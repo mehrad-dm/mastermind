@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none" role="img" aria-label="MasterMind">
+  <g stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="10" d="M128 58 C106 46 80 50 68 66 C50 72 44 94 50 114 C40 126 42 150 60 162 C68 180 90 188 108 182 C114 190 122 191 128 189 C134 191 142 190 148 182 C166 188 188 180 196 162 C214 150 216 126 206 114 C212 94 206 72 188 66 C176 50 150 46 128 58 Z"/>
+    <path stroke-width="6.5" d="M128 64 C122 84 134 100 128 118 C122 136 132 154 128 172"/>
+    <path stroke-width="6.5" d="M98 86 C84 94 84 110 96 116"/>
+    <path stroke-width="6.5" d="M92 132 C80 140 82 156 96 158"/>
+    <path stroke-width="6.5" d="M158 86 C172 94 172 110 160 116"/>
+    <path stroke-width="6.5" d="M164 132 C176 140 174 156 160 158"/>
+  </g>
+</svg>
