@@ -8,30 +8,30 @@
   <a href="https://mastermind.mehrad.me"><strong>🌐 mastermind.mehrad.me</strong></a>
 </p>
 
-> A portable, field-parameterized **genius-builder brain** for AI coding assistants — turn any capable
-> model (Claude Code, Cursor, Copilot, ChatGPT) into a dedicated senior engineer that decides
-> correctly, ships rigorously, and **levels itself up** over time.
+> A **genius-builder brain** for your AI coding assistant — it brings sharp defaults, real judgment,
+> and the discipline to check its own work to Claude Code, Codex, Cursor, Copilot, and more.
+> Just markdown, and it **improves itself** over time.
 
-MasterMind is plain Markdown. No runtime, no dependencies. It's a set of instructions and knowledge
-that loads into an AI assistant to raise its floor — the judgment, defaults, rigor, and taste of the
-people who built the software world.
+MasterMind is plain Markdown — no app, no dependencies. It's a set of instructions that loads into
+your AI assistant and gives it better judgment, good defaults, and the discipline to check its own
+work — the habits of the engineers who built the software world.
 
 ## Why it exists
 
-A frontier model already knows JavaScript, TypeScript, React, algorithms. Re-teaching those wastes
-tokens and makes an assistant heavy and slow. MasterMind encodes only what the model *lacks*:
+Your AI already knows JavaScript, TypeScript, React, and algorithms. Teaching it those again just
+wastes tokens and slows it down. MasterMind adds only what it's *missing*:
 
-- **Defaults** — which tool/pattern to reach for, so it picks the *best* option, not the average one.
-- **A decision framework** — how to choose when there's no default.
-- **A rigor protocol** — how to stay dedicated and never ship lazy work.
-- **Masters to align with** — whose school of thought to follow, with sources.
-- **Lessons from real usage** — it records what it learns and gets better.
+- **Good defaults** — which tool or pattern to reach for, so it picks the best option, not the average one.
+- **A way to decide** — how to choose when there's no obvious default.
+- **A habit of checking** — how to verify its work and never ship lazy code.
+- **Experts to learn from** — whose approach to follow, with sources.
+- **Lessons from real use** — it writes down what it learns and gets better.
 
 ## Architecture: a lean kernel + on-demand modules
 
-Performance degrades as context fills, so the always-loaded layer is tiny and everything else loads
-only when relevant. The knowledge splits into a **universal core** (how to think & work) and a
-**swappable field pack** (what to know for a domain).
+An AI gets slower and less sharp as its context fills up. So the always-loaded part is tiny, and
+everything else loads only when it's needed. The knowledge splits into a **universal core** (how to
+think and work) and a **swappable field pack** (what to know for a specific domain).
 
 ```text
 CLAUDE.md                     # the kernel — always loaded, ~60 lines
@@ -54,13 +54,26 @@ skills/                       # growable library — build, tdd, debug, spec, le
 ## Install
 
 ```bash
-git clone https://github.com/<you>/mastermind.git ~/mastermind
-cd ~/mastermind && ./install.sh          # canonical + auto-detects Claude Code / Codex
+git clone https://github.com/mehrad-dm/mastermind.git ~/mastermind
+cd ~/mastermind && ./install.sh          # sets up the brain + auto-detects Claude Code / Codex
 ```
 
 `install.sh` symlinks the repo into a tool-neutral home, **`~/.mastermind`**, plus each tool's entry
 file — so the repo stays the single source of truth, editing it updates every tool instantly, and
 `git pull` upgrades them all. Nothing personal (Claude sessions/memory/settings) is touched or published.
+
+### Or add it as a Claude Code plugin
+
+Prefer the plugin flow? Add the marketplace and install — no clone needed:
+
+```text
+/plugin marketplace add mehrad-dm/mastermind
+/plugin install mastermind@mastermind
+```
+
+This installs the **skills and agents** (`build`, `tdd`, `debug`, … + `architect`, `code-reviewer`, …).
+The full brain — the always-on `CLAUDE.md` kernel and the `engineering/` knowledge base — still comes
+from the `install.sh` route above, which is the recommended way to get everything.
 
 ### Per tool
 

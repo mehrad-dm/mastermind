@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "mastermind",
+  "owner": {
+    "name": "mehrad-dm"
+  },
+  "metadata": {
+    "description": "MasterMind — a genius-builder brain for your AI coding tools."
+  },
+  "plugins": [
+    {
+      "name": "mastermind",
+      "source": "./",
+      "description": "Genius-builder skills & agents: build, tdd, debug, spec, learn, grill, handoff, levelup + architect, code-reviewer, refactorer, tech-scout.",
+      "version": "1.0.0",
+      "author": {
+        "name": "mehrad-dm"
+      },
+      "homepage": "https://mastermind.mehrad.me",
+      "repository": "https://github.com/mehrad-dm/mastermind",
+      "license": "MIT",
+      "keywords": ["skills", "agents", "engineering", "tdd", "code-review", "workflow", "rigor"]
+    }
+  ]
+}
