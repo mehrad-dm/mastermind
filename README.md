@@ -34,7 +34,7 @@ everything else loads only when it's needed. The knowledge splits into a **unive
 think and work) and a **swappable field pack** (what to know for a specific domain).
 
 ```text
-CLAUDE.md                     # the kernel — always loaded, ~60 lines
+CLAUDE.md                     # the kernel — always loaded, ~90 lines
 engineering/
 ├── active-field.md           # which field is active + how leveling works
 ├── core/                     # UNIVERSAL — field-agnostic
@@ -64,16 +64,17 @@ file — so the repo stays the single source of truth, editing it updates every 
 
 ### Or add it as a Claude Code plugin
 
-Prefer the plugin flow? Add the marketplace and install — no clone needed:
+The skills and agents are also published as a Claude Code plugin:
 
 ```text
 /plugin marketplace add mehrad-dm/mastermind
 /plugin install mastermind@mastermind
 ```
 
-This installs the **skills and agents** (`build`, `tdd`, `debug`, … + `architect`, `code-reviewer`, …).
-The full brain — the always-on `CLAUDE.md` kernel and the `engineering/` knowledge base — still comes
-from the `install.sh` route above, which is the recommended way to get everything.
+This registers the **skills and agents** (`build`, `tdd`, `debug`, … + `architect`, `code-reviewer`, …)
+as native commands. One caveat: those skills and agents read the brain from **`~/.mastermind`**, so run
+`install.sh` (above) once as well — otherwise their `~/.mastermind/engineering/…` references won't
+resolve. Think of it as: `install.sh` gives you the brain, the plugin gives you the command surface.
 
 ### Per tool
 

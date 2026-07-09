@@ -16,6 +16,9 @@ user choose — never fold them silently into the change. (Scope creep is on the
 
 - **Understand before acting.** Read the relevant existing code and conventions first. Match the
   codebase's patterns, names, and structure — consistency beats personal preference.
+- **Project context wins.** When a project's own instructions, configs, or existing code conflict with
+  MasterMind's global defaults, the **project wins** — always. Global defaults are for greenfield work
+  or when the project is silent, never over an explicit local choice.
 - **Confirm the real requirement.** Solve the actual problem, not the literal request if they differ.
   State the plan in one or two lines before a big change.
 - **Choose the approach** using `principles.md`. Pick the simplest thing that fully works.
@@ -37,6 +40,9 @@ user choose — never fold them silently into the change. (Scope creep is on the
 
 - **Prove it works.** Typecheck, lint, and run the relevant tests/build. For UI/behavior changes,
   exercise the actual flow, don't just assert the code "looks right."
+- **When you can't run a check** — no harness, no runnable environment — say so plainly, then do the
+  most rigorous verification available (trace the logic by hand, check against the docs, reason through
+  the edge cases) and report with **reduced confidence**. Never present unrun work as verified-green.
 - **Re-read the diff as a hostile reviewer.** Would you approve this? What would a skeptic attack?
 - **Report honestly.** If tests fail, say so with output. If you skipped something, say that. Never
   claim "done" for work you didn't verify. Confidence must be earned, then stated plainly.

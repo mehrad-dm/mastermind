@@ -20,7 +20,7 @@ to copy. (Carmack, Thompson: know what's under the hood, all the way down.)
 ## 2. The best code is the code you never wrote
 
 The great builders are measured by what they *remove*, not add. Before writing anything, run the
-ladder (from `ponytail`): **Does this need to exist? → Is it already in the codebase? → Does the
+reduction ladder: **Does this need to exist? → Is it already in the codebase? → Does the
 stdlib/platform do it? → Is it one line?** Only then write the minimum that fully works. Every line is
 a liability someone maintains forever. *Lazy about the solution, never about reading or rigor.*
 

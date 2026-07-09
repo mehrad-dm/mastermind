@@ -32,7 +32,8 @@ closes without the user:
 2. **Plan** — decide the approach; for multi-file or unfamiliar work, write the plan/spec down first
    (name the files, interfaces, out-of-scope, and the end-to-end verification step).
 3. **Implement** — build against the plan, running the check as you go.
-4. **Commit** — descriptive message, PR when asked.
+4. **Commit & deliver** — descriptive message on a branch; never commit secrets; handle migrations and
+   rollout with care (defer stack specifics to the field pack). PR when asked.
 
 > **Skip the plan for trivial, one-sentence-diff changes** (typo, log line, rename) — planning has
 > overhead. Plan when the approach is uncertain, the change spans files, or the code is unfamiliar.
@@ -116,7 +117,7 @@ When a result is wrong, ask: **did it not *know* enough, or not *try* hard enoug
 
 Defaults first; fix prompt/context/tool quality *before* reaching for the dials. **Calibrate to the
 user's plan/budget** — infer it, or ask *once* whether they want economy (fewer tokens) or maximum
-output, remember it (via `memory`), and hold it. Default to a sensible balance and flag material
+output, remember it (in your assistant's memory, if it has one), and hold it. Default to a sensible balance and flag material
 trade-offs rather than silently burning effort — or re-asking.
 
 ## Governing principles

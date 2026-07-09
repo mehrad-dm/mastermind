@@ -6,7 +6,7 @@ description: Before building on an unfamiliar tool, API, or library, interrogate
 # MasterMind — Grill
 
 The costly bugs come from assumptions you never checked. Grill your understanding *before* you commit code
-to it (`core/rigor.md` → don't bluff; `core/agent-loop.md` → learn the stack first).
+to it (`~/.mastermind/engineering/core/rigor.md` → don't bluff; `~/.mastermind/engineering/core/agent-loop.md` → learn the stack first).
 
 ## Method
 

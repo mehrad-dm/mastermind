@@ -5,7 +5,7 @@ description: Write a concise handoff so work survives a context reset or a teamm
 
 # MasterMind — Handoff
 
-Context is the fundamental constraint (`core/agent-loop.md`); a long task shouldn't lose its thread to a
+Context is the fundamental constraint (`~/.mastermind/engineering/core/agent-loop.md`); a long task shouldn't lose its thread to a
 reset. Capture just enough to resume cold — high signal, low tokens.
 
 ## Capture

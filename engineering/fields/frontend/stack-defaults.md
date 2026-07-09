@@ -9,7 +9,8 @@ The default AI aesthetic is a tell: system/Inter fonts, a purple→blue gradient
 centered, emoji section markers, `rounded-lg` on everything. **Avoid it.** Ground the design in the
 subject; pick a deliberate palette and type pairing, real hierarchy and spacing, and one considered
 accent. Polished-but-restrained for tools/docs; a distinctive point of view for landing pages. (This is
-what the popular `frontend-design` skill encodes — bake it in, don't ship the default look.)
+the discipline the popular third-party `frontend-design` skill encodes, if you have it — but the rule
+stands on its own: bake it in, don't ship the default look.)
 
 ## Language — TypeScript, always
 
@@ -69,6 +70,8 @@ There is no single winner; choose by constraints. Ranked defaults:
   system and static extraction (great for design systems / libraries; SSR-safe, no runtime cost).
 - **Panda CSS** — when you want Tailwind-like DX **as typed CSS-in-JS with build-time extraction** and
   recipes/variants tied to tokens. A strong middle ground for design systems.
+- **StyleX** — atomic, compile-time, type-safe styling built for very large apps (Meta-scale
+  determinism, style-merging guarantees, dedup). Reach for it at big-codebase scale; overkill for most.
 - **CSS Modules / plain CSS** — when you want zero deps, full control, and no abstraction tax.
 - **Runtime CSS-in-JS (styled-components/emotion)** — only in legacy contexts or when dynamic runtime
   theming truly requires it; avoid for new SSR apps (runtime cost, RSC friction).

@@ -6,7 +6,7 @@ description: Structured six-phase debugging for a hard bug — reproduce, locali
 # MasterMind — Debug
 
 Hard bugs are lost by guessing and patching symptoms. This is the disciplined loop that finds the
-actual cause. Bug: **$ARGUMENTS**. Grounded in `core/rigor.md` and `core/agent-loop.md`.
+actual cause. Bug: **$ARGUMENTS**. Grounded in `~/.mastermind/engineering/core/rigor.md` and `~/.mastermind/engineering/core/agent-loop.md`.
 
 The cardinal rule: **understand the mechanism before you change a line.** A fix you can't explain is a
 coincidence, not a fix.
@@ -29,9 +29,9 @@ coincidence, not a fix.
    condition, add an assertion. Confirm the mechanism *before* fixing. If the experiment refutes it, go
    back to (3) with what you learned. Don't shotgun-change multiple things.
 
-5. **Fix the root cause, not the symptom** (`core/rigor.md`). Address why the bad state was possible —
+5. **Fix the root cause, not the symptom** (`~/.mastermind/engineering/core/rigor.md`). Address why the bad state was possible —
    ideally make it unrepresentable (types, invariants, a reshaped data structure so the edge case
-   disappears — `core/mindset.md`). Never suppress an error to green the check.
+   disappears — `~/.mastermind/engineering/core/mindset.md`). Never suppress an error to green the check.
 
 6. **Verify + guard.** Confirm the red check now passes and nothing else broke (typecheck/lint/tests/
    build). **Add a regression test that would have caught this** — the bug must not be able to return

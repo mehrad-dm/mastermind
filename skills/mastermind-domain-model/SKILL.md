@@ -5,7 +5,7 @@ description: Build or sharpen a project's domain glossary — the canonical term
 
 # MasterMind — Domain Model
 
-Names are the most-read documentation and the data model in disguise (`core/mindset.md`, `principles.md`).
+Names are the most-read documentation and the data model in disguise (`~/.mastermind/engineering/core/mindset.md`, `principles.md`).
 A shared, precise vocabulary is what keeps a codebase coherent. Build one.
 
 ## Method

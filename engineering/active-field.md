@@ -9,6 +9,12 @@ MasterMind is **field-parameterized**: a universal core (how to think & work) pl
 - **Level:** 2. Bumped by the `mastermind-levelup` skill as lessons accumulate and standards are
   refreshed. See the field pack's `lessons.md` for what's been learned so far.
 
+### Level history
+
+- **level 2** — frontend field pack populated (`stack-defaults`, `curriculum`, `mentors`,
+  `learning-sources`, `lessons`); core loop, skills, and agents wired.
+- **level 1** — initial kernel + universal core (mindset · principles · rigor · agent-loop · product-sense).
+
 ## Get ready for the task (onboarding)
 
 Be ready for whatever the user is building — cheaply. At the start of substantive work:
@@ -20,17 +26,21 @@ Be ready for whatever the user is building — cheaply. At the start of substant
 3. **Load the matching pack** — if a `fields/<field>/` pack exists, use it. If not, offer to
    `mastermind-levelup --bootstrap <field>` (researches + generates it once), then use it.
 4. **Token economy** — load only the active field's pack; never preload others. For full-stack work,
-   load both packs but only the files each task needs (per the load-on-demand map).
+   load each field's pack — but only the **frontend** pack ships today; bootstrap the others (e.g.
+   backend) on demand, loading only the files each task needs (per the load-on-demand map).
 
 ## How to change the field
 
 1. Ensure a pack exists at `engineering/fields/<name>/` with a `field.md` manifest (copy the
-   frontend pack's shape: `stack-defaults`, `curriculum`, `mentors`, `learning-sources`, `lessons`).
+   frontend pack's shape: `field.md` (the manifest), `stack-defaults`, `curriculum`, `mentors`,
+   `learning-sources`, `lessons`).
    If it doesn't exist, run `mastermind-levelup --bootstrap <name>` to research and generate it.
 2. Update the "Current field" line above to point at the new pack.
 3. The universal core (`engineering/core/*`) never changes between fields — it's field-agnostic.
 
-Multiple fields can be active at once (e.g. `Frontend + Backend`) for full-stack work; load both packs.
+Multiple fields can be active at once (e.g. `Frontend + Backend`) for full-stack work — load each pack
+you need. Today only the **frontend** pack ships; bootstrap a backend pack
+(`mastermind-levelup --bootstrap backend`) before relying on it.
 
 ## How MasterMind levels up (honest mechanics)
 
@@ -42,8 +52,8 @@ behavior durably across all future sessions:
    `stack-defaults.md`). This is the primary learning channel — it compounds.
 2. **Refresh** — periodically re-run the curriculum research (`mastermind-levelup --refresh`) so the
    field's best-practice list tracks the moving ecosystem; verify repos still exist/are active.
-3. **Adapt to the user** — per-user preferences accumulate in the file-based memory system (separate
-   infra); MasterMind recalls them by relevance. Field packs hold *domain* truth; memory holds *user*
-   truth.
+3. **Adapt to the user** — where your assistant has a memory (e.g. Claude Code's file-based memory),
+   per-user preferences accumulate there and MasterMind recalls them by relevance; where there's no
+   memory, this channel is simply skipped. Field packs hold *domain* truth; memory holds *user* truth.
 4. **Mark the level** — bump the level number above and log the change, so improvement is visible and
    reversible via git.

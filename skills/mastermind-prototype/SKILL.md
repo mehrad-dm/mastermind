@@ -5,7 +5,7 @@ description: Build a fast, throwaway spike to learn — validate a risky assumpt
 
 # MasterMind — Prototype
 
-Tight feedback loops beat big plans when the path is unclear (`core/agent-loop.md`, `mindset.md` →
+Tight feedback loops beat big plans when the path is unclear (`~/.mastermind/engineering/core/agent-loop.md`, `mindset.md` →
 design it twice). A spike buys knowledge cheaply — as long as you don't mistake it for the product.
 
 ## Method

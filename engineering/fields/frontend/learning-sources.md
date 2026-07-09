@@ -10,8 +10,9 @@ mental models current. Two standing habits:
 
 ## Design systems (study how the best are built)
 
-- **facebook/astryx** — Meta's open-source, fully customizable, **agent-ready** design system.
-  <https://github.com/facebook/astryx> — a primary reference for modern, AI-friendly design systems.
+- **facebook/astryx** — Meta's open-source, **agent-ready** design system.
+  <https://github.com/facebook/astryx> — *emerging (published mid-2026); watch it, don't treat it as
+  gospel yet.* Weigh it against the battle-tested systems below before adopting its patterns.
 - **adobe/react-spectrum** — the gold standard for **accessibility** and headless behavior
   (React Aria / React Stately). Study for a11y-correct interaction patterns.
 - **shadcn-ui/ui** — copy-in, you-own-the-code components on Radix + Tailwind; the reference for the

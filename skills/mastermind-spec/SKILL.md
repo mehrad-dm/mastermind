@@ -6,7 +6,7 @@ description: Turn a fuzzy request into a crisp, buildable spec before coding —
 # MasterMind — Spec
 
 A precise spec is cheaper than a wrong build. Time spent making the spec exact pays off more than time
-watching the implementation (`core/product-sense.md`, `core/agent-loop.md`). This produces the *what*,
+watching the implementation (`~/.mastermind/engineering/core/product-sense.md`, `~/.mastermind/engineering/core/agent-loop.md`). This produces the *what*,
 not the code.
 
 ## Write the spec

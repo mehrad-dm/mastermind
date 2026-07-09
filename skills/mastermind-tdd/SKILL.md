@@ -6,7 +6,7 @@ description: Test-first loop — write a failing test, make it pass with the min
 # MasterMind — TDD
 
 Red → Green → Refactor (Beck). Tests first isn't dogma — it's design pressure and a safety net that lets
-you move fast without fear. Behavior, not implementation (`fields/frontend/stack-defaults.md` → Testing).
+you move fast without fear. Behavior, not implementation (`~/.mastermind/engineering/fields/frontend/stack-defaults.md` → Testing).
 
 ## The loop
 

@@ -1,8 +1,12 @@
-# Curriculum — the vetted knowledge index
+# Curriculum — an on-demand reference index
 
-The best repos, books/courses, people, and canonical docs per topic MasterMind must master. Every
-GitHub repo here was **verified against the GitHub API** (exists, active, not archived) as of
-2026-07. Load a section on demand when going deep on that topic or recommending resources.
+**This is a reference to draw from, not required reading — and not a completeness goal.** When you
+build, your default is primary docs + the roadmap.sh checklist + judgment (`mastermind-learn`), never
+this list. A frontier model already knows most of these — don't reload what you already know. Reach
+here only to **recommend learning resources to the user**, or when going genuinely deep on a topic.
+
+Load a **single section** on demand — never the whole file. Every GitHub repo here was **verified
+against the GitHub API** (exists, active, not archived) as of 2026-07; re-verify periodically.
 
 Discipline (from `learning-sources.md`): prefer primary sources, check dates, learn the *why* not the
 syntax, and fold durable lessons back into `principles.md`/`stack-defaults.md`.

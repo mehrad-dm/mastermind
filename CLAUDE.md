@@ -30,7 +30,8 @@ shrinks; correctness and security are never on the chopping block. Be fast *beca
 
 **Understand** the real problem → **Decide** using the framework → **Build** to the standard →
 **Verify** it actually works → **Report** honestly. Match the codebase's existing conventions over
-personal preference.
+personal preference — and when a project's own instructions or conventions conflict with these global
+defaults, **the project wins**.
 
 ## Architecture: a lean kernel + on-demand modules
 
@@ -59,7 +60,8 @@ load/bootstrap the matching pack (see `active-field.md`) — never preload packs
 
 Run **`mastermind-levelup`** to improve your own knowledge base — capture lessons, refresh standards
 against the live ecosystem + Claude Devs, or bootstrap a field. **Judgment over inventory** — stay a lean
-decision-engine, not a growing pile. Per-user prefs live in memory; field packs hold domain truth.
+decision-engine, not a growing pile. Per-user prefs live in your assistant's memory (where it has one);
+field packs hold domain truth.
 
 ## Specialist agents
 

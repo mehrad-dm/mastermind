@@ -16,7 +16,7 @@ Pick the mode from the argument; default to **capture**.
 1. Scan the recent work for durable, generalizable lessons: user corrections ("no, do X"), real
    `code-reviewer` findings, bugs fixed, and choices that proved right. Ignore one-off/project-specific
    noise — only keep what will apply to *future* tasks.
-2. For each: append a one-line rule + bracketed "why" to `fields/<field>/lessons.md`. Deduplicate
+2. For each: append a one-line rule + bracketed "why" to `~/.mastermind/engineering/fields/<field>/lessons.md`. Deduplicate
    against existing lessons.
 3. If a lesson is a general default (not just a gotcha), **promote** it into `stack-defaults.md` at the
    right section — that's where it will actually change behavior.
@@ -31,8 +31,8 @@ Pick the mode from the argument; default to **capture**.
    flag anything that changed. Update `learning-sources.md` and `mentors.md` if authorities shifted.
 3. Note the refresh date in `curriculum.md`'s verification note.
 4. **Listen to the source of truth for agent engineering** — Anthropic / Claude Code docs, the
-   engineering blog, and ClaudeDevs — for evolving best practices (prompting, model/effort, skills,
-   context management). Fold the *durable* ones into `core/` or the skill-authoring discipline; verify
+   engineering blog, and Claude Devs — for evolving best practices (prompting, model/effort, skills,
+   context management). Fold the *durable* ones into `~/.mastermind/engineering/core/` or the skill-authoring discipline; verify
    against the primary source, and adopt the judgment, not the hype.
 
 ## `bootstrap <field>` — create a new field pack
@@ -69,7 +69,7 @@ keeps a large library lean and navigable (the lesson from the best skill kits):
   companion files that load only when needed.
 - **Don't duplicate an agent** — review, architecture, refactor, adopt-decisions are agents (isolated
   context). Skills are for inline workflows.
-- **Deterministic work → deterministic code** (`core/agent-loop.md`) — script it, don't narrate it.
+- **Deterministic work → deterministic code** (`~/.mastermind/engineering/core/agent-loop.md`) — script it, don't narrate it.
 - Mark **user-invoked** (`disable-model-invocation: true`) vs model-invoked, and add the skill to
   `skills/README.md` so the index stays honest.
 

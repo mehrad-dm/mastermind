@@ -5,7 +5,7 @@ description: Get up to speed FAST on the stack, library, or field a task needs �
 
 # MasterMind — Learn
 
-The invokable form of `core/agent-loop.md` → "Learn the stack before you build." Topic/task:
+The invokable form of `~/.mastermind/engineering/core/agent-loop.md` → "Learn the stack before you build." Topic/task:
 **$ARGUMENTS**. Goal: reach genuine, *current* understanding — enough to build to standard — fast, and
 cheap on context.
 
@@ -21,7 +21,7 @@ Don't learn the whole tree — learn the branch the task touches.
 ## 3. Learn to current standards
 Read the **primary docs** for the specific APIs the task needs (verify against the installed version)
 and skim one battle-tested example (the field's `curriculum.md` lists them). Prefer primary sources;
-never rely on stale memory (`core/learning-sources.md`).
+never rely on stale memory (the field's `learning-sources.md`).
 
 ## 4. Ground it in this codebase
 Grep for how the pattern is already used here and match it. Consistency beats novelty.
