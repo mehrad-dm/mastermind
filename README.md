@@ -4,6 +4,10 @@
 
 <h1 align="center">MasterMind</h1>
 
+<p align="center">
+  <a href="https://mastermind.mehrad.me"><strong>🌐 mastermind.mehrad.me</strong></a>
+</p>
+
 > A portable, field-parameterized **genius-builder brain** for AI coding assistants — turn any capable
 > model (Claude Code, Cursor, Copilot, ChatGPT) into a dedicated senior engineer that decides
 > correctly, ships rigorously, and **levels itself up** over time.
