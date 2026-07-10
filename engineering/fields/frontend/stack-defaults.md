@@ -3,6 +3,25 @@
 Opinionated defaults so MasterMind reaches for the *right* tool instead of the average one. Format:
 **Default → when to deviate → what to avoid.** Deviate only for a concrete, stated reason.
 
+## Posture: adapt to the project — never impose a stack
+
+These are **greenfield defaults and tie-breakers, not a stack to force on anyone.** Adding MasterMind to
+a project must never mean rewriting it onto the tools below. Before choosing anything:
+
+1. **Understand the architecture first.** Read the repo — `package.json`/lockfile, configs, folder
+   shape, existing patterns — and map what's actually used *and how* (`core/agent-loop.md`). Understand
+   the project before you touch it.
+2. **A project that already has a stack wins — follow it.** Match its tools, versions, and conventions
+   even where they differ from the defaults here; consistency beats preference and the project's choice
+   is context you don't override (`core/rigor.md`). Propose a change only for a real, stated problem —
+   and let the user decide.
+3. **Greenfield or silent → recommend, don't dictate.** Choose the best fit for *this* project's real
+   requirements — scale, team & skills, longevity, maintenance cost, performance — via the decision
+   framework (`core/principles.md`) and the `tech-scout` agent for build-vs-buy. State the one-line why;
+   escalate genuine product/business trade-offs (budget, hosting, hiring) to the user.
+4. **The defaults below are what to reach for when nothing else decides** — a starting point for new
+   work, never a mandate over a working project.
+
 ## Design quality — distinctive, not generic
 
 The default AI aesthetic is a tell: system/Inter fonts, a purple→blue gradient hero, everything
@@ -20,6 +39,13 @@ stands on its own: bake it in, don't ship the default look.)
   states unrepresentable. Infer types where possible; annotate public function boundaries explicitly.
   Prefer `as const`, `satisfies`, and template-literal types over casts. Casts (`as`) are a smell —
   justify each one.
+- **Deeper patterns (Total TypeScript):** enable `noUncheckedIndexedAccess` — index access can be
+  `undefined`, so the type must admit it. A generic type parameter must **connect two or more things**;
+  if it appears only once, it's `any` in a costume — delete it. Use `satisfies` to check an object/config
+  literal *without* widening its inferred type. **Derive, don't redeclare** — pull types from the single
+  source of truth (`typeof value`, `ReturnType<>`, indexed access `T['field']`) so types can't drift from
+  runtime. **Brand** domain ids (`type UserId = string & { readonly __brand: unique symbol }`) so a raw
+  `string` can't be passed where an id is required.
 - **Avoid:** enums (use `as const` objects / unions), `@ts-ignore` (use `@ts-expect-error` with a
   reason), non-null `!` in app logic.
 - **Align with:** Matt Pocock's *Total TypeScript* patterns (see `mentors.md`).
@@ -30,12 +56,25 @@ stands on its own: bake it in, don't ship the default look.)
   data by default; pure functions where practical.
 - **Know under the hood:** the event loop (macro/microtasks), closures, prototype chain, `this`
   binding, reference vs value, hoisting, coercion. Reason from these, not from cargo-cult rules.
+- **Mental model (Abramov, *Just JavaScript*; Simpson, *YDKJS*):** a variable is a wire pointing at a
+  value — never at another variable; primitives are permanent, immutable values, so you never "change" a
+  string, you repoint the wire. **Reassignment ≠ mutation.** `===` asks "the same value/identity?".
+  `let`/`const` sit in a **temporal dead zone** until declared (no `var`-style hoist-to-`undefined`).
+  Get this model exact and most reference / `this` / closure bugs stop happening.
 - **Avoid:** mutation of shared state, `var`, floating promises, `==`.
 
 ## React
 
 - **Default:** function components + hooks. Composition over configuration. Colocate state as low as
   it can live; lift only when genuinely shared.
+- **State placement (Epic React; Abramov, *Before You memo()*):** colocate first. Before reaching for
+  `memo`, try the two composition fixes — **move state down** into the component that actually uses it,
+  and **lift slow content up as `children`** so it sits outside the re-rendering subtree. Group related
+  transitions in one **`useReducer`** over many `useState`s. **Reset a subtree by changing its `key`**
+  (remount), never by syncing state in an effect.
+- **Advanced composition** — compound components, prop getters, control props, provider patterns: use
+  the installed **`vercel-composition-patterns`** skill rather than hand-rolling prop soup; don't
+  restate its rules here.
 - **State model:** server state ≠ client state. Don't put server data in `useState`. Derive, don't
   sync — if you're writing `useEffect` to copy one state into another, you have a derived value, not
   state.
@@ -46,6 +85,15 @@ stands on its own: bake it in, don't ship the default look.)
   `memo` only to fix a *measured* problem or to stabilize a dependency — not reflexively.
 - **Data fetching:** use a server-state library (**TanStack Query**) or the framework's loader — never
   hand-rolled `useEffect` fetch waterfalls.
+- **Client state:** when state is genuinely shared, default to **Zustand** (small, unopinionated; add
+  `immer` for nested updates) — not Redux for greenfield, not Context for high-frequency updates. Keep
+  *server* data in TanStack Query, never mirrored into the store.
+- **Forms:** **React Hook Form + Zod** (`@hookform/resolvers`) — uncontrolled inputs for performance,
+  and **one Zod schema validates the form *and* the API boundary** (SSOT, parse-don't-trust).
+- **Routing:** on Next.js use its router; for a **Vite SPA, React Router** (v7 data routers — loaders,
+  lazy routes, error boundaries). Code-split at the route.
+- **Animation:** **Motion** (Framer Motion) for UI motion/gestures; Lottie/Rive for designed vector
+  animation. Every animation honors `prefers-reduced-motion` (see `lessons.md`).
 - **Align with:** Kent C. Dodds (testing, composition, colocation), Dan Abramov (mental model, effects).
 - **Avoid:** prop-drilling past ~2 levels (compose or context), giant "god" components, `useEffect`
   for derived state, premature global state.
@@ -77,6 +125,18 @@ There is no single winner; choose by constraints. Ranked defaults:
   theming truly requires it; avoid for new SSR apps (runtime cost, RSC friction).
 - **Rule:** whatever the tool, style through **design tokens** (spacing, color, type scales) — never
   magic numbers scattered in components. SSOT for design decisions.
+
+## Components — primitives vs kits
+
+- **Default: headless primitives + your own styling.** **Radix** or **Base UI** (accessible,
+  unstyled behavior) styled with your tokens — you own the look, inherit the hard 20% (focus, keyboard,
+  ARIA). **shadcn/ui** is this exact stack pre-assembled (Radix + Tailwind + `cva`/`cn`), not an
+  alternative to it (see `lessons.md`).
+- **Batteries-included kits (Ant Design, MUI):** reach for one when you want a full component set fast
+  and can live with its design language and weight (admin panels, internal tools). Don't fight its
+  theming to force a bespoke brand — that's when headless wins.
+- **Never hand-roll** an interactive component (dialog, select, combobox, toast) from raw `div`s — you
+  will get a11y wrong. Take the primitive.
 
 ## Responsive & layout
 
@@ -130,6 +190,9 @@ RTL and localization depend entirely on the **audience**. Determine scope first,
 - **Default:** typed client, schema-validated boundaries (**Zod** at the edges — parse, don't trust).
   REST for CRUD; consider tRPC for TS-fullstack type-safety; GraphQL only when the client genuinely
   needs flexible, aggregated queries.
+- **Generate from the contract, don't hand-write it.** When the backend publishes an OpenAPI schema,
+  codegen the typed client + TanStack Query hooks (**orval**, or **openapi-typescript**) so the API
+  contract stays the single source of truth and drift is impossible. `axios`/`fetch` under the hood.
 - **Rules:** handle loading/error/empty states as first-class. Avoid request waterfalls — parallelize,
   prefetch, colocate data needs. Cache deliberately (HTTP caching, TanStack Query). Debounce/throttle
   user-driven requests. Know the network model: HTTP methods & status codes, idempotency, CORS,
@@ -164,6 +227,13 @@ metric that's actually failing; premature perf work is complexity with no payoff
   **Speculation Rules API** to prefetch/prerender the likely next page.
 - **Cache deliberately.** Immutable hashed assets with long `max-age`; a CDN for static delivery;
   server-state caching (TanStack Query) over refetching. (See Data, API & networking above.)
+- **Adaptive loading (Addy Osmani) — meet the user's device & network, don't assume yours.** On
+  constrained clients serve *less*: read `navigator.connection.effectiveType` / `saveData` (Data Saver),
+  `navigator.deviceMemory` (RAM), and `navigator.hardwareConcurrency` (CPU), then adapt — lighter or
+  fewer images/video, deferred or skipped non-critical JS, disabled heavy features. In React,
+  `react-adaptive-hooks` (`useNetworkStatus` · `useSaveData` · `useMemoryStatus` ·
+  `useHardwareConcurrency`); also honor the `Save-Data` request header and `prefers-reduced-data`. Data
+  Saver alone cuts image bytes ~50–80%. Your fast laptop is not your user's phone.
 
 ## Testing
 
@@ -183,3 +253,12 @@ The defaults below apply *when* the project tests:
 Vite for SPAs; ESLint + Prettier (formatting is not a debate — automate it); TypeScript strict; a
 package manager committed via `packageManager` field; CI that runs typecheck + lint (+ tests where the
 project has them) before merge.
+
+- **Monorepos:** for multiple apps + shared packages, **Turborepo + pnpm workspaces** — cached,
+  parallel task pipelines; share `ui`, `config`, `types` as internal packages.
+- **Git hygiene:** **Husky + lint-staged** (lint/format only staged files pre-commit) and **commitlint**
+  (conventional commits) — keep the gate fast and the history clean.
+- **PWA:** **vite-plugin-pwa + Workbox** when the app must be installable or work offline; precache the
+  shell, choose a deliberate runtime-caching strategy per route.
+- **Error monitoring:** ship a reporter (**Sentry**) with source maps and release tracking — unobserved
+  production errors are bugs you've decided not to find.

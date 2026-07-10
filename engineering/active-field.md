@@ -3,14 +3,19 @@
 MasterMind is **field-parameterized**: a universal core (how to think & work) plus a swappable
 **field pack** (what to know & which tools) for the domain the user is working in.
 
-## Current field: **Frontend Engineering** — level 2
+## Current field: **Frontend Engineering** — level 3
 
 - **Field pack:** `engineering/fields/frontend/` (see its `field.md` manifest).
-- **Level:** 2. Bumped by the `mastermind-levelup` skill as lessons accumulate and standards are
+- **Level:** 3. Bumped by the `mastermind-levelup` skill as lessons accumulate and standards are
   refreshed. See the field pack's `lessons.md` for what's been learned so far.
 
 ### Level history
 
+- **level 3** — stack-defaults deepened & made explicitly adaptive: "adapt-to-project, never impose"
+  posture; Core Web Vitals performance section; components (primitives vs kits); client-state/forms/
+  routing/animation/API-codegen/monorepo/PWA/monitoring defaults (covering real production stacks);
+  captured signature patterns from Total TypeScript, Epic React, and *Just JavaScript* (verified free
+  primary sources). Ask-first testing policy; version/primary-source discipline; `mastermind-verify` skill.
 - **level 2** — frontend field pack populated (`stack-defaults`, `curriculum`, `mentors`,
   `learning-sources`, `lessons`); core loop, skills, and agents wired.
 - **level 1** — initial kernel + universal core (mindset · principles · rigor · agent-loop · product-sense).

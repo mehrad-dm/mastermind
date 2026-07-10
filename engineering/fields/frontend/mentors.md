@@ -38,6 +38,9 @@ thought. This is not name-dropping — it's a shortcut to well-tested judgment. 
 - **Josh Comeau** — modern CSS mental models (stacking contexts, flexbox/grid intuition, spacing).
 - **Kevin Powell** — intrinsic/fluid, mobile-first, container queries, "stop fighting the browser."
 - **Una Kravets / web.dev** — modern layout, logical properties, performance, a11y as baseline.
+- **Addy Osmani** — web-performance authority: Core Web Vitals, image/asset optimization, code-splitting
+  (PRPL), and **adaptive loading** — tailor JS, media, and features to the user's real device & network,
+  not your own. Reason about the low-end phone on a slow network, always.
 - **Kyle Simpson** — *You Don't Know JS.* Under-the-hood JavaScript: closures, `this`, coercion,
   the event loop. Reason from the runtime, not from superstition.
 
