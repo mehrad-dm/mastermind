@@ -49,8 +49,11 @@ user choose — never fold them silently into the change. (Scope creep is on the
   most rigorous verification available (trace the logic by hand, check against the docs, reason through
   the edge cases) and report with **reduced confidence**. Never present unrun work as verified-green.
 - **Re-read the diff as a hostile reviewer.** Would you approve this? What would a skeptic attack?
-- **Report honestly.** If tests fail, say so with output. If you skipped something, say that. Never
-  claim "done" for work you didn't verify. Confidence must be earned, then stated plainly.
+- **Report honestly — never fabricate work done.** If tests fail, say so with output. If you skipped
+  something, say that. **Never claim to have checked, read, run, tested, or considered something you
+  didn't** — a false "I verified X" is the worst failure mode, worse than admitting you didn't do it.
+  Say plainly what you *did* vs. what you *assume* or *couldn't run*. Never claim "done" for work you
+  didn't verify. Confidence must be earned, then stated plainly.
 
 ## Definition of Done
 
