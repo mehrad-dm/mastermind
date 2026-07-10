@@ -3,14 +3,19 @@
 MasterMind is **field-parameterized**: a universal core (how to think & work) plus a swappable
 **field pack** (what to know & which tools) for the domain the user is working in.
 
-## Current field: **Frontend Engineering** — level 3
+## Current field: **Frontend Engineering** — level 4
 
 - **Field pack:** `engineering/fields/frontend/` (see its `field.md` manifest).
-- **Level:** 3. Bumped by the `mastermind-levelup` skill as lessons accumulate and standards are
+- **Level:** 4. Bumped by the `mastermind-levelup` skill as lessons accumulate and standards are
   refreshed. See the field pack's `lessons.md` for what's been learned so far.
 
 ### Level history
 
+- **level 4** (2026-07-10) — added a **UI/UX design-intelligence** capability: vendored the third-party
+  `ui-ux-pro-max` skill (MIT, NextLevelBuilder — searchable styles/palettes/font-pairings/UX-guidelines/
+  charts across stacks) into `skills/`, registered it in the skills index, and pointed the frontend
+  field pack at it (design *what* ↔ field-pack/rigor *how*). Sourced while overhauling the Playlist
+  Telegram Mini App to an Apple/Spotify-grade bar.
 - **level 3** — stack-defaults deepened & made explicitly adaptive: "adapt-to-project, never impose"
   posture; Core Web Vitals performance section; components (primitives vs kits); client-state/forms/
   routing/animation/API-codegen/monorepo/PWA/monitoring defaults (covering real production stacks);

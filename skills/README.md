@@ -30,5 +30,10 @@ router that lies. (Authoring discipline: `mastermind-levelup` → "Authoring a n
 | [`mastermind-handoff`](./mastermind-handoff/SKILL.md) | Write a concise handoff so work survives a `/clear` or takeover |
 | [`mastermind-levelup`](./mastermind-levelup/SKILL.md) | Level MasterMind up — capture lessons / refresh curriculum / bootstrap a field |
 
+## Craft (domain skills)
+| Skill | Job |
+| --- | --- |
+| [`ui-ux-pro-max`](./ui-ux-pro-max/SKILL.md) | UI/UX **design intelligence** — searchable styles, color palettes, font pairings, UX guidelines, chart types across stacks. Vendored, MIT (NextLevelBuilder — see `SOURCE.md`). Use for any UI build/review; pair with `mastermind-build` + the frontend field pack for rigor, states & a11y. |
+
 The library grows freely — add a skill for any distinct, useful workflow, held to the one-job + lean-
 description + on-demand-body bar. Register every new skill here.

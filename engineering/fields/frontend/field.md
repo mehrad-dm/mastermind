@@ -18,6 +18,11 @@ responsive & layout, design systems, plus the API/networking and algorithms a fr
 | `learning-sources.md` | Design-system work or an unfamiliar topic — how to learn from world-class code |
 | `lessons.md` | Always relevant — durable lessons learned from real usage/reviews (the leveling record) |
 
+## Design intelligence
+For visual/UI craft — styles, color palettes, font pairings, UX guidelines, chart types — reach for the
+**`ui-ux-pro-max`** skill (searchable design database, vendored MIT). It supplies the *what* (design
+recommendations); this pack + `core/rigor.md` supply the *how* (states, a11y, verification).
+
 ## Default posture
 Match the codebase first. Where there's no house style, apply `stack-defaults.md`. **RTL/i18n is
 decided per project's audience — never assumed.** Accessibility and correctness are never traded for
