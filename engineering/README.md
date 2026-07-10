@@ -1,4 +1,4 @@
-# MasterMind — a portable, field-parameterized senior-engineer brain
+# MasterMind — a portable, field-parameterized genius-builder brain
 
 This folder is **MasterMind**: a **model-agnostic knowledge base** that turns any capable AI into a
 dedicated genius builder + software architect. It is plain Markdown on purpose — it works with Claude
@@ -14,12 +14,15 @@ opinion (e.g. RTL, per the project's audience), the docs say so.
 
 ## Architecture: kernel + on-demand modules
 
-A lean always-on kernel (`~/.claude/CLAUDE.md`) plus modules loaded only when relevant. Split into a
+A lean always-on kernel (`CLAUDE.md`) plus modules loaded only when relevant. Split into a
 **universal core** (how to think & work) and a **swappable field pack** (what to know for the domain).
+The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlinked from the repo by
+`install.sh`); each tool's entry file just points here, so editing the repo updates every tool at once.
 
 ```
-~/.claude/
+~/.mastermind/                    # canonical, tool-neutral (symlink → the repo)
 ├── CLAUDE.md                     # the kernel — always loaded, tiny
+├── AGENTS.md                     # → CLAUDE.md (entry file for Codex & generic agents)
 ├── agents/                       # specialist roles (architect, code-reviewer, refactorer, tech-scout)
 ├── skills/                       # growable library (build, debug, tdd, spec, learn, grill, … + levelup)
 └── engineering/
@@ -65,8 +68,12 @@ refreshes the curriculum against the live ecosystem, or bootstraps a new field p
 
 ## Use with any AI
 
-- **Claude Code** — auto-loaded via `~/.claude/CLAUDE.md`. Nothing to do.
-- **Cursor / Copilot** — reference or copy `core/*` + the active field's `stack-defaults.md`.
+Run `install.sh` once to symlink the brain to `~/.mastermind/` + each tool's entry file (see the root
+`README.md` for the full table). Then:
+
+- **Claude Code** — auto-loaded via `~/.claude/CLAUDE.md` → the repo. Nothing more to do.
+- **Codex** — reads `~/.codex/AGENTS.md` → the repo. Nothing more to do.
+- **Cursor / Copilot** — add a one-line rule pointing at `~/.mastermind/CLAUDE.md`.
 - **ChatGPT / any chat** — paste `core/mindset.md` + `core/principles.md` + the field's
   `stack-defaults.md` at the top of a session.
 

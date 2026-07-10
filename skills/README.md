@@ -13,6 +13,7 @@ router that lies. (Authoring discipline: `mastermind-levelup` → "Authoring a n
 | [`mastermind-build`](./mastermind-build/SKILL.md) | The flagship: design → implement-to-rigor → verify → review → capture, end to end |
 | [`mastermind-debug`](./mastermind-debug/SKILL.md) | Structured six-phase debugging — evidence over guessing |
 | [`mastermind-tdd`](./mastermind-tdd/SKILL.md) | Red → green → refactor; test-first design pressure |
+| [`mastermind-verify`](./mastermind-verify/SKILL.md) | Confirm a change works by exercising it end-to-end — QA without a test suite (ask-first on tests) |
 | [`mastermind-prototype`](./mastermind-prototype/SKILL.md) | Fast throwaway spike to answer one risky unknown, then rebuild properly |
 
 ## Think before you build

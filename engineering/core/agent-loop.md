@@ -44,15 +44,21 @@ closes without the user:
 Before implementing in a stack you haven't just been working in, **learn it — to the project's actual
 standards, not generic memory:**
 
-- **Detect the real stack.** Read `package.json`/lockfile, configs, and the repo's own patterns to see
-  exactly what's used (framework + versions, styling, state, data, test runner) and *how* the team uses
-  it. Match those conventions first.
+- **Detect the real stack — and its exact versions.** Read `package.json` + the **lockfile**, configs,
+  and the repo's own patterns to see exactly what's used (framework, libraries, language, styling,
+  state, data, test runner) **with their pinned versions** — and *how* the team uses it. Behavior and
+  APIs differ across majors, so target the version actually installed, not "latest in general." Match
+  the team's conventions first.
 - **Learn what the task touches.** For unfamiliar or fast-moving tech, read the **primary docs** and the
   relevant **roadmap.sh** role/topic map — it's the field's skill-tree, so use it to know *what* to learn
   and to spot gaps — then go deep on the specific APIs the task needs.
-- **Work to current standards.** Verify the installed version's current best practices (APIs drift);
-  don't ship a stale pattern. Capture anything durable you learned via the `mastermind-levelup` skill so
-  the field pack gets smarter for next time.
+- **Track the primary source, matched to the version in use.** Verify the current correct usage **for
+  that exact version** against the **official docs, changelog, and release notes** — the primary source,
+  never memory or a stale blog — because APIs drift between majors. When **adding or upgrading** a
+  dependency, check its latest stable version and read the changelog / migration notes *before* wiring
+  it in: adopt the currently-recommended API and flag any breaking changes. Don't ship a deprecated or
+  future pattern. Capture anything durable via the `mastermind-levelup` skill so the field pack gets
+  smarter next time.
 
 **Think many times, write once.** A wrong line shipped costs far more than the minutes to think it
 through. Explore, learn, and design first — decide deliberately — then implement in one clean pass.

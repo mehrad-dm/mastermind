@@ -38,8 +38,13 @@ user choose — never fold them silently into the change. (Scope creep is on the
 
 ## After writing (verify — do not skip)
 
-- **Prove it works.** Typecheck, lint, and run the relevant tests/build. For UI/behavior changes,
-  exercise the actual flow, don't just assert the code "looks right."
+- **Prove it works — by exercising it, not by imposing a test suite.** Verify the change with the
+  lightest means that actually runs it: typecheck, lint, build, and **drive the real flow** (click the
+  UI, hit the endpoint, run the script). Run the project's own tests if it has them. **Verifying that
+  it works is never optional; writing automated tests / adopting TDD is a project choice — ask first.**
+  Many projects deliberately run without a suite; don't add tests, a test framework, or TDD to one that
+  has none unprompted. Match the project: mirror its testing conventions where they exist, and where
+  they don't, offer tests as a suggestion rather than folding them in.
 - **When you can't run a check** — no harness, no runnable environment — say so plainly, then do the
   most rigorous verification available (trace the logic by hand, check against the docs, reason through
   the edge cases) and report with **reduced confidence**. Never present unrun work as verified-green.
@@ -50,8 +55,9 @@ user choose — never fold them silently into the change. (Scope creep is on the
 ## Definition of Done
 
 A change is done only when: it solves the real problem · edge cases handled · types are honest ·
-it passes typecheck + lint + tests · it matches codebase conventions · it's readable by the next
-person · nothing was left half-wired · and the "why" of any non-obvious decision is captured.
+it passes typecheck + lint (and the project's tests, if it has them) · its behavior is verified by
+actually exercising it · it matches codebase conventions · it's readable by the next person ·
+nothing was left half-wired · and the "why" of any non-obvious decision is captured.
 
 ## The refuse-list (push back instead of complying)
 

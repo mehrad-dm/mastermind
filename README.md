@@ -113,6 +113,7 @@ Every run bumps a level marker, so improvement is visible and git-reversible.
 | --- | --- |
 | `/mastermind-build` | The flagship loop: design → implement-to-rigor → verify → adversarial review → capture |
 | `/mastermind-tdd` | Red → green → refactor; test-first design pressure |
+| `/mastermind-verify` | Confirm a change works by exercising it end-to-end — QA without a test suite (ask-first on tests) |
 | `/mastermind-debug` | Structured six-phase debugging — evidence over guessing |
 | `/mastermind-prototype` | Fast throwaway spike to answer one risky unknown, then rebuild properly |
 | `/mastermind-learn` | Just-in-time stack/field learning (roadmap.sh + primary docs) before building |

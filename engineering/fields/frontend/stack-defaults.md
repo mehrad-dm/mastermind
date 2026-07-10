@@ -80,11 +80,31 @@ There is no single winner; choose by constraints. Ranked defaults:
 
 ## Responsive & layout
 
-- **Default:** **mobile-first.** Base styles target small screens; layer up with `min-width` queries.
-- **Modern layout:** CSS Grid for 2D and page structure, Flexbox for 1D. Use **intrinsic/auto layout**
-  — `min()/max()/clamp()`, `fr`, `auto-fit/auto-fill`, container queries — so components adapt to
-  their space, not to hardcoded breakpoints. Fluid type/space with `clamp()`.
-- **Avoid:** fixed pixel widths for containers, desktop-first overrides, breakpoint soup.
+The consensus every serious design system converges on (Material, Tailwind, Bootstrap): mobile-first,
+simple well-supported primitives, and any newer feature verified safe for the project's target browsers.
+
+- **Default: mobile-first.** Base styles target the smallest screen; layer up with `min-width`
+  queries. Leaner CSS, and it forces you to prioritize content.
+- **Two axes of "responsive" — don't conflate them.** **Media queries** handle *page-level* structure
+  (overall grid, viewport-driven type); **container queries** (`@container`) handle *component-level*
+  adaptation — a card sizes to its slot, so the same component works in a hero or a narrow sidebar.
+- **Reach for the boring, battle-tested primitives first.** Flexbox for 1D, CSS Grid for 2D and page
+  structure, with plain breakpoints and `fr`/percentages. These cover the large majority of layouts,
+  read clearly, and behave predictably on every browser and device.
+- **Use `clamp()`, `minmax()`, `min()/max()`, `auto-fit/auto-fill` sparingly — only where a plain
+  approach genuinely can't do the job**, never reflexively. They solve real problems (a card grid
+  with no breakpoints, a truly fluid hero) but add cognitive cost and carry footguns: `minmax(250px,
+  1fr)` overflows below 250px (guard: `minmax(min(250px, 100%), 1fr)`), and `clamp()` fluid type must
+  include a `rem` term or it fails WCAG 1.4.4 zoom (pure `vw` doesn't scale on zoom). Prefer two clear
+  breakpoints over one clever formula the next reader has to decode.
+- **Verify uncommon CSS before shipping it.** For any newer or less-common property/function, check
+  **caniuse.com** (or Baseline) against the project's target browsers/devices — confirm it's supported
+  or degrades safely. Progressively enhance behind `@supports` with a sensible fallback (usually the
+  single-column mobile layout). **Feature-detect, never device-sniff.** Prefer logical properties for
+  direction-safety (see RTL below).
+- **Avoid:** fixed pixel widths for containers, desktop-first overrides, breakpoint soup,
+  device-specific breakpoints (`iPhone`-width hacks), UA sniffing, and clever fluid math where two
+  breakpoints would read clearer.
 
 ## HTML & accessibility
 
@@ -116,7 +136,42 @@ RTL and localization depend entirely on the **audience**. Determine scope first,
   auth (JWT/session/OAuth), REST vs RPC, latency vs bandwidth, retries/backoff.
 - **Avoid:** unvalidated external data, N+1 client requests, storing secrets client-side.
 
+## Performance & optimization
+
+The bar is **Core Web Vitals**, judged at the **75th percentile** of real users across mobile and
+desktop (field data via CrUX — not just a green lab Lighthouse score). Measure first, then fix the
+metric that's actually failing; premature perf work is complexity with no payoff (`core/mindset.md`).
+
+- **The three metrics + targets:** **LCP** (loading) ≤ **2.5s** · **INP** (responsiveness — replaced
+  FID in 2024) ≤ **200ms** · **CLS** (visual stability) ≤ **0.1**. Lab-test with Lighthouse / DevTools;
+  confirm with field data.
+- **LCP — it's usually the hero image, and usually *discovery*, not download.** ~73% of mobile pages
+  have an image LCP, and most delay is the browser finding/prioritizing it late. Give the LCP image
+  `fetchpriority="high"`, `preload` it, never lazy-load it, and size it right. Render the main content
+  server-side/streamed so it isn't gated on client JS.
+- **INP — keep the main thread free.** Break up long tasks (>50ms blocks input), yield to the main
+  thread, and **ship less JavaScript** — the cheapest INP win. Code-split, avoid heavy synchronous work
+  in event handlers, cut hydration cost (RSC / islands).
+- **CLS — reserve space up front.** Always set `width`/`height` or `aspect-ratio` on images/media,
+  reserve space for ads/embeds/late content, use `font-display: swap` **with a metric-matched fallback**
+  (e.g. `next/font`, `size-adjust`), and never inject content above existing content.
+- **Images — usually the biggest single win.** Modern formats (**AVIF → WebP → fallback** via
+  `<picture>`), responsive `srcset`/`sizes`, `loading="lazy"` below the fold, and correct dimensions —
+  never ship a 2000px image into a 400px slot.
+- **Deliver less, sooner.** Code-split by route, tree-shake, `defer`/`async` non-critical JS,
+  `preconnect` to critical origins, subset + `preload` fonts. Keep pages **bfcache-eligible** (no
+  `unload` handlers, no `Cache-Control: no-store`) so back/forward is instant. Consider the
+  **Speculation Rules API** to prefetch/prerender the likely next page.
+- **Cache deliberately.** Immutable hashed assets with long `max-age`; a CDN for static delivery;
+  server-state caching (TanStack Query) over refetching. (See Data, API & networking above.)
+
 ## Testing
+
+**First: does this project even test?** Testing/TDD is a project choice — **confirm before adding a
+suite, a framework, or TDD to a project that has none** (`core/rigor.md`). Match the repo: follow its
+testing conventions where they exist; where they don't, offer tests as a suggestion, don't impose them.
+Either way, always **verify the change works by exercising the real flow** — that part isn't optional.
+The defaults below apply *when* the project tests:
 
 - **Default:** test behavior, not implementation (Testing Library philosophy — Kent C. Dodds). Unit
   for pure logic, component/integration for user-facing behavior, E2E (Playwright) for critical
@@ -126,4 +181,5 @@ RTL and localization depend entirely on the **audience**. Determine scope first,
 ## Tooling baseline
 
 Vite for SPAs; ESLint + Prettier (formatting is not a debate — automate it); TypeScript strict; a
-package manager committed via `packageManager` field; CI that runs typecheck + lint + test before merge.
+package manager committed via `packageManager` field; CI that runs typecheck + lint (+ tests where the
+project has them) before merge.
