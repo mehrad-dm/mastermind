@@ -10,13 +10,30 @@ For each task in `tasks/`:
 
 1. **Two conditions, same model, same prompt.**
    - **baseline** — the model with *no* MasterMind loaded.
-   - **treatment** — the same model with MasterMind loaded (`~/.mastermind` / the plugin).
+   - **treatment** — the same model with MasterMind **actually loaded** (see Fidelity below), *not* a
+     hand-written summary of its principles.
 2. **Score each output against the task's rubric** — a list of **objective, binary** criteria (met / not
    met). Use an **independent LLM-judge** (a *different* model than the one under test) given only the
    rubric + the outputs, **blind to which is which** (shuffle order), required to quote evidence before
    scoring (per Anthropic's rubric-judge guidance). A human can score too; the rubric is the same.
 3. **Record** the pass-rate per condition in `RESULTS.md`. The **delta (treatment − baseline)** is the
    result. Run each task **≥3 times** and average — single runs are noise.
+
+### Fidelity — test the real mechanism, not a summary (learned the hard way)
+
+Runs 1–2 gave the treatment agent a *hand-written summary* of MasterMind's principles. That is **low
+fidelity** — it tests "does a good prompt help," not "does MasterMind help." The real mechanism is the
+**actual pack loaded + the matching skill invoked**. So a treatment run must:
+- **Load the real files** — the agent reads the actual `CLAUDE.md` kernel + the relevant
+  `engineering/core/*` and `engineering/fields/<field>/{stack-defaults,lessons}.md`, not a paraphrase.
+- **Invoke the matching skill** for the task type — e.g. `mastermind-debug` for a bug/perf task,
+  `code-reviewer` for a review. That's how a real session behaves.
+
+**This is not cosmetic — it changes the result.** On task 03 (debugging), the summary-treatment *lost*
+(0.67 vs 0.80 baseline); the **real-pack** treatment **won (1.00 vs 0.80)** — and produced the structural
+fix unaided, one run citing `lessons.md` directly. Lower fidelity *understated* MasterMind and hid that a
+captured lesson actually surfaces. Cost: the agent spends tokens reading the pack — worth it for an
+honest number. (Baseline stays a plain model with nothing loaded — that's the fair "without".)
 
 ### The bar for a public claim (learned from Runs 1–2)
 A single judge is noisy (Run 2 graded the same pattern 0.20 in one output and 0.80 in another). Before
