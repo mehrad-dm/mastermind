@@ -41,12 +41,18 @@ Be ready for whatever the user is building — cheaply. At the start of substant
 
 ## How to change the field
 
-1. Ensure a pack exists at `engineering/fields/<name>/` with a `field.md` manifest (copy the
-   frontend pack's shape: `field.md` (the manifest), `stack-defaults`, `curriculum`, `mentors`,
-   `learning-sources`, `lessons`).
-   If it doesn't exist, run `mastermind-levelup --bootstrap <name>` to research and generate it.
+1. Create the pack at `engineering/fields/<name>/`. Two ways:
+   - **Copy the template** — `cp -r engineering/fields/_template engineering/fields/<name>`, then fill
+     in each file (the template has the shape + inline guidance; `fields/frontend/` shows the bar).
+   - **Bootstrap it** — run `mastermind-levelup --bootstrap <name>` to research and generate it from
+     the template.
 2. Update the "Current field" line above to point at the new pack.
 3. The universal core (`engineering/core/*`) never changes between fields — it's field-agnostic.
+
+> **This is how "swappable" is real, not just a claim.** The frontend pack is one worked example —
+> *your daily field.* Any user, on any agent, can copy `_template/` to stand up their own field
+> (backend, mobile, data, game-dev, …) and load it with exactly the stack notes and defaults they
+> care about. Multiple packs can be active at once for full-stack work.
 
 Multiple fields can be active at once (e.g. `Frontend + Backend`) for full-stack work — load each pack
 you need. Today only the **frontend** pack ships; bootstrap a backend pack

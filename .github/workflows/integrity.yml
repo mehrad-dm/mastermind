@@ -1,0 +1,19 @@
+name: integrity
+
+# Keeps the brain honest: skill frontmatter valid, indexes complete, no broken
+# cross-references. Fails the build if any router would lie. See scripts/check-integrity.mjs.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-integrity.mjs

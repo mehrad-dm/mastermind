@@ -52,16 +52,12 @@ stands on its own: bake it in, don't ship the default look.)
 
 ## JavaScript
 
-- **Default:** modern ES (modules, `const`, arrow fns, optional chaining, `async/await`). Immutable
-  data by default; pure functions where practical.
-- **Know under the hood:** the event loop (macro/microtasks), closures, prototype chain, `this`
-  binding, reference vs value, hoisting, coercion. Reason from these, not from cargo-cult rules.
-- **Mental model (Abramov, *Just JavaScript*; Simpson, *YDKJS*):** a variable is a wire pointing at a
-  value — never at another variable; primitives are permanent, immutable values, so you never "change" a
-  string, you repoint the wire. **Reassignment ≠ mutation.** `===` asks "the same value/identity?".
-  `let`/`const` sit in a **temporal dead zone** until declared (no `var`-style hoist-to-`undefined`).
-  Get this model exact and most reference / `this` / closure bugs stop happening.
-- **Avoid:** mutation of shared state, `var`, floating promises, `==`.
+- **Default:** modern ES; immutable data and pure functions by default. Reason from the runtime (event
+  loop micro/macro-tasks, closures, `this`, coercion, TDZ) — not cargo-cult rules.
+- **Mental model (Abramov, *Just JavaScript*):** a variable points *at* a value, never at another
+  variable; primitives are immutable, so **reassignment ≠ mutation**. Getting this exact kills most
+  reference/closure/`this` bugs.
+- **Avoid:** mutating shared state, `var`, floating promises, `==`.
 
 ## React
 
@@ -193,10 +189,9 @@ RTL and localization depend entirely on the **audience**. Determine scope first,
 - **Generate from the contract, don't hand-write it.** When the backend publishes an OpenAPI schema,
   codegen the typed client + TanStack Query hooks (**orval**, or **openapi-typescript**) so the API
   contract stays the single source of truth and drift is impossible. `axios`/`fetch` under the hood.
-- **Rules:** handle loading/error/empty states as first-class. Avoid request waterfalls — parallelize,
-  prefetch, colocate data needs. Cache deliberately (HTTP caching, TanStack Query). Debounce/throttle
-  user-driven requests. Know the network model: HTTP methods & status codes, idempotency, CORS,
-  auth (JWT/session/OAuth), REST vs RPC, latency vs bandwidth, retries/backoff.
+- **Rules:** treat loading/error/empty as first-class states. Kill request waterfalls (parallelize,
+  prefetch, colocate). Cache deliberately (HTTP + TanStack Query); debounce user-driven requests;
+  retry with backoff on idempotent calls.
 - **Avoid:** unvalidated external data, N+1 client requests, storing secrets client-side.
 
 ## Performance & optimization
