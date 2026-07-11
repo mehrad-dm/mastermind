@@ -19,6 +19,7 @@ router that lies. (Authoring discipline: `mastermind-levelup` → "Authoring a n
 ## Think before you build
 | Skill | Job |
 | --- | --- |
+| [`mastermind-prompt`](./mastermind-prompt/SKILL.md) | Turn a vague ask into a sharp, token-efficient, AI-ready prompt — so the model builds the right thing first try |
 | [`mastermind-learn`](./mastermind-learn/SKILL.md) | Just-in-time learning of the stack/field before building (roadmap.sh + primary docs) |
 | [`mastermind-spec`](./mastermind-spec/SKILL.md) | Turn a fuzzy request into a crisp, buildable spec |
 | [`mastermind-domain-model`](./mastermind-domain-model/SKILL.md) | Build the domain glossary — canonical terms, resolved naming |

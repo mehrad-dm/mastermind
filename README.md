@@ -117,6 +117,7 @@ Every run bumps a level marker, so improvement is visible and git-reversible.
 | `/mastermind-debug` | Structured six-phase debugging — evidence over guessing |
 | `/mastermind-prototype` | Fast throwaway spike to answer one risky unknown, then rebuild properly |
 | `/mastermind-learn` | Just-in-time stack/field learning (roadmap.sh + primary docs) before building |
+| `/mastermind-prompt` | Turn a vague ask into a sharp, token-efficient, AI-ready prompt — the model builds the right thing first try |
 | `/mastermind-spec` | Turn a fuzzy request into a crisp, buildable spec |
 | `/mastermind-domain-model` | Build the domain glossary — canonical terms, resolved naming |
 | `/mastermind-grill` | Interrogate your understanding against the real docs before building |
