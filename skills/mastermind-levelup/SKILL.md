@@ -35,13 +35,24 @@ Pick the mode from the argument; default to **capture**.
    context management). Fold the *durable* ones into `~/.mastermind/engineering/core/` or the skill-authoring discipline; verify
    against the primary source, and adopt the judgment, not the hype.
 
-## `bootstrap <field>` — create a new field pack
+## `bootstrap <field>` — create a new field pack (one command → a pack like frontend)
 
-1. Create `engineering/fields/<field>/` with the same shape as the frontend pack: `field.md`,
-   `stack-defaults.md`, `mentors.md`, `curriculum.md`, `learning-sources.md`, `lessons.md`.
-2. Research the field (the verified sweep) to populate `curriculum.md`/`mentors.md`/`learning-sources.md`,
-   and write opinionated `stack-defaults.md` for it. Start `lessons.md` empty.
-3. Do NOT touch `engineering/core/*` — it's field-agnostic and shared.
+The goal: the user names a field (or points at a project) and gets a strong, tailored pack — the same
+bar as `fields/frontend/` — from one command.
+
+1. **Detect the user's actual stack — tailor to what *they* use, not a generic field.** Read the
+   project: `package.json`/lockfile, configs, framework + versions, DB, test runner, folder shape (per
+   `core/agent-loop.md`). If there's no project or it's ambiguous, ask **one** question: *"What stack —
+   language, framework, database, key libraries?"* The pack must reflect their real tools.
+2. **Scaffold from the template.** `cp -r engineering/fields/_template engineering/fields/<field>`, then
+   fill every file (the template carries the shape + inline guidance).
+3. **Research + write it to the frontend bar.** Do the verified sweep (best repos/courses/people/docs,
+   each checked) for `curriculum.md`/`mentors.md`/`learning-sources.md`, and write an **opinionated
+   `stack-defaults.md`** for *their* stack — `Default → when to deviate → what to avoid`, only the
+   *non-obvious* decisions (not what the model already knows), grounded in primary sources. Match the
+   depth and density of `fields/frontend/stack-defaults.md`. Start `lessons.md` empty.
+4. **Point the active field at it** (`active-field.md`) if the user wants it live, and **do NOT touch
+   `engineering/core/*`** — it's field-agnostic and shared.
 
 ## Guardrail: keep MasterMind lean (token economy)
 
