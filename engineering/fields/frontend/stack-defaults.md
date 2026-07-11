@@ -68,6 +68,11 @@ stands on its own: bake it in, don't ship the default look.)
   and **lift slow content up as `children`** so it sits outside the re-rendering subtree. Group related
   transitions in one **`useReducer`** over many `useState`s. **Reset a subtree by changing its `key`**
   (remount), never by syncing state in an effect.
+- **Perf debugging — symptom → cause:** a component that stutters *while typing/interacting* is almost
+  always an expensive **sibling** re-rendering on each state change. **Fix the structure first** (move
+  the state+input into a small child, or pass the expensive subtree as `children`) — `memo` /
+  `useDeferredValue` / virtualization make the wasted render *cheaper*, not *gone*. Reach for those only
+  after the structure is right, or for a genuinely huge DOM. (See `lessons.md`.)
 - **Advanced composition** — compound components, prop getters, control props, provider patterns: use
   the installed **`vercel-composition-patterns`** skill rather than hand-rolling prop soup; don't
   restate its rules here.

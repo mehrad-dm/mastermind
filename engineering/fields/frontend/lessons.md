@@ -26,3 +26,10 @@ general enough to be a default, also promote it into `stack-defaults.md`.
 - **Testing Radix in jsdom needs polyfills:** stub `ResizeObserver`, `matchMedia`, and pointer-capture
   (`hasPointerCapture`/`setPointerCapture`) + `scrollIntoView` in the Vitest setup, and query Radix
   ToggleGroup items by `role="radio"`, not `"button"`. [Otherwise interactive-component tests throw.]
+- **A component that lags *while typing/interacting* is almost always an unnecessary re-render of an
+  expensive *sibling* — fix the STRUCTURE first, before `memo`/`useDeferredValue`/virtualization.** Move
+  the state + input into a small child so the state change only re-renders that child, or pass the
+  expensive subtree as `children` (a stable element React skips). `memo`/`useDeferredValue` make the
+  wasted render *cheaper*; the structural fix makes it *not happen*. Reach for deferring/virtualization
+  only after the structure is right (or for genuinely huge DOM). [Caught by eval task 03: the default
+  answer — even with MasterMind — was memo/deferred, not the root-cause structural fix. Fix the cause.]

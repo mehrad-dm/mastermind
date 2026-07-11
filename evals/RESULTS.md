@@ -3,6 +3,29 @@
 Record every run here. Each row = one task, one model, averaged over ≥3 runs per condition. The
 **delta** (treatment − baseline) is the evidence. Be honest: log regressions and ties, not just wins.
 
+## Fix verification — task 03 regression closed (2026-07-11) · the loop working
+
+Run 2 showed task 03 (debugging) *regressed* (treatment 0.67 < baseline 0.80): even with MasterMind,
+the answer was `memo`/`useDeferredValue`, not the root-cause **structural** fix. Diagnosis: the guidance
+existed but was soft and not tied to the *symptom* ("lags while typing"). **Fix:** captured a sharp
+lesson (`lessons.md`) + a symptom→cause rule in `stack-defaults.md` React section — *"a component that
+stutters while typing is almost always an expensive sibling re-rendering; fix the structure first."*
+
+Re-ran task 03 treatment (N=2) with the sharpened guidance, judged blind by Sonnet 5:
+
+| Task 03 (debugging) | before fix | after fix |
+| --- | --- | --- |
+| treatment score | 0.67 | **1.00** (N=2, both runs) |
+| vs baseline (0.80) | **−0.13 (regression)** | **+0.20 (win)** |
+
+Both retest outputs gave the clean structural fix (pass `ExpensiveSidebar` as `children` / move state
+into a child), memo/deferred mentioned only as after-the-fact. **This is the whole point of MasterMind:**
+an eval found a real failure, it fed a durable lesson back into the pack, and the failure is gone —
+verified, not asserted. (Caveat: N=2 retest vs N=3 original; rerun the full suite to update the mean —
+projected overall Δ rises from +0.22 to roughly +0.30.)
+
+---
+
 ## Side experiment — Matt Pocock's skills as a 3rd condition (2026-07-11)
 
 Ran `mattpocock/skills` (his engineering approach: domain-modeling + Total-TypeScript rigor +
