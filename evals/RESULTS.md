@@ -3,6 +3,31 @@
 Record every run here. Each row = one task, one model, averaged over ≥3 runs per condition. The
 **delta** (treatment − baseline) is the evidence. Be honest: log regressions and ties, not just wins.
 
+## Side experiment — Matt Pocock's skills as a 3rd condition (2026-07-11)
+
+Ran `mattpocock/skills` (his engineering approach: domain-modeling + Total-TypeScript rigor +
+diagnosing-bugs) as a third condition on the 4 original tasks; judged by Sonnet 5, same rubrics.
+
+| Task | Baseline (N=3) | MasterMind (N=3) | **Pocock (N=1)** |
+| --- | --- | --- | --- |
+| 01 data-model | 0.06 | 0.94 | 0.50 |
+| 02 illegal-states | 0.80 | 0.93 | 0.80 |
+| 03 debugging | 0.80 | 0.67 | 0.80 |
+| 04 untrusted API | 1.00 | 1.00 | 1.00 |
+| **mean** | **0.66** | **0.89** | **0.78** |
+
+**Honest read:** Pocock's skills land **between baseline and MasterMind, and close to MasterMind** —
+because his TS rigor (discriminated unions, branded ids, zod, illegal-states-unrepresentable) is exactly
+what these TS-heavy tasks reward. The gap is within the noise: **N=1** for Pocock (vs N=3), his task-01
+run happened to `as`-cast instead of validating (−), and MasterMind's task-03 was dragged by a judge
+outlier. **Not a fair full picture:** these snippet tasks sit in the *overlap* of both. They don't
+exercise where the two diverge — MasterMind's frontend-specific defaults (a11y/take-the-primitive,
+XSS, perf) that Pocock's TS/workflow skills don't cover, nor Pocock's multi-step, real-codebase
+workflows (repro-first bug diagnosis, code-review) that one-shot snippets don't test. **Conclusion:
+comparable on TS/data-model snippets; different strengths beyond them.**
+
+---
+
 ## Run 2 — 2026-07-11 · N=3, independent judge (the stricter, more honest run)
 
 Generators: Claude Opus 4.8 (3 baseline + 3 treatment, isolated subagents). **Judge: Claude Sonnet 5**
