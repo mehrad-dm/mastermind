@@ -108,6 +108,39 @@ Caveat: confounded (cross-field tasks near-ceiling); the clean test is bootstrap
 re-running these same 5 tasks (core-only +0.01 vs core+pack = the pack's worth). Regression on 13
 (−0.13) may be N=3 noise. Tokens: gen 14.1k + judge 22.6k output; ~667k total; ~2.4 min.
 
+## Token usage — per task, with vs without MasterMind (2026-07-11)
+
+Model both conditions: **Claude Opus 4.8**. Generation only (no judge tokens). N=1 per task, each task run
+in its own agent to get per-task figures.
+
+| Task | Without MM | With MM | Δ |
+| --- | --- | --- | --- |
+| 01 state-modeling | 27,171 | 46,544 | +19,373 |
+| 02 illegal-states | 26,848 | 44,225 | +17,377 |
+| 03 debug-root-cause | 26,941 | 43,501 | +16,560 |
+| 04 untrusted-boundary | 27,335 | 43,864 | +16,529 |
+| 05 simplify-refactor | 26,799 | 46,531 | +19,732 |
+| 06 xss-boundary | 27,052 | 46,819 | +19,767 |
+| 07 a11y-primitive | 27,305 | 47,783 | +20,478 |
+| 08 yagni-restraint | 35,146 (outlier¹) | 44,364 | +9,218 |
+| **avg (excl. 08)** | **~27,064** | **~45,452** | **~+18,388** |
+
+### The honest decomposition (what a real user actually pays)
+The raw per-task Δ (~+18k) is **massively overstated** — each isolated agent re-reads the whole pack. Real
+sessions load it once. The true breakdown:
+- **Fixed agent/harness overhead ≈ 26.5k** — present in BOTH conditions (measured: an agent that reads
+  nothing still costs ~26.5k). This is the eval subagent, **not** MasterMind.
+- **One-time pack load ≈ 7.3k tokens** (measured: CLAUDE.md + mindset + rigor + stack-defaults + lessons =
+  5,647 words). Read **once per session**, then reused for every task.
+- **Per-task marginal ≈ +2–4k output** — MasterMind answers are more thorough (rationale, edge cases).
+
+So the real cost of MasterMind ≈ **a one-time ~7k pack load + ~2–4k more output per task** — e.g. an
+8-task session pays roughly ~7k once + ~24k thoroughness ≈ **~30k extra total**, not the naive +139k the
+per-task table sums to (which counts the pack read 8×). Worth it for +0.20 quality.
+
+¹ Task-08 baseline is an outlier: that plain agent ignored "don't read files" and explored the repo (5
+tool calls, 35k vs the ~27k norm).
+
 ## Run template — copy this block per run, fill in, name the models
 
 **Run N — YYYY-MM-DD · GEN-MODEL gen · JUDGE-MODEL(s) judge · N=k · MasterMind vX/commit**
