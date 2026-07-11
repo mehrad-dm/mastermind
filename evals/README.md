@@ -12,11 +12,21 @@ For each task in `tasks/`:
    - **baseline** — the model with *no* MasterMind loaded.
    - **treatment** — the same model with MasterMind loaded (`~/.mastermind` / the plugin).
 2. **Score each output against the task's rubric** — a list of **objective, binary** criteria (met / not
-   met). Prefer an **independent LLM-judge** given only the rubric + the two outputs, **blind to which is
-   which** (shuffle order), required to quote evidence before scoring (per Anthropic's rubric-judge
-   guidance). A human can score too; the rubric is the same.
+   met). Use an **independent LLM-judge** (a *different* model than the one under test) given only the
+   rubric + the outputs, **blind to which is which** (shuffle order), required to quote evidence before
+   scoring (per Anthropic's rubric-judge guidance). A human can score too; the rubric is the same.
 3. **Record** the pass-rate per condition in `RESULTS.md`. The **delta (treatment − baseline)** is the
    result. Run each task **≥3 times** and average — single runs are noise.
+
+### The bar for a public claim (learned from Runs 1–2)
+A single judge is noisy (Run 2 graded the same pattern 0.20 in one output and 0.80 in another). Before
+any number goes on the website:
+- **≥3 independent judges** per output; take the **median** score per criterion (majority vote). Report
+  inter-judge agreement — if judges disagree wildly on a task, the rubric is ambiguous; fix it.
+- **All ≥8 tasks**, N≥3 generations per condition.
+- **Stable across two separate runs** (deltas within ~±0.1). One good run is a fluke, not evidence.
+- A genuinely different baseline (a weaker/plain model) would strengthen it further; until then, be
+  explicit the delta is "guidance in-context," not "vs. a weaker model."
 
 ## What we measure (and why it's honest)
 
@@ -45,6 +55,7 @@ results drift as both change.
   objective truth. Improve them as they're proven too lax or too strict.
 
 ## Files
-- `tasks/*.md` — one task each: the prompt + an objective rubric (with anti-criteria).
+- `tasks/*.md` — 8 tasks: data-modeling, illegal-states, debugging, untrusted API, refactor/simplify,
+  XSS boundary, a11y primitive, and a YAGNI **restraint** control (where over-engineering must lose).
 - `judge-prompt.md` — the blind rubric-scoring prompt for an LLM-judge.
 - `RESULTS.md` — the running log of scores (date · model · task · baseline · treatment · delta).
