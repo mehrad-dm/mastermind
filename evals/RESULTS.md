@@ -59,6 +59,32 @@ held: debug +0.30/+0.33, over-engineering control 1.00/1.00 both runs. **Remaini
 firmer judges (Haiku/Fable inflate absolutes) so the treatment 0.96 is trustworthy, not just the Δ. F2 tokens:
 gen 24.1k + judge 81.0k output; ~863k total; 30 agents; ~4.6 min.
 
+## Run F2-SJ — 2026-07-11 · strong-judge re-judge (F2 outputs, 3× Sonnet 5 median)
+
+Re-judged F2's exact generated outputs with a **3× Sonnet 5** panel (distinct seats, median) — generation
+replayed from cache, only judging re-ran (~55k output tokens). Isolates the judge-quality effect.
+
+| Task | Baseline | Treatment | Δ |
+| --- | --- | --- | --- |
+| 01 state-modeling | 0.72 | 1.00 | +0.28 |
+| 02 illegal-states | 1.00 | 1.00 | 0.00 |
+| 03 debug-root-cause | 0.60 | 1.00 | +0.40 |
+| 04 untrusted-boundary | 0.93 | 1.00 | +0.07 |
+| 05 simplify-refactor | 0.80 | 0.93 | +0.13 |
+| 06 xss-boundary | 0.80 | 0.80 | 0.00 |
+| 07 a11y-primitive | 0.33 | 1.00 | +0.67 |
+| 08 yagni-restraint | 1.00 | 1.00 | 0.00 |
+| **mean** | **0.77** | **0.97** | **+0.20** |
+
+**Finding:** strong judges did **not** deflate the treatment — it still scored **0.97** (predicted deflation
+to ~0.85 did not happen). So both the **Δ (+0.20)** and the **absolute (0.97)** are robust across two samples
+(F1/F2) and two judge panels (mixed / 3× Sonnet). Strong judges mainly rescored the *baseline* (task 02
+→1.00, task 03 →0.60). Value concentrates on a11y (+0.67), debug (+0.40), state-modeling (+0.28), refactor
+(+0.13); neutral where the base model is already good; over-engineering control tied at 0. **Trustworthy
+number:** baseline ~0.77 → treatment ~0.97, Δ ≈ +0.20 on these 8 frontend tasks. **Remaining for a public
+claim:** breadth beyond frontend (cross-field tasks test whether the universal *core* generalizes), and a
+genuinely-weaker baseline model.
+
 ## Run template — copy this block per run, fill in, name the models
 
 **Run N — YYYY-MM-DD · GEN-MODEL gen · JUDGE-MODEL(s) judge · N=k · MasterMind vX/commit**
