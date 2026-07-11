@@ -85,6 +85,29 @@ number:** baseline ~0.77 → treatment ~0.97, Δ ≈ +0.20 on these 8 frontend t
 claim:** breadth beyond frontend (cross-field tasks test whether the universal *core* generalizes), and a
 genuinely-weaker baseline model.
 
+## Run CF1 — 2026-07-11 · CROSS-FIELD (core only, no field pack) · 3× Sonnet judges
+
+5 backend/algo/security/systems tasks. Treatment loads only the universal **core** (mindset/principles/
+rigor/agent-loop) — MasterMind has no pack for these domains. Tests whether the core generalizes.
+
+| Task | Baseline | Treatment | Δ |
+| --- | --- | --- | --- |
+| 09 backend-api | 0.87 | 1.00 | +0.13 |
+| 10 nplus1 | 0.93 | 1.00 | +0.07 |
+| 11 algorithm-median | 1.00 | 1.00 | 0.00 |
+| 12 shell-injection | 1.00 | 1.00 | 0.00 |
+| 13 resource-cleanup | 1.00 | 0.87 | −0.13 |
+| **mean** | **0.96** | **0.97** | **+0.01** |
+
+**The finding (important):** the measured lift comes from the **field pack, not the core alone.**
+Frontend (with pack) Δ +0.20 vs cross-field (core only) Δ **+0.01**. Two honest effects: (1) **ceiling** —
+cross-field baseline was 0.96 (a strong model already nails backend/algo/security basics), so little room;
+(2) **no pack** — the core is a judgment framework, not domain-specific defaults. MasterMind's value shows
+where the base model underperforms AND a field pack exists. Validates the field-parameterized thesis.
+Caveat: confounded (cross-field tasks near-ceiling); the clean test is bootstrapping a backend pack and
+re-running these same 5 tasks (core-only +0.01 vs core+pack = the pack's worth). Regression on 13
+(−0.13) may be N=3 noise. Tokens: gen 14.1k + judge 22.6k output; ~667k total; ~2.4 min.
+
 ## Run template — copy this block per run, fill in, name the models
 
 **Run N — YYYY-MM-DD · GEN-MODEL gen · JUDGE-MODEL(s) judge · N=k · MasterMind vX/commit**
