@@ -5,11 +5,44 @@ models** used named per run (generator + judge). The **delta (treatment − base
 Be honest: log regressions and ties, not just wins. See `README.md` for the method and the bar a run
 must clear before any number goes on the website.
 
-> **Reset to a clean template 2026-07-11 — no current numbers.** Prior preliminary runs (Run 1, Run 2,
-> the Matt Pocock 3rd-condition experiment, and the task-03 fix verification) are **preserved in git
-> history** — nothing was lost; they were just too preliminary/noisy to present as results. This table
-> stays empty until a run clears the bar in `README.md` (8 tasks · N≥3 · 3-judge median · stable across
-> two runs). Don't fabricate rows.
+> **⚗️ Experimental (v0.17.3).** These numbers are real and cleared the stability bar (2 runs) — but
+> they're a small self-administered eval (8 tasks, N=3, same base model both sides), not a benchmark.
+> Trust the **Δ** (both sides judged identically); treat absolutes as directional. Detailed per-run logs
+> and the full method are below and in `README.md`.
+
+## Headline — frontend tasks, with vs without MasterMind
+
+**Generator:** Claude Opus 4.8 (both conditions) · **Judges:** Sonnet 5 × 3 seats (median) · **N=3** ·
+treatment loads the real frontend pack. (Scores = rubric criteria met, 0–100%.)
+
+| Task | Without MM | With MM | Δ |
+| --- | --- | --- | --- |
+| 01 state-modeling | 72% | 100% | +28 |
+| 02 illegal-states | 100% | 100% | 0 |
+| 03 debug-root-cause | 60% | 100% | +40 |
+| 04 untrusted-boundary | 93% | 100% | +7 |
+| 05 simplify-refactor | 80% | 93% | +13 |
+| 06 xss-boundary | 80% | 80% | 0 |
+| 07 a11y-primitive | 33% | 100% | +67 |
+| 08 yagni-restraint (over-eng control) | 100% | 100% | 0 |
+| **mean** | **77%** | **97%** | **+20** |
+
+**Token cost of MasterMind:** a one-time **~7k** pack load per session + **~2–4k** more output per task
+(more thorough answers). Not per-task-expensive — the pack loads once and is reused. (Full per-task token
+table further below.)
+
+### Define your stack → that's where the lift is
+
+MasterMind's value comes from its **field pack**, not the core alone. Same tasks, two setups:
+
+| Setup | Without MM | With MM | Δ |
+| --- | --- | --- | --- |
+| **Frontend** — stack pack defined | 77% | 97% | **+20** |
+| **No stack pack** — universal core only | 96% | 97% | +1 |
+
+→ Adding **your project's stack** (copy `engineering/fields/_template/` and fill it in) is what turns the
+lift on for your domain. Without a matching pack, you get the core's judgment but not the domain-specific
+defaults (take the a11y primitive, discriminated unions, parse-don't-trust, …).
 
 ## Run F1 — 2026-07-11 · first full fidelity run (real pack loaded)
 
