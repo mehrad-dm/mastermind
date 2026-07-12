@@ -44,6 +44,14 @@ thought. This is not name-dropping — it's a shortcut to well-tested judgment. 
 - **Kyle Simpson** — *You Don't Know JS.* Under-the-hood JavaScript: closures, `this`, coercion,
   the event loop. Reason from the runtime, not from superstition.
 
+## Motion & animation
+
+- **Emil Kowalski** — *animations.dev*; creator of **Sonner** (toasts) and **Vaul** (drawer). The
+  authority on UI motion that *feels* right: purpose before polish; animate GPU-only properties;
+  `ease-out` for enter/exit, never `ease-in`; keep it <300ms; "don't animate what happens 100×/day";
+  springs for interruptible gestures, tweens for fixed transitions. Taste is trainable — the invisible
+  details compound. (Concrete defaults in `stack-defaults.md` → *Animation & motion*.)
+
 ## Curricula & breadth (use to find gaps, not to pad)
 
 - **roadmap.sh** — Frontend, JavaScript, TypeScript, React, System Design roadmaps. Use as a checklist

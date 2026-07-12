@@ -35,6 +35,7 @@ router that lies. (Authoring discipline: `mastermind-levelup` → "Authoring a n
 | Skill | Job |
 | --- | --- |
 | [`ui-ux-pro-max`](./ui-ux-pro-max/SKILL.md) | UI/UX **design intelligence** — searchable styles, color palettes, font pairings, UX guidelines, chart types across stacks. Vendored, MIT (NextLevelBuilder — see `SOURCE.md`). Use for any UI build/review; pair with `mastermind-build` + the frontend field pack for rigor, states & a11y. |
+| [`web-animations`](./web-animations/SKILL.md) | **UI motion** — build/review animations, transitions, gestures to Emil Kowalski's bar (animations.dev, MIT): purpose → easing → duration → performance/a11y. Distilled; exact defaults in the frontend pack's *Animation & motion*. |
 
 The library grows freely — add a skill for any distinct, useful workflow, held to the one-job + lean-
 description + on-demand-body bar. Register every new skill here.

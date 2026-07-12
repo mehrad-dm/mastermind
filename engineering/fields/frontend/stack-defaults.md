@@ -22,6 +22,34 @@ a project must never mean rewriting it onto the tools below. Before choosing any
 4. **The defaults below are what to reach for when nothing else decides** — a starting point for new
    work, never a mandate over a working project.
 
+### Worked project stack — the client `the-app` (Turborepo monorepo)
+
+A concrete, in-use stack this pack has worked in. When a task lands in this repo (or its sibling
+`the-sibling-app`), reach for **these**, not the greenfield defaults above:
+
+- **Components:** the internal **`@kit/ui`** component kit (`@kit/ui/components`) + **`@kit/mini-game-kit`**.
+  Never hand-roll a primitive that the kit already ships; never build a custom component until the kit
+  lacks it. Layout with the kit's `Stack`/`Paper`/`Box`, not ad-hoc flex divs.
+- **Styling:** **Vanilla Extract** — `sprinkles(...)` for token-scale props and `*.css.ts` `style([...])`
+  for the rest; 4px spacing base. Colors/type come from the kit's `vars.palette` + Typography recipe;
+  add a missing token to the recipe rather than a magic hex.
+- **Data/API:** **Orval-generated** typed clients + TanStack Query hooks re-exported from **`@kit/services/*`**
+  (e.g. `@kit/services/payment`, `@kit/services/types`). Never hand-write a fetch; the OpenAPI contract is SSOT.
+- **Routing:** **React Router v7** data routes with `lazy()` route modules under `src/pages/**/route.tsx`
+  wired in `src/router/config/config.tsx`. Pages own `useNavigate`/`useSearchParams`.
+- **Forms:** **React Hook Form + Zod** (`@hookform/resolvers`), one schema for the form and the boundary.
+- **Client state:** **Zustand** stores (e.g. per-list `filterStore`) for genuinely shared UI state.
+- **Layering (house rule):** **page → hook → component.** Pages fetch/navigate/mutate; hooks hold domain
+  logic; `components/` folders are **presentational only** — no API/router/store/domain imports, view-model
+  props + `onX` callbacks in. Match the sibling app (`the-sibling-app`) for the lead's conventions before inventing.
+- **Toolchain:** pnpm workspaces + Turborepo; `pnpm type-check` (`tsc --noEmit`) and `eslint --max-warnings 0`
+  are the gate.
+- **House rules (owner preferences):** kit components over hand-rolled markup (read source + storybook +
+  a lead usage first); routes defined inline in their route files, never a central path-constants file;
+  one component per file, no giants; short/standard names; imports/exports match existing siblings; API
+  wiring stays minimal and Orval/react-query-idiomatic like the lead's code; **flag speculative
+  edge-case/normalize code for review instead of shipping it** — add only what the owner confirms.
+
 ## Design quality — distinctive, not generic
 
 The default AI aesthetic is a tell: system/Inter fonts, a purple→blue gradient hero, everything
@@ -93,8 +121,8 @@ stands on its own: bake it in, don't ship the default look.)
   and **one Zod schema validates the form *and* the API boundary** (SSOT, parse-don't-trust).
 - **Routing:** on Next.js use its router; for a **Vite SPA, React Router** (v7 data routers — loaders,
   lazy routes, error boundaries). Code-split at the route.
-- **Animation:** **Motion** (Framer Motion) for UI motion/gestures; Lottie/Rive for designed vector
-  animation. Every animation honors `prefers-reduced-motion` (see `lessons.md`).
+- **Animation:** **Motion** (Framer Motion) for gestures/springs, CSS transitions for simple state,
+  Lottie/Rive for designed vector — see **Animation & motion** below for the craft rules.
 - **Align with:** Kent C. Dodds (testing, composition, colocation), Dan Abramov (mental model, effects).
 - **Avoid:** prop-drilling past ~2 levels (compose or context), giant "god" components, `useEffect`
   for derived state, premature global state.
@@ -126,6 +154,30 @@ There is no single winner; choose by constraints. Ranked defaults:
   theming truly requires it; avoid for new SSR apps (runtime cost, RSC friction).
 - **Rule:** whatever the tool, style through **design tokens** (spacing, color, type scales) — never
   magic numbers scattered in components. SSOT for design decisions.
+
+## Animation & motion
+
+Motion is polish that compounds — or noise that annoys. The non-obvious defaults (Emil Kowalski,
+animations.dev). The `web-animations` skill carries the build/audit workflow; these are the rules:
+
+- **Animate only `transform` and `opacity`** — GPU-composited, no layout/paint. **Never** animate
+  `width/height/margin/padding/top/left` (layout thrash). Framer's `x`/`y` run on the main thread →
+  prefer `transform: translateX()` under load.
+- **Duration <300ms for UI**, scaled to weight: press 100–160ms · tooltip 125–200ms · dropdown
+  150–250ms · modal/drawer 200–500ms. A 180ms dropdown feels *more* responsive than a 400ms one.
+- **Easing:** `ease-out` for enter/exit (immediate), `ease-in-out` for on-screen moves, `ease` for
+  hover/color, `linear` for continuous. **Never `ease-in` on UI** — it feels sluggish at the same
+  duration. Curves: `--ease-out: cubic-bezier(0.23,1,0.32,1)`, `--ease-drawer: cubic-bezier(0.32,0.72,0,1)`.
+- **Don't animate high-frequency or keyboard-initiated actions** (command palette, shortcuts, list nav
+  done 100×/day) — motion there is friction. Reserve it for occasional (modal/toast) and first-run moments.
+- **Springs for interruptible gestures** (drag — retains velocity), **tweens for fixed transitions.**
+  Keep bounce subtle (0.1–0.3); Apple-style `{ type:'spring', duration:0.5, bounce:0.2 }`.
+- **Interruptible → CSS transitions, not keyframes** (keyframes restart from 0; transitions retarget).
+- **Enter from `scale(0.95)+opacity:0`**, never `scale(0)` (looks broken). Press: `scale(0.97)` on
+  `:active`. Popover `transform-origin` = trigger location; modals stay centered. Prefer
+  `@starting-style` over a `mounted`-state effect for entry.
+- **A11y (non-negotiable):** honor `@media (prefers-reduced-motion: reduce)` (drop transform motion,
+  keep opacity/color); gate `:hover` transforms behind `@media (hover:hover) and (pointer:fine)`.
 
 ## Components — primitives vs kits
 

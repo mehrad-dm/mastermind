@@ -29,6 +29,10 @@ mental models current. Two standing habits:
 - **Material Design** & **Apple HIG** — rigorous, well-argued platform design systems to reason from.
 - **Nielsen Norman Group** — usability heuristics grounded in research.
 - **web.dev** — performance, accessibility, and Core Web Vitals as first-class design constraints.
+- **animations.dev** (Emil Kowalski) — the best course/reference for **web UI animation**: purpose,
+  timing, easing, interruptibility, performance, a11y. Pair with **easing.dev** / **easings.co** for
+  curves, and `emilkowalski/skills` (MIT — design-eng + animation-review notes). Feeds the
+  `web-animations` skill and `stack-defaults.md` → *Animation & motion*.
 
 ## High-value repos to learn best practices from (by area)
 
