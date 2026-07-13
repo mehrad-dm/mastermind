@@ -16,6 +16,7 @@ responsive & layout, design systems, plus the API/networking and algorithms a fr
 | `mentors.md` | Taste/philosophy is contested — the field's authorities to align with |
 | `curriculum.md` | Going deep on a topic / recommending resources — the vetted, API-verified index |
 | `learning-sources.md` | Design-system work or an unfamiliar topic — how to learn from world-class code |
+| `web-animations.md` | Building or reviewing motion — animation, transitions, gestures (Emil Kowalski, MIT) |
 | `lessons.md` | Always relevant — durable lessons learned from real usage/reviews (the leveling record) |
 
 ## Design intelligence

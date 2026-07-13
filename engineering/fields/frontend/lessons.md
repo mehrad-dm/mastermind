@@ -36,58 +36,57 @@ general enough to be a default, also promote it into `stack-defaults.md`.
 - **In an established codebase, match the target app's sibling patterns *before* applying a generic
   purity/DRY rule — and confirm against the sibling, not just the skill.** A "violation" flagged by a
   purity checklist (API-type import, status→style mapping, DTO-typed props in `components/`) is often
-  the house style; if the reference app (`the-sibling-app`) does the same thing, leave it. Fix only the
-  genuine outlier. [the-app wallet refactor: 3 of 4 "violations" matched the lead's the sibling app code; only
-  a component using `useNavigate` + navigation was the real one.]
+  the house style; if the reference sibling app does the same thing, leave it. Fix only the genuine
+  outlier. [A wallet refactor: 3 of 4 "violations" matched the sibling app's code; only a component
+  using `useNavigate` + navigation was the real one.]
 - **Router hooks and navigation never live in a `components/` file.** A component that calls
   `useNavigate`/computes a destination is doing a page's job — lift the navigation to the page and pass
-  a ready view-model + `onActivate`. [Same refactor: `DepositPackageCard` navigated itself; the page
-  now builds `bannerSrc`/labels/`onActivate` and the card is pure.]
+  a ready view-model + `onActivate`. [Same refactor: a card component navigated itself; the page now
+  builds `bannerSrc`/labels/`onActivate` and the card is pure.]
 - **Amount/limit UI: derive, don't sync; guard one-time init with a ref, not a state-copy effect.**
   Compute rail/source-intersection bounds as derived values each render (a pure `resolve*Limits` util);
   seed the input once per package with a `ref`-gated effect, and keep a separate clamp effect so a
   provider switch re-pins the value into range. Copying config into state on every render freezes the
-  control (unstable object identity + `increment: 0`). [the-app deposit amount picker froze.]
+  control (unstable object identity + `increment: 0`). [A deposit amount picker froze this way.]
 - **Minimum change beats DRY — don't extract a shared hook when the house style deliberately
-  duplicates.** Two list pages (CashStatement, Transactions) each inline the same filter-store +
-  infinite-query scaffolding *on purpose* in the reference app; a `useWalletInfiniteList` abstraction
-  across 2 intentionally-separate callers would diverge from the codebase and over-abstract. Verify the
-  sibling before "DRYing." [the-app refactor: the sibling app duplicates it too → left as-is.]
+  duplicates.** Two list pages each inline the same filter-store + infinite-query scaffolding *on
+  purpose*; a `useWalletInfiniteList` abstraction across 2 intentionally-separate callers would diverge
+  from the codebase and over-abstract. Verify the sibling before "DRYing." [The sibling app duplicates
+  it too → left as-is.]
 - **Pass the memoized array straight to the child; don't `[...spread]` it in JSX.** `options={[...opts]}`
   allocates a fresh array every render (new identity to the child) purely to satisfy a `readonly`→mutable
-  type; type the prop mutable and forward the already-`useMemo`'d array instead. [the-app
-  `DepositAmountPicker`.]
+  type; type the prop mutable and forward the already-`useMemo`'d array instead. [Seen in an amount picker.]
 - **Don't write speculative defensive code — list the "what about X?" scenarios and let the owner
   decide.** Normalize helpers with long alias tables, "ranges don't overlap" fallbacks, and enum cases
   for rails a market never uses are usually handling inputs that can't occur. Default to the minimal
   path that matches real API output; surface the edge cases as a review list, add only the ones the
-  owner confirms. Mirror the lead dev's existing code, not a generic robustness instinct. [the-app
-  review: owner explicitly wants speculative normalize/fallback code flagged, not shipped.]
+  owner confirms. Mirror the lead dev's existing code, not a generic robustness instinct. [Owner
+  explicitly wanted speculative normalize/fallback code flagged, not shipped.]
 - **Kit-first, and learn the kit before using it.** In a repo with an in-house component kit, always
   reach for a kit component over hand-rolled markup — but read its source + storybook + an existing
-  usage by the lead first, so you pass the right props and use it the intended way. [the-app `@kit/ui`.]
+  usage by the lead first, so you pass the right props and use it the intended way.
 - **Keep config next to its code — no central "constants" dumping ground for routes.** Route
   definitions live in their own route files (like types live with the code that owns them); a shared
-  `routes.ts`/`constants.ts` of paths is indirection the owner doesn't want. [the-app routing rule.]
+  `routes.ts`/`constants.ts` of paths is indirection the owner doesn't want.
 - **One component per file; split multi-component files; never grow a giant component.** Readability +
-  composition over a single sprawling render. [the-app house rule, reinforced by composition-patterns.]
+  composition over a single sprawling render. [A house rule, reinforced by composition-patterns.]
 - **No inline `style` — reach for sprinkles first, then a `.css.ts` `style`/`recipe`; kit components over
   raw HTML.** Ladder: sprinkles props (`justify="end"`, `sprinkles={{ flexWrap: "wrap", cursor: "pointer" }}`)
   → a colocated `.css.ts` class/recipe for anything long or with pseudo/variants (selected border, ellipsis
   truncation, absolute-positioned overlays) → inline `style` ONLY for genuinely data-driven values a static
   stylesheet can't express (e.g. `backgroundImage: url(pkg.bannerUrl)`). Swap raw `<div>` for the kit `Box`.
-  [the-app no-inline-style pass: converted cursor/flexWrap/justify/ellipsis/sentinel/radio-border.]
+  [A no-inline-style pass: converted cursor/flexWrap/justify/ellipsis/sentinel/radio-border.]
 - **Before converting an inline style, confirm the kit supports it — read the primitive.** Check the
   sprinkles property map actually lists the key (`cursor`, `flexWrap`, `position` do; arbitrary `1px` height
   does not → use a `.css.ts` `style`), and confirm the primitive you're switching to forwards what you need:
-  `@kit/ui` `Box` is `forwardRef`, so an IntersectionObserver scroll-sentinel `<div ref={..}>` → `<Box ref={..}>`
-  keeps working. [the-app: verified `Box.tsx` + `properties.css.ts` before editing.]
+  if the kit's `Box` is `forwardRef`, an IntersectionObserver scroll-sentinel `<div ref={..}>` → `<Box ref={..}>`
+  keeps working. [Verified `Box.tsx` + `properties.css.ts` before editing.]
 - **When a new owner rule conflicts with sibling-parity, don't silently pick — surface the tradeoff.**
-  Nearly every wallet inline style was verbatim from the reference app (the sibling app). Applying "no inline styles"
-  meant the app would diverge from its twin. Presented the parity table and let the owner choose; they took
-  app-only divergence and kept the sibling app isolated for the branch. [the-app: the "match the lead" rule and a
+  Nearly every wallet inline style was verbatim from the sibling app. Applying "no inline styles" meant
+  the app would diverge from its twin. Presented the parity table and let the owner choose; they took
+  app-only divergence and kept the sibling isolated for the branch. [The "match the sibling" rule and a
   new "no inline styles" rule genuinely collide — the owner arbitrates, not a default.]
 - **Validate Vanilla-Extract changes with a real build, not just `tsc`.** `.css.ts` `recipe`/`style` compile
   at build time; `tsc --noEmit` type-checks the call but won't run the VE compiler. Run `vite build` after
-  adding/editing `.css.ts` to catch recipe/style misuse that type-checks but fails to compile. [the-app
-  QA: `tsc` + eslint green, then `vite build` confirmed the new recipes actually compile.]
+  adding/editing `.css.ts` to catch recipe/style misuse that type-checks but fails to compile. [`tsc` +
+  eslint green, then `vite build` confirmed the new recipes actually compile.]

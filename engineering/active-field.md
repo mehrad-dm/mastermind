@@ -11,27 +11,26 @@ MasterMind is **field-parameterized**: a universal core (how to think & work) pl
 
 ### Level history
 
-- **level 6** (2026-07-12) — added a **motion/animation** capability, distilled (not vendored) from
-  Emil Kowalski's `emilkowalski/skills` (MIT, animations.dev; creator of Sonner + Vaul). Added him as
-  the **Motion & animation** mentor (`mentors.md`), added **animations.dev / easing.dev** to
-  `learning-sources.md`, wrote a dense **Animation & motion** section in `stack-defaults.md` (GPU-only
-  props; <300ms durations by weight; `ease-out` enter/exit, never `ease-in`; frequency rule — don't
-  animate 100×/day/keyboard actions; springs-vs-tweens; interruptible→transitions-not-keyframes;
-  `scale(0.95)` not `scale(0)`; `prefers-reduced-motion` + hover gating), and created the lean
-  **`web-animations`** skill for the build/audit workflow. Sourced from the user surfacing Emil's repo.
-- **level 5** (2026-07-12) — captured a real production stack (the client `the-app` Turborepo) as a
-  named **worked project stack** in `stack-defaults.md` (`@kit/ui` kit + `@kit/mini-game-kit`, Vanilla
-  Extract sprinkles/tokens, Orval + TanStack Query via `@kit/services/*`, React Router v7, RHF + Zod,
-  pnpm/Turborepo, page→hook→component layering + ui-only `components/`). Added refactor lessons:
-  **match the target app's sibling patterns over a generic rule**, router/navigation never in
-  `components/`, derive-don't-sync amount state with a ref-guarded one-time init, and *minimum change
-  beats DRY* (don't extract a shared hook when the house style deliberately duplicates). Sourced while
-  doing a behavior-preserving structural refactor of the the-app wallet flow. Extended in the same
-  refactor with a **styling + verification** batch: no inline `style` (sprinkles → `.css.ts`
+- **level 6** (2026-07-12) — added a **web-animation & motion** capability: vendored Emil Kowalski's
+  animation playbook complete (MIT — `emilkowalski/skills`, animations.dev; creator of Sonner + Vaul)
+  into the pack as **`web-animations.md`** (decision framework, springs, component principles, CSS
+  transform/clip-path, gestures, performance, a11y, the Sonner principles, review checklist), added Emil
+  as the **Motion & animation** mentor and animations.dev to `learning-sources.md`, and wired the file
+  into `field.md`. It lives entirely in the frontend pack (loaded only for motion work), not as a global
+  skill. Also **genericized the worked-stack notes** — the concrete profile and lessons stay, but all
+  project/product/person names were stripped so the pack carries patterns, not identities.
+- **level 5** (2026-07-12) — captured a **worked stack profile** (a Turborepo monorepo with an in-house
+  component kit) in `stack-defaults.md` (Vanilla Extract sprinkles/tokens, Orval + TanStack Query service
+  packages, React Router v7, RHF + Zod, pnpm/Turborepo, page→hook→component layering + ui-only
+  `components/`). Added refactor lessons: **match the target app's sibling patterns over a generic rule**,
+  router/navigation never in `components/`, derive-don't-sync amount state with a ref-guarded one-time
+  init, and *minimum change beats DRY* (don't extract a shared hook when the house style deliberately
+  duplicates). Sourced while doing a behavior-preserving structural refactor of a wallet flow. Extended in
+  the same refactor with a **styling + verification** batch: no inline `style` (sprinkles → `.css.ts`
   class/recipe → inline only for data-driven values like `backgroundImage: url()`), kit primitives over
   raw HTML (verify sprinkles supports the property and that `Box` forwards `ref` before swapping), surface
-  owner-rule-vs-sibling-parity conflicts for the owner to arbitrate (chose app-only divergence, the sibling app
-  isolated), and **validate `.css.ts` with a real `vite build`, not just `tsc`**.
+  owner-rule-vs-sibling-parity conflicts for the owner to arbitrate, and **validate `.css.ts` with a real
+  `vite build`, not just `tsc`**.
 - **level 4** (2026-07-10) — added a **UI/UX design-intelligence** capability: vendored the third-party
   `ui-ux-pro-max` skill (MIT, NextLevelBuilder — searchable styles/palettes/font-pairings/UX-guidelines/
   charts across stacks) into `skills/`, registered it in the skills index, and pointed the frontend

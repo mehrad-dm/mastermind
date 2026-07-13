@@ -50,7 +50,7 @@ thought. This is not name-dropping — it's a shortcut to well-tested judgment. 
   authority on UI motion that *feels* right: purpose before polish; animate GPU-only properties;
   `ease-out` for enter/exit, never `ease-in`; keep it <300ms; "don't animate what happens 100×/day";
   springs for interruptible gestures, tweens for fixed transitions. Taste is trainable — the invisible
-  details compound. (Concrete defaults in `stack-defaults.md` → *Animation & motion*.)
+  details compound. (Full playbook vendored in this pack as `web-animations.md`.)
 
 ## Curricula & breadth (use to find gaps, not to pad)
 
