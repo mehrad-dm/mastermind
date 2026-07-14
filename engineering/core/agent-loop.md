@@ -35,6 +35,16 @@ closes without the user:
 4. **Commit & deliver** — descriptive message on a branch; never commit secrets; handle migrations and
    rollout with care (defer stack specifics to the field pack). PR when asked.
 
+> **Publishing is irreversible — stage deliberately.** `git add -A`/`git commit -a` bundles whatever is
+> sitting in the tree, including work you didn't write and haven't read. **Never blind-stage:** list what
+> you're about to commit and *read anything you didn't author*. Before pushing to a **public** remote,
+> scan the diff for confidential data (client/product/person names, internal package names, endpoints,
+> credentials) — a public push is permanent: force-pushing orphans a commit but leaves it fetchable by
+> SHA, and fork networks keep objects alive. Raw confidential material must never live in a publishable
+> tree — quarantine it (a gitignored `lab/`) and commit only the genericized output: **patterns, not
+> identities**. Enforce it with a hook, not memory. [Learned the hard way: a bundled WIP file published a
+> client's stack to a public repo.]
+
 > **Skip the plan for trivial, one-sentence-diff changes** (typo, log line, rename) — planning has
 > overhead. Plan when the approach is uncertain, the change spans files, or the code is unfamiliar.
 > (Matches `principles.md`: effort matches stakes.)
