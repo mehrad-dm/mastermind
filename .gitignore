@@ -2,3 +2,13 @@
 *.log
 .idea/
 .vscode/
+
+# Client/project pattern packs — LOCAL ONLY, never publish.
+# (~/.mastermind is a symlink to this PUBLIC repo, so local-only requires ignoring.)
+engineering/fields/*/*-coding-patterns.md
+engineering/fields/*/*-coding-patterns/
+
+# ── Lab: quarantine for raw confidential input. NEVER committed. ──────────────
+# Sensitive material lands in lab/ only. Analyse it there; commit only the
+# genericized OUTPUT (patterns, not identities). Enforced by .githooks/pre-commit.
+lab/
