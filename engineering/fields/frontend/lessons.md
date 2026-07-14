@@ -90,3 +90,28 @@ general enough to be a default, also promote it into `stack-defaults.md`.
   at build time; `tsc --noEmit` type-checks the call but won't run the VE compiler. Run `vite build` after
   adding/editing `.css.ts` to catch recipe/style misuse that type-checks but fails to compile. [`tsc` +
   eslint green, then `vite build` confirmed the new recipes actually compile.]
+- **Constants: colocate unless genuinely shared.** Single-consumer timing values, asset maps, and stable
+  literals belong in the file that owns them — not a feature `constants.ts` that exists for one export.
+  Reserve a shared `constants.ts` for search params/domain keys used by 2+ modules. [A refactor deleted
+  three constants files that each had exactly one consumer.]
+- **Vanilla Extract composition: `style([sprinkles({...}), { ... }])`.** Token props go through
+  `sprinkles()`; the plain style block carries only what tokens can't express (pseudo-selectors, arbitrary
+  px, transforms, `flexGrow`). A pure-token class can be `sprinkles({...})` alone. Kit layout props first.
+- **Prefer the kit's semantic layout props over raw token props.** Where a kit primitive exposes an
+  intent-named prop (`spacing` for gap, `fullWidth` for width), use it instead of the equivalent
+  `sprinkles` prop — same token, clearer intent. Check the recipe: not every primitive has one. [Verify
+  against the kit source before assuming a prop exists.]
+- **No `let` reassignment for derived values — use a util with an early `return`.** Prefer
+  `const x = getFoo(a, b)` where `getFoo` branches with `if` + `return`. And when the value is used
+  **once** (e.g. a className), call the util inline in JSX rather than binding an intermediate `const`.
+  Applies to className resolution, view state, any derived branch.
+- **No nested ternary for className/logic — extract a util or use if/else.** Matches ESLint
+  `no-nested-ternary`; a nested ternary in JSX is where branching logic goes to die.
+- **No single-use layout constants in `.css.ts`.** If a named constant is used once to compute a value,
+  inline the number at the use site. Reserve named constants for 2+ consumers or genuine domain meaning.
+- **Animated list keys: key by position, not by value.** For rolling/animated digits, `key={len - 1 - i}`
+  keeps the animating component mounted as the value changes; `key={`${value}-${i}`}` remounts it and
+  breaks the animation direction. Key by *slot*, not by content, whenever the content animates.
+- **A "select the default" effect must run only while the selection is still `null`.** An effect that
+  assigns `options[0]` on every refetch stomps the user's choice the moment the query refreshes. Gate it
+  on `selected === null` so it initialises once instead of re-asserting the default forever.
