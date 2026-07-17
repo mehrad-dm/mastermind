@@ -1,40 +1,42 @@
 # MasterMind Skills — index & router
 
-The skill library. Each is one job with a lean routing-rule description and an on-demand body. This
-index is the map — keep it honest: a skill it never lists, or one it still lists after removal, is a
-router that lies. (Authoring discipline: `mastermind-levelup` → "Authoring a new skill".)
+**You don't need to run these.** MasterMind reads what you ask in plain language and applies the right
+skill automatically — no slash command required. This index is the map (for reference, and for power
+users who *want* to invoke one directly with `/name`). Each skill is one job with a lean routing-rule
+description and an on-demand body. Keep the map honest: a skill it never lists, or one it still lists
+after removal, is a router that lies. (Authoring discipline: `levelup` → "Authoring a new skill".)
 
-> Skills are for **inline workflows**. Isolated-context expert roles — review, architecture, refactor,
-> adopt-decisions — are **agents** (`../agents/`), not skills. Don't duplicate them here.
+> Skills are **inline workflows**. Isolated-context expert *roles* — `architect`, `code-reviewer`,
+> `refactorer`, `tech-scout` — are **agents** (`../agents/`), not skills.
 
-## Core loop
-| Skill | Job |
+## Build & ship
+| Skill | What it does (auto-applies when you…) |
 | --- | --- |
-| [`mastermind-build`](./mastermind-build/SKILL.md) | The flagship: design → implement-to-rigor → verify → review → capture, end to end |
-| [`mastermind-debug`](./mastermind-debug/SKILL.md) | Structured six-phase debugging — evidence over guessing |
-| [`mastermind-tdd`](./mastermind-tdd/SKILL.md) | Red → green → refactor; test-first design pressure |
-| [`mastermind-verify`](./mastermind-verify/SKILL.md) | Confirm a change works by exercising it end-to-end — QA without a test suite (ask-first on tests) |
-| [`mastermind-prototype`](./mastermind-prototype/SKILL.md) | Fast throwaway spike to answer one risky unknown, then rebuild properly |
+| [`build`](./build/SKILL.md) | …ask to build a feature. The flagship: design → implement-to-rigor → verify → review → capture. |
+| [`debug`](./debug/SKILL.md) | …hit a hard bug. Structured six-phase debugging — evidence over guessing. |
+| [`qa`](./qa/SKILL.md) | …finish something / want it tested. Prove it works end-to-end; tests / TDD only if you say so (offered after a build). |
+| [`spike`](./spike/SKILL.md) | …face a risky unknown. A fast throwaway spike to learn, then rebuild properly. |
 
-## Think before you build
-| Skill | Job |
+## Think first
+| Skill | What it does (auto-applies when you…) |
 | --- | --- |
-| [`mastermind-prompt`](./mastermind-prompt/SKILL.md) | Turn a vague ask into a sharp, token-efficient, AI-ready prompt — so the model builds the right thing first try |
-| [`mastermind-learn`](./mastermind-learn/SKILL.md) | Just-in-time learning of the stack/field before building (roadmap.sh + primary docs) |
-| [`mastermind-spec`](./mastermind-spec/SKILL.md) | Turn a fuzzy request into a crisp, buildable spec |
-| [`mastermind-domain-model`](./mastermind-domain-model/SKILL.md) | Build the domain glossary — canonical terms, resolved naming |
-| [`mastermind-grill`](./mastermind-grill/SKILL.md) | Interrogate your understanding against the real docs before building |
+| [`spec`](./spec/SKILL.md) | …give a fuzzy/multi-file ask. Turn it into a crisp spec (problem, scope, key terms, interfaces, acceptance, edges). |
+| [`learn`](./learn/SKILL.md) | …work in unfamiliar/fast-moving tech. Learn the real stack to current standards + grill your assumptions against the source. |
+| [`route`](./route/SKILL.md) | …start a non-trivial task. Load only the pack files / docs / code it needs (via `ROUTER.md`); refuses to over-plan a small one. |
+| [`prompt`](./prompt/SKILL.md) | …want a request sharpened. Turn a vague ask into a tight, AI-ready prompt. |
 
-## Keep the work moving
-| Skill | Job |
+## Capture, improve, hand off
+| Skill | What it does (auto-applies when you…) |
 | --- | --- |
-| [`mastermind-handoff`](./mastermind-handoff/SKILL.md) | Write a concise handoff so work survives a `/clear` or takeover |
-| [`mastermind-levelup`](./mastermind-levelup/SKILL.md) | Level MasterMind up — capture lessons / refresh curriculum / bootstrap a field |
+| [`signature`](./signature/SKILL.md) | …want MasterMind to fit your team. Capture the codebase's real patterns (Lab, patterns-not-people) → name-free rules the AI follows. Proposes, never auto-applies. |
+| [`explain`](./explain/SKILL.md) | …have an under-documented internal package. Generate AI-friendly per-unit usage docs so any model understands it. **Asks first.** |
+| [`lab`](./lab/SKILL.md) | …need to capture sensitive project data safely. Sets up a private, gitignored Lab + the safety guards. |
+| [`levelup`](./levelup/SKILL.md) | …teach MasterMind something durable. Capture a lesson / refresh a field / bootstrap a new field. |
+| [`handoff`](./handoff/SKILL.md) | …pause or hand off. A concise handoff so work survives a `/clear` or a new session. |
 
-## Craft (domain skills)
-| Skill | Job |
-| --- | --- |
-| [`ui-ux-pro-max`](./ui-ux-pro-max/SKILL.md) | UI/UX **design intelligence** — searchable styles, color palettes, font pairings, UX guidelines, chart types across stacks. Vendored, MIT (NextLevelBuilder — see `SOURCE.md`). Use for any UI build/review; pair with `mastermind-build` + the frontend field pack for rigor, states & a11y. |
+> **Frontend-field abilities** live in the frontend pack, not here — they load with that field via the
+> router: **`improve-ui`** (audit a UI against its own design language → a fix plan) and the
+> **`ui-ux-pro-max`** design-intelligence database.
 
-The library grows freely — add a skill for any distinct, useful workflow, held to the one-job + lean-
-description + on-demand-body bar. Register every new skill here.
+The library grows freely — add a skill for any distinct, useful workflow (one job + lean routing-rule
+description + on-demand body). Register every new skill here.

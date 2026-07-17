@@ -1,7 +1,12 @@
+---
+field: frontend
+route_when: [lesson, gotcha, pattern, review-finding, house-style]
+---
+
 # Lessons — Frontend (the leveling record)
 
 Durable lessons learned from real usage and `code-reviewer` findings. Each is a one-line rule with
-the "why" in brackets. New lessons are appended by the `mastermind-levelup` skill. When a lesson is
+the "why" in brackets. New lessons are appended by the `levelup` skill. When a lesson is
 general enough to be a default, also promote it into `stack-defaults.md`.
 
 - **Sliding indicators (segmented control, tabs underline) must measure real layout, not assume equal
@@ -65,6 +70,13 @@ general enough to be a default, also promote it into `stack-defaults.md`.
 - **Kit-first, and learn the kit before using it.** In a repo with an in-house component kit, always
   reach for a kit component over hand-rolled markup — but read its source + storybook + an existing
   usage by the lead first, so you pass the right props and use it the intended way.
+- **Read the per-component doc before using a kit component — and if there's none, adding it is
+  high-leverage.** Well-run kits colocate a usage doc (a `README.md` beside each component) with its
+  props, variants, and the **non-obvious rules** — recommended icon size per button size, which state
+  hides what, the default element `type`, where styling is configured. Read it first: cheaper and more
+  accurate than reading source, and it's the SSOT for *intended* usage. If a kit has none, generating
+  per-component usage docs makes every future AI (and human) use it correctly by default — see the
+  `explain` skill. [The highest-signal part is the gotchas, not the prop list.]
 - **Keep config next to its code — no central "constants" dumping ground for routes.** Route
   definitions live in their own route files (like types live with the code that owns them); a shared
   `routes.ts`/`constants.ts` of paths is indirection the owner doesn't want.
@@ -115,3 +127,71 @@ general enough to be a default, also promote it into `stack-defaults.md`.
 - **A "select the default" effect must run only while the selection is still `null`.** An effect that
   assigns `options[0]` on every refetch stomps the user's choice the moment the query refreshes. Gate it
   on `selected === null` so it initialises once instead of re-asserting the default forever.
+
+## Distilled patterns by area (from production frontend work)
+
+**Routing (React Router)**
+
+- **Route-entry files are thin delegates — no logic in `route.tsx`.** The route file is a one-line
+  hand-off to the feature module/container; URL params, fetching, and flow logic live in the module. Keeps
+  routing a lookup table and stops `route.tsx` becoming a second home for logic.
+- **Model multi-step flows as nested routes, not a local `step` variable.** A shared layout + step
+  indicator + `<Outlet>`. Back/forward, deep-linking, and refresh work for free; each step stays small and
+  testable. A single component juggling `step` breaks the browser's navigation model.
+- **Bookmarkable state → URL search params; transient UI state → a small external store; write
+  query-state with `replace: true`.** Shareable/reloadable state (active tab, selected id) belongs in the
+  URL (SSOT); an open/applied filter sheet is UI-only — keep it in `useSyncExternalStore`. `replace:true`
+  avoids spamming history on every filter change.
+
+**TypeScript**
+
+- **End a union `switch` with an exhaustive `never` guard** — `default: { const _: never = value; return _ }`.
+  Adding a new union member becomes a compile error at every switch that forgot it, instead of a silent
+  runtime fallthrough.
+- **Colocate a union's type + `is*` guard + `resolve*(raw)` fallback next to its `as const` literal.** One
+  home for "what are the valid values, and what happens for an invalid one" — parse external strings (URL
+  params, API enums) into the union there, instead of scattered inline `?? "default"` casts.
+
+**Forms (React Hook Form + Zod)**
+
+- **Three-layer validation: schema → pure `get*Error(ctx)` returning an error-*code* → `get*ErrorMessage(code)`
+  exhaustive switch.** Business rules stay pure and unit-testable, copy stays in one localizable place, and
+  the exhaustive switch guarantees every code has a message. Don't mix rule logic and display strings in the schema.
+- **When validation limits are server-driven, build the schema with a memoized factory** —
+  `useMemo(() => createSchema(limits), [limits])` — not hardcoded bounds, so validation can't drift from
+  the real (server) limits.
+
+**Data (TanStack Query)**
+
+- **Transform DTOs into view models in the query's `select`, not the component body.** The component gets
+  ready-to-render data; the mapping is memoized by the cache and doesn't re-run on unrelated renders.
+- **Every filter dimension must be in the query key.** [correctness — TanStack Query "Query Keys" docs: a
+  key must include every input the query depends on. Reusing one key across filter values serves
+  stale/wrong-filter data or flashes the previous filter's results.]
+- **Toast in `onError` and stop — never re-throw.** Use a shared API-error-message extractor; put the
+  generic "a request failed" toast in the query client / HTTP interceptor with a per-request opt-out for
+  screens that handle their own errors. Re-throwing after toasting double-handles and leaks unhandled rejections.
+
+**Architecture**
+
+- **Route every async screen's loading/error/empty states through one shared boundary component**
+  (`<Boundary isLoading isError error>…`), not per-screen `if (isLoading)…if (isError)…`. Uniform UX and one
+  place to evolve it; hand-rolled branches drift and miss states.
+- **Isolate DTO→view-model mapping in a pure `mappers/` layer, out of components.** Mapping is the churny,
+  testable part; isolating it keeps components presentational and lets the API shape change in one place.
+- **One shared realtime listener per channel key, bridged into the query cache via `setQueryData` — never
+  one subscription per component.** [correctness — per-component listeners leak connections and create
+  divergent copies of the same data; a single keyed subscription written into server-state cache keeps one
+  source of truth.]
+
+**Monorepo / tooling**
+
+- **Import shared/generated packages only through their public entry — never deep `dist/`/`generated/`
+  paths.** Preserves the package boundary so internals (and regenerated files) can change freely without
+  breaking consumers.
+- **In a multi-stack monorepo, follow the stack local to the file; don't import primitives across stacks.**
+  Each stack has its own token/layout model; cross-importing produces inconsistent styling and bundle bloat.
+  ("Adapt to the project" applied at sub-project granularity.)
+- **Before changing a difference between two parallel apps, classify it: style drift or product truth.**
+  Designate one app as the style reference and read it first; fix drift *toward* it, but preserve a
+  deliberate product difference. Stops "fixing" a real product divergence into false uniformity.

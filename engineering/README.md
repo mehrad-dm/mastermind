@@ -24,14 +24,15 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
 ├── CLAUDE.md                     # the kernel — always loaded, tiny
 ├── AGENTS.md                     # → CLAUDE.md (entry file for Codex & generic agents)
 ├── agents/                       # specialist roles (architect, code-reviewer, refactorer, tech-scout)
-├── skills/                       # growable library (build, debug, tdd, spec, learn, grill, … + levelup)
+├── skills/                       # growable library (build, debug, spec, learn, qa, … + levelup)
 └── engineering/
     ├── README.md                 # this file
     ├── active-field.md           # which field is active + how leveling works
+    ├── ROUTER.md                 # generated manifest (scripts/build-router.mjs) — load only what a task needs
     ├── core/                     # UNIVERSAL — field-agnostic
     │   ├── mindset.md            # genius-builder mental models (the operating soul)
     │   ├── principles.md         # decision framework + clean-code laws
-    │   ├── rigor.md              # the quality gate + refuse-list
+    │   ├── rigor.md              # the quality gate + refuse-list + the verdict
     │   ├── agent-loop.md         # how to execute: verify-loop, explore→plan→implement, context
     │   └── product-sense.md      # product & business literacy — scope tasks & specs right
     └── fields/
@@ -41,7 +42,11 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
             ├── mentors.md        # the field's authorities to align with
             ├── curriculum.md     # vetted, API-verified repos/books/people/docs
             ├── learning-sources.md
-            └── lessons.md        # durable lessons from real usage (the leveling record)
+            ├── web-animations.md # motion & animation craft (Emil Kowalski)
+            ├── audit-rules.md    # framework-specific defect checks for code-reviewer
+            ├── improve-ui.md     # a UI design-consistency pass
+            ├── lessons.md        # durable lessons from real usage (the leveling record)
+            └── ui-ux-pro-max/    # vendored design database — searchable, MIT
 ```
 
 ## Load-on-demand map
@@ -62,7 +67,7 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
 ## How it improves (leveling up)
 
 MasterMind's weights are fixed; it gets better by **editing this knowledge base**. The
-`mastermind-levelup` skill captures corrections/review-findings into the active field's `lessons.md`,
+`levelup` skill captures corrections/review-findings into the active field's `lessons.md`,
 refreshes the curriculum against the live ecosystem, or bootstraps a new field pack. See
 `active-field.md`.
 

@@ -71,5 +71,16 @@ if [ "$FAIL" -ne 0 ]; then
   exit 1
 fi
 
+# ---- Router freshness (MasterMind repo only; harmless elsewhere) -------------
+# Keep engineering/ROUTER.md in sync like a lockfile: if a routable file changed,
+# regenerate and stage the manifest so it can't silently drift.
+if [ -f "$REPO_ROOT/scripts/build-router.mjs" ] && command -v node >/dev/null 2>&1; then
+  if ! node "$REPO_ROOT/scripts/build-router.mjs" --check >/dev/null 2>&1; then
+    node "$REPO_ROOT/scripts/build-router.mjs" >/dev/null 2>&1 \
+      && git add "$REPO_ROOT/engineering/ROUTER.md" 2>/dev/null \
+      && printf '%s\n' "${YEL}↻ ROUTER.md was stale — regenerated and staged.${NC}"
+  fi
+fi
+
 printf '%s\n' "${GRN}✓ MasterMind guard: clean${NC}"
 exit 0

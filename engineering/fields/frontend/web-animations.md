@@ -1,3 +1,8 @@
+---
+field: frontend
+route_when: [animation, motion, transition, gesture, spring, easing, scroll, framer-motion, hover, drawer, toast, modal, popover]
+---
+
 # Web Animations & Motion — the craft of UI that feels right
 
 Part of the **frontend field pack** — loaded when building or reviewing animation, motion, transitions,

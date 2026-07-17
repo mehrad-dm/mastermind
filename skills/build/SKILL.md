@@ -1,5 +1,5 @@
 ---
-name: mastermind-build
+name: build
 description: The flagship MasterMind build loop — take a feature/change from intent to shipped, the genius way, end to end. Orchestrates design → plan → implement-to-rigor → verify → adversarial review → capture-lessons. Use for any non-trivial implementation task where quality matters. For a one-line diff, skip this and just do it.
 ---
 
@@ -29,15 +29,17 @@ a foundation gets the full loop. Don't perform ceremony the task doesn't warrant
    (null/empty/loading/error/zero/one/many/offline/unauthorized/malformed). Types honest, no lazy
    placeholders, no dead code. Single-purpose units. Style like the surrounding code.
 
-5. **Verify — close the loop** (`~/.mastermind/engineering/core/agent-loop.md`) — give the work a check that returns pass/fail
-   and run it: typecheck + lint + tests + build, and for UI, exercise the actual flow / screenshot.
-   Show the evidence; never assert success. If you can't verify it, it isn't done. Fix root causes.
+5. **Verify — close the loop** (`~/.mastermind/engineering/core/agent-loop.md`; the `qa` skill) — prove it works by driving
+   the real thing: typecheck + lint + build, run the project's **existing** tests, and for UI exercise the
+   actual flow / screenshot. Show the evidence; never assert success. If you can't verify it, it isn't
+   done. Fix root causes. **Don't add tests or a test framework unprompted** — once it works, *offer:*
+   "Built and verified — want me to add tests / do this test-first?"
 
 6. **Adversarial review** — invoke the **`code-reviewer`** agent on the diff in a fresh context. Fix
    real must-fix findings (correctness/security/a11y); treat gap-hunting nits as optional to avoid
    over-engineering. Re-verify after fixes.
 
-7. **Capture & report** — run the **`mastermind-levelup`** skill (capture) to fold any durable lesson
+7. **Capture & report** — run the **`levelup`** skill (capture) to fold any durable lesson
    or correction into the active field's `lessons.md`. Report honestly in a few lines: what shipped,
    the evidence it works, and anything deferred. Commit / open a PR only if asked.
 

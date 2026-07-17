@@ -6,7 +6,7 @@ MasterMind is **field-parameterized**: a universal core (how to think & work) pl
 ## Current field: **Frontend Engineering** — level 6
 
 - **Field pack:** `engineering/fields/frontend/` (see its `field.md` manifest).
-- **Level:** 6. Bumped by the `mastermind-levelup` skill as lessons accumulate and standards are
+- **Level:** 6. Bumped by the `levelup` skill as lessons accumulate and standards are
   refreshed. See the field pack's `lessons.md` for what's been learned so far.
 
 ### Level history
@@ -33,14 +33,14 @@ MasterMind is **field-parameterized**: a universal core (how to think & work) pl
   `vite build`, not just `tsc`**.
 - **level 4** (2026-07-10) — added a **UI/UX design-intelligence** capability: vendored the third-party
   `ui-ux-pro-max` skill (MIT, NextLevelBuilder — searchable styles/palettes/font-pairings/UX-guidelines/
-  charts across stacks) into `skills/`, registered it in the skills index, and pointed the frontend
-  field pack at it (design *what* ↔ field-pack/rigor *how*). Sourced while overhauling the Playlist
+  charts across stacks) into the frontend field pack at `fields/frontend/ui-ux-pro-max/` — it's field
+  knowledge, not a global skill (design *what* ↔ field-pack/rigor *how*). Sourced while overhauling the Playlist
   Telegram Mini App to an Apple/Spotify-grade bar.
 - **level 3** — stack-defaults deepened & made explicitly adaptive: "adapt-to-project, never impose"
   posture; Core Web Vitals performance section; components (primitives vs kits); client-state/forms/
   routing/animation/API-codegen/monorepo/PWA/monitoring defaults (covering real production stacks);
   captured signature patterns from Total TypeScript, Epic React, and *Just JavaScript* (verified free
-  primary sources). Ask-first testing policy; version/primary-source discipline; `mastermind-verify` skill.
+  primary sources). Ask-first testing policy; version/primary-source discipline; `qa` skill.
 - **level 2** — frontend field pack populated (`stack-defaults`, `curriculum`, `mentors`,
   `learning-sources`, `lessons`); core loop, skills, and agents wired.
 - **level 1** — initial kernel + universal core (mindset · principles · rigor · agent-loop · product-sense).
@@ -53,18 +53,31 @@ Be ready for whatever the user is building — cheaply. At the start of substant
    Backend/API? Mobile? Infra? This is free and usually enough — don't ask if it's obvious.
 2. **Ask only when ambiguous** — one short question: *"What are we building (frontend / backend /
    mobile / …) and on what stack?"* Don't interrogate; one question, then proceed.
-3. **Load the matching pack** — if a `fields/<field>/` pack exists, use it. If not, offer to
-   `mastermind-levelup --bootstrap <field>` (researches + generates it once), then use it.
-4. **Token economy** — load only the active field's pack; never preload others. For full-stack work,
-   load each field's pack — but only the **frontend** pack ships today; bootstrap the others (e.g.
-   backend) on demand, loading only the files each task needs (per the load-on-demand map).
+3. **Load the matching pack — or create one, with a single confirm.** If a `fields/<field>/` pack
+   exists, use it. If not — on first substantive work after MasterMind is added to a project — **detect
+   the real stack, confirm once, then build a tailored field pack for them**: *"This looks like a
+   `<stack>` project — want me to set up a MasterMind field pack tuned to it?"* On yes, `levelup`
+   bootstraps it from `_template` (researches + generates, once); from then on it just loads. One
+   question, not an interrogation — and never build a pack silently or refuse to build one they'd benefit from.
+4. **Token economy — route, don't read-everything.** If `engineering/ROUTER.md` exists, match the task
+   to a node's `route_when` and load **only** that node's file(s) — not the whole pack. It lists each
+   file's token cost so you can budget. Loading everything to decide relevance is the waste the router
+   removes (~15k → ~6k on a typical task). If `ROUTER.md` is missing or a `hash` no longer matches its
+   file, ignore it and fall back to `field.md`'s load-on-demand map — **the router only ever speeds
+   things up; it's never a dependency.** Regenerate it with `node scripts/build-router.mjs`.
+5. **Let the host cache the stable parts.** The always-loaded kernel + a field's pack are stable text; on
+   hosts with **prompt caching** (Claude Code / the API, ~90% cheaper on cached reads) they're reused
+   across turns at a fraction of the cost. So keep the loaded set **stable within a session** — route
+   once, then build; don't churn which pack files are loaded turn-to-turn. Caching is the host's job, not
+   ours — we just structure loads so it pays off. (Verdict from research: this + the router are the real
+   token wins; encoding skills as *images* is not — it costs more and misreads code.)
 
 ## How to change the field
 
 1. Create the pack at `engineering/fields/<name>/`. Two ways:
    - **Copy the template** — `cp -r engineering/fields/_template engineering/fields/<name>`, then fill
      in each file (the template has the shape + inline guidance; `fields/frontend/` shows the bar).
-   - **Bootstrap it** — run `mastermind-levelup --bootstrap <name>` to research and generate it from
+   - **Bootstrap it** — run `levelup --bootstrap <name>` to research and generate it from
      the template.
 2. Update the "Current field" line above to point at the new pack.
 3. The universal core (`engineering/core/*`) never changes between fields — it's field-agnostic.
@@ -76,7 +89,7 @@ Be ready for whatever the user is building — cheaply. At the start of substant
 
 Multiple fields can be active at once (e.g. `Frontend + Backend`) for full-stack work — load each pack
 you need. Today only the **frontend** pack ships; bootstrap a backend pack
-(`mastermind-levelup --bootstrap backend`) before relying on it.
+(`levelup --bootstrap backend`) before relying on it.
 
 ## How MasterMind levels up (honest mechanics)
 
@@ -86,7 +99,7 @@ behavior durably across all future sessions:
 1. **Capture** — every correction the user gives, and every real finding from a `code-reviewer` pass,
    becomes a one-line entry in the active field's `lessons.md` (and, if it's a durable default, in
    `stack-defaults.md`). This is the primary learning channel — it compounds.
-2. **Refresh** — periodically re-run the curriculum research (`mastermind-levelup --refresh`) so the
+2. **Refresh** — periodically re-run the curriculum research (`levelup --refresh`) so the
    field's best-practice list tracks the moving ecosystem; verify repos still exist/are active.
 3. **Adapt to the user** — where your assistant has a memory (e.g. Claude Code's file-based memory),
    per-user preferences accumulate there and MasterMind recalls them by relevance; where there's no

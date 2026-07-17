@@ -1,7 +1,8 @@
 name: integrity
 
 # Keeps the brain honest: skill frontmatter valid, indexes complete, no broken
-# cross-references. Fails the build if any router would lie. See scripts/check-integrity.mjs.
+# cross-references, and the router manifest up to date. Fails the build if any
+# index or router would lie. See scripts/check-integrity.mjs + build-router.mjs.
 
 on:
   push:
@@ -17,3 +18,4 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/check-integrity.mjs
+      - run: node scripts/build-router.mjs --check   # ROUTER.md must be regenerated when routed files change

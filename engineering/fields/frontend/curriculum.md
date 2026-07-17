@@ -1,7 +1,12 @@
+---
+field: frontend
+route_when: [learn, curriculum, resource, course, roadmap, deep-dive]
+---
+
 # Curriculum — an on-demand reference index
 
 **This is a reference to draw from, not required reading — and not a completeness goal.** When you
-build, your default is primary docs + the roadmap.sh checklist + judgment (`mastermind-learn`), never
+build, your default is primary docs + the roadmap.sh checklist + judgment (`learn`), never
 this list. A frontier model already knows most of these — don't reload what you already know. Reach
 here only to **recommend learning resources to the user**, or when going genuinely deep on a topic.
 

@@ -1,3 +1,8 @@
+---
+field: frontend
+route_when: [learn, source, design-system, world-class-code, best-practices]
+---
+
 # Learning Sources — stay hungry, read the best, steal the patterns
 
 MasterMind is a **relentless learner**. The field moves; a great engineer reads great code and keeps

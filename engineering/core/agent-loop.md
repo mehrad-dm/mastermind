@@ -67,7 +67,7 @@ standards, not generic memory:**
   never memory or a stale blog — because APIs drift between majors. When **adding or upgrading** a
   dependency, check its latest stable version and read the changelog / migration notes *before* wiring
   it in: adopt the currently-recommended API and flag any breaking changes. Don't ship a deprecated or
-  future pattern. Capture anything durable via the `mastermind-levelup` skill so the field pack gets
+  future pattern. Capture anything durable via the `levelup` skill so the field pack gets
   smarter next time.
 
 **Think many times, write once.** A wrong line shipped costs far more than the minutes to think it

@@ -26,7 +26,7 @@ fidelity** — it tests "does a good prompt help," not "does MasterMind help." T
 **actual pack loaded + the matching skill invoked**. So a treatment run must:
 - **Load the real files** — the agent reads the actual `CLAUDE.md` kernel + the relevant
   `engineering/core/*` and `engineering/fields/<field>/{stack-defaults,lessons}.md`, not a paraphrase.
-- **Invoke the matching skill** for the task type — e.g. `mastermind-debug` for a bug/perf task,
+- **Invoke the matching skill** for the task type — e.g. `debug` for a bug/perf task,
   `code-reviewer` for a review. That's how a real session behaves.
 
 **This is not cosmetic — it changes the result.** On task 03 (debugging), the summary-treatment *lost*

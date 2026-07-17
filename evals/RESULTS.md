@@ -47,7 +47,7 @@ defaults (take the a11y primitive, discriminated unions, parse-don't-trust, …)
 ## Run F1 — 2026-07-11 · first full fidelity run (real pack loaded)
 
 **Generator:** Claude Opus 4.8 (both conditions) · **Judges:** Sonnet 5 + Haiku 4.5 + Fable 5 (3-judge
-median) · **N=3** per condition · treatment reads the real pack + `mastermind-debug` (not a summary).
+median) · **N=3** per condition · treatment reads the real pack + `debug` (not a summary).
 
 | Task | Baseline | Treatment | Δ |
 | --- | --- | --- | --- |

@@ -1,5 +1,5 @@
 ---
-name: mastermind-debug
+name: debug
 description: Structured six-phase debugging for a hard bug — reproduce, localize, hypothesize, test the hypothesis, fix the root cause, guard against regression. Use when a bug isn't obvious, resists a quick fix, or keeps coming back. Enforces evidence over guessing.
 ---
 
@@ -38,5 +38,5 @@ coincidence, not a fix.
    silently. Show the evidence.
 
 ## After
-Run **`mastermind-levelup`** (capture) to record the class of bug and its lesson in the active field's
+Run **`levelup`** (capture) to record the class of bug and its lesson in the active field's
 `lessons.md`, so MasterMind doesn't relearn it. Report: root cause, the fix, and the guard added.

@@ -1,5 +1,5 @@
 ---
-name: mastermind-levelup
+name: levelup
 description: Level MasterMind up — capture lessons from recent work into the active field pack, refresh the field's best-practice curriculum against the live ecosystem, or bootstrap a whole new field pack. Invoke after a review/correction, periodically to refresh standards, or when switching MasterMind to a new field.
 ---
 

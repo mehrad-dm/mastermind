@@ -1,5 +1,5 @@
 ---
-name: mastermind-prompt
+name: prompt
 description: Turn a vague or rushed request into a sharp, token-efficient, AI-ready prompt — so the model builds what the user actually wants on the first try. Use when the user asks to "optimize / improve / fix my prompt", when a request is fuzzy and they want help expressing it to an AI, or before firing a big/expensive task off a thin prompt. This is prompt-for-an-AI optimization, not code optimization (that's /simplify).
 ---
 

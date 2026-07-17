@@ -1,5 +1,5 @@
 ---
-name: mastermind-handoff
+name: handoff
 description: Write a concise handoff so work survives a context reset or a teammate/next-session takeover — what's done, what's next, key decisions and why, where things live, and the gotchas. Use before a /clear on a long task, when pausing, or when handing off. A summary, not a context dump.
 ---
 

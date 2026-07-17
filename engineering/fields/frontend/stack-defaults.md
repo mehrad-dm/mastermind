@@ -1,3 +1,8 @@
+---
+field: frontend
+route_when: [stack, tool, library, default, choose, typescript, react, nextjs, styling, tailwind, vanilla-extract, state, zustand, data-fetching, tanstack-query, forms, zod, routing, components, monorepo, performance, pwa]
+---
+
 # Stack Defaults — choose the best, every time
 
 Opinionated defaults so MasterMind reaches for the *right* tool instead of the average one. Format:

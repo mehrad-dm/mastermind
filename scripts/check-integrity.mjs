@@ -80,7 +80,7 @@ for (const file of ['skills/README.md', 'README.md']) {
 const docFiles = []
 ;(function walk(d) {
   for (const e of readdirSync(join(ROOT, d), { withFileTypes: true })) {
-    if (e.name === 'node_modules' || e.name.startsWith('.git')) continue
+    if (e.name === 'node_modules' || e.name === 'lab' || e.name.startsWith('.git')) continue
     const p = `${d}/${e.name}`
     if (e.isDirectory()) walk(p)
     else if (e.name.endsWith('.md')) docFiles.push(p.replace(/^\.\//, ''))

@@ -11,15 +11,15 @@
     {
       "name": "mastermind",
       "source": "./",
-      "description": "Genius-builder skills & agents: build, tdd, debug, spec, learn, grill, handoff, levelup + architect, code-reviewer, refactorer, tech-scout. Experimental (v0.17.3).",
-      "version": "0.17.3",
+      "description": "Genius-builder skills & agents: build, debug, qa, spec, learn, signature, route, handoff, levelup + architect, code-reviewer, refactorer, tech-scout. Experimental (v0.18.1).",
+      "version": "0.18.1",
       "author": {
         "name": "mehrad-dm"
       },
       "homepage": "https://mastermind.mehrad.me",
       "repository": "https://github.com/mehrad-dm/mastermind",
       "license": "MIT",
-      "keywords": ["skills", "agents", "engineering", "tdd", "code-review", "workflow", "rigor"]
+      "keywords": ["skills", "agents", "engineering", "code-review", "workflow", "rigor", "router"]
     }
   ]
 }

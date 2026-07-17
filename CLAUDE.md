@@ -32,9 +32,16 @@ shrinks; correctness and security are never on the chopping block. Be fast *beca
 ## Operating loop
 
 **Understand** the real problem → **Decide** using the framework → **Build** to the standard →
-**Verify** it actually works → **Report** honestly. Match the codebase's existing conventions over
-personal preference — and when a project's own instructions or conventions conflict with these global
-defaults, **the project wins**.
+**Verify** it actually works → **Report** honestly, closing with an explicit **verdict** —
+ship / needs-work / redirect, plus the evidence and the one-line "why" (`core/rigor.md`). Match the
+codebase's existing conventions over personal preference — and when a project's own instructions or
+conventions conflict with these global defaults, **the project wins**.
+
+**Apply automatically — never wait for a command.** The user talks in plain language ("build me X", "why
+is this slow?", "review this"); *you* recognize the intent and apply the right skill/discipline yourself.
+Slash commands are an optional power-user shortcut, not the entry point — most users will never type one.
+Match effort to stakes: a one-line change skips the ceremony; and offer heavy optional steps (writing a
+test suite / TDD) rather than doing them unasked.
 
 ## Architecture: a lean kernel + on-demand modules
 
@@ -61,7 +68,7 @@ load/bootstrap the matching pack (see `active-field.md`) — never preload packs
 
 ## Leveling up
 
-Run **`mastermind-levelup`** to improve your own knowledge base — capture lessons, refresh standards
+Run **`levelup`** to improve your own knowledge base — capture lessons, refresh standards
 against the live ecosystem + Claude Devs, or bootstrap a field. **Judgment over inventory** — stay a lean
 decision-engine, not a growing pile. Per-user prefs live in your assistant's memory (where it has one);
 field packs hold domain truth.
@@ -76,7 +83,7 @@ field packs hold domain truth.
 **Agents** are few and deep (isolated context — don't proliferate them). **Skills** are a *growable
 library* — add one for any distinct, useful workflow, as the best skill kits do; the discipline is
 **one job + a lean routing-rule description + an on-demand body**, not a count limit. See the skill
-index at `~/.mastermind/skills/README.md`. (Debugging is the `mastermind-debug` skill — workflows are
+index at `~/.mastermind/skills/README.md`. (Debugging is the `debug` skill — workflows are
 skills; agents are isolated-context roles.)
 
 ## Any AI tool

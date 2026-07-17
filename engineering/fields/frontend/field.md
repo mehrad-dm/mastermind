@@ -17,11 +17,14 @@ responsive & layout, design systems, plus the API/networking and algorithms a fr
 | `curriculum.md` | Going deep on a topic / recommending resources — the vetted, API-verified index |
 | `learning-sources.md` | Design-system work or an unfamiliar topic — how to learn from world-class code |
 | `web-animations.md` | Building or reviewing motion — animation, transitions, gestures (Emil Kowalski, MIT) |
+| `audit-rules.md` | Reviewing/auditing code — framework-specific defect checks (React today) for `code-reviewer` |
+| `improve-ui.md` | A UI design-consistency pass — audit the interface against its own design language |
 | `lessons.md` | Always relevant — durable lessons learned from real usage/reviews (the leveling record) |
 
 ## Design intelligence
-For visual/UI craft — styles, color palettes, font pairings, UX guidelines, chart types — reach for the
-**`ui-ux-pro-max`** skill (searchable design database, vendored MIT). It supplies the *what* (design
+For visual/UI craft — styles, color palettes, font pairings, UX guidelines, chart types — this pack
+bundles **`ui-ux-pro-max/`** (a searchable design database + Python search scripts, vendored MIT — see its
+`SOURCE.md`). It's part of the frontend field, not a global skill: query it for the *what* (design
 recommendations); this pack + `core/rigor.md` supply the *how* (states, a11y, verification).
 
 ## Default posture
@@ -31,4 +34,4 @@ speed (`core/rigor.md`).
 
 ## Adding to this pack
 New durable knowledge goes here, not in the core. Keep each file tight and high-signal — if a rule
-isn't load-bearing, cut it. When the ecosystem shifts, refresh via the `mastermind-levelup` skill.
+isn't load-bearing, cut it. When the ecosystem shifts, refresh via the `levelup` skill.

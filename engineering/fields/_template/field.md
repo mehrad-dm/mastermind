@@ -28,4 +28,4 @@ security are never traded for speed (`core/rigor.md`). <Add this field's own non
 
 ## Adding to this pack
 New durable knowledge goes here, not in the core. Keep each file tight and high-signal — if a rule
-isn't load-bearing, cut it. Refresh against the ecosystem via the `mastermind-levelup` skill.
+isn't load-bearing, cut it. Refresh against the ecosystem via the `levelup` skill.
