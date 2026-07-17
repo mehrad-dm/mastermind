@@ -1,0 +1,22 @@
+name: freshness
+
+# Weekly check that MasterMind's curated resources still resolve and the curriculum
+# hasn't gone stale (a nudge to run `levelup refresh`). Advisory by design: it runs on
+# a schedule and via manual dispatch, NOT on every push — link liveness is flaky and
+# must never block a commit. A red run means a curriculum link 404'd or DNS-failed.
+# See scripts/check-links.mjs.
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Mondays, 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-links.mjs

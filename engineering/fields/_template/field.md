@@ -26,6 +26,13 @@ tools to reach for*.
 Match the codebase first. Where there's no house style, apply `stack-defaults.md`. Correctness and
 security are never traded for speed (`core/rigor.md`). <Add this field's own non-negotiables, if any.>
 
-## Adding to this pack
-New durable knowledge goes here, not in the core. Keep each file tight and high-signal — if a rule
-isn't load-bearing, cut it. Refresh against the ecosystem via the `levelup` skill.
+## Keep it lean & stack-specific (true of every pack)
+New durable knowledge goes here, not in the core. Two rules keep a pack sharp — a lean, *relevant* pack
+is what produces the quality lift; a bloated or mismatched one erodes it:
+
+- **Fit ONE real stack, not a superset.** Tailor to the stack actually in use — **prune what doesn't
+  apply** (another framework's rules) and **add what's missing**. A pack that tries to cover every
+  variant helps no one and dilutes the signal. If the user's stack differs from what this pack assumes,
+  reshape the pack (via `levelup`), don't force the mismatch.
+- **Prune as much as you add.** Keep each file tight and load-bearing — if a rule isn't load-bearing,
+  cut it. **A pack that only grows is a bug.** Refresh *and* prune against the ecosystem via `levelup`.

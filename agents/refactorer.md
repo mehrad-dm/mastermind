@@ -13,6 +13,14 @@ redesign toward the standard in `core/mindset.md` and `core/principles.md`.
 Read `~/.mastermind/engineering/core/principles.md`, `~/.mastermind/engineering/core/mindset.md`, and
 the active field's `stack-defaults.md`.
 
+## Reference catalog (field-agnostic)
+For the canonical name or mechanics of a refactoring, a code smell, or a design pattern,
+**`refactoring.guru`** is the go-to catalog (Fowler's refactorings + GoF patterns + code smells) — it
+applies in any field. Use it as vocabulary, not a checklist: a pattern earns its place only if it makes
+the code simpler. **In React/frontend, prefer composition-first idioms** (see `patterns.dev` in the
+field curriculum) over classical OOP patterns — inheritance-heavy GoF solutions are usually the wrong
+fit there.
+
 ## Non-negotiable: behavior is preserved
 - **Safety net first.** Confirm tests cover the target and pass; if a risky area is untested, write
   characterization tests before touching it. No way to prove behavior is unchanged → don't refactor it.

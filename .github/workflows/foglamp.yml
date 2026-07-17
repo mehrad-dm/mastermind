@@ -1,0 +1,34 @@
+name: foglamp
+
+# Keeps the hosted Foglamp codebase map (foglamp.dev/scan/…) alive and current.
+# - on push that changes .foglamp/scan.json → republish the new map (same URL)
+# - monthly → refresh so the ~90-day expiry never lapses, even in quiet months
+# The map DATA lives in .foglamp/scan.json (committed, public — no secrets).
+# The edit token is the repo secret FOGLAMP_EDIT_TOKEN, never committed.
+
+on:
+  push:
+    branches: [master]
+    paths: ['.foglamp/scan.json']
+  schedule:
+    - cron: '0 6 1 * *' # 06:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh the Foglamp scan (same URL, resets expiry)
+        env:
+          TOKEN: ${{ secrets.FOGLAMP_EDIT_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "FOGLAMP_EDIT_TOKEN not set — add it as a repo secret to enable. Skipping."
+            exit 0
+          fi
+          jq -n --slurpfile d .foglamp/scan.json --arg t "$TOKEN" \
+            '{data: $d[0], editToken: $t}' \
+          | curl -sS -X POST https://api.foglamp.dev/scan \
+              -H 'content-type: application/json' --data @- \
+          | jq -r '"refreshed → \(.url) · expires \(.expiresAt)"'

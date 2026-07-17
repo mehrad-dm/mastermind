@@ -1,0 +1,10 @@
+[
+  { "id": "accessible-modal-dialog", "domain": "frontend", "difficulty": "medium" },
+  { "id": "search-fetch-race-condition", "domain": "frontend", "difficulty": "hard" },
+  { "id": "product-list-render-performance", "domain": "frontend", "difficulty": "medium" },
+  { "id": "dashboard-duplication-refactor", "domain": "frontend", "difficulty": "easy" },
+  { "id": "countdown-timer-stale-closure", "domain": "frontend", "difficulty": "medium" },
+  { "id": "document-endpoint-injection-idor", "domain": "backend", "difficulty": "medium" },
+  { "id": "order-schema-money-and-history", "domain": "backend", "difficulty": "hard" },
+  { "id": "free-slots-interval-math", "domain": "general", "difficulty": "medium" }
+]

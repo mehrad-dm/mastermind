@@ -13,7 +13,7 @@ AGENTS.md agent). You don't learn commands; you just talk, and it applies the ri
 ### Added
 
 - **Router** — `scripts/build-router.mjs` generates `engineering/ROUTER.md`, a deterministic manifest
-  so a task loads only the field/skill files it needs (~70% fewer tokens per task). No AI, no network.
+  so a task loads only the field/skill files it needs (~65% fewer tokens per task, measured). No AI, no network.
   Degrades safely: if the manifest is missing, MasterMind loads the field the normal way.
 - **`signature` skill — two modes.** Capture a team's real style into clean, name-free rules (private,
   Lab-gated); or write in the documented public style of a named engineer — grounded in their real
@@ -24,6 +24,12 @@ AGENTS.md agent). You don't learn commands; you just talk, and it applies the ri
   or client material can never reach the repo or its history.
 - **Frontend field:** a web-animations capability (Emil Kowalski) and framework-specific `audit-rules`
   for the `code-reviewer`.
+- **Honesty tooling:** a link-checker + weekly freshness CI, and a **multi-model eval suite**
+  (`evals/pilot-multimodel/`) with published results — the router's ~65% saving and per-model quality
+  deltas measured, misses included.
+- **Maps:** a bird's-eye [`MAP.md`](MAP.md) plus an auto-refreshed interactive map (Foglamp).
+- **Onboarding:** if a task's field has no pack, MasterMind offers a one-time setup and explains the
+  trade-off; every pack must fit one real stack and stay lean (prune as it grows).
 
 ### Changed
 

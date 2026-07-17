@@ -14,3 +14,8 @@ engineering/fields/*/*-coding-patterns/
 # Anchored to the repo root (leading slash) so it does NOT also ignore the
 # unrelated skills/lab/ skill directory.
 /lab/
+
+# Foglamp scan — commit .foglamp/scan.json (public architecture data, no secrets);
+# NEVER commit the lock file (holds the secret editToken). The token lives as the
+# GitHub Actions secret FOGLAMP_EDIT_TOKEN, used by .github/workflows/foglamp.yml.
+/.foglamp/scan.lock.json

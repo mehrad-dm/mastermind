@@ -105,6 +105,12 @@ teaching-comments — per their public work"). Prefer their *principles* over su
 signature is how someone decides, not just how they format. It composes with the active field: persona sets
 taste, the field pack supplies the stack, rigor supplies the gate.
 
+**Self-check before you claim the style (guards against shallow mimicry):** for each trait, ask *"can I
+point to a real sample of their public work that shows it?"* — a repo, a talk, a post. If you can't ground
+a trait in something they actually wrote, **drop it** rather than inventing a plausible-sounding one. A
+stereotype of someone ("they'd use lots of patterns") is the failure mode; the real, cited habit is the
+goal. When in doubt, say which traits you're confident about and which you're inferring.
+
 ## Gotchas
 - **A convention is not a defect** — the commonest failure is "fixing" house style. When unsure, conform.
 - **Negative signal dominates** — capture approvals too, or rules drift into timid nitpicks; retire a rule that keeps getting dismissed.

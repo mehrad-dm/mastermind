@@ -1,0 +1,10 @@
+[
+  { "id": "typeahead-stale-race", "domain": "frontend", "difficulty": "hard" },
+  { "id": "recurring-event-dst", "domain": "frontend", "difficulty": "hard" },
+  { "id": "modal-focus-trap-audit", "domain": "frontend", "difficulty": "hard" },
+  { "id": "currency-input-minor-units", "domain": "frontend", "difficulty": "hard" },
+  { "id": "transfer-endpoint-hardening", "domain": "backend", "difficulty": "hard" },
+  { "id": "orders-keyset-pagination", "domain": "backend", "difficulty": "hard" },
+  { "id": "webhook-receiver-exactly-once", "domain": "backend", "difficulty": "hard" },
+  { "id": "token-bucket-monotonic", "domain": "general", "difficulty": "hard" }
+]

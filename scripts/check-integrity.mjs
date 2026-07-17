@@ -69,10 +69,12 @@ const rootReadme = read('README.md')
 for (const dir of skillDirs) {
   if (dir.startsWith('mastermind-') && !rootReadme.includes(dir)) fail(`README.md: first-party skill "${dir}" not listed`)
 }
-// flag any mastermind-* name claimed in an index that has no matching dir
+// flag any `mastermind-*` skill name claimed in an index that has no matching dir.
+// Only backticked refs count — that's how skills are cited — so URLs/slugs like
+// foglamp.dev/scan/mastermind-xyz don't trip it.
 for (const file of ['skills/README.md', 'README.md']) {
-  for (const m of read(file).matchAll(/mastermind-[a-z-]+/g)) {
-    if (!skillDirs.includes(m[0])) fail(`${file}: lists "${m[0]}" — no such skill dir`)
+  for (const m of read(file).matchAll(/`(mastermind-[a-z-]+)`/g)) {
+    if (!skillDirs.includes(m[1])) fail(`${file}: lists "${m[1]}" — no such skill dir`)
   }
 }
 

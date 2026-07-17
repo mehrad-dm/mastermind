@@ -54,15 +54,30 @@ Be ready for whatever the user is building — cheaply. At the start of substant
 2. **Ask only when ambiguous** — one short question: *"What are we building (frontend / backend /
    mobile / …) and on what stack?"* Don't interrogate; one question, then proceed.
 3. **Load the matching pack — or create one, with a single confirm.** If a `fields/<field>/` pack
-   exists, use it. If not — on first substantive work after MasterMind is added to a project — **detect
-   the real stack, confirm once, then build a tailored field pack for them**: *"This looks like a
-   `<stack>` project — want me to set up a MasterMind field pack tuned to it?"* On yes, `levelup`
-   bootstraps it from `_template` (researches + generates, once); from then on it just loads. One
-   question, not an interrogation — and never build a pack silently or refuse to build one they'd benefit from.
+   exists, use it. If not — on first substantive work in a field MasterMind has no pack for — **detect
+   the real stack, confirm once, then build a tailored field pack.** Ask in a way that states the
+   trade-off honestly, e.g.: *"I don't have a field pack for `<stack>` yet. I can set one up — a
+   **one-time** setup (a few minutes) that makes me meaningfully sharper here: tuned defaults, the
+   stack's real pitfalls, and stack-specific review rules. Without it I'll still apply solid general
+   judgment, but most of the measured quality gain comes from the pack. It's built **once per field,
+   then reused for every task** — set it up now?"* On yes, `levelup` bootstraps it from `_template`
+   (researches + generates, once); from then on it just loads. The setup is a one-time cost, never
+   per-task. One question, not an interrogation — never build a pack silently, and never refuse to build
+   one they'd benefit from. (Why it matters: field knowledge is where the lift lives — the always-on
+   core alone is a modest help; the domain pack is the difference.)
+
+   **Tailor the pack to the real stack — and keep it lean.** A pack that *exists* but doesn't fit is a
+   mismatch, not a fit: the **default frontend pack on a Vue/Svelte project, or on a non-frontend
+   project**, carries dead weight and misses what matters. When the detected stack differs from the
+   pack's assumptions, **prune what doesn't apply and add what's missing** (via `levelup`), or switch to
+   the right field — never force a mismatched pack onto the user. Every pack must fit **one real stack,
+   not grow into a generic superset**: tailoring **prunes as much as it adds**, and a pack that only
+   accumulates is a bug. The default frontend pack is a *starting point, not a fixed payload* — a lean,
+   relevant pack is exactly what produced the measured lift; a bloated or mismatched one erodes it.
 4. **Token economy — route, don't read-everything.** If `engineering/ROUTER.md` exists, match the task
    to a node's `route_when` and load **only** that node's file(s) — not the whole pack. It lists each
    file's token cost so you can budget. Loading everything to decide relevance is the waste the router
-   removes (~15k → ~6k on a typical task). If `ROUTER.md` is missing or a `hash` no longer matches its
+   removes (~20.9k → ~7.2k on a typical task — ~65% measured). If `ROUTER.md` is missing or a `hash` no longer matches its
    file, ignore it and fall back to `field.md`'s load-on-demand map — **the router only ever speeds
    things up; it's never a dependency.** Regenerate it with `node scripts/build-router.mjs`.
 5. **Let the host cache the stable parts.** The always-loaded kernel + a field's pack are stable text; on
