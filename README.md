@@ -25,8 +25,7 @@ No app, no dependencies — just text that loads into your AI. **You don't learn
 normally** ("build me X", "why is this slow?", "review this") and MasterMind applies the right discipline
 automatically. It **improves itself** over time, and it's **tool-agnostic** — one brain for every editor.
 
-> **🗺️ New here?** See the whole thing at a glance in [`MAP.md`](MAP.md), or explore the
-> [**live interactive map**](https://foglamp.dev/scan/mastermind-mkfscq).
+> **🗺️ New here?** Explore the <a href="https://foglamp.dev/scan/mastermind-mkfscq" target="_blank" rel="noopener"><b>live interactive map</b></a>.
 
 ## Why it exists
 
