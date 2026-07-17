@@ -1,0 +1,4 @@
+# One term per line, case-insensitive. Any staged change containing these is BLOCKED.
+# This file is gitignored — the sensitive terms themselves must never be committed.
+# Add: company/client names, product/app names, internal package scopes, colleague names,
+# private hostnames/domains. Keep it updated as you capture more.

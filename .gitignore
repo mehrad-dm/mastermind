@@ -11,4 +11,6 @@ engineering/fields/*/*-coding-patterns/
 # ── Lab: quarantine for raw confidential input. NEVER committed. ──────────────
 # Sensitive material lands in lab/ only. Analyse it there; commit only the
 # genericized OUTPUT (patterns, not identities). Enforced by .githooks/pre-commit.
-lab/
+# Anchored to the repo root (leading slash) so it does NOT also ignore the
+# unrelated skills/lab/ skill directory.
+/lab/

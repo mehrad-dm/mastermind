@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# MasterMind guard — last line of defence before anything reaches a remote.
+#
+# pre-commit can be skipped (--no-verify), and history can contain commits made
+# before the guard existed. This scans every commit actually being pushed.
+# Today's lesson: the leak was a commit that was already made — the push is the
+# moment it becomes irreversible. Guard the irreversible step.
+#
+# Escape hatch:  ALLOW_SENSITIVE=1 git push ...
+
+set -uo pipefail
+
+RED=$'\033[0;31m'; YEL=$'\033[0;33m'; GRN=$'\033[0;32m'; NC=$'\033[0m'
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+DENYLIST="$REPO_ROOT/lab/.denylist"
+
+if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
+  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1 — push guard BYPASSED.${NC}"
+  exit 0
+fi
+
+[ -f "$DENYLIST" ] || exit 0
+TERMS=$(grep -vE '^\s*(#|$)' "$DENYLIST" | sed 's/[].[^$\\*+?()|{}]/\\&/g' | paste -sd '|' -)
+[ -n "$TERMS" ] || exit 0
+
+FAIL=0
+# stdin: <local ref> <local sha> <remote ref> <remote sha>
+while read -r _lref lsha _rref rsha; do
+  [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
+
+  if [ "$rsha" = "0000000000000000000000000000000000000000" ]; then
+    RANGE="$lsha"          # new branch — scan its whole history
+  else
+    RANGE="$rsha..$lsha"   # only what's new
+  fi
+
+  for rev in $(git rev-list "$RANGE" 2>/dev/null); do
+    HIT=$(git grep -liE "$TERMS" "$rev" -- '*.md' '*.ts' '*.tsx' '*.js' '*.json' 2>/dev/null || true)
+    if [ -n "$HIT" ]; then
+      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") contains confidential terms:${NC}"
+      printf '%s\n' "$HIT" | sed 's/^/    /' | head -5
+      FAIL=1
+    fi
+  done
+done
+
+if [ "$FAIL" -ne 0 ]; then
+  printf '\n%s\n' "${RED}Push aborted — confidential data would become public and permanent.${NC}"
+  printf '%s\n' "Rewrite the offending commits before pushing (git filter-repo / interactive rebase)."
+  exit 1
+fi
+
+printf '%s\n' "${GRN}✓ push guard: clean${NC}"
+exit 0

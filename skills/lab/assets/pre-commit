@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+#
+# MasterMind guard — blocks confidential data from ever entering a commit.
+#
+# Two layers:
+#   1. Quarantine   — nothing from lab/ (or a *-coding-patterns pack) may be staged.
+#   2. Content scan — staged text is scanned against a LOCAL denylist + secret patterns.
+#
+# The denylist lives at lab/.denylist and is gitignored: the sensitive terms
+# themselves must never be committed. This hook is generic and safe to publish.
+#
+# Escape hatch (use only when you are certain):  ALLOW_SENSITIVE=1 git commit ...
+
+set -uo pipefail
+
+RED=$'\033[0;31m'; YEL=$'\033[0;33m'; GRN=$'\033[0;32m'; NC=$'\033[0m'
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+DENYLIST="$REPO_ROOT/lab/.denylist"
+FAIL=0
+
+if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
+  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1 — MasterMind guard BYPASSED. You own this.${NC}"
+  exit 0
+fi
+
+staged() { git diff --cached --name-only --diff-filter=ACMR; }
+
+# ---- Layer 1: quarantine — lab/ and client packs must never be staged --------
+QUARANTINED=$(staged | grep -E '^lab/|-coding-patterns' || true)
+if [ -n "$QUARANTINED" ]; then
+  printf '%s\n' "${RED}✖ BLOCKED — quarantined path staged:${NC}"
+  printf '    %s\n' $QUARANTINED
+  printf '%s\n' "  lab/ is for raw confidential input. It must never be committed."
+  FAIL=1
+fi
+
+# ---- Layer 2: content scan against the local denylist ------------------------
+if [ -f "$DENYLIST" ]; then
+  # Build an alternation of non-comment, non-empty terms.
+  TERMS=$(grep -vE '^\s*(#|$)' "$DENYLIST" | sed 's/[].[^$\\*+?()|{}]/\\&/g' | paste -sd '|' -)
+  if [ -n "$TERMS" ]; then
+    # Scan only ADDED lines of staged text (not whole files, not deletions).
+    HITS=$(git diff --cached -U0 -- . ':(exclude)lab/**' 2>/dev/null \
+            | grep -E '^\+' | grep -v '^+++' \
+            | grep -inE "$TERMS" || true)
+    if [ -n "$HITS" ]; then
+      printf '%s\n' "${RED}✖ BLOCKED — confidential term(s) found in staged changes:${NC}"
+      printf '%s\n' "$HITS" | head -15 | sed 's/^/    /'
+      COUNT=$(printf '%s\n' "$HITS" | wc -l | tr -d ' ')
+      [ "$COUNT" -gt 15 ] && printf '    … and %s more\n' "$((COUNT - 15))"
+      printf '%s\n' "  Move the raw material to lab/ and commit only the genericized output."
+      FAIL=1
+    fi
+  fi
+else
+  printf '%s\n' "${YEL}⚠  no lab/.denylist found — term scan skipped${NC}"
+fi
+
+# ---- Layer 3: real credential patterns (always on) ---------------------------
+SECRETS=$(git diff --cached -U0 | grep -E '^\+' | grep -v '^+++' \
+  | grep -InE '(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' || true)
+if [ -n "$SECRETS" ]; then
+  printf '%s\n' "${RED}✖ BLOCKED — looks like a real credential:${NC}"
+  printf '%s\n' "$SECRETS" | head -5 | sed 's/^/    /'
+  FAIL=1
+fi
+
+if [ "$FAIL" -ne 0 ]; then
+  printf '\n%s\n' "${RED}Commit aborted by the MasterMind guard.${NC}"
+  printf '%s\n' "Fix the above, or override deliberately: ${YEL}ALLOW_SENSITIVE=1 git commit …${NC}"
+  exit 1
+fi
+
+printf '%s\n' "${GRN}✓ MasterMind guard: clean${NC}"
+exit 0

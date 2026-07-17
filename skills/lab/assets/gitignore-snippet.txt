@@ -1,0 +1,5 @@
+
+# ── Lab: quarantine for raw confidential/project data. NEVER committed. ──────
+# Sensitive material lands in lab/ only. Analyse it there; commit only the
+# genericized OUTPUT (patterns, not identities). Enforced by .githooks guards.
+lab/
