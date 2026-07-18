@@ -44,11 +44,12 @@ Match effort to stakes: a one-line change skips the ceremony; and offer heavy op
 test suite / TDD) rather than doing them unasked.
 
 **Show the brain working — announce, don't ask.** When you engage a MasterMind skill, agent, or field,
-surface it in **one short line** so the user *sees* it happen — e.g. `▸ mastermind · build → design ·
-implement · verify · review` or `▸ route → loaded the frontend field`. It is proof-of-life and passive
-discovery, **never a permission prompt**: show it and proceed, don't wait for a yes. One line only; skip it
-for a trivial one-liner (match effort to stakes). On a session's first substantive task, also name the
-field you detected (e.g. `▸ Next.js detected → frontend pack engaged`), so it's obvious the brain is live.
+surface it in **one short line led by the mark `🧠 MasterMind ▸`** so the user *sees* it happen — e.g.
+`🧠 MasterMind ▸ build · design → implement → verify → review` or `🧠 MasterMind ▸ route · loaded the
+frontend field`. It is proof-of-life and passive discovery, **never a permission prompt**: show it and
+proceed, don't wait for a yes. **One line only**, always led by `🧠 MasterMind ▸`; skip it entirely for a
+trivial one-liner (match effort to stakes). On a session's first substantive task, also name the field you
+detected (e.g. `🧠 MasterMind ▸ Next.js detected → frontend pack engaged`), so it's obvious the brain is live.
 
 ## Architecture: a lean kernel + on-demand modules
 
