@@ -4,6 +4,14 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.22.4] — 2026-07-19
+
+### Changed
+
+- **Site/UX polish** — consistent caption spacing under tables/bars/maps, a fix for the inline `--global`
+  token (Geist-Mono leading-hyphen was eating the space; now an inline-code pill), footer restored, and
+  version synced across repo + site. No changes to the brain itself since 0.22.0.
+
 ## [0.22.0] — 2026-07-19
 
 Adopt three proven agent-engineering patterns as **portable discipline** (works on any AI model), all in
