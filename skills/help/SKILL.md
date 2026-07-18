@@ -66,3 +66,8 @@ the right one and tells you.
 If MasterMind isn't set up for this project yet (no field pack for your stack), it will offer a **one-time
 setup** — say *"init"* or just start working and it'll ask. Verify your install anytime with
 `~/.mastermind/install.sh --check`.
+
+**Two optional preferences** (per project, both **off** by default, kept in `.mastermind/prefs.md`):
+- **cycle report** — a written write-up (markdown/html) at the end of a build/QA cycle. Turn on: *"reports on"*.
+- **plan-first** — on bigger tasks, MasterMind shows the plan and **waits for your OK before editing**, then
+  announces *`🧠 MasterMind ▸ implementing the plan`* and proceeds. Turn on: *"plan first from now on"*.

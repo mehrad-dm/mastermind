@@ -63,15 +63,18 @@ Both paths finish with a **~5-line** report so the setup is visible and the user
 
 Then proceed straight into their actual task. Don't stop and wait after the report.
 
-## One optional preference — offer once, then remember
-After the ready report, offer the **cycle report** a single time — skippable, default **off**:
+## Optional preferences — offer once, then remember
+After the ready report, offer these once — both skippable, both default **off**:
 
-> *"Optional: want a short written report at the end of each build/QA cycle? **off** (default) · **markdown** · **html** — I'll remember it."*
+> *"Two optional preferences, both off by default — I'll remember your answers:*
+> *(1) a short written **report** at the end of each build/QA cycle? (markdown / html)*
+> *(2) **plan-first** — on bigger tasks, should I show the plan and wait for your OK before editing?"*
 
-Record the answer in **`.mastermind/prefs.md`** (create it) as one line — `cycle-report: off|ask|markdown|html`.
-Don't push it: if they don't care or don't answer, default `off` and move straight on. They can change it
-anytime ("reports on", "always html"). The `report` skill reads this preference. (This is the only optional
-question init asks — never turn setup into an interrogation.)
+Record in **`.mastermind/prefs.md`** (create it), one line each — `cycle-report: off|ask|markdown|html` and
+`plan-first: off|on`. Don't push it: if they don't care or don't answer, default both `off` and move straight
+on. They can change either anytime ("reports on", "plan first from now on"). The `report` skill reads
+`cycle-report`; the `build` skill's plan-first gate reads `plan-first`. (Keep it to this single light offer —
+never turn setup into an interrogation.)
 
 ## Gotchas
 - **Don't re-initialize** a project that's already set up — check for a loaded/matching field pack first.

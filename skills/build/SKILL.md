@@ -25,6 +25,14 @@ a foundation gets the full loop. Don't perform ceremony the task doesn't warrant
 3. **Decide the stack** — apply the active field's `stack-defaults.md`. Choose the simplest thing that
    fully works; deviate only for a stated reason. Consult `mentors.md` if a call is contested.
 
+> **Plan-first gate (opt-in, off by default).** If the project's **`plan-first`** preference is on
+> (`.mastermind/prefs.md`: `plan-first: on`) — or the user asks to "plan first" — **do not start editing yet.**
+> Present a concise plan from steps 1–3: the **goal**, the **approach**, the **files you'll touch**, the
+> **steps**, and any risk/decision worth a look. Then **stop and wait for the user's go-ahead** (this
+> overrides the usual "decide and do" for this project — they opted in). If they adjust it, fold that in and
+> re-show. **On approval, announce `🧠 MasterMind ▸ implementing the plan` and proceed to step 4.** Skip the
+> gate entirely for a trivial one-liner (match effort to stakes) — it's for changes worth reviewing first.
+
 4. **Implement to rigor** (`~/.mastermind/engineering/core/rigor.md`) — build against the design. Handle the unhappy paths
    (null/empty/loading/error/zero/one/many/offline/unauthorized/malformed). Types honest, no lazy
    placeholders, no dead code. Single-purpose units. Style like the surrounding code.
