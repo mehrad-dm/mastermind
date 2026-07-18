@@ -43,8 +43,19 @@ regressions cheaply; full audits are for deliberate sweeps.
 6. **Stack fit** — deviations from the sensible default without a reason; anti-patterns.
 7. **Consistency** — does it match the surrounding codebase's conventions?
 
-## Verify, don't just eyeball
-Where feasible, run typecheck/lint/tests/build to confirm claims rather than assuming.
+## Verify every finding before you report it (the signal gate)
+A finding you can't reproduce is noise. Before a bug reaches the output, **demonstrate the failure** —
+trace the exact inputs → the wrong result, or run the typecheck/lint/test/build that proves it. If you
+can't show it failing, **drop it** (or downgrade to a one-line question). Report only what survives
+verification — this is what separates real bugs from plausible-sounding ones, and a padded review trains
+people to ignore you.
+
+**Substantial or high-stakes diff? fan out.** Do a **second independent pass** in a fresh context and keep
+only findings that a reproduce step (or both passes) confirms — parallel reviewers catch what one misses.
+Opt-in by stakes: a normal diff gets **one** verified pass; reserve the fan-out for big changes (it costs
+real tokens). *On Claude Code,* `/code-review ultra` runs exactly this — a fleet with independent
+verification — in the cloud (0 local tokens); a good heavy option, but the discipline above is the portable
+core that works on any model.
 
 ## Output
 Ranked findings, most severe first. Tag each with **category** (correctness · security · types ·

@@ -89,6 +89,10 @@ keeps a large library lean and navigable (the lesson from the best skill kits):
 - **One job.** The mega-skill (commits + PRs + changelog + …) is the top mistake. Split it.
 - **Description = a routing rule** — specific enough that it activates at exactly the right moment, and
   not otherwise. **Unambiguous:** if a human can't say which skill applies, neither can the agent.
+- **Phrase `route_when` / the description as the *question the user would actually ask*, in their words** —
+  not a topic label. The router matches by meaning, so `"why is this slow?"` routes far better than
+  `"performance optimization"`. A knowledge file is only as findable as the question written on its front
+  (the KB lesson) — lead with the real trigger, and freshen it in `refresh` when the way people ask shifts.
 - **Only what pushes away from defaults.** Don't restate what the model already does well; the
   highest-signal part is a **Gotchas** section — the failure points it hits *without* the skill. (Anthropic.)
 - **Lean body, detail on demand** — core instructions fit on a phone screen; push edge cases into

@@ -4,6 +4,27 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.22.0] — 2026-07-19
+
+Adopt three proven agent-engineering patterns as **portable discipline** (works on any AI model), all in
+**on-demand files** — the always-loaded kernel is untouched, so the per-task baseline cost is unchanged.
+
+### Added
+
+- **Rubric-driven self-correcting loop** (`core/agent-loop.md`) — for non-trivial work, write the pass/fail
+  done-rubric up front (reusing `spec`'s acceptance criteria) and loop against it, self-correcting until it's
+  green, without stopping to ask mid-loop. **Bounded: ≤2 correction passes**, then surface/escalate; skipped
+  for one-liners. (Anthropic "outcomes" / long-horizon self-correction.)
+- **Verified review + opt-in fan-out** (`code-reviewer`) — every finding must be **reproduced before it's
+  reported** (drop what you can't demonstrate); substantial diffs get a second independent pass. Higher
+  signal, fewer style-nits. On Claude Code, `/code-review ultra` is the cloud version; the discipline is the
+  portable core. (ultrareview.)
+- **`route_when` = the question the user would ask** (`levelup` authoring) — phrase routing triggers as the
+  real question ("why is this slow?"), not a topic label, so the router matches intent more precisely.
+  (Knowledge-base retrieval lesson — Cerebras.)
+- **`🧠 MasterMind ▸` proof-of-life mark** — the announce line now leads with the name + brain logo, so you
+  see MasterMind engage on each task (one line, skipped for trivial).
+
 ## [0.21.0] — 2026-07-19
 
 ### Added

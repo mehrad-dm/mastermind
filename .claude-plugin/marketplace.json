@@ -11,8 +11,8 @@
     {
       "name": "mastermind",
       "source": "./",
-      "description": "Genius-builder skills & agents: init, build, debug, perf, qa, spec, learn, signature, route, levelup, help + architect, code-reviewer, refactorer, tech-scout. Experimental (v0.21.0).",
-      "version": "0.21.0",
+      "description": "Genius-builder skills & agents: init, build, debug, perf, qa, spec, learn, signature, route, levelup, help + architect, code-reviewer, refactorer, tech-scout. Experimental (v0.22.0).",
+      "version": "0.22.0",
       "author": {
         "name": "mehrad-dm"
       },

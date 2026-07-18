@@ -26,6 +26,21 @@ closes without the user:
   plausible code that silently mishandles edge cases.)
 - Prefer fixing **root causes, not symptoms** — never suppress an error to make a check pass.
 
+### Loop against an explicit rubric (the "outcomes" pattern)
+
+Make the check concrete: for non-trivial work, write the **done-rubric** — the pass/fail criteria that
+actually mean *done* (reuse the acceptance criteria `spec` already produces; don't duplicate them). Then run
+the loop **against the rubric**, self-correcting each miss until every item is green — **without stopping to
+ask mid-loop**. That's the long-horizon habit: keep closing the gap yourself, don't hand back a half-finished
+result and ask "is this ok?".
+
+**Bound it — this is where tokens hide.** Cap self-correction at **~2 passes**. If the rubric still isn't
+green, *stop looping* and surface it: report exactly what's failing and why, then ask or escalate (stronger
+model / rethink the approach) — a third and fourth patch usually means the context is polluted or the design
+is wrong (see *Tight feedback loops*). **Skip the rubric entirely for trivial one-liners** — effort matches
+stakes. The rubric is a few cheap lines; the loop only costs more when it's catching real gaps, which is far
+cheaper than shipping the bug and debugging it later.
+
 ## Explore → Plan → Implement → Commit
 
 1. **Explore** — read the relevant files and existing patterns first. Understand before acting.
