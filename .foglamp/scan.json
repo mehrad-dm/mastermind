@@ -7,99 +7,486 @@
     "iconDomain": "mastermind.mehrad.me",
     "date": "2026-07-18"
   },
-  "stats": { "agents": 4, "models": 1, "tools": 13, "integrations": 5 },
+  "stats": {
+    "agents": 4,
+    "models": 1,
+    "tools": 16,
+    "integrations": 5
+  },
   "topModels": [
-    { "id": "claude", "label": "Claude", "domain": "claude.ai" }
+    {
+      "id": "claude",
+      "label": "Claude",
+      "domain": "claude.ai"
+    }
   ],
   "topTools": [
-    { "id": "build", "label": "build" },
-    { "id": "debug", "label": "debug" },
-    { "id": "qa", "label": "qa" },
-    { "id": "spec", "label": "spec" },
-    { "id": "learn", "label": "learn" },
-    { "id": "signature", "label": "signature" },
-    { "id": "route", "label": "route" },
-    { "id": "levelup", "label": "levelup" },
-    { "id": "explain", "label": "explain" },
-    { "id": "handoff", "label": "handoff" }
+    {
+      "id": "build",
+      "label": "build"
+    },
+    {
+      "id": "debug",
+      "label": "debug"
+    },
+    {
+      "id": "qa",
+      "label": "qa"
+    },
+    {
+      "id": "spec",
+      "label": "spec"
+    },
+    {
+      "id": "learn",
+      "label": "learn"
+    },
+    {
+      "id": "signature",
+      "label": "signature"
+    },
+    {
+      "id": "route",
+      "label": "route"
+    },
+    {
+      "id": "levelup",
+      "label": "levelup"
+    },
+    {
+      "id": "explain",
+      "label": "explain"
+    },
+    {
+      "id": "handoff",
+      "label": "handoff"
+    }
   ],
   "topIntegrations": [
-    { "id": "claudecode", "label": "Claude Code", "domain": "claude.ai" },
-    { "id": "codex", "label": "Codex", "domain": "openai.com" },
-    { "id": "cursor", "label": "Cursor", "domain": "cursor.com" },
-    { "id": "copilot", "label": "Copilot", "domain": "github.com" },
-    { "id": "github", "label": "GitHub", "domain": "github.com" }
+    {
+      "id": "claudecode",
+      "label": "Claude Code",
+      "domain": "claude.ai"
+    },
+    {
+      "id": "codex",
+      "label": "Codex",
+      "domain": "openai.com"
+    },
+    {
+      "id": "cursor",
+      "label": "Cursor",
+      "domain": "cursor.com"
+    },
+    {
+      "id": "copilot",
+      "label": "Copilot",
+      "domain": "github.com"
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "domain": "github.com"
+    }
   ],
   "graph": {
     "nodes": [
-      { "id": "talk", "label": "Just talk", "kind": "entry", "sub": "no commands to learn" },
-      { "id": "install", "label": "install.sh", "kind": "entry", "sub": "symlinks brain to ~/.claude", "sourceRef": "install.sh" },
-      { "id": "claude", "label": "Claude", "kind": "model", "sub": "Opus · Sonnet · Haiku", "domain": "claude.ai", "detail": "MasterMind is model-agnostic but Claude-first; the model reads the brain, it is not called by it." },
-      { "id": "claudecode", "label": "Claude Code", "kind": "external", "domain": "claude.ai" },
-      { "id": "codex", "label": "Codex", "kind": "external", "domain": "openai.com" },
-      { "id": "cursor", "label": "Cursor", "kind": "external", "domain": "cursor.com" },
-      { "id": "copilot", "label": "Copilot", "kind": "external", "domain": "github.com" },
-
-      { "id": "kernel", "label": "Kernel", "kind": "service", "sub": "CLAUDE.md — always-on", "group": "The brain", "sourceRef": "CLAUDE.md", "detail": "Identity, prime directives, and the operating loop the AI reads first — the only always-on layer (~1.7k tokens)." },
-      { "id": "core", "label": "Universal core", "kind": "service", "sub": "mindset · principles · rigor", "group": "The brain", "sourceRef": "engineering/core/", "detail": "Field-agnostic how-to-think: mindset, principles, rigor, agent-loop, product-sense." },
-      { "id": "router", "label": "The router", "kind": "service", "sub": "loads only what a task needs", "group": "The brain", "sourceRef": "scripts/build-router.mjs", "detail": "Generates ROUTER.md so a task loads only the 1–2 files it needs — measured ~65% fewer tokens. No AI, no network." },
-      { "id": "manifest", "label": "ROUTER.md", "kind": "store", "sub": "routing manifest", "group": "The brain", "sourceRef": "engineering/ROUTER.md" },
-      { "id": "field", "label": "Frontend field", "kind": "service", "sub": "the one domain pack", "group": "The brain", "sourceRef": "engineering/fields/frontend/", "detail": "Domain knowledge: stack-defaults, mentors, curriculum, lessons, audit-rules, web-animations, a design DB." },
-      { "id": "template", "label": "Field template", "kind": "service", "sub": "shape for new fields", "group": "The brain", "sourceRef": "engineering/fields/_template/" },
-
-      { "id": "build", "label": "build", "kind": "tool", "sub": "design → verify → review", "group": "Library", "sourceRef": "skills/build/" },
-      { "id": "debug", "label": "debug", "kind": "tool", "sub": "evidence-first debugging", "group": "Library", "sourceRef": "skills/debug/" },
-      { "id": "qa", "label": "qa", "kind": "tool", "sub": "prove it works + tests", "group": "Library", "sourceRef": "skills/qa/" },
-      { "id": "signature", "label": "signature", "kind": "tool", "sub": "code in a chosen voice", "group": "Library", "sourceRef": "skills/signature/", "detail": "Two modes: capture a team's real style into rules, or write in a named engineer's documented style." },
-      { "id": "levelup", "label": "levelup", "kind": "tool", "sub": "improve the brain", "group": "Library", "sourceRef": "skills/levelup/" },
-      { "id": "moreskills", "label": "+8 more skills", "kind": "tool", "sub": "route·spec·learn·explain·spike·…", "group": "Library" },
-      { "id": "architect", "label": "architect", "kind": "agent", "sub": "design before code", "group": "Library", "sourceRef": "agents/architect.md" },
-      { "id": "reviewer", "label": "code-reviewer", "kind": "agent", "sub": "convention vs correctness", "group": "Library", "sourceRef": "agents/code-reviewer.md", "detail": "Reviews a diff against the rigor gate; proposes fixes, never applies them." },
-      { "id": "refactorer", "label": "refactorer", "kind": "agent", "sub": "behavior-preserving redesign", "group": "Library", "sourceRef": "agents/refactorer.md" },
-      { "id": "techscout", "label": "tech-scout", "kind": "agent", "sub": "adopt vs build decisions", "group": "Library", "sourceRef": "agents/tech-scout.md" },
-
-      { "id": "hooks", "label": "Commit guards", "kind": "service", "sub": "pre-commit / pre-push", "group": "Safety & honesty", "sourceRef": ".githooks/", "detail": "Block any private/client data, denylisted names, or secrets from being committed or pushed." },
-      { "id": "lab", "label": "Lab quarantine", "kind": "store", "sub": "private data, gitignored", "group": "Safety & honesty", "sourceRef": "lab/" },
-      { "id": "integrity", "label": "Integrity check", "kind": "service", "sub": "indexes can't lie", "group": "Safety & honesty", "sourceRef": "scripts/check-integrity.mjs" },
-      { "id": "links", "label": "Link check", "kind": "service", "sub": "curriculum stays live", "group": "Safety & honesty", "sourceRef": "scripts/check-links.mjs" },
-      { "id": "evals", "label": "Evals", "kind": "store", "sub": "the honesty apparatus", "group": "Safety & honesty", "sourceRef": "evals/", "detail": "Baseline-vs-treatment rubric evals, blind-judged, results published — misses included." },
-      { "id": "ci", "label": "GitHub Actions CI", "kind": "cron", "sub": "integrity + weekly freshness", "group": "Safety & honesty", "sourceRef": ".github/workflows/" }
+      {
+        "id": "talk",
+        "label": "Just talk",
+        "kind": "entry",
+        "sub": "no commands to learn"
+      },
+      {
+        "id": "install",
+        "label": "install.sh",
+        "kind": "entry",
+        "sub": "symlinks brain to ~/.claude",
+        "sourceRef": "install.sh"
+      },
+      {
+        "id": "claude",
+        "label": "Claude",
+        "kind": "model",
+        "sub": "Opus · Sonnet · Haiku",
+        "domain": "claude.ai",
+        "detail": "MasterMind is model-agnostic but Claude-first; the model reads the brain, it is not called by it."
+      },
+      {
+        "id": "claudecode",
+        "label": "Claude Code",
+        "kind": "external",
+        "domain": "claude.ai"
+      },
+      {
+        "id": "codex",
+        "label": "Codex",
+        "kind": "external",
+        "domain": "openai.com"
+      },
+      {
+        "id": "cursor",
+        "label": "Cursor",
+        "kind": "external",
+        "domain": "cursor.com"
+      },
+      {
+        "id": "copilot",
+        "label": "Copilot",
+        "kind": "external",
+        "domain": "github.com"
+      },
+      {
+        "id": "kernel",
+        "label": "Kernel",
+        "kind": "service",
+        "sub": "CLAUDE.md — always-on",
+        "group": "The brain",
+        "sourceRef": "CLAUDE.md",
+        "detail": "Identity, prime directives, and the operating loop the AI reads first — the only always-on layer (~1.7k tokens)."
+      },
+      {
+        "id": "core",
+        "label": "Universal core",
+        "kind": "service",
+        "sub": "mindset · principles · rigor",
+        "group": "The brain",
+        "sourceRef": "engineering/core/",
+        "detail": "Field-agnostic how-to-think: mindset, principles, rigor, agent-loop, product-sense."
+      },
+      {
+        "id": "router",
+        "label": "The router",
+        "kind": "service",
+        "sub": "loads only what a task needs",
+        "group": "The brain",
+        "sourceRef": "scripts/build-router.mjs",
+        "detail": "Generates ROUTER.md so a task loads only the 1–2 files it needs — measured ~65% fewer tokens. No AI, no network."
+      },
+      {
+        "id": "manifest",
+        "label": "ROUTER.md",
+        "kind": "store",
+        "sub": "routing manifest",
+        "group": "The brain",
+        "sourceRef": "engineering/ROUTER.md"
+      },
+      {
+        "id": "field",
+        "label": "Frontend field",
+        "kind": "service",
+        "sub": "the one domain pack",
+        "group": "The brain",
+        "sourceRef": "engineering/fields/frontend/",
+        "detail": "Domain knowledge: stack-defaults, mentors, curriculum, lessons, audit-rules, web-animations, a design DB."
+      },
+      {
+        "id": "template",
+        "label": "Field template",
+        "kind": "service",
+        "sub": "shape for new fields",
+        "group": "The brain",
+        "sourceRef": "engineering/fields/_template/"
+      },
+      {
+        "id": "build",
+        "label": "build",
+        "kind": "tool",
+        "sub": "design → verify → review",
+        "group": "Library",
+        "sourceRef": "skills/build/"
+      },
+      {
+        "id": "debug",
+        "label": "debug",
+        "kind": "tool",
+        "sub": "evidence-first debugging",
+        "group": "Library",
+        "sourceRef": "skills/debug/"
+      },
+      {
+        "id": "qa",
+        "label": "qa",
+        "kind": "tool",
+        "sub": "prove it works + tests",
+        "group": "Library",
+        "sourceRef": "skills/qa/"
+      },
+      {
+        "id": "signature",
+        "label": "signature",
+        "kind": "tool",
+        "sub": "code in a chosen voice",
+        "group": "Library",
+        "sourceRef": "skills/signature/",
+        "detail": "Two modes: capture a team's real style into rules, or write in a named engineer's documented style."
+      },
+      {
+        "id": "levelup",
+        "label": "levelup",
+        "kind": "tool",
+        "sub": "improve the brain",
+        "group": "Library",
+        "sourceRef": "skills/levelup/"
+      },
+      {
+        "id": "moreskills",
+        "label": "+11 more skills",
+        "kind": "tool",
+        "sub": "route·spec·learn·explain·spike·…",
+        "group": "Library"
+      },
+      {
+        "id": "architect",
+        "label": "architect",
+        "kind": "agent",
+        "sub": "design before code",
+        "group": "Library",
+        "sourceRef": "agents/architect.md"
+      },
+      {
+        "id": "reviewer",
+        "label": "code-reviewer",
+        "kind": "agent",
+        "sub": "convention vs correctness",
+        "group": "Library",
+        "sourceRef": "agents/code-reviewer.md",
+        "detail": "Reviews a diff against the rigor gate; proposes fixes, never applies them."
+      },
+      {
+        "id": "refactorer",
+        "label": "refactorer",
+        "kind": "agent",
+        "sub": "behavior-preserving redesign",
+        "group": "Library",
+        "sourceRef": "agents/refactorer.md"
+      },
+      {
+        "id": "techscout",
+        "label": "tech-scout",
+        "kind": "agent",
+        "sub": "adopt vs build decisions",
+        "group": "Library",
+        "sourceRef": "agents/tech-scout.md"
+      },
+      {
+        "id": "hooks",
+        "label": "Commit guards",
+        "kind": "service",
+        "sub": "pre-commit / pre-push",
+        "group": "Safety & honesty",
+        "sourceRef": ".githooks/",
+        "detail": "Block any private/client data, denylisted names, or secrets from being committed or pushed."
+      },
+      {
+        "id": "lab",
+        "label": "Lab quarantine",
+        "kind": "store",
+        "sub": "private data, gitignored",
+        "group": "Safety & honesty",
+        "sourceRef": "lab/"
+      },
+      {
+        "id": "integrity",
+        "label": "Integrity check",
+        "kind": "service",
+        "sub": "indexes can't lie",
+        "group": "Safety & honesty",
+        "sourceRef": "scripts/check-integrity.mjs"
+      },
+      {
+        "id": "links",
+        "label": "Link check",
+        "kind": "service",
+        "sub": "curriculum stays live",
+        "group": "Safety & honesty",
+        "sourceRef": "scripts/check-links.mjs"
+      },
+      {
+        "id": "evals",
+        "label": "Evals",
+        "kind": "store",
+        "sub": "the honesty apparatus",
+        "group": "Safety & honesty",
+        "sourceRef": "evals/",
+        "detail": "Baseline-vs-treatment rubric evals, blind-judged, results published — misses included."
+      },
+      {
+        "id": "ci",
+        "label": "GitHub Actions CI",
+        "kind": "cron",
+        "sub": "integrity + weekly freshness",
+        "group": "Safety & honesty",
+        "sourceRef": ".github/workflows/"
+      }
     ],
     "edges": [
-      { "from": "talk", "to": "kernel", "kind": "triggers", "label": "you just talk" },
-      { "from": "install", "to": "claudecode", "kind": "writes", "label": "symlinks brain" },
-      { "from": "claudecode", "to": "claude", "kind": "calls", "label": "runs on" },
-      { "from": "claude", "to": "kernel", "kind": "reads", "label": "loads the brain" },
-      { "from": "codex", "to": "kernel", "kind": "reads" },
-      { "from": "cursor", "to": "kernel", "kind": "reads" },
-      { "from": "copilot", "to": "kernel", "kind": "reads" },
-
-      { "from": "kernel", "to": "core", "kind": "reads", "label": "applies rigor" },
-      { "from": "kernel", "to": "router", "kind": "calls", "label": "route the task" },
-      { "from": "router", "to": "manifest", "kind": "reads" },
-      { "from": "router", "to": "field", "kind": "reads", "label": "~65% fewer tokens" },
-
-      { "from": "kernel", "to": "build", "kind": "triggers", "label": "applies automatically" },
-      { "from": "kernel", "to": "debug", "kind": "triggers" },
-      { "from": "kernel", "to": "qa", "kind": "triggers" },
-      { "from": "kernel", "to": "signature", "kind": "triggers" },
-      { "from": "kernel", "to": "levelup", "kind": "triggers" },
-      { "from": "kernel", "to": "moreskills", "kind": "triggers" },
-      { "from": "kernel", "to": "architect", "kind": "triggers", "label": "delegates" },
-      { "from": "kernel", "to": "reviewer", "kind": "triggers", "label": "delegates" },
-      { "from": "kernel", "to": "refactorer", "kind": "triggers" },
-      { "from": "kernel", "to": "techscout", "kind": "triggers" },
-
-      { "from": "build", "to": "field", "kind": "reads" },
-      { "from": "reviewer", "to": "field", "kind": "reads", "label": "audit-rules" },
-      { "from": "signature", "to": "lab", "kind": "writes", "label": "private capture" },
-      { "from": "levelup", "to": "field", "kind": "writes", "label": "captures lessons" },
-      { "from": "levelup", "to": "template", "kind": "reads", "label": "bootstrap a field" },
-
-      { "from": "hooks", "to": "lab", "kind": "reads", "label": "block leaks" },
-      { "from": "ci", "to": "integrity", "kind": "triggers" },
-      { "from": "ci", "to": "links", "kind": "triggers" },
-      { "from": "integrity", "to": "manifest", "kind": "reads", "label": "router not stale" }
+      {
+        "from": "talk",
+        "to": "kernel",
+        "kind": "triggers",
+        "label": "you just talk"
+      },
+      {
+        "from": "install",
+        "to": "claudecode",
+        "kind": "writes",
+        "label": "symlinks brain"
+      },
+      {
+        "from": "claudecode",
+        "to": "claude",
+        "kind": "calls",
+        "label": "runs on"
+      },
+      {
+        "from": "claude",
+        "to": "kernel",
+        "kind": "reads",
+        "label": "loads the brain"
+      },
+      {
+        "from": "codex",
+        "to": "kernel",
+        "kind": "reads"
+      },
+      {
+        "from": "cursor",
+        "to": "kernel",
+        "kind": "reads"
+      },
+      {
+        "from": "copilot",
+        "to": "kernel",
+        "kind": "reads"
+      },
+      {
+        "from": "kernel",
+        "to": "core",
+        "kind": "reads",
+        "label": "applies rigor"
+      },
+      {
+        "from": "kernel",
+        "to": "router",
+        "kind": "calls",
+        "label": "route the task"
+      },
+      {
+        "from": "router",
+        "to": "manifest",
+        "kind": "reads"
+      },
+      {
+        "from": "router",
+        "to": "field",
+        "kind": "reads",
+        "label": "~65% fewer tokens"
+      },
+      {
+        "from": "kernel",
+        "to": "build",
+        "kind": "triggers",
+        "label": "applies automatically"
+      },
+      {
+        "from": "kernel",
+        "to": "debug",
+        "kind": "triggers"
+      },
+      {
+        "from": "kernel",
+        "to": "qa",
+        "kind": "triggers"
+      },
+      {
+        "from": "kernel",
+        "to": "signature",
+        "kind": "triggers"
+      },
+      {
+        "from": "kernel",
+        "to": "levelup",
+        "kind": "triggers"
+      },
+      {
+        "from": "kernel",
+        "to": "moreskills",
+        "kind": "triggers"
+      },
+      {
+        "from": "kernel",
+        "to": "architect",
+        "kind": "triggers",
+        "label": "delegates"
+      },
+      {
+        "from": "kernel",
+        "to": "reviewer",
+        "kind": "triggers",
+        "label": "delegates"
+      },
+      {
+        "from": "kernel",
+        "to": "refactorer",
+        "kind": "triggers"
+      },
+      {
+        "from": "kernel",
+        "to": "techscout",
+        "kind": "triggers"
+      },
+      {
+        "from": "build",
+        "to": "field",
+        "kind": "reads"
+      },
+      {
+        "from": "reviewer",
+        "to": "field",
+        "kind": "reads",
+        "label": "audit-rules"
+      },
+      {
+        "from": "signature",
+        "to": "lab",
+        "kind": "writes",
+        "label": "private capture"
+      },
+      {
+        "from": "levelup",
+        "to": "field",
+        "kind": "writes",
+        "label": "captures lessons"
+      },
+      {
+        "from": "levelup",
+        "to": "template",
+        "kind": "reads",
+        "label": "bootstrap a field"
+      },
+      {
+        "from": "hooks",
+        "to": "lab",
+        "kind": "reads",
+        "label": "block leaks"
+      },
+      {
+        "from": "ci",
+        "to": "integrity",
+        "kind": "triggers"
+      },
+      {
+        "from": "ci",
+        "to": "links",
+        "kind": "triggers"
+      },
+      {
+        "from": "integrity",
+        "to": "manifest",
+        "kind": "reads",
+        "label": "router not stale"
+      }
     ]
   }
 }

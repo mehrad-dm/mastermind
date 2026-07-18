@@ -4,6 +4,38 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.19.0] — 2026-07-18
+
+The **getting-started** release: make MasterMind as easy to start as possible, and make setup for
+a project one clear step. Nothing about the mindset changed — this is all onboarding, distribution,
+and honesty.
+
+### Added
+
+- **`init` skill** — first substantive work in a project sets MasterMind up once: detect the stack
+  (or, on an empty folder, ask *one* open question — "what do you want to build?"), load/tailor the
+  field pack, and hand back a short "ready" report. Runs automatically on the first task, or on
+  request (say "init"; `/init` in Claude Code / Gemini).
+- **`help` skill** — the full menu of skills + agents, each with the scenario it auto-fires in and how
+  to call it by hand. Ask "what can you do?".
+- **`perf` skill** — measure → find the real bottleneck → fix the biggest one → verify.
+- **One-line install** — `curl -fsSL …/bootstrap.sh | bash` clones (or updates) and runs the installer.
+- **Self-healing installer** — `install.sh` prunes stale/renamed skill links and relinks the current
+  set on every run, so an upgrade can never leave a skill silently dead. `--check` is a doctor that
+  verifies everything resolves and now reports when your clone is **behind origin** (network-optional).
+- **Interactive architecture map** — a Foglamp map of the kernel → router → field pack → skills/agents,
+  auto-refreshed by CI, embedded on the site's `/architecture` page and linked from `MAP.md`.
+
+### Changed
+
+- **Renamed `initialize` → `init`** (shorter). All phrasings — init / set up / onboard — route to the
+  same one skill; no conflict.
+- **Cross-tool onboarding** — the installer wires Claude Code + Codex; Cursor / Copilot / Gemini / any
+  `AGENTS.md` tool load the same brain via one line. "Just talk, no commands" holds on every tool.
+- **Honest router number** — the measured **~65%** token reduction everywhere (was overstated).
+- **Kernel** — "show the brain working" (announce a skill/agent in one line, never a permission prompt)
+  plus an inlined skill/agent menu so the disciplines apply in non-native tools too.
+
 ## [0.18.1] — 2026-07-17
 
 A lean markdown "brain" that gives an AI coding assistant sharp defaults, real judgment, and the

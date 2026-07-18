@@ -101,7 +101,7 @@ intent from the menu below, then **read that file under `~/.mastermind/skills/<n
 `~/.mastermind/agents/<name>.md` and follow it as a step-by-step procedure.** The menu is inlined here so
 it works without the index loaded:
 
-- **skills** — `initialize` (set up a project) · `build` (implement a feature) · `debug` (a hard bug) ·
+- **skills** — `init` (set up a project) · `build` (implement a feature) · `debug` (a hard bug) ·
   `perf` (something's slow) · `qa` (prove it works) · `spec` (a fuzzy / multi-file ask) · `route` (start a non-trivial task) ·
   `learn` (unfamiliar tech) · `spike` (a risky unknown) · `signature` (fit a team's or author's style) ·
   `explain` (document an internal package) · `prompt` (sharpen a prompt) · `lab` (quarantine private

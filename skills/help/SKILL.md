@@ -56,5 +56,5 @@ the right one and tells you.
 ## Getting set up
 
 If MasterMind isn't set up for this project yet (no field pack for your stack), it will offer a **one-time
-setup** — say *"initialize"* or just start working and it'll ask. Verify your install anytime with
+setup** — say *"init"* or just start working and it'll ask. Verify your install anytime with
 `~/.mastermind/install.sh --check`.

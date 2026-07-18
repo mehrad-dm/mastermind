@@ -30,10 +30,19 @@ Pick the mode from the argument; default to **capture**.
 2. Diff against the current `curriculum.md`: add what's newly best-in-class, drop what's archived/dead,
    flag anything that changed. Update `learning-sources.md` and `mentors.md` if authorities shifted.
 3. Note the refresh date in `curriculum.md`'s verification note.
-4. **Listen to the source of truth for agent engineering** — Anthropic / Claude Code docs, the
-   engineering blog, and Claude Devs — for evolving best practices (prompting, model/effort, skills,
-   context management). Fold the *durable* ones into `~/.mastermind/engineering/core/` or the skill-authoring discipline; verify
-   against the primary source, and adopt the judgment, not the hype.
+4. **Listen to the source of truth for agent engineering** — Anthropic / Claude Code docs + changelog,
+   the engineering blog, and **Claude Devs** (Anthropic's developer content) — on two axes:
+   - **Evolving best practices** — prompting, model/effort, skills, context management.
+   - **Newly shipped capabilities** — new tool types, skill/agent/hook mechanisms, slash-commands, MCP,
+     subagents, and workflow primitives worth *adopting into MasterMind's architecture* to get better.
+   **Stay tool-agnostic — this is a hard constraint, not a preference.** MasterMind runs on Codex,
+   Cursor, Copilot, Gemini, and any AGENTS.md tool; the shared brain is portable Markdown that must load
+   and work *everywhere*. So extract the **durable, portable principle**, never the vendor mechanism. A
+   Claude-Code-only feature (hooks, native skills, slash-commands) may *sharpen the Claude path* as an
+   additive enhancement, but must **never** become a hard dependency, or leave a rule that only makes
+   sense inside Claude Code. If a capability can't be expressed portably, keep it out of `core/` and the
+   kernel. Fold the durable ones into `~/.mastermind/engineering/core/`, the skill/agent-authoring discipline, or the kernel;
+   verify against the primary source, adopt the judgment (not the hype), and note the check date.
 
 > **`refresh` is upstream maintenance — do it in the MasterMind repo, not on each user's install.**
 > Refreshing the curriculum, mentors, and Claude-Devs/ecosystem best-practices improves the *shared*

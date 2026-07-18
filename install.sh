@@ -54,6 +54,21 @@ prune_dead_links() {
   shopt -u nullglob
 }
 
+# Tell the user if their clone is behind origin. Network-optional: any failure
+# (offline, no upstream, detached HEAD) is silent — this never blocks or errors.
+check_updates() {
+  command -v git >/dev/null 2>&1 || return 0
+  git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  git -C "$REPO" fetch --quiet 2>/dev/null || return 0
+  local here up base
+  here="$(git -C "$REPO" rev-parse @ 2>/dev/null)"        || return 0
+  up="$(git -C "$REPO" rev-parse '@{u}' 2>/dev/null)"     || return 0
+  base="$(git -C "$REPO" merge-base @ '@{u}' 2>/dev/null)" || return 0
+  if [ "$here" != "$up" ] && [ "$here" = "$base" ]; then
+    printf '%s⬆ An update is available.%s  cd ~/.mastermind && git pull && ./install.sh\n' "$y" "$x"
+  fi
+}
+
 # --- Canonical, tool-neutral location (always) -------------------------------
 if [ "$MODE" != check ]; then
   ln -sfn "$REPO" "$HOME/.mastermind"
@@ -104,7 +119,10 @@ done
 # --- Report ------------------------------------------------------------------
 if [ "$MODE" = check ]; then
   echo
-  if [ "$ISSUES" -eq 0 ]; then printf '%s✓ MasterMind is healthy — kernel, skills, and agents all resolve.%s\n' "$g" "$x"; exit 0
+  if [ "$ISSUES" -eq 0 ]; then
+    printf '%s✓ MasterMind is healthy — kernel, skills, and agents all resolve.%s\n' "$g" "$x"
+    check_updates
+    exit 0
   else printf '%s✖ %d issue(s). Run ./install.sh to repair.%s\n' "$r" "$ISSUES" "$x"; exit 1; fi
 fi
 

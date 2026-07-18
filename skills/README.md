@@ -12,7 +12,7 @@ after removal, is a router that lies. (Authoring discipline: `levelup` → "Auth
 ## Start & discover
 | Skill | What it does (auto-applies when you…) |
 | --- | --- |
-| [`initialize`](./initialize/SKILL.md) | …first work in a new project. Detect the stack (or ask what you're building), set up the field pack(s), hand back a short "ready" report. Once per project. |
+| [`init`](./init/SKILL.md) | …first work in a new project. Detect the stack (or ask what you're building), set up the field pack(s), hand back a short "ready" report. Once per project. |
 | [`help`](./help/SKILL.md) | …ask "what can you do / how do I use this". The full menu of skills + agents — each with the scenario it auto-fires in and how to call it by hand. |
 
 ## Build & ship
