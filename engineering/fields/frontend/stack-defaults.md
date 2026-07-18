@@ -29,9 +29,11 @@ a project must never mean rewriting it onto the tools below. Before choosing any
 
 ### A worked stack profile — Turborepo monorepo with an in-house component kit
 
-One concrete, real-world stack shape this pack has worked in — a common production-frontend setup. When a
-task lands in a monorepo like this (an app with a sibling app sharing packages), reach for **its**
-conventions, not the greenfield defaults above:
+One concrete, real-world stack shape this pack has worked in — *one team's* real setup, **not a default to
+impose.** Reach for its conventions **only** when the task genuinely lands in a monorepo like this (an app
+with sibling apps sharing packages, Turborepo, an in-house kit). **Otherwise — a plain Next.js app, a Vite
+SPA, any other shape — ignore this profile** and use the greenfield defaults above + the framework's own
+section below (e.g. Next.js → App Router + RSC). Detect the real stack; never retrofit this one onto it:
 
 - **Components:** an **in-house component kit** (a shared `ui` package, plus any domain kits). Never
   hand-roll a primitive the kit already ships; never build a custom component until the kit lacks it.

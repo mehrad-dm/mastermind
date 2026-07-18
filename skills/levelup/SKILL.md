@@ -35,6 +35,12 @@ Pick the mode from the argument; default to **capture**.
    context management). Fold the *durable* ones into `~/.mastermind/engineering/core/` or the skill-authoring discipline; verify
    against the primary source, and adopt the judgment, not the hype.
 
+> **`refresh` is upstream maintenance — do it in the MasterMind repo, not on each user's install.**
+> Refreshing the curriculum, mentors, and Claude-Devs/ecosystem best-practices improves the *shared*
+> brain; commit it upstream so every user gets it on `git pull`. End users should **not** each re-run
+> this research — that fragments the knowledge base. (Per-install `capture` of a project-specific lesson
+> is the exception, and it stays local unless genericized.)
+
 ## `bootstrap <field>` — create a new field pack (one command → a pack like frontend)
 
 The goal: the user names a field (or points at a project) and gets a strong, tailored pack — the same

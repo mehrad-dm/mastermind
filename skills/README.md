@@ -20,6 +20,7 @@ after removal, is a router that lies. (Authoring discipline: `levelup` → "Auth
 | --- | --- |
 | [`build`](./build/SKILL.md) | …ask to build a feature. The flagship: design → implement-to-rigor → verify → review → capture. |
 | [`debug`](./debug/SKILL.md) | …hit a hard bug. Structured six-phase debugging — evidence over guessing. |
+| [`perf`](./perf/SKILL.md) | …something's slow ("why is this slow?"). Measure → find the real bottleneck → fix the biggest → verify. Not a correctness bug (that's `debug`). |
 | [`qa`](./qa/SKILL.md) | …finish something / want it tested. Prove it works end-to-end; tests / TDD only if you say so (offered after a build). |
 | [`spike`](./spike/SKILL.md) | …face a risky unknown. A fast throwaway spike to learn, then rebuild properly. |
 
