@@ -10,7 +10,7 @@
   "stats": {
     "agents": 4,
     "models": 1,
-    "tools": 16,
+    "tools": 17,
     "integrations": 6
   },
   "topModels": [
@@ -236,7 +236,7 @@
       },
       {
         "id": "moreskills",
-        "label": "+10 more skills",
+        "label": "+11 more skills",
         "kind": "tool",
         "sub": "route·spec·learn·explain·spike·…",
         "group": "Library"

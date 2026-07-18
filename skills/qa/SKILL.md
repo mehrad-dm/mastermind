@@ -48,4 +48,6 @@ read like the spec. Struggling to make a test pass cleanly? The design is probab
 ## Output
 A plain verdict — works / doesn't — with the evidence and the edge cases exercised, plus any gaps you
 couldn't cover (and why). If tests were written: note what they cover, then **ask whether to keep or
-discard the test files** — never persist a test suite the user didn't agree to.
+discard the test files** — never persist a test suite the user didn't agree to. If the project's
+**`cycle-report`** preference is on (`.mastermind/prefs.md`), also run the **`report`** skill to save a
+durable write-up; default off, so by default the verdict stays in chat.

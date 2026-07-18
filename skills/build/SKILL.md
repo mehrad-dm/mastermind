@@ -41,7 +41,10 @@ a foundation gets the full loop. Don't perform ceremony the task doesn't warrant
 
 7. **Capture & report** — run the **`levelup`** skill (capture) to fold any durable lesson
    or correction into the active field's `lessons.md`. Report honestly in a few lines: what shipped,
-   the evidence it works, and anything deferred. Commit / open a PR only if asked.
+   the evidence it works, and anything deferred. Commit / open a PR only if asked. If the project's
+   **`cycle-report`** preference is on (`.mastermind/prefs.md`: `markdown`/`html`, or `ask` → offer once),
+   also run the **`report`** skill to write a durable file — **default is off**, so most cycles just get
+   this in-chat verdict. Skip it entirely for a one-line change.
 
 ## Non-negotiables
 Correctness, security, accessibility are never traded for speed. Speed is the reward for rigor. If an

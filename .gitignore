@@ -3,6 +3,10 @@
 .idea/
 .vscode/
 
+# Project-local MasterMind workspace (prefs + generated cycle reports) — created
+# when USING the brain in a project; never part of the brain repo itself.
+.mastermind/
+
 # Client/project pattern packs — LOCAL ONLY, never publish.
 # (~/.mastermind is a symlink to this PUBLIC repo, so local-only requires ignoring.)
 engineering/fields/*/*-coding-patterns.md

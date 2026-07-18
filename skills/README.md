@@ -22,6 +22,7 @@ after removal, is a router that lies. (Authoring discipline: `levelup` → "Auth
 | [`debug`](./debug/SKILL.md) | …hit a hard bug. Structured six-phase debugging — evidence over guessing. |
 | [`perf`](./perf/SKILL.md) | …something's slow ("why is this slow?"). Measure → find the real bottleneck → fix the biggest → verify. Not a correctness bug (that's `debug`). |
 | [`qa`](./qa/SKILL.md) | …finish something / want it tested. Prove it works end-to-end; tests / TDD only if you say so (offered after a build). |
+| [`report`](./report/SKILL.md) | …ask for a report / write-up of a cycle (or automatically at the end of build/qa, if you turned it on). A shareable record — Markdown default, HTML optional. Opt-in, off by default. |
 | [`spike`](./spike/SKILL.md) | …face a risky unknown. A fast throwaway spike to learn, then rebuild properly. |
 
 ## Think first

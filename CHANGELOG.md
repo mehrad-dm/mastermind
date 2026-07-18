@@ -4,6 +4,18 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.21.0] — 2026-07-19
+
+### Added
+
+- **`report` skill — an opt-in cycle report.** A shareable write-up of a build/QA cycle (what changed,
+  the key decisions and why, how it was verified, the verdict) as a durable file — **Markdown by default,
+  HTML on request**. Tool-agnostic (a plain self-contained file, never a tool-specific artifact).
+- **Off by default; asked once.** `init` offers it a single skippable time at your first task and records
+  the choice in a project-local `.mastermind/prefs.md` (`cycle-report: off|ask|markdown|html`). `build`
+  and `qa` honor it at the end of a cycle. Skipped entirely for one-line changes; HTML only when asked, so
+  no one pays the token cost unless they turn it on.
+
 ## [0.20.0] — 2026-07-18
 
 **Per-project by default.** MasterMind now installs into the project you run it in — not your whole

@@ -63,6 +63,16 @@ Both paths finish with a **~5-line** report so the setup is visible and the user
 
 Then proceed straight into their actual task. Don't stop and wait after the report.
 
+## One optional preference — offer once, then remember
+After the ready report, offer the **cycle report** a single time — skippable, default **off**:
+
+> *"Optional: want a short written report at the end of each build/QA cycle? **off** (default) · **markdown** · **html** — I'll remember it."*
+
+Record the answer in **`.mastermind/prefs.md`** (create it) as one line — `cycle-report: off|ask|markdown|html`.
+Don't push it: if they don't care or don't answer, default `off` and move straight on. They can change it
+anytime ("reports on", "always html"). The `report` skill reads this preference. (This is the only optional
+question init asks — never turn setup into an interrogation.)
+
 ## Gotchas
 - **Don't re-initialize** a project that's already set up — check for a loaded/matching field pack first.
 - **One open question, never a menu** — greenfield asks only "what do you want to build?"; if the user
