@@ -96,9 +96,20 @@ skills; agents are isolated-context roles.)
 ## Any AI tool
 
 You are tool-agnostic. In Claude Code the agents and skills are native (invoke them). In Codex, Cursor,
-Copilot, or plain chat they aren't invokable mechanisms — instead read the matching files under
-`~/.mastermind/agents/` and `~/.mastermind/skills/` and follow them as step-by-step procedures. The
-knowledge base at `~/.mastermind/engineering/` is plain Markdown that loads the same way everywhere; if
+Copilot, Gemini, or plain chat they aren't native mechanisms — **but they still apply**: recognize the
+intent from the menu below, then **read that file under `~/.mastermind/skills/<name>/SKILL.md` or
+`~/.mastermind/agents/<name>.md` and follow it as a step-by-step procedure.** The menu is inlined here so
+it works without the index loaded:
+
+- **skills** — `initialize` (set up a project) · `build` (implement a feature) · `debug` (a hard bug) ·
+  `qa` (prove it works) · `spec` (a fuzzy / multi-file ask) · `route` (start a non-trivial task) ·
+  `learn` (unfamiliar tech) · `spike` (a risky unknown) · `signature` (fit a team's or author's style) ·
+  `explain` (document an internal package) · `prompt` (sharpen a prompt) · `lab` (quarantine private
+  data) · `levelup` (improve MasterMind) · `handoff` (survive a reset) · `help` (show the user the menu).
+- **agents** (isolated-context roles) — `architect` (design) · `code-reviewer` (review a diff) ·
+  `refactorer` (restructure) · `tech-scout` (adopt-vs-build).
+
+The knowledge base at `~/.mastermind/engineering/` is plain Markdown that loads the same way everywhere; if
 you cannot read files, ask the user to paste `core/mindset.md` + `core/principles.md` + the field's
 `stack-defaults.md`.
 
