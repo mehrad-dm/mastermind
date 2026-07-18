@@ -77,12 +77,24 @@ lab/                          # your private, gitignored space for sensitive pro
 
 ```bash
 git clone https://github.com/mehrad-dm/mastermind.git ~/mastermind
-cd ~/mastermind && ./install.sh          # sets up the brain + auto-detects Claude Code / Codex
+cd ~/mastermind && ./install.sh          # links the brain + auto-detects Claude Code / Codex
 ```
 
-`install.sh` symlinks the repo into a tool-neutral home, **`~/.mastermind`**, plus each tool's entry file —
-so the repo stays the single source of truth, editing it updates every tool, and `git pull` upgrades them
-all. Nothing personal (sessions/memory/settings) is touched or published.
+`install.sh` symlinks the repo into a tool-neutral home, **`~/.mastermind`** (the clone lives wherever you
+put it; `~/.mastermind` is the stable symlink tools point at), plus each tool's entry files. It's **safe and
+self-healing** — re-run it anytime: it **backs up** any existing `CLAUDE.md` before touching it, and
+**prunes stale links + relinks** the current skills/agents, so an update can never leave skills silently
+broken. Nothing personal (sessions/memory/settings) is touched or published.
+
+```bash
+# Update later — pull the repo, then repair the links:
+cd ~/.mastermind && git pull && ./install.sh
+# Check everything is wired correctly, anytime:
+~/.mastermind/install.sh --check
+```
+
+> **Restart your tool after installing** — until you do, the brain isn't loaded. Then confirm it's live:
+> ask *"are you running as MasterMind?"*
 
 ### Or add it as a Claude Code plugin
 
