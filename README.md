@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.19.0-7c6bff" alt="version 0.19.0" />
+  <img src="https://img.shields.io/badge/version-0.20.0-7c6bff" alt="version 0.20.0" />
   <img src="https://img.shields.io/badge/status-experimental-e0a800" alt="status: experimental" />
   <img src="https://img.shields.io/badge/license-MIT-555" alt="license MIT" />
 </p>
 
-<p align="center"><sub><b>⚗️ Experimental (v0.19.0).</b> Under active development — not yet stable, but usable. Its
+<p align="center"><sub><b>⚗️ Experimental (v0.20.0).</b> Under active development — not yet stable, but usable. Its
 effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md</a>); APIs and defaults may change.</sub></p>
 
 > **Make your AI coding assistant trustworthy.** MasterMind is plain Markdown that gives Claude Code,
@@ -75,31 +75,38 @@ lab/                          # your private, gitignored space for sensitive pro
 
 ## Install
 
-**First, you need an AI coding tool** — MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/claude-code) (or Codex, Cursor, Copilot, Gemini). Then:
+**First, you need an AI coding tool** — MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/claude-code) (or Codex, Cursor, Copilot, Gemini). Then, **from inside the project you want it in**:
 
 ```bash
-# One line — installs, and updates an existing install:
+# Per-project (default) — wires MasterMind into THIS project, for every AI tool you have:
+cd my-project
 curl -fsSL https://raw.githubusercontent.com/mehrad-dm/mastermind/master/bootstrap.sh | bash
 
-# …or clone + install manually:
-git clone https://github.com/mehrad-dm/mastermind.git ~/mastermind && cd ~/mastermind && ./install.sh
+# Prefer it everywhere? one global install for all projects:
+curl -fsSL https://raw.githubusercontent.com/mehrad-dm/mastermind/master/bootstrap.sh | bash -s -- --global
 ```
 
-`install.sh` symlinks the repo into a tool-neutral home, **`~/.mastermind`** (the clone lives wherever you
-put it; `~/.mastermind` is the stable symlink tools point at), plus each tool's entry files. It's **safe and
-self-healing** — re-run it anytime: it **backs up** any existing `CLAUDE.md` before touching it, and
-**prunes stale links + relinks** the current skills/agents, so an update can never leave skills silently
-broken. Nothing personal (sessions/memory/settings) is touched or published.
+MasterMind installs **per project by default**: it wires the current repo's `.claude/` (Claude Code) plus
+`AGENTS.md` / `.cursor/rules` / `GEMINI.md` for the other tools you have — active only there. Run it in each
+project you want it in, or use `--global` once for all. The clone lives at **`~/.mastermind`** — the single
+source of truth every project links to.
+
+It's **safe and self-healing** — re-run anytime: it **backs up** a real `CLAUDE.md`, **appends** (never
+overwrites) an existing `AGENTS.md`, and **prunes stale links + relinks** current skills/agents. Nothing
+personal (sessions/memory/settings) is touched or published.
 
 ```bash
-# Update later — pull the repo, then repair the links:
-cd ~/.mastermind && git pull && ./install.sh
-# Check everything is wired correctly, anytime:
-~/.mastermind/install.sh --check
+cd ~/.mastermind && git pull && ~/.mastermind/install.sh   # update the brain + repair links
+~/.mastermind/install.sh --check                           # is this project wired?
+~/.mastermind/install.sh --uninstall                       # remove from this project (or --global)
 ```
 
 > **Restart your tool after installing** — until you do, the brain isn't loaded. Then confirm it's live:
 > ask *"are you running as MasterMind?"*
+
+> **Already installed globally (pre-0.20)?** Your setup keeps working — nothing breaks. To switch to
+> per-project: `~/.mastermind/install.sh --global --uninstall`, then run `~/.mastermind/install.sh`
+> inside each project you want.
 
 ### Or add it as a Claude Code plugin
 
@@ -108,20 +115,22 @@ cd ~/.mastermind && git pull && ./install.sh
 /plugin install mastermind@mastermind
 ```
 
-This registers the skills and agents as native commands. They read the brain from **`~/.mastermind`**, so
-run `install.sh` once too — `install.sh` gives you the brain, the plugin adds the command surface.
+This registers the skills and agents as native commands (user-global). They read the brain from
+**`~/.mastermind`**, so run `install.sh` too — the plugin adds the command surface, `install.sh` wires the brain.
 
-### Per tool
+### Per tool (what a per-project install wires)
 
-| Tool | How MasterMind loads | Set up by |
+| Tool | How MasterMind loads | Wired by |
 | --- | --- | --- |
-| **Claude Code** | `~/.claude/CLAUDE.md` + native `agents/` & `skills/` | `./install.sh claude` |
-| **Codex** | `~/.codex/AGENTS.md` (the repo's `AGENTS.md`) | `./install.sh codex` |
-| **Cursor / Composer** | `.cursor/rules/mastermind.mdc` — frontmatter `alwaysApply: true`, body *"Follow `~/.mastermind/CLAUDE.md`."* | per project |
-| **GitHub Copilot** | `.github/copilot-instructions.md` → *"Follow `~/.mastermind/CLAUDE.md`."* | per project |
-| **Gemini CLI** | `gemini extensions install github.com/mehrad-dm/mastermind` (or `~/.gemini/GEMINI.md` → the same line) | one command |
-| **Any project, any agent** | `ln -s ~/.mastermind/AGENTS.md AGENTS.md` in the repo root | per project |
+| **Claude Code** | project `.claude/` — native `skills/`, `agents/`, and the kernel `CLAUDE.md` | `install.sh` |
+| **Codex** | project `AGENTS.md` → the brain | `install.sh` |
+| **Cursor / Composer** | `.cursor/rules/mastermind.mdc` — frontmatter `alwaysApply: true`, body *"Follow `~/.mastermind/CLAUDE.md`."* | `install.sh` |
+| **Gemini CLI** | project `GEMINI.md` → the brain (or global `gemini extensions install github.com/mehrad-dm/mastermind`) | `install.sh` |
+| **GitHub Copilot** | `.github/copilot-instructions.md` → *"Follow `~/.mastermind/CLAUDE.md`."* | `install.sh copilot` |
+| **Any AGENTS.md tool** | project `AGENTS.md` (Windsurf, Zed, Aider, JetBrains…) | `install.sh` |
 | **Plain chat (ChatGPT, …)** | paste `core/mindset.md` + `core/principles.md` + the field's `stack-defaults.md` | — |
+
+With `--global`, Claude Code + Codex are wired once in `~/` for every project instead.
 
 ## Just talk — no commands to learn
 

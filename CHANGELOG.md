@@ -4,6 +4,31 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.20.0] — 2026-07-18
+
+**Per-project by default.** MasterMind now installs into the project you run it in — not your whole
+machine — and wires **every AI tool you have**, not just Claude Code.
+
+### Changed
+
+- **Install scope is now per-project by default.** `install.sh` (run inside a project) wires that repo's
+  `.claude/` for Claude Code plus `AGENTS.md` / `.cursor/rules/*.mdc` / `GEMINI.md` for Codex / Cursor /
+  Gemini — active only there. Run it in each project you want it in. `--global` keeps the old machine-wide
+  behavior (Claude + Codex in `~/`). The one-liner run from inside a project wires that project.
+- **Non-destructive for every tool.** An existing `AGENTS.md` / `GEMINI.md` / Copilot file is **appended**
+  to (pointer line), never overwritten; a real `CLAUDE.md` is still backed up.
+
+### Added
+
+- **`--uninstall`** (scoped) — cleanly removes MasterMind's links from a project (or `--global`), leaving
+  your own files untouched. This is the migration path off a pre-0.20 global install.
+- **`--check` is project-aware** — verifies only what's wired here, and says so when a project isn't set up.
+
+### Migration
+
+- A pre-0.20 **global** install keeps working. To move to per-project: `~/.mastermind/install.sh --global
+  --uninstall`, then run `~/.mastermind/install.sh` inside each project you want.
+
 ## [0.19.0] — 2026-07-18
 
 The **getting-started** release: make MasterMind as easy to start as possible, and make setup for
