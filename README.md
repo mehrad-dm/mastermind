@@ -76,8 +76,11 @@ lab/                          # your private, gitignored space for sensitive pro
 ## Install
 
 ```bash
-git clone https://github.com/mehrad-dm/mastermind.git ~/mastermind
-cd ~/mastermind && ./install.sh          # links the brain + auto-detects Claude Code / Codex
+# One line — installs, and updates an existing install:
+curl -fsSL https://raw.githubusercontent.com/mehrad-dm/mastermind/master/bootstrap.sh | bash
+
+# …or clone + install manually:
+git clone https://github.com/mehrad-dm/mastermind.git ~/mastermind && cd ~/mastermind && ./install.sh
 ```
 
 `install.sh` symlinks the repo into a tool-neutral home, **`~/.mastermind`** (the clone lives wherever you
