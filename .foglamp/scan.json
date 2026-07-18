@@ -11,7 +11,7 @@
     "agents": 4,
     "models": 1,
     "tools": 16,
-    "integrations": 5
+    "integrations": 6
   },
   "topModels": [
     {
@@ -21,6 +21,10 @@
     }
   ],
   "topTools": [
+    {
+      "id": "init",
+      "label": "init"
+    },
     {
       "id": "build",
       "label": "build"
@@ -56,10 +60,6 @@
     {
       "id": "explain",
       "label": "explain"
-    },
-    {
-      "id": "handoff",
-      "label": "handoff"
     }
   ],
   "topIntegrations": [
@@ -82,6 +82,11 @@
       "id": "copilot",
       "label": "Copilot",
       "domain": "github.com"
+    },
+    {
+      "id": "gemini",
+      "label": "Gemini CLI",
+      "domain": "google.com"
     },
     {
       "id": "github",
@@ -231,7 +236,7 @@
       },
       {
         "id": "moreskills",
-        "label": "+11 more skills",
+        "label": "+10 more skills",
         "kind": "tool",
         "sub": "route·spec·learn·explain·spike·…",
         "group": "Library"
@@ -318,6 +323,20 @@
         "sub": "integrity + weekly freshness",
         "group": "Safety & honesty",
         "sourceRef": ".github/workflows/"
+      },
+      {
+        "id": "init",
+        "label": "init",
+        "kind": "tool",
+        "sub": "set up this project, once",
+        "group": "Library",
+        "sourceRef": "skills/init/"
+      },
+      {
+        "id": "gemini",
+        "label": "Gemini CLI",
+        "kind": "external",
+        "domain": "google.com"
       }
     ],
     "edges": [
@@ -486,6 +505,18 @@
         "to": "manifest",
         "kind": "reads",
         "label": "router not stale"
+      },
+      {
+        "from": "kernel",
+        "to": "init"
+      },
+      {
+        "from": "init",
+        "to": "field"
+      },
+      {
+        "from": "gemini",
+        "to": "kernel"
       }
     ]
   }
