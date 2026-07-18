@@ -75,6 +75,8 @@ lab/                          # your private, gitignored space for sensitive pro
 
 ## Install
 
+**First, you need an AI coding tool** — MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/claude-code) (or Codex, Cursor, Copilot, Gemini). Then:
+
 ```bash
 # One line — installs, and updates an existing install:
 curl -fsSL https://raw.githubusercontent.com/mehrad-dm/mastermind/master/bootstrap.sh | bash
@@ -115,8 +117,9 @@ run `install.sh` once too — `install.sh` gives you the brain, the plugin adds 
 | --- | --- | --- |
 | **Claude Code** | `~/.claude/CLAUDE.md` + native `agents/` & `skills/` | `./install.sh claude` |
 | **Codex** | `~/.codex/AGENTS.md` (the repo's `AGENTS.md`) | `./install.sh codex` |
-| **Cursor / Composer** | a rule → *"Follow `~/.mastermind/CLAUDE.md`."* | per project |
+| **Cursor / Composer** | `.cursor/rules/mastermind.mdc` — frontmatter `alwaysApply: true`, body *"Follow `~/.mastermind/CLAUDE.md`."* | per project |
 | **GitHub Copilot** | `.github/copilot-instructions.md` → *"Follow `~/.mastermind/CLAUDE.md`."* | per project |
+| **Gemini CLI** | `gemini extensions install github.com/mehrad-dm/mastermind` (or `~/.gemini/GEMINI.md` → the same line) | one command |
 | **Any project, any agent** | `ln -s ~/.mastermind/AGENTS.md AGENTS.md` in the repo root | per project |
 | **Plain chat (ChatGPT, …)** | paste `core/mindset.md` + `core/principles.md` + the field's `stack-defaults.md` | — |
 
@@ -132,12 +135,12 @@ matching skill. (Power users *can* type `/name` as a shortcut, but nobody has to
 | finish something | proves it works end-to-end; **offers** tests/TDD rather than forcing them (`qa`) |
 | face an unknown | learns the real stack + grills its own assumptions against the source (`learn`, `spike`) |
 | give a fuzzy ask | turns it into a crisp spec — problem, scope, terms, acceptance (`spec`) |
-| want a design pass | audits the UI against its own design language → a fix plan (`improve-ui`, frontend field) |
+| want a design pass | audits the UI against its own design language → a fix plan (a frontend-field capability) |
 | want code to fit your team | captures the codebase's real style → name-free rules it follows (`signature`) |
 | want code in a style you admire | writes in the documented public style of an engineer you name — e.g. Dan Abramov, Kent C. Dodds (`signature`) |
 
-Plus, on request: `explain` (AI-friendly docs for an internal package), `lab` (a private,
-gitignored space for sensitive data), `handoff`, and `levelup` (teach MasterMind something durable).
+Also auto-applied (and callable by name): `explain` (AI-friendly docs for an internal package), `lab`
+(a private, gitignored space for sensitive data), `handoff`, and `levelup` (teach MasterMind something durable).
 Specialist **agents** — `architect`, `code-reviewer`, `refactorer`, `tech-scout` — handle deep,
 isolated-context work. Full index: [`skills/README.md`](skills/README.md).
 

@@ -84,8 +84,9 @@ if [ ${#TOOLS[@]} -eq 0 ]; then
 fi
 if [ ${#TOOLS[@]} -eq 0 ]; then
   warn "No supported tool detected (Claude Code / Codex)."
-  echo "  The brain is at ~/.mastermind. For Cursor/Copilot, see the note below;"
-  echo "  or install a tool and re-run this script."
+  echo "  You need an AI coding tool first — e.g. Claude Code: https://claude.com/claude-code"
+  echo "  The brain is at ~/.mastermind. For Cursor/Copilot/Gemini, see the note below;"
+  echo "  install a tool and re-run this script."
 fi
 
 # --- Per tool ----------------------------------------------------------------
@@ -111,6 +112,7 @@ for tool in "${TOOLS[@]}"; do
       [ "$MODE" = check ] || mkdir -p "$HOME/.codex"
       printf '\nCodex:\n'
       safe_link "$REPO/AGENTS.md" "$HOME/.codex/AGENTS.md"
+      [ "$MODE" = check ] || ok "AGENTS.md linked"
       ;;
     *) warn "skipping unknown tool: $tool";;
   esac
@@ -128,9 +130,12 @@ fi
 
 cat <<'EOF'
 
-Per-project tools (Cursor, Copilot) — add one line pointing at the brain:
-  Cursor  : .cursor/rules/mastermind.mdc     → "Follow ~/.mastermind/CLAUDE.md."
+Other tools — point them at the brain:
+  Cursor  : .cursor/rules/mastermind.mdc     → body "Follow ~/.mastermind/CLAUDE.md."
+            (add frontmatter so it always loads:  ---  alwaysApply: true  ---)
   Copilot : .github/copilot-instructions.md  → "Follow ~/.mastermind/CLAUDE.md."
+  Gemini  : gemini extensions install github.com/mehrad-dm/mastermind
+            (or ~/.gemini/GEMINI.md → "Follow ~/.mastermind/CLAUDE.md.")
 
 To UPDATE later:  cd ~/.mastermind && git pull && ./install.sh   (repairs links after any change)
 To VERIFY:        ~/.mastermind/install.sh --check

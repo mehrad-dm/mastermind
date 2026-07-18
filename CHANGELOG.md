@@ -24,7 +24,7 @@ and honesty.
   set on every run, so an upgrade can never leave a skill silently dead. `--check` is a doctor that
   verifies everything resolves and now reports when your clone is **behind origin** (network-optional).
 - **Interactive architecture map** — a Foglamp map of the kernel → router → field pack → skills/agents,
-  auto-refreshed by CI, embedded on the site's `/architecture` page and linked from `MAP.md`.
+  auto-refreshed by CI and embedded on the site's `/architecture` page.
 
 ### Changed
 
@@ -35,6 +35,10 @@ and honesty.
 - **Honest router number** — the measured **~65%** token reduction everywhere (was overstated).
 - **Kernel** — "show the brain working" (announce a skill/agent in one line, never a permission prompt)
   plus an inlined skill/agent menu so the disciplines apply in non-native tools too.
+
+### Removed
+
+- **Static `MAP.md`** — superseded by the live, auto-refreshed interactive map. One map, always current.
 
 ## [0.18.1] — 2026-07-17
 

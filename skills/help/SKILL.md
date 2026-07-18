@@ -20,6 +20,7 @@ of them by hand.
 
 | Skill | What it does | Fires automatically when… | Call it by hand |
 | --- | --- | --- | --- |
+| **init** | set MasterMind up for this project — detect the stack (or ask what you're building), load the field pack | your first real task in a project it isn't set up for | *"init"* · *"set up MasterMind"* |
 | **build** | design → implement → verify → review → capture, end to end | you ask to build/add/implement a non-trivial feature | *"build a search box for the header"* |
 | **debug** | structured, evidence-first root-cause debugging | a bug is hard, weird, or keeps coming back | *"debug why the list doesn't refresh"* |
 | **perf** | measure → find the real bottleneck → fix the biggest → verify | something's slow or janky ("why is this slow?") | *"why is this page so slow?"* |
@@ -34,6 +35,7 @@ of them by hand.
 | **lab** | set up a private, gitignored quarantine for confidential data | before capturing project/client-specific notes | *"set up a lab here"* |
 | **levelup** | improve MasterMind's own knowledge (lessons, curriculum, new field) | after a correction/review, or to refresh standards | *"levelup — remember this"* |
 | **handoff** | write a concise handoff so work survives a reset/teammate | before a long-task `/clear`, pausing, or handing off | *"write a handoff"* |
+| **help** | show this menu — what every skill/agent does and when it fires | you ask "what can you do?" / "help" / "how do I use this" | *"what can you do?"* |
 
 ## Agents — the deep expert roles (isolated context)
 
