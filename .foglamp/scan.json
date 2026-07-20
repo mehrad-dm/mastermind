@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": "0.24.0",
   "project": {
     "name": "MasterMind",
     "slug": "mastermind",
@@ -133,13 +133,15 @@
         "id": "cursor",
         "label": "Cursor",
         "kind": "external",
-        "domain": "cursor.com"
+        "domain": "cursor.com",
+        "sub": "kernel + bootstrap hook"
       },
       {
         "id": "copilot",
         "label": "Copilot",
         "kind": "external",
-        "domain": "github.com"
+        "domain": "github.com",
+        "sub": "kernel + bootstrap hook"
       },
       {
         "id": "kernel",
@@ -337,6 +339,33 @@
         "label": "Gemini CLI",
         "kind": "external",
         "domain": "google.com"
+      },
+      {
+        "id": "bootstrap",
+        "label": "Bootstrap hook",
+        "kind": "service",
+        "sub": "re-injects on compaction",
+        "group": "Safety & honesty",
+        "sourceRef": "hooks/session-start.sh",
+        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact. Without it the brain is read once and fades as the window fills, so long sessions silently run without MasterMind. Verified on Claude Code; wired for Cursor and Copilot CLI."
+      },
+      {
+        "id": "installtests",
+        "label": "Installer tests",
+        "kind": "service",
+        "sub": "30 assertions",
+        "group": "Safety & honesty",
+        "sourceRef": "tests/install.test.sh",
+        "detail": "Guards the promises install.sh makes: never destroy your files, never lose a MasterMind capability, stay idempotent, merge settings instead of clobbering, and leave an unparseable config alone."
+      },
+      {
+        "id": "library",
+        "label": "Library pages",
+        "kind": "service",
+        "sub": "docs generated from source",
+        "group": "Safety & honesty",
+        "sourceRef": "scripts/build-library.mjs",
+        "detail": "Generates one article per skill and agent from ABOUT.md files, so the public docs cannot claim a skill does something the skill does not. Refuses to build if a skill has no article; --check fails when the site is stale."
       }
     ],
     "edges": [
@@ -517,6 +546,41 @@
       {
         "from": "gemini",
         "to": "kernel"
+      },
+      {
+        "from": "install",
+        "to": "bootstrap",
+        "kind": "writes",
+        "label": "registers the hook"
+      },
+      {
+        "from": "bootstrap",
+        "to": "kernel",
+        "kind": "writes",
+        "label": "re-injects the brain"
+      },
+      {
+        "from": "installtests",
+        "to": "install",
+        "kind": "reads",
+        "label": "verifies"
+      },
+      {
+        "from": "library",
+        "to": "moreskills",
+        "kind": "reads",
+        "label": "generates docs from"
+      },
+      {
+        "from": "ci",
+        "to": "installtests",
+        "kind": "triggers"
+      },
+      {
+        "from": "ci",
+        "to": "library",
+        "kind": "triggers",
+        "label": "checks docs are in sync"
       }
     ]
   }
