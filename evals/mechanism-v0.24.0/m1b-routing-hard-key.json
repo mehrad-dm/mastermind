@@ -1,0 +1,23 @@
+{
+  "note": "HARD routing cases: ambiguous, overlapping, or trap phrasings where two or more skills genuinely compete. Key derived from skill bodies. `also_ok` = defensible alternate. Anything else = miss.",
+  "cases": [
+    { "id": 1,  "prompt": "explain what you just did", "expect": "report", "also_ok": [], "trap": "'explain' is for documenting internal packages, not narrating work" },
+    { "id": 2,  "prompt": "the app feels slow and it also crashes sometimes", "expect": "debug", "also_ok": ["perf"], "trap": "correctness vs speed" },
+    { "id": 3,  "prompt": "help me plan this out before we start", "expect": "spec", "also_ok": ["route", "build"], "trap": "planning is spread across three skills" },
+    { "id": 4,  "prompt": "our conventions keep getting ignored, fix that permanently", "expect": "signature", "also_ok": ["levelup"], "trap": "team style vs durable knowledge" },
+    { "id": 5,  "prompt": "this library is new to me and I need to ship with it today", "expect": "learn", "also_ok": ["build"], "trap": "learn-then-build" },
+    { "id": 6,  "prompt": "tidy things up, someone else takes over tomorrow", "expect": "handoff", "also_ok": ["report"], "trap": "handoff vs report" },
+    { "id": 7,  "prompt": "check my work", "expect": "qa", "also_ok": ["report"], "trap": "verification vs code review agent" },
+    { "id": 8,  "prompt": "make this shorter and clearer before I paste it into ChatGPT", "expect": "prompt", "also_ok": [], "trap": "could read as code cleanup" },
+    { "id": 9,  "prompt": "what's the best way to structure this feature", "expect": "spec", "also_ok": ["build", "route"], "trap": "design question, architect is an agent not a skill" },
+    { "id": 10, "prompt": "I'm not sure this is even possible, can we find out cheaply", "expect": "spike", "also_ok": ["learn"], "trap": "spike vs learn" },
+    { "id": 11, "prompt": "stop putting our client's name in the commits", "expect": "lab", "also_ok": [], "trap": "phrased as a complaint, not a request" },
+    { "id": 12, "prompt": "the button component is used wrong everywhere", "expect": "explain", "also_ok": ["build"], "trap": "docs problem disguised as a code problem" },
+    { "id": 13, "prompt": "we fixed it but I want to be sure it never comes back", "expect": "qa", "also_ok": ["debug"], "trap": "regression guard sits in both" },
+    { "id": 14, "prompt": "you got that wrong earlier, don't do it again", "expect": "levelup", "also_ok": [], "trap": "a correction, not a task" },
+    { "id": 15, "prompt": "give me the rundown of everything in this release", "expect": "report", "also_ok": [], "trap": "close to help/handoff" },
+    { "id": 16, "prompt": "where do I even begin with this codebase", "expect": "route", "also_ok": ["learn", "spec"], "trap": "orientation vs learning" },
+    { "id": 17, "prompt": "it renders twice on every keystroke", "expect": "perf", "also_ok": ["debug"], "trap": "symptom reads as a bug but is a perf issue" },
+    { "id": 18, "prompt": "I want it to look like the rest of the product", "expect": "signature", "also_ok": ["build"], "trap": "visual vs code style ambiguity" }
+  ]
+}

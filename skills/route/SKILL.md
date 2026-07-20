@@ -1,6 +1,6 @@
 ---
 name: route
-description: At the start of a non-trivial or unfamiliar task, choose the route before diving in — name the goal, then load only the field-pack files, skills, core docs, and code areas it actually needs (via ROUTER.md). Refuses to over-plan a small task. Use when a task spans multiple files, or you're unsure where to start or what to load. Skips itself for a one-line change.
+description: Use at the start of a task that spans multiple files, touches unfamiliar areas of a codebase, or where it isn't obvious what to load or where to begin. Skips itself for a one-line change or an already-scoped task.
 ---
 
 # MasterMind — Wayfinder

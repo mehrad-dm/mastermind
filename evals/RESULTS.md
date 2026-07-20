@@ -174,6 +174,49 @@ per-task table sums to (which counts the pack read 8×). Worth it for +0.20 qual
 ¹ Task-08 baseline is an outlier: that plain agent ignored "don't read files" and explored the repo (5
 tool calls, 35k vs the ~27k norm).
 
+## Run M1 — 2026-07-21 · v0.24.0 **mechanism** evals · Opus 4.8 gen · rubric pre-registered · N=2/cond
+
+A different class from the runs above. Those measure **output quality** (baseline vs treatment on a
+coding task). These measure whether a **specific v0.24.0 change alters behavior at all** — the question
+"did this edit do anything?", which output-quality evals are too coarse to answer.
+
+Every rubric was written **before** results were seen, with an interpretation threshold set in advance.
+
+| # | What was tested | Control | Treatment | Δ | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| M1a | Routing, 24 plain requests | 24/24 | 24/24 | 0 | **ceiling — test too easy, uninformative** |
+| M1b | Routing, 18 ambiguous/trap requests | 17/18 | **18/18** | +1 | directional only (n=1 diff) |
+| M1c | Skill-body compliance (does it read the body or shortcut on the description?) | 4/4 | 4/4 | 0 | **invalid — probe named the file path, forcing a read** |
+| M1d | **Planning behavior** (graph block in `core/agent-loop.md`) | 2.5/4 | **4.0/4** | **+1.5** | **validated** (bar was ≥1.5) |
+| M1e | **Bootstrap re-injection** (does the payload restore the brain?) | 0/4 | **3/4** | **+3** | **validated** (bar was ≥2) |
+
+**M1d setup.** Identical `agent-loop.md` except the treatment contains the "Shape the work as a graph"
+block. Same two planning tasks (security audit; 9-component migration) per condition. Scored on four
+*behavioral* criteria; graph vocabulary was **recorded but not scored**, since the treatment's guide
+contains the words and counting them measures copying, not thinking. Cleanest signal: "treats merge/dedupe
+as deterministic, not a model call" — **0/2 control, 2/2 treatment**. Both control agents planned to have
+a model merge findings; both treatment agents caught it.
+
+**M1e setup.** Control = global kernel *and* all skills parked, empty project dir. Treatment = identical,
+plus the `hooks/session-start.sh` payload injected exactly as the hook emits it. Control asked the user to
+pick a validation library (a technical question the kernel forbids) and closed by asking permission.
+Treatment split product-vs-technical decisions per prime directive 1, cited `mindset.md`'s data-model
+principle unprompted, and added an audit-before-touching step the control never mentioned.
+
+### Caveats — read before citing any of this
+
+- **N=2 per condition**, not the ≥3 this file's own method requires. M1d/M1e are real signals, not statistics.
+- **No independent LLM judge.** Rubrics were pre-registered and criteria are binary, but the author of the
+  change also scored it. Weaker than the blind-judge protocol used in runs F1–CF1.
+- **M1a and M1c produced no usable signal** and are recorded as failures of test design, not as evidence.
+- **M1e proves the payload restores behavior; it does not prove the hook fires after a real compaction.**
+  The matcher includes `compact` and the JSON is valid, but the end-to-end event is unobserved.
+- **Token cost went up, and is measured:** `agent-loop.md` 2,642 → 3,220 (+578 on any task that loads it);
+  bootstrap adds ~2,100 per compaction. Kernel and ROUTER.md unchanged. This release buys reliability,
+  not efficiency.
+- A duplication sweep across the kernel and all `core/*.md` found **5 shared 6-word phrases kernel↔core and
+  0 across core files** — there is no dedup saving available. The only remaining lever is a kernel trim.
+
 ## Run template — copy this block per run, fill in, name the models
 
 **Run N — YYYY-MM-DD · GEN-MODEL gen · JUDGE-MODEL(s) judge · N=k · MasterMind vX/commit**

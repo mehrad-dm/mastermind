@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Structured six-phase debugging for a hard bug — reproduce, localize, hypothesize, test the hypothesis, fix the root cause, guard against regression. Use when a bug isn't obvious, resists a quick fix, or keeps coming back. Enforces evidence over guessing.
+description: Use when a bug isn't obvious, resists a quick fix, keeps coming back, or you're about to start guessing — "why is this broken", "this keeps happening", intermittent or flaky failures, a crash you can't explain, behaviour that makes no sense. Not for a typo or an obvious mistake.
 ---
 
 # MasterMind — Debug

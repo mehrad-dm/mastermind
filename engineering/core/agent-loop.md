@@ -131,6 +131,35 @@ Reach for these building blocks, simplest first:
 4. **Orchestrator–workers** — a lead dynamically splits work, delegates, synthesizes.
 5. **Evaluator–optimizer** — one generates, another critiques, in a loop until good enough.
 
+### Shape the work as a graph, not a queue
+
+Most multi-step plans are a straight line only because that's the order you happened to think of them.
+**Nodes** are jobs; **edges** are data actually moving between them. Getting that distinction right is
+most of the win — and it costs nothing to apply.
+
+- **The edge test.** At every "and then", ask: **does the next step read the previous step's output?**
+  If not, there is no edge — and the wait is wasted. *"Summarize the file and then check the weather"*
+  is two independent nodes, not a chain. Cut the fake edges and the line collapses into something wider:
+  independent work that can run at once, feeding the one step that needs it all.
+- **Give every node a contract.** Bounded input, bounded output, exactly one job — and state the shape
+  it returns **before** it runs. A step whose output you can't describe is a step you can't parallelize,
+  and its result is something the next step has to guess at.
+- **Edges are free — never pay a model to do plumbing.** Merging, flattening, deduping, filtering,
+  sorting, counting: that's deterministic work, so just do it. Spend model calls on **judgment**, never
+  on wiring. Delegating the plumbing is paying rent on your own scaffolding.
+- **The diamond is the default shape: fan out → reduce → synthesize.** Breadth in parallel, compress
+  with plain logic, then one judgment step writes the answer. Stop asking "how do I add more steps" and
+  start asking "where's the split, where's the merge".
+- **Barriers cost real time.** Wait for *all* results only when a step genuinely needs the whole set —
+  cross-item dedupe, ranking, an early exit on an empty total. "The steps feel separate" is not a reason;
+  **separate is not the same as synchronized.**
+- **Converge your loops.** For unknown-size discovery, stop once K rounds surface nothing new — and
+  dedupe against **everything seen, not only what was confirmed**. Otherwise rejected findings reappear
+  every round and the loop pays forever to rediscover the same dead ends.
+- **Isolate only where steps write in parallel.** Sandboxing every step is a tax; it's the seatbelt for
+  the one topology that needs it. And design every merge to **tolerate a missing input** rather than
+  assume a full set — one failed branch shouldn't sink the result.
+
 ## When work is wrong: knowing vs. trying
 
 Two separate levers control quality — diagnose *which* is lacking before dialing either (Anthropic,

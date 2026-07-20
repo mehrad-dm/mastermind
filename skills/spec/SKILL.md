@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Turn a fuzzy request into a crisp, buildable spec before coding — problem, in/out scope, the key domain terms (glossary), interfaces, acceptance criteria, and edge cases. Use when the ask is ambiguous, spans multiple files, or naming feels muddled, or you'll hand it off to another session. Skip for a clear one-line change.
+description: Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session. Symptoms: "make it better", "add the thing", or disagreement about what's in scope. Skip for a clear one-line change.
 ---
 
 # MasterMind — Spec

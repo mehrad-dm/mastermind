@@ -1,6 +1,6 @@
 ---
 name: levelup
-description: Level MasterMind up — capture lessons from recent work into the active field pack, refresh the field's best-practice curriculum against the live ecosystem, or bootstrap a whole new field pack. Invoke after a review/correction, periodically to refresh standards, or when switching MasterMind to a new field.
+description: Use after a correction or review finding worth remembering, when standards may have drifted from the live ecosystem, when switching MasterMind to a new domain or stack, or when the user says "remember this", "learn from that", "level up", "update your knowledge".
 ---
 
 # MasterMind — Level Up
@@ -93,6 +93,14 @@ keeps a large library lean and navigable (the lesson from the best skill kits):
   not a topic label. The router matches by meaning, so `"why is this slow?"` routes far better than
   `"performance optimization"`. A knowledge file is only as findable as the question written on its front
   (the KB lesson) — lead with the real trigger, and freshen it in `refresh` when the way people ask shifts.
+- **The description says WHEN, never WHAT.** State only the triggering conditions. **Never summarize the
+  skill's own steps or workflow** — a description that describes the process becomes a shortcut the model
+  takes *instead of* reading the skill, and the body turns into documentation it skips. (Measured: a
+  description saying "code review between tasks" made an agent run *one* review where the body specified
+  two. Removing the summary fixed it.) Symptoms, situations, and the user's real words — not a procedure.
+- **Name actions, not tools.** Write "dispatch a subagent", "read the file", "run the check" — never a
+  specific tool's name. This one rule is why the same skill body runs unedited on Claude Code, Codex,
+  Cursor, Gemini, and plain chat. Tool vocabulary belongs in the per-tool wiring, never in a skill.
 - **Only what pushes away from defaults.** Don't restate what the model already does well; the
   highest-signal part is a **Gotchas** section — the failure points it hits *without* the skill. (Anthropic.)
 - **Lean body, detail on demand** — core instructions fit on a phone screen; push edge cases into
@@ -102,6 +110,22 @@ keeps a large library lean and navigable (the lesson from the best skill kits):
 - **Deterministic work → deterministic code** (`~/.mastermind/engineering/core/agent-loop.md`) — script it, don't narrate it.
 - Mark **user-invoked** (`disable-model-invocation: true`) vs model-invoked, and add the skill to
   `skills/README.md` so the index stays honest.
+
+### Prove the skill changes behavior (watch it fail first)
+
+A skill that reads well but changes nothing is worse than no skill — it costs tokens and buys confidence
+you haven't earned. So test it the way you'd test code: **red first.**
+
+1. **Write the scenario** — a concrete task that should trigger the skill.
+2. **Run it WITHOUT the skill** (a fresh subagent, no skill loaded) and **write down exactly how it goes
+   wrong** — the specific shortcuts and excuses it reaches for. This is your red.
+3. **Write the skill against *those* failures** — not against imagined ones.
+4. **Run the scenario again with the skill** and confirm the behavior actually changed. Green.
+5. **Look for the next loophole**, close it, re-run.
+
+> **If you never watched an agent fail without the skill, you don't know whether the skill teaches the
+> right thing.** Do this for any skill meant to enforce a discipline (verification, review, honesty
+> gates); skip it for pure reference material, which has nothing to enforce.
 
 ## Always, after any mode
 

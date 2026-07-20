@@ -35,6 +35,32 @@ fix unaided, one run citing `lessons.md` directly. Lower fidelity *understated* 
 captured lesson actually surfaces. Cost: the agent spends tokens reading the pack — worth it for an
 honest number. (Baseline stays a plain model with nothing loaded — that's the fair "without".)
 
+### Isolation — a subagent is NOT a clean baseline (learned the hard way, 2026-07-21)
+
+The mirror image of the fidelity trap. If the "without MasterMind" condition is a **subagent spawned from
+a session that has MasterMind loaded**, it inherits the brain from the session harness and is *not* a
+baseline. This produced a null result that looked real: control and treatment both scored 4/4, because
+both *were* MasterMind.
+
+The tell: the control emitted the `🧠 MasterMind ▸` mark it should have had no way to know about.
+
+**Removing the files mid-session does not fix it** — verified directly: with `~/.claude/CLAUDE.md`
+deleted, a spawned subagent still behaved as MasterMind, because the session's harness already carried it.
+
+**What actually works — a separate process**, which re-reads config at startup:
+
+```bash
+mv ~/.claude/CLAUDE.md /tmp/parked && mv ~/.claude/skills /tmp/parked-skills
+cd /tmp/empty-project && claude -p "<task>"          # genuine baseline
+mv /tmp/parked ~/.claude/CLAUDE.md && mv /tmp/parked-skills ~/.claude/skills
+```
+
+Park the kernel **and** the skills, run from a directory with no `.claude/` or `AGENTS.md`, and restore
+immediately. A fresh `HOME` is cleaner still but has no credentials, so it can't run.
+
+**Check every baseline for contamination before trusting a Δ.** A control that scores suspiciously well,
+or uses vocabulary only the treatment should know, is contaminated — not evidence of "no effect."
+
 ### The bar for a public claim (learned from Runs 1–2)
 A single judge is noisy (Run 2 graded the same pattern 0.20 in one output and 0.80 in another). Before
 any number goes on the website:

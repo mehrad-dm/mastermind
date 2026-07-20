@@ -1,6 +1,6 @@
 ---
 name: explain
-description: Generate or refresh AI-friendly usage docs for an INTERNAL package — a colocated doc beside each public unit (component, function, hook, service, class) with its API, usage, and the non-obvious gotchas — so any AI or human uses it correctly by default. Works for any package (with or without AI), so if you switch models the new one still understands your code. Asks and confirms before writing. Use when an internal package has little/no usage docs.
+description: Use when an internal package, module, or shared component has little or no usage documentation and people (or future AI sessions) keep using it wrong — "document this", "write docs for our library", onboarding someone onto an internal API, or handing a package to another team.
 ---
 
 # Document Package — make an internal package self-explaining to any model

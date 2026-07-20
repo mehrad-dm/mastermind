@@ -1,6 +1,6 @@
 ---
 name: build
-description: The flagship MasterMind build loop — take a feature/change from intent to shipped, the genius way, end to end. Orchestrates design → plan → implement-to-rigor → verify → adversarial review → capture-lessons. Use for any non-trivial implementation task where quality matters. For a one-line diff, skip this and just do it.
+description: Use when implementing any non-trivial feature, change, or fix — "build me X", "add this feature", "implement this", "make this work", "can you create". Covers new functionality, meaningful changes to existing code, and anything where quality matters. Not for a one-line diff — just do that.
 ---
 
 # MasterMind — Build
@@ -28,7 +28,13 @@ a foundation gets the full loop. Don't perform ceremony the task doesn't warrant
 > **Plan-first gate (opt-in, off by default).** If the project's **`plan-first`** preference is on
 > (`.mastermind/prefs.md`: `plan-first: on`) — or the user asks to "plan first" — **do not start editing yet.**
 > Present a concise plan from steps 1–3: the **goal**, the **approach**, the **files you'll touch**, the
-> **steps**, and any risk/decision worth a look. Then **stop and wait for the user's go-ahead** (this
+> **steps**, and any risk/decision worth a look.
+>
+> **The bar:** clear enough for *an enthusiastic junior engineer with poor taste, no judgement, no project
+> context, and an aversion to testing* to follow without asking you anything. That means **exact file
+> paths**, not "the auth module"; **bite-sized steps**, not "implement the feature"; and a stated way to
+> **tell each step worked**. If a step needs you to already know something the plan doesn't say, it isn't
+> written yet. Then **stop and wait for the user's go-ahead** (this
 > overrides the usual "decide and do" for this project — they opted in). If they adjust it, fold that in and
 > re-show. **On approval, announce `🧠 MasterMind ▸ implementing the plan` and proceed to step 4.** Skip the
 > gate entirely for a trivial one-liner (match effort to stakes) — it's for changes worth reviewing first.

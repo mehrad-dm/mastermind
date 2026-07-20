@@ -1,6 +1,6 @@
 ---
 name: init
-description: Set MasterMind up for THIS project in a few quick steps — detect the stack (or, on an empty project, ask what you're building), then load/tailor/bootstrap the field pack(s) it needs, and hand back a short "ready" report. Use on the first substantive work in a project MasterMind isn't set up for, when the user says "init / initialize / set up MasterMind / get me ready / onboard", or when no field pack matches the detected stack. Run once per project; keep it short.
+description: Use on the first substantive work in a project MasterMind isn't set up for yet, when the user says "init", "initialize", "set up MasterMind", "onboard", "get me ready", or when no field pack matches the project's detected stack.
 ---
 
 # Initialize — get MasterMind ready for this project, fast

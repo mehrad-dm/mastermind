@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Get up to speed FAST on the stack, library, or field a task needs — before building — and grill your own assumptions against the real docs/source so you don't build on a guess. Detects the project's real stack, maps the field skill-tree (roadmap.sh), reads the primary docs for what the task touches, verifies your assumptions, and returns a working understanding to current standards. Use for unfamiliar or fast-moving tech, a tricky API, a new codebase, or whenever "I think it works like…" is load-bearing. Distinct from levelup (durable knowledge-base updates) — this is just-in-time, task-scoped learning.
+description: Use when a task depends on tech you don't actually know — an unfamiliar library, a fast-moving framework, a tricky API, an unfamiliar codebase — or whenever "I think it works like…" is load-bearing. Just-in-time and task-scoped; distinct from levelup, which updates the durable knowledge base.
 ---
 
 # MasterMind — Learn

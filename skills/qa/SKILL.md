@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Prove a change actually works — QA it by driving the real thing end-to-end and observing behavior (never "looks right"). This is the counterpart offered after building. Verifying is never optional; writing tests / test-driven development is a project choice you OFFER, never impose. Use after finishing a feature to confirm it works, or when the user wants it tested. Two modes — verify (default) and test-first (opt-in).
+description: Use after finishing a feature or fix to confirm it actually works, when the user says "test this", "does it work", "verify this", "QA it", or before shipping something that has never been driven end-to-end. Also when the user asks for tests to be written or wants to work test-first.
 ---
 
 # QA — prove it works (verify by default, tests on request)

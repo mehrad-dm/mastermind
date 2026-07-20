@@ -1,6 +1,6 @@
 ---
 name: lab
-description: Set up a private, gitignored "Lab" in the current repo so raw confidential/project data can be captured safely and never accidentally published. Installs the lab/ quarantine, a local denylist, and the pre-commit/pre-push guards that block names + secrets. Use once per project before capturing project-specific notes, patterns, or /character data. Run again to repair a Lab.
+description: Use before capturing anything confidential in a repo — a client's internal patterns, private project data, real names, proprietary code — or when the user says "this is sensitive", "don't commit this", "set up the lab". Also when a Lab already exists but its guards are missing or broken.
 ---
 
 # Lab Init — a safe place for project data

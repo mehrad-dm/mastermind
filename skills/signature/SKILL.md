@@ -1,6 +1,6 @@
 ---
 name: signature
-description: Decide whose coding voice the code should speak in, two ways. (A) Learn a team's real signature — the recurring patterns and corrections they give AI over and over — and turn them into clean, name-free rules the AI follows (patterns only, never judgments about people; identities never leave the Lab; proposes pack edits, never auto-applies; reads a real codebase, asks consent first). (B) Write in the documented public style of an engineer the user names (e.g. a well-known OSS author like Dan Abramov or Kent C. Dodds) — grounded in that person's real public work, on any code, never impersonation or fabricated opinions. Use to make MasterMind fit THIS team, convert repeated corrections into durable rules, or adopt an admired engineer's documented style as the active lens.
+description: Use when code should speak in a specific voice — a team's real conventions the user keeps correcting the AI toward ("make it match our codebase", "follow our patterns", "you keep writing it wrong"), or the documented public style of a named engineer the user admires. Also when repeated corrections should become durable rules.
 ---
 
 # Signature — whose voice should the code speak in?

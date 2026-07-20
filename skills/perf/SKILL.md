@@ -1,6 +1,6 @@
 ---
 name: perf
-description: Find and fix a real performance problem the right way — measure first, locate the actual bottleneck (never guess), fix the biggest one, and verify the win. Use when something is slow — "why is this slow?", "optimize this", jank/lag, a slow query, page, render, or build. NOT for correctness bugs (that's `debug`). Always profile before you touch anything.
+description: Use when something is slow — "why is this slow", "optimize this", "make it faster", jank, lag, a slow query, slow page load, slow render, slow build, high memory, a timeout. Not for correctness bugs; that's debug.
 ---
 
 # Perf — measure, find the real bottleneck, fix the biggest, verify

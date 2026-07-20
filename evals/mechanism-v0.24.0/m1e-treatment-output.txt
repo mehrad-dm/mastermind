@@ -1,0 +1,20 @@
+🧠 MasterMind ▸ Next.js/frontend territory → this is a design problem, not a code problem
+
+Good instinct to consolidate — but "sort it out" hides one real decision I need from you, and one I'll just make.
+
+**The decision that's yours:** what should the *user experience* be? My default, which I'll apply unless you object:
+
+- **Validate on submit first** — never block someone mid-typing.
+- **After the first failed submit, re-validate that field on change** — so they see errors clear as they fix them.
+- **Validate on blur only for expensive/async checks** (e.g. "email already taken").
+
+That's the pattern users expect and it's what the research supports. It's a UX call, so I'm surfacing it — say the word if your product wants something stricter (e.g. banking-style inline validation).
+
+**The rest I'll just fix:**
+- **One schema-driven validation layer** — define rules once (likely Zod), share them client and server. Right now the mess is because validation logic is scattered and duplicated; getting the data model right makes most of the inconsistency disappear.
+- **One form primitive** every form uses (React Hook Form + the schema resolver), so timing is consistent by construction, not by discipline.
+- **One error-message source** — centralized, consistent copy and presentation.
+
+**Before I touch anything:** I'll audit every form to inventory current behavior, so I know what I'm standardizing and don't silently change a validation someone depended on.
+
+Want me to run that audit and come back with the list + a concrete plan, or just proceed on the defaults above?

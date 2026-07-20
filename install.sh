@@ -37,7 +37,7 @@ g=$'\033[0;32m'; y=$'\033[0;33m'; r=$'\033[0;31m'; x=$'\033[0m'
 ok()   { printf '  %s✓%s %s\n' "$g" "$x" "$*"; }
 warn() { printf '  %s⚠%s %s\n' "$y" "$x" "$*"; }
 bad()  { printf '  %s✖%s %s\n' "$r" "$x" "$*"; }
-ISSUES=0; LINKED_SKILLS=0; LINKED_AGENTS=0; PRUNED=0
+ISSUES=0; LINKED_SKILLS=0; LINKED_AGENTS=0; PRUNED=0; RENAMED=0; SKIPPED=0
 HINT='Follow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).'
 
 # Scope → where Claude/Codex get wired (project-local by default, home with --global).
@@ -60,6 +60,47 @@ safe_link() {
     mv "$dst" "$bak"; warn "backed up your existing $(basename "$dst") → $bak"
   fi
   ln -sfn "$src" "$dst"
+}
+
+is_ours()     { [ -L "$1" ] && readlink "$1" | grep -qF "$REPO"; }
+path_exists() { [ -e "$1" ] || [ -L "$1" ]; }
+
+# Link a skill/agent so BOTH the project's and MasterMind's survive.
+#
+# The kernel's rule is "the project wins" — but winning must never mean MasterMind
+# loses a capability. So on a name collision we leave the project's file exactly where
+# it is and install ours ALONGSIDE it as `mastermind-<name>`. Nothing is displaced,
+# nothing silently disappears, and the names say which is which.
+link_skill() {
+  local src="$1" base="$2" name="$3" kind="$4"
+  local dst="$base/$name" alt="$base/mastermind-$name"
+  local target="$dst" renamed=0   # separate `local`: same-statement $dst isn't set yet
+
+  if path_exists "$dst" && ! is_ours "$dst"; then target="$alt"; renamed=1; fi
+
+  if [ "$MODE" = check ]; then
+    if is_ours "$target" && [ -e "$target" ]; then
+      if [ "$renamed" = 1 ]; then ok "mastermind-$name (your own '$name' kept)"; else ok "$name"; fi
+      return 0
+    fi
+    bad "$(basename "$target") is not linked to MasterMind"; ISSUES=$((ISSUES + 1)); return 1
+  fi
+
+  # The project owns BOTH names — refuse rather than clobber anything of theirs.
+  if [ "$renamed" = 1 ] && path_exists "$alt" && ! is_ours "$alt"; then
+    warn "you own both '$name' and 'mastermind-$name' — MasterMind's $kind skipped"
+    SKIPPED=$((SKIPPED + 1)); return 1
+  fi
+
+  ln -sfn "$src" "$target"
+  if [ "$renamed" = 1 ]; then
+    warn "you already have a $kind '$name' — installed MasterMind's as 'mastermind-$name' (both work)"
+    RENAMED=$((RENAMED + 1))
+  elif is_ours "$alt"; then
+    # Their colliding file is gone, so ours reclaimed the real name — drop the alias.
+    rm -f "$alt"
+  fi
+  return 0
 }
 
 # Wire an instruction file (AGENTS.md / GEMINI.md / copilot-instructions.md) to the
@@ -89,6 +130,57 @@ wire_cursor() {
   fi
   mkdir -p "$PWD/.cursor/rules"
   printf -- '---\nalwaysApply: true\n---\n%s\n' "$HINT" > "$dst"; ok ".cursor/rules/mastermind.mdc"
+  wire_cursor_hook
+}
+
+# Copilot CLI reads every .github/hooks/*.json, so we ship our OWN file — no merging into
+# anyone's config and no clobber risk. Its sessionStart hook injects stdout's
+# `additionalContext` as a prepended user message (the `sdk` shape).
+#
+# Copilot exposes no compaction event, so this is startup-only: the brain reloads per
+# session but may still fade inside a long one. Reported as such by --check.
+wire_copilot_hook() {
+  local dst="$PWD/.github/hooks/mastermind.json"
+  if [ "$MODE" = check ]; then
+    if [ -f "$dst" ]; then ok ".github/hooks/mastermind.json (startup only)"; fi
+    return 0
+  fi
+  mkdir -p "$PWD/.github/hooks"
+  printf '{\n  "version": 1,\n  "hooks": {\n    "sessionStart": [\n      {\n        "type": "command",\n        "bash": "%s/hooks/session-start.sh sdk"\n      }\n    ]\n  }\n}\n' "$REPO" > "$dst"
+  ok ".github/hooks/mastermind.json — reloads each session (no compaction event in Copilot)"
+  return 0
+}
+
+# Cursor's own hook system (.cursor/hooks.json). sessionStart re-loads the kernel on a new
+# conversation; preCompact fires before Cursor compacts, which is the event that matters.
+#
+# UNVERIFIED — see docs: Cursor has open bug reports where a sessionStart hook's
+# additional_context is accepted but never reaches the model. We wire it because it costs
+# nothing and starts working the moment that's fixed, but the .mdc rule above remains the
+# load-bearing path for Cursor. Do not claim Cursor re-injection works until it's observed.
+wire_cursor_hook() {
+  local dst="$PWD/.cursor/hooks.json"
+  if [ "$MODE" = check ]; then
+    if [ -f "$dst" ] && grep -q 'session-start.sh' "$dst"; then ok ".cursor/hooks.json (unverified upstream)"; fi
+    return 0
+  fi
+  command -v node >/dev/null 2>&1 || return 0
+  mkdir -p "$PWD/.cursor"
+  MM_DST="$dst" MM_CMD="$REPO/hooks/session-start.sh cursor" node -e '
+    const fs=require("fs"); const p=process.env.MM_DST, cmd=process.env.MM_CMD;
+    let s={version:1,hooks:{}};
+    if (fs.existsSync(p)) { try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); } }
+    s.version ??= 1; s.hooks ||= {};
+    for (const ev of ["sessionStart","preCompact"]) {
+      const keep=(s.hooks[ev]||[]).filter(e=>!JSON.stringify(e).includes("session-start.sh"));
+      keep.push({command: cmd});
+      s.hooks[ev]=keep;
+    }
+    fs.writeFileSync(p, JSON.stringify(s,null,2)+"\n");
+  ' 2>/dev/null \
+    && ok ".cursor/hooks.json — sessionStart + preCompact (unverified upstream)" \
+    || warn "left your .cursor/hooks.json alone (could not parse it)"
+  return 0
 }
 
 # Wire Claude Code natively (skills + agents + kernel) into a base .claude dir.
@@ -100,15 +192,66 @@ wire_claude() {
   # Global links engineering into ~/.claude; per-project reads it via ~/.mastermind.
   [ "$SCOPE" = global ] && safe_link "$REPO/engineering" "$base/engineering"
   prune_dead_links "$base/skills"; prune_dead_links "$base/agents"
-  LINKED_SKILLS=0; LINKED_AGENTS=0
+  LINKED_SKILLS=0; LINKED_AGENTS=0; RENAMED=0; SKIPPED=0
   local a s
   for a in "$REPO"/agents/*.md; do
-    safe_link "$a" "$base/agents/$(basename "$a")"; [ "$MODE" = check ] || LINKED_AGENTS=$((LINKED_AGENTS + 1))
+    if link_skill "$a" "$base/agents" "$(basename "$a")" agent; then
+      [ "$MODE" = check ] || LINKED_AGENTS=$((LINKED_AGENTS + 1))
+    fi
   done
   for s in "$REPO"/skills/*/; do
-    safe_link "${s%/}" "$base/skills/$(basename "$s")"; [ "$MODE" = check ] || LINKED_SKILLS=$((LINKED_SKILLS + 1))
+    if link_skill "${s%/}" "$base/skills" "$(basename "$s")" skill; then
+      [ "$MODE" = check ] || LINKED_SKILLS=$((LINKED_SKILLS + 1))
+    fi
   done
-  [ "$MODE" = check ] || ok "$LINKED_SKILLS skills, $LINKED_AGENTS agents linked · $PRUNED stale removed"
+  if [ "$MODE" != check ]; then
+    ok "$LINKED_SKILLS skills, $LINKED_AGENTS agents linked · $PRUNED stale removed"
+    if [ "$RENAMED" -gt 0 ]; then
+      warn "$RENAMED name(s) clashed with your own — yours kept, ours added as mastermind-*"
+    fi
+  fi
+  wire_bootstrap "$base"
+}
+
+# Register the SessionStart bootstrap so the kernel is re-injected on startup AND after
+# a compaction — otherwise the brain quietly fades out of a long session. Merges into an
+# existing settings.json (never overwrites it) and is idempotent.
+wire_bootstrap() {
+  local base="$1" settings="$base/settings.json" hook="$REPO/hooks/session-start.sh"
+
+  if [ "$MODE" = check ]; then
+    if [ -f "$settings" ] && grep -q 'session-start.sh' "$settings"; then ok "bootstrap hook"
+    else bad "bootstrap hook not registered (kernel will fade after a compaction)"; ISSUES=$((ISSUES + 1)); fi
+    return 0
+  fi
+
+  if ! command -v node >/dev/null 2>&1; then
+    warn "node not found — skipped the bootstrap hook (brain won't survive a compaction)"
+    return 0
+  fi
+
+  MM_SETTINGS="$settings" MM_HOOK="$hook" node -e '
+    const fs = require("fs");
+    const p = process.env.MM_SETTINGS, cmd = JSON.stringify(process.env.MM_HOOK);
+    let s = {};
+    if (fs.existsSync(p)) {
+      try { s = JSON.parse(fs.readFileSync(p, "utf8") || "{}"); }
+      catch { console.error("KEEP"); process.exit(3); }   // unparseable: never clobber it
+    }
+    s.hooks ||= {};
+    const list = (s.hooks.SessionStart ||= []);
+    // Drop any previous MasterMind entry, then re-add — keeps other tools hooks intact.
+    const clean = list.filter(e => !JSON.stringify(e).includes("session-start.sh"));
+    clean.push({
+      matcher: "startup|clear|compact",
+      hooks: [{ type: "command", command: cmd, async: false }],
+    });
+    s.hooks.SessionStart = clean;
+    fs.writeFileSync(p, JSON.stringify(s, null, 2) + "\n");
+  ' 2>/dev/null \
+    && ok "bootstrap hook — kernel re-injected on startup + compaction" \
+    || warn "left your settings.json alone (could not parse it) — bootstrap hook not registered"
+  return 0
 }
 
 # Remove every dangling symlink in a dir (target gone — e.g. a renamed skill).
@@ -233,7 +376,7 @@ for tool in ${TOOLS[@]+"${TOOLS[@]}"}; do
       else printf '\nCursor:\n'; wire_cursor; fi ;;
     copilot)
       if [ "$SCOPE" = global ]; then printf '\nCopilot:\n'; warn "Copilot instructions are per-project — run this inside a project"
-      else printf '\nGitHub Copilot:\n'; wire_brain_file "$PWD/.github/copilot-instructions.md" "$REPO/CLAUDE.md"; fi ;;
+      else printf '\nGitHub Copilot:\n'; wire_brain_file "$PWD/.github/copilot-instructions.md" "$REPO/CLAUDE.md"; wire_copilot_hook; fi ;;
     *) warn "skipping unknown tool: $tool";;
   esac
 done

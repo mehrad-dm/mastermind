@@ -1,6 +1,6 @@
 ---
 name: help
-description: Show the user what MasterMind can do and how to drive it — the full menu of skills and agents, each with the scenario it fires in AUTOMATICALLY and an example of how to call it BY HAND, plus which are auto vs on-request. Use when the user asks "what can you do", "help", "how do I use this", "what commands/skills are there", "list your abilities", or otherwise seems unsure how to drive MasterMind.
+description: Use when the user asks what MasterMind can do or how to drive it — "help", "what can you do", "how do I use this", "what commands are there", "list your skills", "what are my options" — or when they seem unsure how to get started.
 ---
 
 # Help — what MasterMind can do, and how to use it

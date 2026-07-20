@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Write a concise handoff so work survives a context reset or a teammate/next-session takeover — what's done, what's next, key decisions and why, where things live, and the gotchas. Use before a /clear on a long task, when pausing, or when handing off. A summary, not a context dump.
+description: Use when work needs to survive losing context — before a /clear on a long task, when pausing something unfinished, when handing over to a teammate or the next session, or when the context window is filling up on multi-day work.
 ---
 
 # MasterMind — Handoff

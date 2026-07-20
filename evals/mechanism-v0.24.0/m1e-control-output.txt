@@ -1,0 +1,15 @@
+Happy to. Before touching code, I'd want to align on a standard so we're not just trading one inconsistency for another. Here's how I'd approach it:
+
+**1. Audit first.** Quick inventory of every form: what it validates, when, and how errors surface. Half an hour of grepping saves us from guessing.
+
+**2. Agree on validation timing.** The pattern that tests best: validate on submit always, plus re-validate a field on blur *after* it's been touched once, and clear errors live as the user fixes them. Avoid validating pristine fields on blur — yelling at someone for an empty field they haven't reached yet is the most common complaint.
+
+**3. Centralize the rules.** One schema/validation layer per form (Zod, Yup, or whatever we already lean on) instead of hand-rolled `if` checks scattered around. Single source of truth for what "valid" means.
+
+**4. Standardize error presentation.** Consistent copy tone, placement (inline, below the field), and a11y (`aria-invalid`, associated error IDs). A shared error component so no one reinvents it.
+
+**5. Roll out incrementally.** Fix the highest-traffic / highest-pain forms first, prove the pattern, then migrate the rest. Don't big-bang it.
+
+Two things I'd need from you or the team: are we standardizing on a validation library (or is one already in use?), and is there a designer/copy owner for error message wording? That's usually the real bottleneck, not the code.
+
+Want me to start with the audit and come back with the inventory + a proposed standard?

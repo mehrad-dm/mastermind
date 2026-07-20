@@ -1,6 +1,6 @@
 ---
 name: spike
-description: Build a fast, throwaway spike to learn — validate a risky assumption or an unclear approach quickly, then rebuild it properly. Use when the right design is genuinely unknown and reality will teach you faster than planning. Explicitly throwaway — the spike does not ship.
+description: Use when the right approach is genuinely unknown and reality will teach faster than planning — a risky unvalidated assumption, an unfamiliar integration, "will this even work", "try something quick". The result is explicitly throwaway and does not ship.
 ---
 
 # MasterMind — Prototype

@@ -1,0 +1,29 @@
+{
+  "note": "Answer key derived from each skill's BODY (what it actually does), not from any description. Written before results are seen. `also_ok` covers genuinely defensible alternates; a pick outside both counts as a miss.",
+  "cases": [
+    { "id": 1,  "prompt": "this keeps breaking every time I deploy and I have no idea why", "expect": "debug", "also_ok": [] },
+    { "id": 2,  "prompt": "the dashboard takes like 4 seconds to load, make it faster", "expect": "perf", "also_ok": [] },
+    { "id": 3,  "prompt": "can you write up what you changed so I can send it to my team", "expect": "report", "also_ok": [] },
+    { "id": 4,  "prompt": "this touches a bunch of files and I honestly don't know where to start", "expect": "route", "also_ok": ["spec"] },
+    { "id": 5,  "prompt": "add dark mode to the settings page", "expect": "build", "also_ok": [] },
+    { "id": 6,  "prompt": "does this actually work? I haven't tried it end to end", "expect": "qa", "also_ok": [] },
+    { "id": 7,  "prompt": "set MasterMind up for this project", "expect": "init", "also_ok": [] },
+    { "id": 8,  "prompt": "what can you actually do?", "expect": "help", "also_ok": [] },
+    { "id": 9,  "prompt": "I'm about to run out of context, save where we got to", "expect": "handoff", "also_ok": [] },
+    { "id": 10, "prompt": "you keep writing it differently from the rest of our codebase, make it match", "expect": "signature", "also_ok": [] },
+    { "id": 11, "prompt": "this is a client's internal stuff, make sure it never gets committed", "expect": "lab", "also_ok": [] },
+    { "id": 12, "prompt": "I've never used tRPC before and I need to use it here", "expect": "learn", "also_ok": [] },
+    { "id": 13, "prompt": "will this approach even work? throw something together quickly to find out", "expect": "spike", "also_ok": [] },
+    { "id": 14, "prompt": "the requirements are vague, I'm not sure what we're actually building", "expect": "spec", "also_ok": [] },
+    { "id": 15, "prompt": "document our internal UI kit, people keep using the components wrong", "expect": "explain", "also_ok": [] },
+    { "id": 16, "prompt": "can you sharpen this prompt before I send it to the AI", "expect": "prompt", "also_ok": [] },
+    { "id": 17, "prompt": "remember that I always prefer named exports over default exports", "expect": "levelup", "also_ok": [] },
+    { "id": 18, "prompt": "why is this database query so slow", "expect": "perf", "also_ok": ["debug"] },
+    { "id": 19, "prompt": "it works locally but fails in CI and the error makes no sense", "expect": "debug", "also_ok": [] },
+    { "id": 20, "prompt": "build me a login form with proper validation", "expect": "build", "also_ok": [] },
+    { "id": 21, "prompt": "prove to me this is fixed", "expect": "qa", "also_ok": [] },
+    { "id": 22, "prompt": "the tests are flaky, sometimes green sometimes red", "expect": "debug", "also_ok": [] },
+    { "id": 23, "prompt": "onboard me, I just installed this", "expect": "init", "also_ok": ["help"] },
+    { "id": 24, "prompt": "write the code the way Dan Abramov would", "expect": "signature", "also_ok": [] }
+  ]
+}

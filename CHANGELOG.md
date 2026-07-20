@@ -4,6 +4,77 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.24.0] — 2026-07-21
+
+Twelve improvements drawn from two agent-engineering courses (harness, graph) and the `obra/superpowers`
+repo — adopted as **portable discipline** that works on any model. The kernel is unchanged in size, and
+everything new lives in on-demand files or shell.
+
+### Fixed
+
+- **Your own skills are never displaced again.** Installing into a project that already had a `build`,
+  `debug`, or `qa` skill used to move yours aside. Now **both survive**: yours keeps its name, MasterMind's
+  installs alongside as `mastermind-<name>`, and the installer says so. If your file later disappears,
+  ours reclaims the plain name and the alias is cleaned up. `--uninstall` still never touches your files.
+
+### Added
+
+- **Bootstrap re-injection — the brain now survives a compaction.** A `SessionStart` hook re-injects the
+  kernel on `startup|clear|compact`. Previously the kernel was read once and faded as the window filled,
+  so long sessions silently ran without MasterMind's discipline — no error, just confident answers without
+  the rigor. Merges into an existing `settings.json` without clobbering it, is idempotent, and leaves an
+  unparseable settings file strictly alone. `--check` reports whether it's registered.
+- **Graph thinking** (`core/agent-loop.md`) — the **edge test** (does the next step actually read the last
+  step's output? if not, the wait is wasted), **node contracts**, **edges are free** (never pay a model to
+  do plumbing), the **diamond** (fan out → reduce → synthesize), **barriers cost wall-clock**, **loop
+  convergence** (dedupe against everything *seen*, not only what was confirmed), and **isolate only where
+  steps write in parallel**.
+- **Prove a skill changes behavior** (`levelup`) — watch an agent fail *without* the skill and record its
+  actual rationalizations before writing it. "If you never watched it fail, you don't know whether the
+  skill teaches the right thing."
+- **Plan quality bar** (`build`, plan-first mode) — a plan must be followable by *an enthusiastic junior
+  engineer with poor taste, no judgement, no project context, and an aversion to testing*: exact file
+  paths, bite-sized steps, and a stated way to tell each one worked.
+- **Installer regression tests** (`tests/install.test.sh`) — 27 assertions over the scenarios that guard
+  our actual promises: never destroy your files, never lose a MasterMind capability, always idempotent,
+  merge settings rather than clobber them, leave an unparseable config alone. `install.sh` is the
+  highest-risk file we ship and had no coverage until now.
+- **Cursor hook wiring** (`.cursor/hooks.json`, `sessionStart` + `preCompact`). **Unverified upstream:**
+  Cursor has open bug reports where a hook's `additional_context` is accepted but never reaches the
+  model, and we cannot test Cursor here. It costs nothing and starts working the moment that's fixed —
+  but the `.mdc` rule remains Cursor's load-bearing path, and we do not claim re-injection works there.
+- **Copilot CLI hook wiring** (`.github/hooks/mastermind.json`, `sessionStart`) — built against GitHub's
+  published hooks reference and verified to match its schema. Copilot loads every `.github/hooks/*.json`,
+  so we ship our own file and never touch yours. **Startup-only:** Copilot exposes no compaction event,
+  so the brain reloads each session but can still fade inside a long one.
+- The bootstrap script now takes an explicit **shape argument** (`cursor|claude|sdk`) instead of relying
+  on environment sniffing. A project-level Cursor hook gets no `CURSOR_PLUGIN_ROOT`, so detection alone
+  would have silently emitted the wrong field and injected nothing.
+
+### Known limits — what re-injection actually covers
+
+| Tool | Level | Status |
+| --- | --- | --- |
+| Claude Code | startup **+ compaction** | verified (`evals/RESULTS.md` Run M1e) |
+| Cursor | startup + `preCompact` | wired, **unverified** — upstream bug reports |
+| Copilot CLI | **startup only** | schema-verified, untested live; no compaction event exists |
+| Codex | — | has a hook system; not yet wired |
+| Gemini | startup only | loads via `contextFileName`; no evidence it re-fires on compaction |
+| Plain chat | — | **impossible**; no mechanism exists |
+
+Only the Claude Code row is measured. The rest are built to published schemas and stated as unverified
+rather than claimed.
+
+### Changed
+
+- **Every skill description now states WHEN, never WHAT.** A description that summarizes its own workflow
+  becomes a shortcut the model takes *instead of* reading the skill — measured elsewhere as an agent running
+  one review where the body specified two. All 17 rewritten as triggering conditions in the user's own
+  words, which also sharpens router matching.
+- **New authoring rule: name actions, not tools** (`levelup`) — "dispatch a subagent", never a specific
+  tool's name. This is what lets one skill body run unedited on Claude Code, Codex, Cursor, Gemini, and
+  plain chat.
+
 ## [0.23.0] — 2026-07-19
 
 ### Added
