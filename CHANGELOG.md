@@ -110,7 +110,7 @@ surfaced along the way that were not on the list.
 
 #### Added
 
-- **First tests for the design engine** — 41 characterization tests over `design_system.py`, 1329 lines
+- **First tests for the design engine** — 46 characterization tests over `design_system.py`, 1329 lines
   that had none. They pin determinism, dial clamping and tier edges, no-match paths, and that
   persistence writes only under its output dir. Standard library only; no new dependency. They pin
   current behavior rather than assert it is correct: three of them document real bugs, including a
