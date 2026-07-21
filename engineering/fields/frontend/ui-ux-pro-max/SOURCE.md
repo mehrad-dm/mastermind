@@ -38,7 +38,7 @@ python3 -m unittest discover -s engineering/fields/frontend/ui-ux-pro-max/script
   `engineering/fields/frontend/web-animations.md` (small/local 100–200ms · medium 200–350ms ·
   large 350–500ms). Upstream's durations contradict that policy, so a clean re-vendor silently
   reintroduces the contradiction. Re-apply the overrides and keep the two files in agreement.
-- **`scripts/design_system.py`** — carries **three bug fixes to upstream's code** (v0.24.3).
+- **`scripts/design_system.py`** — carries **three bug fixes to upstream's code** (v0.25.0).
   A clean re-vendor silently reintroduces all three, including a **security** bug. Each fix
   is marked in the file with a `MASTERMIND LOCAL OVERRIDE` comment pointing back here, and
   each is covered by a test in `scripts/tests/` that goes red if the bug returns. Re-apply

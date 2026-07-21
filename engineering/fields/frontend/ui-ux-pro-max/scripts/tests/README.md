@@ -26,7 +26,7 @@ Still pinned:
 - `hex_to_ansi` — a 7-char string starting with `#` but containing non-hex digits
   (`"#GGGGGG"`) raises `ValueError`, while every other malformed value degrades to `""`.
 
-**Fixed in v0.24.3 — these tests now assert the CORRECT behavior** and are
+**Fixed in v0.25.0 — these tests now assert the CORRECT behavior** and are
 [local overrides of upstream](../../SOURCE.md), so a re-vendor that reintroduces the
 bug turns them red:
 

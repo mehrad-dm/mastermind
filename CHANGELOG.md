@@ -4,66 +4,53 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
-## [0.24.3] — 2026-07-21
+## [0.25.0] — 2026-07-21
 
-A fresh-eyes audit of the files v0.24.1 and v0.24.2 never touched — the installer, the hooks, and the
-checks themselves. It found that the previous release's headline security fix had only landed in half
-the places it needed to, plus a bug that could destroy an install outright.
+Clears the entire backlog from the v0.24.0 documentation pass, then audits the files that pass never
+touched. **A minor bump, not a patch:** several skills now behave differently — `debug` refuses to guess
+at an unreproducible bug, `spike` stops at a bound, `signature` drops uncited claims, and motion
+durations changed. Three review passes over the work found real defects each time, including two
+security holes and a bug that destroyed installs; those are called out below rather than buried.
 
-### Fixed
+### Mechanical fixes — the four that blocked everything else
 
-- **The documented update command destroyed the install.** `REPO` was resolved with `pwd`, which
-  returns the *logical* path — so running `~/.mastermind/install.sh` (the command in the README, the
-  installer's own header, and every "how to update" doc) set `REPO=~/.mastermind` and then ran
-  `ln -sfn ~/.mastermind ~/.mastermind`, pointing the brain symlink at **itself**. The result is an
-  unreadable loop: every glob stops matching, so skills link as a literal `*`, agents as `*.md`, and
-  the kernel is gone — while the installer still prints `✓ 1 skills, 1 agents linked`. Now resolved
-  with `pwd -P`, with a hard refusal if the two paths ever coincide again, and three regression tests
-  that reproduce the exact symptom.
-- **v0.24.2's push-guard fix only landed in the copy we ship.** `.githooks/pre-push` — the guard
-  actually protecting this public repo — kept the extension allowlist, so a secret in a `.env`, `.py`,
-  or `.yaml` still walked past it here. `CHANGELOG.md` and `SECURITY.md` both claimed otherwise. Synced,
-  and `check-integrity.mjs` now fails when the live guards and the shipped guards diverge.
-- **A trailing space in `lab/.denylist` silently disabled that term.** Terms were never trimmed, so
-  `"Acme Corp "` became an alternation branch requiring a literal trailing space — the guard then printed
-  `✓ clean` while that client's name went unscanned. Same failure with a CRLF denylist. **Fails open,
-  silently, per-term**, which is the worst shape a leak guard can have. Now trims whitespace and CR.
-- **`--uninstall` left behind everything it wrote.** It removed symlinks but not the `SessionStart`
-  entry it merged into `settings.json`, `.cursor/hooks.json`, or `.github/hooks/mastermind.json` — so
-  following the printed advice to "delete the clone" left every session firing a hook that pointed at a
-  missing script. Now unwired properly, and the user's own settings are still preserved untouched.
-- **`--global --uninstall` deleted files from the current project.** It removed `GEMINI.md`,
-  `.cursor/rules/mastermind.mdc`, and the Copilot instructions from `$PWD` regardless of scope, while
-  announcing it was operating on global. Project artifacts are now project-scope only.
-- **The skills index check was vacuous for 6 of 17 skills.** `skills/README.md` was verified with a
-  bare substring match, so deleting the row for `qa`, `build`, `report`, `route`, `learn`, or `debug`
-  passed clean — their names occur in ordinary prose. It also never detected an *extra* entry. Now
-  parses the table rows and compares sets both ways.
-- **`build-library.mjs` invented a repo that wasn't there.** With no sibling site checkout it created
-  the whole `../mastermind-site/src/pages/library/` tree and reported success. Now exits 1 with a clear
-  message.
-- **Three bugs in the vendored design engine**, found by v0.24.2's characterization suite and fixed
-  locally (recorded in `SOURCE.md` so a re-vendor can't silently undo them): a **path traversal** in
-  `persist_design_system` where a crafted project name wrote outside the output tree; a keyword pass so
-  loose that the token `"e"` made every unrecognized category inherit E-commerce rules; and a
-  bidirectional name match where a short style name beat the intended target. All 161 real categories
-  resolve unchanged and normal output is byte-identical.
+Mechanical bug fixes found by reading the source during a documentation pass. No behavior change to
+any skill or agent — these fix things that were silently broken or quietly untrue.
 
-### Added
+#### Fixed
 
-- **Three integrity checks** (7 → 10), each proven to fail before being kept: the active field points
-  at a pack that exists; a `SOURCE.md` preserve list is honored; and the repo's own guards match the
-  guards it ships.
-- **Seven installer regression tests** (30 → 37) covering the symlink-invocation path, uninstall
-  completeness, and global/project scope separation.
+- **A new field pack was silently unroutable — this is why only `frontend` ever existed.** None of the
+  files in `engineering/fields/_template/` carried `route_when` frontmatter, and `build-router.mjs`
+  skips any field file without it. So `cp -r _template` produced a pack with **zero router nodes and no
+  warning**: the model could never find it. Every template file is now tagged (copying the template now
+  yields 6 routable nodes), and `_`-prefixed directories are excluded from the router so the template's
+  own placeholder files can never be routed to.
+- **The template shipped no `audit-rules.md`,** so a bootstrapped pack left `code-reviewer` with no
+  framework-specific rules at all. Added, listed in the pack's contents table, and now required.
+- **`check-integrity.mjs` fails on the above instead of letting it pass silently** — every field-pack
+  file except `field.md` must carry `route_when`, and every pack must ship `field.md` + `audit-rules.md`.
+- **Every documented `ui-ux-pro-max` command was broken.** The docs said
+  `skills/ui-ux-pro-max/scripts/search.py`; the real path is
+  `engineering/fields/frontend/ui-ux-pro-max/`. All 14 occurrences corrected to a path that works from
+  any directory, and verified by running one.
+- **`ui-ux-pro-max` advertised 6 stacks it cannot serve.** `javafx`, `wpf`, `winui`, `avalonia`, `uno`,
+  and `uwp` were configured with no data files, so `--stack wpf` was accepted and then failed with
+  "Stack file not found". The dead entries are gone and the available list is now derived from the CSVs
+  that actually ship, so config and disk cannot drift apart again.
+- **Corrected `ui-ux-pro-max`'s own stats** — 73 font pairings (said 57) across 16 stacks (said 10).
+  Palettes (161), UX guidelines (99), product types (161), and chart types (25) were already accurate.
+- **`help`'s "17 skills · 4 agents" header is now verified, not hand-synced.** It had to be updated by
+  hand on every skill addition, which guarantees it eventually lies; `check-integrity.mjs` now fails if
+  it disagrees with what ships. `tests/install.test.sh` likewise derives its expected counts from the
+  repo rather than hardcoding 17/4/18.
 
-## [0.24.2] — 2026-07-21
+### Design fixes — where a skill contradicted its own stated rule
 
 Clears the rest of the backlog from the v0.24.0 documentation pass — ten design defects where a skill
 or agent contradicted its own stated rule, plus the first tests for the design engine. Two real bugs
 surfaced along the way that were not on the list.
 
-### Fixed
+#### Fixed
 
 - **The `lab` push guard only scanned five file extensions.** A secret in a `.env`, `.py`, `.yaml`, or
   `.txt` walked straight past `pre-push` — the layer that exists to catch exactly what `--no-verify`
@@ -121,7 +108,7 @@ surfaced along the way that were not on the list.
 - **`lessons.md` grew without pruning**, against the project's own "a pack that only grows is a bug".
   Both the frontend pack and the template now carry a pruning trigger and four delete conditions.
 
-### Added
+#### Added
 
 - **First tests for the design engine** — 41 characterization tests over `design_system.py`, 1329 lines
   that had none. They pin determinism, dial clamping and tier edges, no-match paths, and that
@@ -131,45 +118,66 @@ surfaced along the way that were not on the list.
   Coverage is partial by design and `scripts/tests/README.md` says so — roughly 700 lines of output
   formatting remain untested.
 
-### Removed
+#### Removed
 
 - **`data/draft.csv`** (~104KB) — an unreferenced near-duplicate of `design.csv` that no code path
   reads, and which documents its own deadness in a comment. `design.csv` was dead by the same evidence
-  and is removed in v0.24.3.
+  and is removed here too.
 - **The duplicated cycle-report / plan-first preference block**, restated in `init` and `help` where it
   would drift. `build` and `report` keep the authoritative definitions; the others point.
 
-## [0.24.1] — 2026-07-21
+### Audit — the installer, the hooks, and the checks themselves
 
-Mechanical bug fixes found by reading the source during a documentation pass. No behavior change to
-any skill or agent — these fix things that were silently broken or quietly untrue.
+A fresh-eyes audit of the files the fixes above never touched — the installer, the hooks, and the
+checks themselves. It found that the previous release's headline security fix had only landed in half
+the places it needed to, plus a bug that could destroy an install outright.
 
-### Fixed
+#### Fixed
 
-- **A new field pack was silently unroutable — this is why only `frontend` ever existed.** None of the
-  files in `engineering/fields/_template/` carried `route_when` frontmatter, and `build-router.mjs`
-  skips any field file without it. So `cp -r _template` produced a pack with **zero router nodes and no
-  warning**: the model could never find it. Every template file is now tagged (copying the template now
-  yields 6 routable nodes), and `_`-prefixed directories are excluded from the router so the template's
-  own placeholder files can never be routed to.
-- **The template shipped no `audit-rules.md`,** so a bootstrapped pack left `code-reviewer` with no
-  framework-specific rules at all. Added, listed in the pack's contents table, and now required.
-- **`check-integrity.mjs` fails on the above instead of letting it pass silently** — every field-pack
-  file except `field.md` must carry `route_when`, and every pack must ship `field.md` + `audit-rules.md`.
-- **Every documented `ui-ux-pro-max` command was broken.** The docs said
-  `skills/ui-ux-pro-max/scripts/search.py`; the real path is
-  `engineering/fields/frontend/ui-ux-pro-max/`. All 14 occurrences corrected to a path that works from
-  any directory, and verified by running one.
-- **`ui-ux-pro-max` advertised 6 stacks it cannot serve.** `javafx`, `wpf`, `winui`, `avalonia`, `uno`,
-  and `uwp` were configured with no data files, so `--stack wpf` was accepted and then failed with
-  "Stack file not found". The dead entries are gone and the available list is now derived from the CSVs
-  that actually ship, so config and disk cannot drift apart again.
-- **Corrected `ui-ux-pro-max`'s own stats** — 73 font pairings (said 57) across 16 stacks (said 10).
-  Palettes (161), UX guidelines (99), product types (161), and chart types (25) were already accurate.
-- **`help`'s "17 skills · 4 agents" header is now verified, not hand-synced.** It had to be updated by
-  hand on every skill addition, which guarantees it eventually lies; `check-integrity.mjs` now fails if
-  it disagrees with what ships. `tests/install.test.sh` likewise derives its expected counts from the
-  repo rather than hardcoding 17/4/18.
+- **The documented update command destroyed the install.** `REPO` was resolved with `pwd`, which
+  returns the *logical* path — so running `~/.mastermind/install.sh` (the command in the README, the
+  installer's own header, and every "how to update" doc) set `REPO=~/.mastermind` and then ran
+  `ln -sfn ~/.mastermind ~/.mastermind`, pointing the brain symlink at **itself**. The result is an
+  unreadable loop: every glob stops matching, so skills link as a literal `*`, agents as `*.md`, and
+  the kernel is gone — while the installer still prints `✓ 1 skills, 1 agents linked`. Now resolved
+  with `pwd -P`, with a hard refusal if the two paths ever coincide again, and three regression tests
+  that reproduce the exact symptom.
+- **The push-guard fix above only landed in the copy we ship.** `.githooks/pre-push` — the guard
+  actually protecting this public repo — kept the extension allowlist, so a secret in a `.env`, `.py`,
+  or `.yaml` still walked past it here. `CHANGELOG.md` and `SECURITY.md` both claimed otherwise. Synced,
+  and `check-integrity.mjs` now fails when the live guards and the shipped guards diverge.
+- **A trailing space in `lab/.denylist` silently disabled that term.** Terms were never trimmed, so
+  `"Acme Corp "` became an alternation branch requiring a literal trailing space — the guard then printed
+  `✓ clean` while that client's name went unscanned. Same failure with a CRLF denylist. **Fails open,
+  silently, per-term**, which is the worst shape a leak guard can have. Now trims whitespace and CR.
+- **`--uninstall` left behind everything it wrote.** It removed symlinks but not the `SessionStart`
+  entry it merged into `settings.json`, `.cursor/hooks.json`, or `.github/hooks/mastermind.json` — so
+  following the printed advice to "delete the clone" left every session firing a hook that pointed at a
+  missing script. Now unwired properly, and the user's own settings are still preserved untouched.
+- **`--global --uninstall` deleted files from the current project.** It removed `GEMINI.md`,
+  `.cursor/rules/mastermind.mdc`, and the Copilot instructions from `$PWD` regardless of scope, while
+  announcing it was operating on global. Project artifacts are now project-scope only.
+- **The skills index check was vacuous for 6 of 17 skills.** `skills/README.md` was verified with a
+  bare substring match, so deleting the row for `qa`, `build`, `report`, `route`, `learn`, or `debug`
+  passed clean — their names occur in ordinary prose. It also never detected an *extra* entry. Now
+  parses the table rows and compares sets both ways.
+- **`build-library.mjs` invented a repo that wasn't there.** With no sibling site checkout it created
+  the whole `../mastermind-site/src/pages/library/` tree and reported success. Now exits 1 with a clear
+  message.
+- **Three bugs in the vendored design engine**, found by the new characterization suite and fixed
+  locally (recorded in `SOURCE.md` so a re-vendor can't silently undo them): a **path traversal** in
+  `persist_design_system` where a crafted project name wrote outside the output tree; a keyword pass so
+  loose that the token `"e"` made every unrecognized category inherit E-commerce rules; and a
+  bidirectional name match where a short style name beat the intended target. All 161 real categories
+  resolve unchanged and normal output is byte-identical.
+
+#### Added
+
+- **Three integrity checks** (7 → 10), each proven to fail before being kept: the active field points
+  at a pack that exists; a `SOURCE.md` preserve list is honored; and the repo's own guards match the
+  guards it ships.
+- **Seven installer regression tests** (30 → 37) covering the symlink-invocation path, uninstall
+  completeness, and global/project scope separation.
 
 ## [0.24.0] — 2026-07-21
 

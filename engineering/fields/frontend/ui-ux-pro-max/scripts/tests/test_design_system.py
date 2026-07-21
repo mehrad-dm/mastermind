@@ -9,7 +9,7 @@ deliberately NOT a specification: where the current behavior looks like a bug,
 the test says so in its docstring and pins the buggy behavior anyway. Changing
 one of those is a decision, not an accident.
 
-Three such bugs were fixed in v0.24.3 (path traversal in persist_design_system,
+Three such bugs were fixed in v0.25.0 (path traversal in persist_design_system,
 the over-loose _find_reasoning_rule keyword pass, and the bidirectional
 _select_best_match name compare). Their tests now assert the CORRECT behavior and
 are marked "FIXED" with the old test name in the docstring. Those fixes are local

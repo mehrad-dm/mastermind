@@ -207,7 +207,7 @@ if (!packRef) {
 // --- 9. a SOURCE.md preserve list is honored ----------------------------------
 // A vendored dir's SOURCE.md documents a re-vendor that `rm -rf`s the directory, so any
 // MasterMind-authored file in it survives only if it is named in that file's preserve list
-// AND copied aside by the documented procedure. v0.24.2 edited `data/motion.csv` — vendored,
+// AND copied aside by the documented procedure. an earlier pass edited `data/motion.csv` — vendored,
 // unlisted — and the edit would have been destroyed on the next re-vendor; human review
 // caught it, no check did.
 //
@@ -245,7 +245,7 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
 
 // --- 10. the repo's own guards match the guards it ships ----------------------
 // `.githooks/` is this repo's live guard; `skills/lab/assets/` is what we install for
-// users. v0.24.2 fixed a leak in the shipped `pre-push` and left `.githooks/` stale, so
+// users. a fix landed in the shipped `pre-push` and left `.githooks/` stale, so
 // the guard protecting this public repo kept the bug the CHANGELOG said was fixed —
 // while both docs claimed otherwise. A security fix applied to one copy is not a fix.
 //
