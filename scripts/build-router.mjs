@@ -46,8 +46,13 @@ const walk = (dir) =>
 
 const nodes = []
 
-// Field packs — routed by route_when frontmatter
-for (const f of walk(path.join(ROOT, 'engineering', 'fields')).filter((p) => p.endsWith('.md'))) {
+// Field packs — routed by route_when frontmatter.
+// `_`-prefixed dirs (e.g. `_template/`) are scaffolding, not packs: their files carry real
+// `route_when` tags so a copied pack routes on day one, but the template itself must never
+// become a routable node — the model would load a file of `<angle-bracket>` placeholders.
+const isScaffold = (p) => path.relative(ROOT, p).split(path.sep).some((seg) => seg.startsWith('_'))
+
+for (const f of walk(path.join(ROOT, 'engineering', 'fields')).filter((p) => p.endsWith('.md') && !isScaffold(p))) {
   const body = fs.readFileSync(f, 'utf8')
   const fm = frontmatter(body)
   if (!fm.route_when) continue // field.md (the pack TOC) and untagged files are skipped

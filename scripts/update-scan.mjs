@@ -1,8 +1,16 @@
-// Refresh .foglamp/scan.json for v0.24.0. Idempotent: re-running replaces the same
-// nodes/edges by id rather than duplicating them.
-import { readFileSync, writeFileSync } from 'node:fs'
+// Refresh .foglamp/scan.json — the architecture map published on every push. Idempotent:
+// re-running replaces the same nodes/edges by id rather than duplicating them.
+//
+// Version and counts are read from the repo, never written here: this file publishes a
+// public map, so a stale literal would ship a lie on the first skill added after a release.
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join, resolve } from 'node:path'
 
-const P = '/Users/zed/Desktop/Projects/mastermind/.foglamp/scan.json'
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const P = join(ROOT, '.foglamp', 'scan.json')
+const count = (dir, pred) => readdirSync(join(ROOT, dir), { withFileTypes: true }).filter(pred).length
+
 const d = JSON.parse(readFileSync(P, 'utf8'))
 const g = d.graph
 
@@ -64,8 +72,12 @@ for (const t of ['cursor', 'copilot']) {
   if (i >= 0) g.nodes[i].sub = 'kernel + bootstrap hook'
 }
 
-d.version = '0.24.0'
-d.stats = { ...d.stats, agents: 4, tools: 17 }
+d.version = readFileSync(join(ROOT, 'VERSION'), 'utf8').trim()
+d.stats = {
+  ...d.stats,
+  agents: count('agents', (e) => e.isFile() && e.name.endsWith('.md')),
+  tools: count('skills', (e) => e.isDirectory()),
+}
 
 writeFileSync(P, JSON.stringify(d, null, 2) + '\n')
 console.log(`✓ scan.json → ${g.nodes.length} nodes, ${g.edges.length} edges (v${d.version})`)

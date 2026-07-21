@@ -1,3 +1,8 @@
+---
+field: <field>
+route_when: [learn, curriculum, resource, course, roadmap, deep-dive]
+---
+
 # Curriculum — an on-demand reference index
 
 **A reference to draw from, not required reading — and not a completeness goal.** A frontier model

@@ -1,3 +1,8 @@
+---
+field: <field>
+route_when: [learn, source, world-class-code, best-practices]
+---
+
 # Learning Sources — how to learn this field well
 
 The discipline for getting up to speed fast and correctly (pairs with the `learn` skill).

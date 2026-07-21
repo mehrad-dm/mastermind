@@ -23,3 +23,7 @@ engineering/fields/*/*-coding-patterns/
 # NEVER commit the lock file (holds the secret editToken). The token lives as the
 # GitHub Actions secret FOGLAMP_EDIT_TOKEN, used by .github/workflows/foglamp.yml.
 /.foglamp/scan.lock.json
+
+# Python bytecode from the vendored ui-ux-pro-max search engine
+__pycache__/
+*.pyc

@@ -8,7 +8,8 @@ Usage: python search.py "<query>" [--domain <domain>] [--stack <stack>] [--max-r
        python search.py "<query>" --design-system --variance 8 --motion 9 --density 7
 
 Domains: style, prompt, color, chart, landing, product, ux, typography, google-fonts, gsap
-Stacks: react, nextjs, vue, svelte, astro, swiftui, react-native, flutter, nuxtjs, nuxt-ui, html-tailwind, shadcn, jetpack-compose, threejs, angular, laravel, javafx, wpf, winui, avalonia, uno, uwp
+Stacks: angular, astro, flutter, html-tailwind, jetpack-compose, laravel, nextjs, nuxt-ui, nuxtjs, react, react-native, shadcn, svelte, swiftui, threejs, vue
+        (the live set is whatever ships in data/stacks/ — run with an unknown --stack to have it listed)
 
 Design dials (1-10, only with --design-system):
   --variance   DESIGN_VARIANCE: 1=centered/minimal, 10=bold/asymmetric

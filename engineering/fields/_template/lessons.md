@@ -1,3 +1,8 @@
+---
+field: <field>
+route_when: [lesson, gotcha, pattern, review-finding, house-style]
+---
+
 # Lessons — <FIELD> (the leveling record)
 
 Durable lessons from real usage and `code-reviewer` findings. Each is a one-line rule with the "why"

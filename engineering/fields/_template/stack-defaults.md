@@ -1,3 +1,8 @@
+---
+field: <field>
+route_when: [stack, tool, library, default, choose, framework, testing, tooling]
+---
+
 # Stack Defaults — choose the best, every time
 
 Opinionated defaults so MasterMind reaches for the *right* tool instead of the average one. Format:

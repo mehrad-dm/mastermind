@@ -1,3 +1,8 @@
+---
+field: <field>
+route_when: [mentor, philosophy, taste, authority, who-to-align-with]
+---
+
 # Mentors — the masters MasterMind reasons like
 
 When taste or "what's the *right* way" is contested, align with these schools of thought. Not name-

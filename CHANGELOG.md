@@ -4,6 +4,38 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.24.1] — 2026-07-21
+
+Mechanical bug fixes found by reading the source during a documentation pass. No behavior change to
+any skill or agent — these fix things that were silently broken or quietly untrue.
+
+### Fixed
+
+- **A new field pack was silently unroutable — this is why only `frontend` ever existed.** None of the
+  files in `engineering/fields/_template/` carried `route_when` frontmatter, and `build-router.mjs`
+  skips any field file without it. So `cp -r _template` produced a pack with **zero router nodes and no
+  warning**: the model could never find it. Every template file is now tagged (copying the template now
+  yields 6 routable nodes), and `_`-prefixed directories are excluded from the router so the template's
+  own placeholder files can never be routed to.
+- **The template shipped no `audit-rules.md`,** so a bootstrapped pack left `code-reviewer` with no
+  framework-specific rules at all. Added, listed in the pack's contents table, and now required.
+- **`check-integrity.mjs` fails on the above instead of letting it pass silently** — every field-pack
+  file except `field.md` must carry `route_when`, and every pack must ship `field.md` + `audit-rules.md`.
+- **Every documented `ui-ux-pro-max` command was broken.** The docs said
+  `skills/ui-ux-pro-max/scripts/search.py`; the real path is
+  `engineering/fields/frontend/ui-ux-pro-max/`. All 14 occurrences corrected to a path that works from
+  any directory, and verified by running one.
+- **`ui-ux-pro-max` advertised 6 stacks it cannot serve.** `javafx`, `wpf`, `winui`, `avalonia`, `uno`,
+  and `uwp` were configured with no data files, so `--stack wpf` was accepted and then failed with
+  "Stack file not found". The dead entries are gone and the available list is now derived from the CSVs
+  that actually ship, so config and disk cannot drift apart again.
+- **Corrected `ui-ux-pro-max`'s own stats** — 73 font pairings (said 57) across 16 stacks (said 10).
+  Palettes (161), UX guidelines (99), product types (161), and chart types (25) were already accurate.
+- **`help`'s "17 skills · 4 agents" header is now verified, not hand-synced.** It had to be updated by
+  hand on every skill addition, which guarantees it eventually lies; `check-integrity.mjs` now fails if
+  it disagrees with what ships. `tests/install.test.sh` likewise derives its expected counts from the
+  repo rather than hardcoding 17/4/18.
+
 ## [0.24.0] — 2026-07-21
 
 Twelve improvements drawn from two agent-engineering courses (harness, graph) and the `obra/superpowers`

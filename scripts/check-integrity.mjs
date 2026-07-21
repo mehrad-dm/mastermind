@@ -10,6 +10,9 @@
  *   3. the root README.md skills table lists exactly the skill dirs
  *   4. no broken ~/.mastermind / engineering / core / fields cross-references in the docs
  *   5. active-field.md declares a level
+ *   6. help/SKILL.md's "<n> skills · <n> agents" header matches what actually ships
+ *   7. every field-pack file (except field.md) carries `route_when`, and every pack
+ *      ships field.md + audit-rules.md — otherwise the router skips it silently
  */
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -101,6 +104,62 @@ for (const f of docFiles) {
 // --- 5. active-field declares a level ----------------------------------------
 if (!/level\s+\d+/i.test(read('engineering/active-field.md'))) {
   fail('engineering/active-field.md: no level declared')
+}
+
+// --- 6. the help menu's headline counts are true ------------------------------
+// help/SKILL.md prints "<n> skills · <n> agents" to the user. Hand-syncing it on every
+// skill addition guarantees it eventually lies, so assert it instead of trusting it.
+const agentCount = readdirSync(join(ROOT, 'agents'), { withFileTypes: true })
+  .filter((e) => e.isFile() && e.name.endsWith('.md')).length
+const helpHeader = read('skills/help/SKILL.md').match(/(\d+)\s+skills\s+·\s+(\d+)\s+agents/)
+if (!helpHeader) {
+  fail('skills/help/SKILL.md: no "<n> skills · <n> agents" header line to verify')
+} else {
+  const [, s, a] = helpHeader
+  if (+s !== skillDirs.length) fail(`skills/help/SKILL.md: claims ${s} skills, found ${skillDirs.length}`)
+  if (+a !== agentCount) fail(`skills/help/SKILL.md: claims ${a} agents, found ${agentCount}`)
+}
+
+// --- 7. every field-pack knowledge file is routable ---------------------------
+// build-router.mjs silently skips any field file without `route_when`, so a pack that
+// forgets it produces zero router nodes and no warning. This must mirror the router's
+// view exactly, so it uses the same `frontmatter()` anchoring (string-start `---`, tag
+// read from inside the block) rather than a looser text match — a check that disagrees
+// with the thing it guards is worse than no check. It walks nested dirs because the
+// router does too (`ui-ux-pro-max/SKILL.md` is a live node one level down).
+//
+// NON_ROUTABLE lists the docs that are deliberately unrouted: a pack's own table of
+// contents and its provenance notes. It is an explicit allowlist so that adding a new
+// unrouted doc is a decision someone makes, not something that happens by accident.
+const NON_ROUTABLE = new Set(['field.md', 'SOURCE.md', 'README.md'])
+const fieldsDir = join(ROOT, 'engineering', 'fields')
+const packs = readdirSync(fieldsDir, { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name)
+  .sort()
+
+const walkMd = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? walkMd(join(dir, e.name)) : e.name.endsWith('.md') ? [join(dir, e.name)] : []
+  )
+
+for (const pack of packs) {
+  const packDir = join(fieldsDir, pack)
+  const files = walkMd(packDir)
+  const top = files.filter((p) => dirname(p) === packDir).map((p) => p.split('/').pop())
+
+  if (!top.includes('field.md')) fail(`engineering/fields/${pack}/: no field.md (the pack's table of contents)`)
+  if (!top.includes('audit-rules.md')) {
+    fail(`engineering/fields/${pack}/: no audit-rules.md — code-reviewer would have no framework rules`)
+  }
+  for (const abs of files) {
+    if (NON_ROUTABLE.has(abs.split('/').pop())) continue
+    const rel = abs.slice(ROOT.length + 1)
+    const fm = frontmatter(read(rel))
+    if (!fm || !('route_when' in fm)) {
+      fail(`${rel}: no \`route_when\` frontmatter — build-router.mjs will skip it silently`)
+    }
+  }
 }
 
 // --- report ------------------------------------------------------------------

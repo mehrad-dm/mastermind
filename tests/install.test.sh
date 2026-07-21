@@ -26,14 +26,19 @@ yes_() { if [ -n "$2" ]; then ok "$1"; else no "$1"; fi; }
 proj() { local d="$TMP/$1"; rm -rf "$d"; mkdir -p "$d"; printf '%s' "$d"; }
 run()  { (cd "$1" && shift && "$INSTALL" "$@" 2>&1); }
 
+# Derived from the repo, never hand-written: the promise is "every skill/agent we ship gets
+# linked", not "exactly 17". A literal here silently becomes a lie the next time one is added.
+N_SKILLS="$(ls -d "$REPO"/skills/*/ | wc -l | tr -d ' ')"
+N_AGENTS="$(ls "$REPO"/agents/*.md | wc -l | tr -d ' ')"
+
 echo "── syntax"
 bash -n "$INSTALL" && ok "install.sh parses" || no "install.sh parses"
 bash -n "$REPO/hooks/session-start.sh" && ok "session-start.sh parses" || no "session-start.sh parses"
 
 echo "── clean install"
 P=$(proj clean); OUT=$(run "$P" claude)
-is "17 skills linked" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "17"
-is "4 agents linked"  "$(ls "$P/.claude/agents" | wc -l | tr -d ' ')" "4"
+is "all skills linked" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILLS"
+is "all agents linked" "$(ls "$P/.claude/agents" | wc -l | tr -d ' ')" "$N_AGENTS"
 yes_ "bootstrap registered" "$(grep -o session-start.sh "$P/.claude/settings.json" 2>/dev/null | head -1)"
 is "fires on compact" "$(python3 -c "import json;print('compact' in json.load(open('$P/.claude/settings.json'))['hooks']['SessionStart'][0]['matcher'])")" "True"
 
@@ -47,7 +52,7 @@ is "their skill untouched"  "$(cat "$P/.claude/skills/build/SKILL.md")" "MINE"
 is "their agent untouched"  "$(cat "$P/.claude/agents/code-reviewer.md")" "MINE"
 yes_ "ours installed as mastermind-build" "$([ -L "$P/.claude/skills/mastermind-build" ] && echo y)"
 yes_ "ours installed as mastermind-code-reviewer.md" "$([ -L "$P/.claude/agents/mastermind-code-reviewer.md" ] && echo y)"
-is "no capability lost (17 ours + 1 theirs)" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "18"
+is "no capability lost (all ours + 1 theirs)" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$((N_SKILLS + 1))"
 is "no .bak created" "$(ls "$P/.claude/skills/"*.bak-* 2>/dev/null | wc -l | tr -d ' ')" "0"
 
 echo "── collision released: ours reclaims the plain name"
@@ -57,7 +62,7 @@ is "alias cleaned up" "$([ -e "$P/.claude/skills/mastermind-build" ] && echo pre
 
 echo "── idempotency"
 P=$(proj idem); run "$P" claude >/dev/null; run "$P" claude >/dev/null; run "$P" claude >/dev/null
-is "still 17 skills" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "17"
+is "still all skills" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILLS"
 is "one bootstrap entry" "$(python3 -c "import json;d=json.load(open('$P/.claude/settings.json'));print(sum('session-start.sh' in json.dumps(e) for e in d['hooks']['SessionStart']))")" "1"
 
 echo "── existing settings.json is merged, never clobbered"

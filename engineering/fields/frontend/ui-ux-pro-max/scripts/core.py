@@ -94,12 +94,6 @@ STACK_CONFIG = {
     "threejs":          {"file": "stacks/threejs.csv"},
     "angular":          {"file": "stacks/angular.csv"},
     "laravel":          {"file": "stacks/laravel.csv"},
-    "javafx":           {"file": "stacks/javafx.csv"},
-    "wpf":              {"file": "stacks/wpf.csv"},
-    "winui":            {"file": "stacks/winui.csv"},
-    "avalonia":         {"file": "stacks/avalonia.csv"},
-    "uno":              {"file": "stacks/uno.csv"},
-    "uwp":              {"file": "stacks/uwp.csv"},
 }
 
 # Common columns for all stacks
@@ -108,7 +102,12 @@ _STACK_COLS = {
     "output_cols": ["Category", "Guideline", "Description", "Do", "Don't", "Code Good", "Code Bad", "Severity", "Docs URL"]
 }
 
-AVAILABLE_STACKS = list(STACK_CONFIG.keys())
+# Only stacks whose CSV actually ships are offered. Deriving this from disk (rather than
+# from the config keys) is what keeps the advertised list honest: a configured stack with no
+# data file used to be accepted by --stack and then fail with "Stack file not found".
+AVAILABLE_STACKS = sorted(
+    name for name, cfg in STACK_CONFIG.items() if (DATA_DIR / cfg["file"]).exists()
+)
 
 
 # ============ BM25 IMPLEMENTATION ============
@@ -254,7 +253,7 @@ def search(query, domain=None, max_results=MAX_RESULTS):
 
 def search_stack(query, stack, max_results=MAX_RESULTS):
     """Search stack-specific guidelines"""
-    if stack not in STACK_CONFIG:
+    if stack not in AVAILABLE_STACKS:
         return {"error": f"Unknown stack: {stack}. Available: {', '.join(AVAILABLE_STACKS)}"}
 
     filepath = DATA_DIR / STACK_CONFIG[stack]["file"]
