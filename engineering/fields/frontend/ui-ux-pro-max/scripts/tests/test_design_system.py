@@ -9,6 +9,14 @@ deliberately NOT a specification: where the current behavior looks like a bug,
 the test says so in its docstring and pins the buggy behavior anyway. Changing
 one of those is a decision, not an accident.
 
+Three such bugs were fixed in v0.24.3 (path traversal in persist_design_system,
+the over-loose _find_reasoning_rule keyword pass, and the bidirectional
+_select_best_match name compare). Their tests now assert the CORRECT behavior and
+are marked "FIXED" with the old test name in the docstring. Those fixes are local
+overrides of vendored upstream code — see ../../SOURCE.md. If one of them goes red
+after a re-vendor, the override was dropped and the bug is back; restore the fix,
+do not relax the test.
+
 Run:
     python3 -m unittest discover -s engineering/fields/frontend/ui-ux-pro-max/scripts/tests -v
 
@@ -165,13 +173,25 @@ class TestSelectBestMatch(unittest.TestCase):
             self.gen._select_best_match(results, ["Brutalism"])["Style Category"], "Brutalism"
         )
 
-    def test_substring_match_is_bidirectional_BUG(self):
-        """BUG (pinned, not fixed): the name match is `priority in name OR name in
-        priority`. A style whose name is a substring of the priority string wins
-        even when a later result is the real target. Here 'A' is inside
-        'Brutalism', so 'A' is selected instead of 'Brutalism'."""
+    def test_substring_match_is_directional(self):
+        """FIXED (was test_substring_match_is_bidirectional_BUG). Upstream matched
+        `priority in name OR name in priority`, so a style whose name is a substring
+        of the priority string won over the style the priority actually names: 'A' is
+        inside 'Brutalism', so 'A' was selected. The match is now directional, so the
+        intended target wins. See SOURCE.md -> local overrides."""
         results = [{"Style Category": "A"}, {"Style Category": "Brutalism"}]
-        self.assertEqual(self.gen._select_best_match(results, ["Brutalism"])["Style Category"], "A")
+        self.assertEqual(
+            self.gen._select_best_match(results, ["Brutalism"])["Style Category"], "Brutalism"
+        )
+
+    def test_priority_still_matches_a_longer_real_style_name(self):
+        """The intended feature survives the directional fix: a priority string
+        matches a real style name that CONTAINS it."""
+        results = [{"Style Category": "Neubrutalism"}, {"Style Category": "Glassmorphism 2.0"}]
+        self.assertEqual(
+            self.gen._select_best_match(results, ["Glassmorphism"])["Style Category"],
+            "Glassmorphism 2.0",
+        )
 
     def test_empty_priority_string_matches_everything_and_yields_first_result(self):
         """Style_Priority="" splits to [""], and "" is a substring of every name."""
@@ -196,16 +216,46 @@ class TestReasoningLookup(unittest.TestCase):
             self.gen._find_reasoning_rule("General").get("UI_Category"), "SaaS (General)"
         )
 
-    def test_single_letter_token_makes_unrelated_categories_match_ecommerce_BUG(self):
-        """BUG (pinned, not fixed): the keyword pass splits "E-commerce" into
-        ["e", "commerce"], so ANY unmatched category containing the letter "e"
-        resolves to the E-commerce rule. This makes the documented
-        "no rule -> neutral defaults" branch in _apply_reasoning near-unreachable."""
-        rule = self.gen._find_reasoning_rule("zzzz-no-such-category-qq")
-        self.assertEqual(rule.get("UI_Category"), "E-commerce")
+    def test_unrecognized_category_reaches_the_neutral_defaults_branch(self):
+        """FIXED (was test_single_letter_token_makes_unrelated_categories_match_ecommerce_BUG).
+        Upstream's keyword pass split "E-commerce" into ["e", "commerce"] and accepted a
+        substring hit, so ANY unmatched category containing the letter "e" resolved to the
+        E-commerce rule. Whole-token matching with a minimum token length makes the
+        documented "no rule -> neutral defaults" branch reachable again.
+        See SOURCE.md -> local overrides."""
+        for category in ("zzzz-no-such-category-qq", "qqq-eee-no-such-thing", "xyzzy"):
+            with self.subTest(category=category):
+                self.assertEqual(self.gen._find_reasoning_rule(category), {})
+
+    def test_real_categories_still_resolve_through_the_keyword_pass(self):
+        """The keyword pass must still do its job for freeform categories that miss
+        the exact and partial passes."""
+        cases = [
+            ("Fitness App", "Fitness/Gym App"),
+            ("Dental", "Dental Practice"),
+            ("crypto wallet", "Fintech/Crypto"),
+            ("pet grooming", "Pet Tech App"),
+            ("online course", "Online Course/E-learning"),
+        ]
+        for category, expected in cases:
+            with self.subTest(category=category):
+                self.assertEqual(
+                    self.gen._find_reasoning_rule(category).get("UI_Category"), expected
+                )
+
+    def test_every_real_ui_category_resolves_to_itself(self):
+        """Guards the fix against over-tightening: all 161 rows in ui-reasoning.csv
+        (which is also the Product Type vocabulary the generator feeds in) must still
+        resolve to their own rule."""
+        for rule in self.gen.reasoning_data:
+            category = rule.get("UI_Category", "")
+            with self.subTest(category=category):
+                self.assertEqual(
+                    self.gen._find_reasoning_rule(category).get("UI_Category"), category
+                )
 
     def test_truly_unmatched_category_falls_back_to_hardcoded_defaults(self):
-        """A category with no matching token at all ('zzz') does reach the fallback."""
+        """A category with no matching token at all ('zzz') reaches the fallback."""
         self.assertEqual(self.gen._find_reasoning_rule("zzz"), {})
         reasoning = self.gen._apply_reasoning("zzz", {})
         self.assertEqual(reasoning["pattern"], "Hero + Features + CTA")
@@ -362,20 +412,58 @@ class TestPersistence(unittest.TestCase):
                 expected = "default" if not name else name.lower().replace(" ", "-")
                 self.assertTrue((tmp / "design-system" / expected / "MASTER.md").exists())
 
-    def test_project_name_and_page_are_not_sanitised_path_traversal_BUG(self):
-        """BUG (pinned, not fixed): project_name and page are only lowercased and
-        space-hyphenated before being joined onto the output path, so `../`
-        escapes the design-system/ tree entirely. Contained here by nesting the
-        output_dir two levels inside the temp dir."""
-        nested = self.tmp / "a" / "b"
-        nested.mkdir(parents=True)
+    def test_project_name_and_page_cannot_traverse_out_of_the_output_dir(self):
+        """FIXED (was test_project_name_and_page_are_not_sanitised_path_traversal_BUG).
+        Upstream only lowercased and space-hyphenated project_name and page before
+        joining them onto the output path, so `../` escaped the design-system/ tree
+        entirely: the master landed two levels up and the page two levels above that.
+        Both are now sanitised to a single path segment. See SOURCE.md -> local
+        overrides."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir).resolve()
+            nested = root / "a" / "b"
+            nested.mkdir(parents=True)
+            design = dict(self.design, project_name="../../escaped")
+            result = ds.persist_design_system(
+                design, page="../../pwned", output_dir=str(nested)
+            )
+
+            # Nothing escaped: every written file resolves inside nested/design-system/.
+            tree_root = (nested / "design-system").resolve()
+            self.assertTrue(result["created_files"])
+            for written in result["created_files"]:
+                resolved = Path(written).resolve()
+                self.assertTrue(
+                    str(resolved).startswith(str(tree_root) + os.sep),
+                    f"{resolved} escaped {tree_root}",
+                )
+                self.assertTrue(resolved.exists())
+
+            # The specific escape targets the old code produced are absent...
+            self.assertFalse((root / "a" / "escaped").exists())
+            self.assertFalse((root / "a" / "pwned.md").exists())
+            # ...and nothing at all was created outside nested/.
+            self.assertEqual(sorted(p.name for p in (root / "a").iterdir()), ["b"])
+            self.assertEqual(sorted(p.name for p in root.iterdir()), ["a"])
+
+    def test_traversal_attempts_still_produce_a_usable_slug(self):
+        """Sanitising must degrade to a safe single segment, not crash: the writes
+        succeed, just inside the tree."""
         design = dict(self.design, project_name="../../escaped")
-        ds.persist_design_system(design, page="../../pwned", output_dir=str(nested))
-        # Both files land OUTSIDE nested/design-system/. The master escapes two
-        # levels up; the page escapes two further levels from pages/.
-        self.assertTrue((self.tmp / "a" / "escaped" / "MASTER.md").exists())
-        self.assertTrue((self.tmp / "a" / "pwned.md").exists())
-        self.assertFalse((nested / "design-system" / "escaped").exists())
+        result = ds.persist_design_system(design, page="/etc/passwd", output_dir=str(self.tmp))
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(len(result["created_files"]), 2)
+        for written in result["created_files"]:
+            self.assertIn("design-system", Path(written).parts)
+
+    def test_a_name_that_sanitises_to_nothing_falls_back_to_default(self):
+        """Consistent with the empty-name case above — a fallback, not an exception."""
+        tmp = Path(self._mkdtemp())
+        design = dict(self.design, project_name="..")
+        ds.persist_design_system(design, output_dir=str(tmp))
+        self.assertTrue((tmp / "design-system" / "default" / "MASTER.md").exists())
 
     def test_generate_without_persist_writes_nothing(self):
         before = sorted(p.name for p in self.tmp.iterdir())

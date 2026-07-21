@@ -16,6 +16,7 @@ Usage:
 import csv
 import json
 import os
+import re
 import sys
 import io
 from datetime import datetime
@@ -31,6 +32,11 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != 'utf-8':
 
 # ============ CONFIGURATION ============
 REASONING_FILE = "ui-reasoning.csv"
+
+# Tokens shorter than this are ignored when keyword-matching a UI_Category.
+# "E-commerce" -> {"commerce"}: the degenerate "e" token is what made every
+# unrecognized category resolve to the E-commerce rule (see _find_reasoning_rule).
+MIN_CATEGORY_TOKEN_LEN = 3
 
 SEARCH_CONFIG = {
     "product": {"max_results": 1},
@@ -61,6 +67,19 @@ DIAL_TIERS = {
         (8, 10, {"label": "Dense / Dashboard", "spacing": {"xs": "2px", "sm": "4px", "md": "8px", "lg": "12px", "xl": "16px", "2xl": "24px", "3xl": "32px"}}),
     ],
 }
+
+
+def _tokenize_category(text: str) -> set:
+    """Split a category label into comparable whole words.
+
+    Splits on any run of non-alphanumeric characters, so "Developer Tool / IDE",
+    "E-commerce" and "SaaS (General)" all tokenize cleanly, and drops tokens below
+    MIN_CATEGORY_TOKEN_LEN. See _find_reasoning_rule.
+    """
+    return {
+        token for token in re.split(r"[^a-z0-9]+", (text or "").lower())
+        if len(token) >= MIN_CATEGORY_TOKEN_LEN
+    }
 
 
 def _resolve_dial(dial_name: str, value) -> dict:
@@ -117,12 +136,29 @@ class DesignSystemGenerator:
             if ui_cat in category_lower or category_lower in ui_cat:
                 return rule
 
-        # Try keyword match
-        for rule in self.reasoning_data:
-            ui_cat = rule.get("UI_Category", "").lower()
-            keywords = ui_cat.replace("/", " ").replace("-", " ").split()
-            if any(kw in category_lower for kw in keywords):
-                return rule
+        # Try keyword match.
+        #
+        # MASTERMIND LOCAL OVERRIDE (see ../SOURCE.md): upstream split UI_Category on
+        # "/" and "-" and accepted a *substring* hit from ANY resulting token. "E-commerce"
+        # yields the token "e", which is a substring of almost every string, so every
+        # unrecognized category silently inherited the E-commerce rule and the documented
+        # "no rule -> neutral defaults" branch was near-unreachable.
+        #
+        # Fix: whole-token matching (not substring), tokens shorter than 3 chars ignored,
+        # and the best-scoring rule wins instead of the first one that grazes a token.
+        # Score = total length of the shared tokens, so a specific word ("fitness") beats
+        # a generic one ("app"). CSV order remains the tiebreak.
+        category_tokens = _tokenize_category(category_lower)
+        if category_tokens:
+            best_rule, best_score = None, 0
+            for rule in self.reasoning_data:
+                rule_tokens = _tokenize_category(rule.get("UI_Category", "").lower())
+                shared = rule_tokens & category_tokens
+                score = sum(len(tok) for tok in shared)
+                if score > best_score:
+                    best_rule, best_score = rule, score
+            if best_rule is not None:
+                return best_rule
 
         return {}
 
@@ -168,12 +204,20 @@ class DesignSystemGenerator:
         if not priority_keywords:
             return results[0]
 
-        # First: try exact style name match
+        # First: try exact style name match.
+        #
+        # MASTERMIND LOCAL OVERRIDE (see ../SOURCE.md): upstream compared
+        # bidirectionally (`priority in name OR name in priority`), so a style whose
+        # name merely happens to be a substring of the priority string beat the style
+        # the priority actually names — e.g. priority "Brutalism" selecting a style
+        # called "A". The match is now directional: a priority string matches a real
+        # style name that CONTAINS it, which is the intended feature ("Glassmorphism"
+        # matching "Glassmorphism 2.0"), and nothing else.
         for priority in priority_keywords:
             priority_lower = priority.lower().strip()
             for result in results:
                 style_name = result.get("Style Category", "").lower()
-                if priority_lower in style_name or style_name in priority_lower:
+                if priority_lower in style_name:
                     return result
 
         # Second: score by keyword match in all fields
@@ -695,6 +739,40 @@ def generate_design_system(query: str, project_name: str = None, output_format: 
 
 
 # ============ PERSISTENCE FUNCTIONS ============
+def _safe_path_slug(value: str, fallback: str = "default") -> str:
+    """Slug a user-supplied name into a single, non-traversing path segment.
+
+    MASTERMIND LOCAL OVERRIDE (see ../SOURCE.md): upstream only lowercased and
+    space-hyphenated these values before joining them onto the output path, so
+    `-p "../../escaped" --page "../../pwned"` wrote files outside design-system/.
+
+    Legitimate names are unchanged ("My Project" -> "my-project"); only characters
+    that can traverse or re-root a path are neutralised. A name that sanitises away
+    to nothing falls back to `fallback` — consistent with the existing empty-name
+    behavior, and safer than raising in a CLI whose input is often a bare query.
+    """
+    slug = (value or "").lower().replace(" ", "-")
+    # Path separators (both platforms), NUL, and the Windows drive/ADS colon.
+    for char in ("/", "\\", "\x00", ":"):
+        slug = slug.replace(char, "-")
+    # Any run of dots ("..", "...") can traverse; a leading dot hides the file.
+    # Single dots are kept, so a name like "v1.2" survives intact.
+    slug = re.sub(r"\.{2,}", "", slug).lstrip(".")
+    return slug or fallback
+
+
+def _contained(child: Path, parent: Path) -> bool:
+    """True if `child` resolves to `parent` itself or something inside it.
+
+    Belt-and-braces companion to _safe_path_slug: slug sanitising alone is easy to
+    get subtly wrong, and this catches anything that slips through (including
+    symlinks, since both sides are fully resolved).
+    """
+    child_real = os.path.realpath(str(child))
+    parent_real = os.path.realpath(str(parent))
+    return child_real == parent_real or child_real.startswith(parent_real + os.sep)
+
+
 def persist_design_system(design_system: dict, page: str = None, output_dir: str = None, page_query: str = None) -> dict:
     """
     Persist design system to design-system/<project>/ folder using Master + Overrides pattern.
@@ -713,11 +791,17 @@ def persist_design_system(design_system: dict, page: str = None, output_dir: str
     # Use project name for project-specific folder. Coalesce falsy values
     # (missing key, explicit None, or "") so the .lower() below can't crash.
     project_name = design_system.get("project_name") or "default"
-    project_slug = project_name.lower().replace(' ', '-')
-    
-    design_system_dir = base_dir / "design-system" / project_slug
+    project_slug = _safe_path_slug(project_name)
+
+    root_dir = base_dir / "design-system"
+    design_system_dir = root_dir / project_slug
     pages_dir = design_system_dir / "pages"
-    
+
+    # Belt and braces: the slug above should make this unreachable, but the write
+    # only happens if the resolved target really is inside design-system/.
+    if not _contained(design_system_dir, root_dir):
+        raise ValueError(f"refusing to write outside {root_dir}: {design_system_dir}")
+
     created_files = []
     
     # Create directories
@@ -734,7 +818,9 @@ def persist_design_system(design_system: dict, page: str = None, output_dir: str
     
     # If page is specified, create page override file with intelligent content
     if page:
-        page_file = pages_dir / f"{page.lower().replace(' ', '-')}.md"
+        page_file = pages_dir / f"{_safe_path_slug(page)}.md"
+        if not _contained(page_file, pages_dir):
+            raise ValueError(f"refusing to write outside {pages_dir}: {page_file}")
         page_content = format_page_override_md(design_system, page, page_query)
         with open(page_file, 'w', encoding='utf-8') as f:
             f.write(page_content)

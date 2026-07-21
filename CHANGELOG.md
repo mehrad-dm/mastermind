@@ -4,6 +4,59 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.24.3] — 2026-07-21
+
+A fresh-eyes audit of the files v0.24.1 and v0.24.2 never touched — the installer, the hooks, and the
+checks themselves. It found that the previous release's headline security fix had only landed in half
+the places it needed to, plus a bug that could destroy an install outright.
+
+### Fixed
+
+- **The documented update command destroyed the install.** `REPO` was resolved with `pwd`, which
+  returns the *logical* path — so running `~/.mastermind/install.sh` (the command in the README, the
+  installer's own header, and every "how to update" doc) set `REPO=~/.mastermind` and then ran
+  `ln -sfn ~/.mastermind ~/.mastermind`, pointing the brain symlink at **itself**. The result is an
+  unreadable loop: every glob stops matching, so skills link as a literal `*`, agents as `*.md`, and
+  the kernel is gone — while the installer still prints `✓ 1 skills, 1 agents linked`. Now resolved
+  with `pwd -P`, with a hard refusal if the two paths ever coincide again, and three regression tests
+  that reproduce the exact symptom.
+- **v0.24.2's push-guard fix only landed in the copy we ship.** `.githooks/pre-push` — the guard
+  actually protecting this public repo — kept the extension allowlist, so a secret in a `.env`, `.py`,
+  or `.yaml` still walked past it here. `CHANGELOG.md` and `SECURITY.md` both claimed otherwise. Synced,
+  and `check-integrity.mjs` now fails when the live guards and the shipped guards diverge.
+- **A trailing space in `lab/.denylist` silently disabled that term.** Terms were never trimmed, so
+  `"Acme Corp "` became an alternation branch requiring a literal trailing space — the guard then printed
+  `✓ clean` while that client's name went unscanned. Same failure with a CRLF denylist. **Fails open,
+  silently, per-term**, which is the worst shape a leak guard can have. Now trims whitespace and CR.
+- **`--uninstall` left behind everything it wrote.** It removed symlinks but not the `SessionStart`
+  entry it merged into `settings.json`, `.cursor/hooks.json`, or `.github/hooks/mastermind.json` — so
+  following the printed advice to "delete the clone" left every session firing a hook that pointed at a
+  missing script. Now unwired properly, and the user's own settings are still preserved untouched.
+- **`--global --uninstall` deleted files from the current project.** It removed `GEMINI.md`,
+  `.cursor/rules/mastermind.mdc`, and the Copilot instructions from `$PWD` regardless of scope, while
+  announcing it was operating on global. Project artifacts are now project-scope only.
+- **The skills index check was vacuous for 6 of 17 skills.** `skills/README.md` was verified with a
+  bare substring match, so deleting the row for `qa`, `build`, `report`, `route`, `learn`, or `debug`
+  passed clean — their names occur in ordinary prose. It also never detected an *extra* entry. Now
+  parses the table rows and compares sets both ways.
+- **`build-library.mjs` invented a repo that wasn't there.** With no sibling site checkout it created
+  the whole `../mastermind-site/src/pages/library/` tree and reported success. Now exits 1 with a clear
+  message.
+- **Three bugs in the vendored design engine**, found by v0.24.2's characterization suite and fixed
+  locally (recorded in `SOURCE.md` so a re-vendor can't silently undo them): a **path traversal** in
+  `persist_design_system` where a crafted project name wrote outside the output tree; a keyword pass so
+  loose that the token `"e"` made every unrecognized category inherit E-commerce rules; and a
+  bidirectional name match where a short style name beat the intended target. All 161 real categories
+  resolve unchanged and normal output is byte-identical.
+
+### Added
+
+- **Three integrity checks** (7 → 10), each proven to fail before being kept: the active field points
+  at a pack that exists; a `SOURCE.md` preserve list is honored; and the repo's own guards match the
+  guards it ships.
+- **Seven installer regression tests** (30 → 37) covering the symlink-invocation path, uninstall
+  completeness, and global/project scope separation.
+
 ## [0.24.2] — 2026-07-21
 
 Clears the rest of the backlog from the v0.24.0 documentation pass — ten design defects where a skill

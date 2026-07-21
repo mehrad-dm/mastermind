@@ -21,7 +21,13 @@
 #   cd my-project && ~/.mastermind/install.sh cursor   # only the named tool(s)
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# `pwd -P` — resolve symlinks to the REAL repo path. Plain `pwd` returns the logical path,
+# so running the documented `~/.mastermind/install.sh` gave REPO=~/.mastermind, and the
+# `ln -sfn "$REPO" "$HOME/.mastermind"` below then pointed that symlink at ITSELF — an
+# unreadable loop that silently unlinks the whole brain ("Too many levels of symbolic links",
+# every glob stops matching, and skills link as a literal `*`). The documented update command
+# was the one that broke it.
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 MODE=install; SCOPE=project; TOOLS=()
 for a in "$@"; do
   case "$a" in
@@ -299,9 +305,46 @@ if [ "$MODE" = uninstall ]; then
   for l in "$CLAUDE_DIR"/skills/* "$CLAUDE_DIR"/agents/*; do remove_link "$l" && n=$((n + 1)); done
   shopt -u nullglob
   remove_link "$CODEX_AGENTS"                          && n=$((n + 1))
-  remove_link "$PWD/GEMINI.md"                         && n=$((n + 1))
-  remove_link "$PWD/.github/copilot-instructions.md"   && n=$((n + 1))
-  if [ -f "$PWD/.cursor/rules/mastermind.mdc" ]; then rm -f "$PWD/.cursor/rules/mastermind.mdc"; ok "removed .cursor/rules/mastermind.mdc"; n=$((n + 1)); fi
+  # Project-scoped artifacts: only ever touch these when uninstalling THIS project.
+  # They live under $PWD, so removing them during a --global uninstall would silently
+  # de-wire whatever directory the user happened to run the command from.
+  if [ "$SCOPE" = project ]; then
+    remove_link "$PWD/GEMINI.md"                       && n=$((n + 1))
+    remove_link "$PWD/.github/copilot-instructions.md" && n=$((n + 1))
+    if [ -f "$PWD/.cursor/rules/mastermind.mdc" ]; then rm -f "$PWD/.cursor/rules/mastermind.mdc"; ok "removed .cursor/rules/mastermind.mdc"; n=$((n + 1)); fi
+    # Copilot's hook file is wholly ours — no merge, so no filtering needed.
+    if [ -f "$PWD/.github/hooks/mastermind.json" ]; then rm -f "$PWD/.github/hooks/mastermind.json"; ok "removed .github/hooks/mastermind.json"; n=$((n + 1)); fi
+    # Cursor's hooks.json is shared: filter our entries out rather than deleting the file.
+    if [ -f "$PWD/.cursor/hooks.json" ] && command -v node >/dev/null 2>&1; then
+      MM_DST="$PWD/.cursor/hooks.json" node -e '
+        const fs=require("fs"); const p=process.env.MM_DST;
+        let s; try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); }
+        let hit=false;
+        for (const ev of Object.keys(s.hooks||{})) {
+          const keep=(s.hooks[ev]||[]).filter(e=>!JSON.stringify(e).includes("session-start.sh"));
+          if (keep.length !== (s.hooks[ev]||[]).length) hit=true;
+          if (keep.length) s.hooks[ev]=keep; else delete s.hooks[ev];
+        }
+        if (!hit) process.exit(1);
+        fs.writeFileSync(p, JSON.stringify(s,null,2)+"\n");
+      ' 2>/dev/null && { ok "unwired .cursor/hooks.json"; n=$((n + 1)); }
+    fi
+  fi
+  # The bootstrap hook is merged into a settings.json we do not own — filter our entry
+  # out and leave everything else exactly as it was. Without this, uninstalling and then
+  # deleting the clone leaves every session firing a hook that points at a missing script.
+  if [ -f "$CLAUDE_DIR/settings.json" ] && command -v node >/dev/null 2>&1; then
+    MM_SETTINGS="$CLAUDE_DIR/settings.json" node -e '
+      const fs=require("fs"); const p=process.env.MM_SETTINGS;
+      let s; try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); }
+      const list=(s.hooks||{}).SessionStart||[];
+      const keep=list.filter(e=>!JSON.stringify(e).includes("session-start.sh"));
+      if (keep.length === list.length) process.exit(1);
+      if (keep.length) s.hooks.SessionStart=keep; else delete s.hooks.SessionStart;
+      if (s.hooks && !Object.keys(s.hooks).length) delete s.hooks;
+      fs.writeFileSync(p, JSON.stringify(s,null,2)+"\n");
+    ' 2>/dev/null && { ok "unwired the bootstrap hook from settings.json"; n=$((n + 1)); }
+  fi
   for f in "$CODEX_AGENTS" "$PWD/GEMINI.md" "$PWD/.github/copilot-instructions.md"; do
     [ -f "$f" ] && grep -q 'mastermind/CLAUDE.md' "$f" && warn "left your $(basename "$f") in place — it still has a MasterMind pointer line you can remove by hand"
   done
@@ -310,7 +353,17 @@ if [ "$MODE" = uninstall ]; then
 fi
 
 # --- Brain source (always) ---------------------------------------------------
-if [ "$MODE" != check ]; then ln -sfn "$REPO" "$HOME/.mastermind"; fi
+# Never point ~/.mastermind at itself — that loop makes the brain unreadable and every
+# glob below silently stops matching. REPO is resolved with `pwd -P` above so this should
+# be unreachable; it stays as a hard stop because the failure mode is catastrophic and
+# completely silent (the installer still prints ✓ while linking a literal `*`).
+if [ "$MODE" != check ]; then
+  if [ "$REPO" = "$HOME/.mastermind" ]; then
+    printf '%s✖ refusing to link ~/.mastermind to itself.%s Run install.sh from the real clone path.\n' "$r" "$x" >&2
+    exit 1
+  fi
+  ln -sfn "$REPO" "$HOME/.mastermind"
+fi
 
 # --- Per-project sanity: need a real project dir, not the clone or ~ ----------
 if [ "$SCOPE" = project ] && [ "$MODE" = install ] && { [ "$PWD" -ef "$REPO" ] || [ "$PWD" -ef "$HOME" ]; }; then

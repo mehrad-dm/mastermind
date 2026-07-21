@@ -24,7 +24,13 @@ is()   { if [ "$2" = "$3" ]; then ok "$1"; else no "$1 (got '$2', want '$3')"; f
 yes_() { if [ -n "$2" ]; then ok "$1"; else no "$1"; fi; }
 
 proj() { local d="$TMP/$1"; rm -rf "$d"; mkdir -p "$d"; printf '%s' "$d"; }
-run()  { (cd "$1" && shift && "$INSTALL" "$@" 2>&1); }
+
+# EVERY invocation runs under a sandboxed HOME. install.sh always writes `$HOME/.mastermind`,
+# and `--global` writes `~/.claude` / `~/.codex` — so without this the suite mutates the
+# developer's own setup. A `--global --uninstall` case once wiped a real global install.
+# This is what makes the "touches nothing in $HOME" promise at the top of this file true.
+SANDBOX_HOME="$TMP/home"; mkdir -p "$SANDBOX_HOME"
+run()  { (cd "$1" && shift && HOME="$SANDBOX_HOME" "$INSTALL" "$@" 2>&1); }
 
 # Derived from the repo, never hand-written: the promise is "every skill/agent we ship gets
 # linked", not "exactly 17". A literal here silently becomes a lie the next time one is added.
@@ -85,6 +91,40 @@ P=$(proj uninst); mkdir -p "$P/.claude/skills/qa"; echo MINE > "$P/.claude/skill
 run "$P" claude >/dev/null; run "$P" --uninstall claude >/dev/null
 is "their skill survives" "$(cat "$P/.claude/skills/qa/SKILL.md" 2>/dev/null)" "MINE"
 is "our links gone" "$(find "$P/.claude/skills" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+echo "── invoking via the ~/.mastermind symlink must not self-link the brain"
+# Regression: REPO used plain `pwd`, which returns the LOGICAL path. Running the documented
+# `~/.mastermind/install.sh` therefore set REPO=~/.mastermind and `ln -sfn "$REPO" ~/.mastermind`
+# pointed the symlink at itself — an unreadable loop that silently broke every glob, so skills
+# linked as a literal `*` while the installer still printed ✓. The documented command was the
+# one that destroyed the install.
+H="$TMP/fakehome"; mkdir -p "$H"
+ln -sfn "$REPO" "$H/.mastermind"
+(cd "$H" && HOME="$H" "$H/.mastermind/install.sh" --global >/dev/null 2>&1) || true
+is "brain link still points at the real clone" "$(readlink "$H/.mastermind")" "$REPO"
+is "no literal-glob links created" "$(ls "$H/.claude/skills" 2>/dev/null | grep -c '^\*' | tr -d ' ')" "0"
+is "all skills linked via the symlink path" "$(ls "$H/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+
+echo "── uninstall removes what it wired, and keeps what it didn't"
+P=$(proj unwire); mkdir -p "$P/.claude"
+printf '{"model":"opus","hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo MINE"}]}]}}' > "$P/.claude/settings.json"
+run "$P" claude cursor copilot >/dev/null 2>&1
+run "$P" --uninstall claude cursor copilot >/dev/null 2>&1
+is "bootstrap hook unwired" "$(python3 -c "
+import json;d=json.load(open('$P/.claude/settings.json'))
+print(len([e for e in d.get('hooks',{}).get('SessionStart',[]) if 'session-start.sh' in json.dumps(e)]))")" "0"
+is "their settings survive uninstall" "$(python3 -c "
+import json;d=json.load(open('$P/.claude/settings.json'));print(d.get('model'),'PreToolUse' in d.get('hooks',{}))")" "opus True"
+is "copilot hook file removed" "$([ -f "$P/.github/hooks/mastermind.json" ] && echo present || echo gone)" "gone"
+
+echo "── --global --uninstall must not delete project files"
+# HOME is overridden to a throwaway dir: --global operates on ~/.claude and ~/.codex, so
+# running this against the real $HOME would uninstall the developer's own global setup —
+# which is exactly what happened once. This file promises it touches nothing in $HOME.
+P=$(proj gscope); GH="$TMP/globalhome"; mkdir -p "$GH"
+(cd "$P" && HOME="$GH" "$INSTALL" gemini >/dev/null 2>&1) || true
+(cd "$P" && HOME="$GH" "$INSTALL" --global --uninstall >/dev/null 2>&1) || true
+is "project GEMINI.md survives a global uninstall" "$([ -e "$P/GEMINI.md" ] && echo present || echo deleted)" "present"
 
 echo "── hook emits the right JSON shape per host"
 for pair in "cursor additional_context" "claude hookSpecificOutput" "sdk additionalContext"; do

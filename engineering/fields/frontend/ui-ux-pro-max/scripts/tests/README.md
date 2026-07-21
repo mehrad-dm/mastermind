@@ -19,17 +19,28 @@ and cleans up; nothing is ever written into the repo.
 They pin what the code **does today**, not what it should do. Where current behavior
 looks wrong, the test name ends in `_BUG` and its docstring says so — those tests pin
 the bug deliberately so that fixing it is a conscious decision with a visible red test,
-not a silent change. Currently pinned bugs:
+not a silent change.
 
-- `_find_reasoning_rule` — the keyword pass splits `"E-commerce"` into `["e", "commerce"]`,
-  so any otherwise-unmatched category containing the letter "e" resolves to the E-commerce
-  rule, making the neutral-defaults branch in `_apply_reasoning` near-unreachable.
-- `_select_best_match` — the style-name match is bidirectional (`priority in name OR
+Still pinned:
+
+- `hex_to_ansi` — a 7-char string starting with `#` but containing non-hex digits
+  (`"#GGGGGG"`) raises `ValueError`, while every other malformed value degrades to `""`.
+
+**Fixed in v0.24.3 — these tests now assert the CORRECT behavior** and are
+[local overrides of upstream](../../SOURCE.md), so a re-vendor that reintroduces the
+bug turns them red:
+
+- `_find_reasoning_rule` — the keyword pass split `"E-commerce"` into `["e", "commerce"]`
+  and accepted a substring hit, so any otherwise-unmatched category containing the letter
+  "e" resolved to the E-commerce rule. Now whole-token, min token length 3, best score wins.
+  See `test_unrecognized_category_reaches_the_neutral_defaults_branch`.
+- `_select_best_match` — the style-name match was bidirectional (`priority in name OR
   name in priority`), so a short style name that is a substring of the priority string
-  wins over the intended target.
-- `persist_design_system` — `project_name` and `page` are only lowercased and
-  space-hyphenated before being joined onto the output path, so `../` escapes the
-  `design-system/` tree.
+  beat the intended target. Now directional. See `test_substring_match_is_directional`.
+- `persist_design_system` — `project_name` and `page` were only lowercased and
+  space-hyphenated before being joined onto the output path, so `../` escaped the
+  `design-system/` tree. Now slug-sanitised **and** containment-checked against the
+  resolved output dir. See `test_project_name_and_page_cannot_traverse_out_of_the_output_dir`.
 
 ## Not covered
 

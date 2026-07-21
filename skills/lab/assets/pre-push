@@ -21,7 +21,8 @@ if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
 fi
 
 [ -f "$DENYLIST" ] || exit 0
-TERMS=$(grep -vE '^\s*(#|$)' "$DENYLIST" | sed 's/[].[^$\\*+?()|{}]/\\&/g' | paste -sd '|' -)
+TERMS=$(tr -d '\r' < "$DENYLIST" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+  | grep -vE '^(#|$)' | sed 's/[].[^$\\*+?()|{}]/\\&/g' | paste -sd '|' -)
 [ -n "$TERMS" ] || exit 0
 
 FAIL=0

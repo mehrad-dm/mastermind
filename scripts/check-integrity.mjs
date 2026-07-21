@@ -13,6 +13,12 @@
  *   6. help/SKILL.md's "<n> skills · <n> agents" header matches what actually ships
  *   7. every field-pack file (except field.md) carries `route_when`, and every pack
  *      ships field.md + audit-rules.md — otherwise the router skips it silently
+ *   8. active-field.md's declared "Field pack:" points at a pack dir that exists and is
+ *      well-formed (field.md + audit-rules.md, same bar as check 7)
+ *   9. every SOURCE.md with a destructive re-vendor procedure carries a preserve list, every
+ *      listed path exists, and the list and the procedure agree in both directions
+ *  10. .githooks/ (this repo's live guards) matches skills/lab/assets/ (what we ship),
+ *      so a security fix cannot land in one copy and leave the other vulnerable
  */
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -64,9 +70,19 @@ for (const dir of skillDirs) {
 // --- 2 & 3. index parity -----------------------------------------------------
 // skills/README.md is the AUTHORITATIVE index: every skill dir must appear (incl. vendored).
 // root README.md markets the first-party skills: every mastermind-* dir must appear there.
+// Parse the actual index ROWS, not a substring of the whole file: skill names like `qa`,
+// `build`, `route`, `learn`, `debug`, and `report` are ordinary English words that appear in
+// the surrounding prose, so `includes(dir)` passed even with the skill's row deleted — the
+// exact drift this check exists to catch. Compare sets both ways so "no extra" is real too.
 const skillsReadme = read('skills/README.md')
+const listedSkills = new Set(
+  [...skillsReadme.matchAll(/\[`([a-z0-9-]+)`\]\(\.\/([a-z0-9-]+)\/SKILL\.md\)/g)].map((m) => m[2])
+)
 for (const dir of skillDirs) {
-  if (!skillsReadme.includes(dir)) fail(`skills/README.md: skill "${dir}" not listed (the index must be complete)`)
+  if (!listedSkills.has(dir)) fail(`skills/README.md: skill "${dir}" not listed (the index must be complete)`)
+}
+for (const listed of listedSkills) {
+  if (!skillDirs.includes(listed)) fail(`skills/README.md: lists "${listed}" — no such skill dir`)
 }
 const rootReadme = read('README.md')
 for (const dir of skillDirs) {
@@ -159,6 +175,96 @@ for (const pack of packs) {
     if (!fm || !('route_when' in fm)) {
       fail(`${rel}: no \`route_when\` frontmatter — build-router.mjs will skip it silently`)
     }
+  }
+}
+
+// --- 8. active-field.md points at a pack that actually exists -----------------
+// The pointer is the one line that decides which pack loads at runtime. A stale or
+// misspelled path passes every other check silently — check 4 only validates `.md`
+// references, and check 7 only audits packs it finds on disk, never the one we claim to
+// use — and the model then fails to load a field pack with no diagnostic at all.
+// Keyed narrowly on the `- **Field pack:** \`<path>\`` bullet under "Current field", which
+// is the file's only declarative statement of the active pack. Prose elsewhere mentions
+// `engineering/fields/<name>/` as a placeholder and `_template` as an example; neither is a
+// declaration, and neither matches this shape.
+const activeField = read('engineering/active-field.md')
+const packRef = activeField.match(/^\s*[-*]\s*\*\*Field pack:\*\*\s*`([^`]+)`/m)
+if (!packRef) {
+  fail('engineering/active-field.md: no `- **Field pack:** `<path>`` line — nothing declares the active pack')
+} else {
+  const packPath = packRef[1].replace(/\/$/, '')
+  if (!existsSync(join(ROOT, packPath)) || !statSync(join(ROOT, packPath)).isDirectory()) {
+    fail(`engineering/active-field.md: field pack "${packRef[1]}" does not exist — the active field cannot load`)
+  } else {
+    for (const required of ['field.md', 'audit-rules.md']) {
+      if (!existsSync(join(ROOT, packPath, required))) {
+        fail(`engineering/active-field.md: active pack "${packRef[1]}" is missing ${required}`)
+      }
+    }
+  }
+}
+
+// --- 9. a SOURCE.md preserve list is honored ----------------------------------
+// A vendored dir's SOURCE.md documents a re-vendor that `rm -rf`s the directory, so any
+// MasterMind-authored file in it survives only if it is named in that file's preserve list
+// AND copied aside by the documented procedure. v0.24.2 edited `data/motion.csv` — vendored,
+// unlisted — and the edit would have been destroyed on the next re-vendor; human review
+// caught it, no check did.
+//
+// We cannot diff against upstream offline, so this cannot detect "file X was edited but not
+// listed" — the exact shape of that bug. What it CAN make impossible is the list rotting:
+// a preserved path that was renamed or deleted, a listed path the procedure never copies
+// aside, or a path the procedure copies aside that the prose never explains. Each of those
+// breaks the re-vendor just as silently.
+for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
+  const text = read(rel)
+  const dir = dirname(rel)
+  if (!/rm\s+-rf/.test(text)) continue // non-destructive procedure: nothing can be lost
+
+  // the preserve list: backticked paths in the bullets that follow the "must survive" claim.
+  const section = text.split(/^.*must survive.*$/im)[1]
+  const listed = section
+    ? [...section.split(/^#/m)[0].matchAll(/^\s*[-*]\s*\*\*`([^`]+)`\*\*/gm)].map((m) => m[1].replace(/\/$/, ''))
+    : []
+  if (!listed.length) {
+    fail(`${rel}: re-vendor \`rm -rf\`s this directory but no preserve list found — expected bullets of the form "- **\`path\`** — why" after a line saying what must survive`)
+    continue
+  }
+  for (const p of listed) {
+    if (!existsSync(join(ROOT, dir, p))) fail(`${rel}: preserved path "${p}" does not exist — the re-vendor would restore nothing`)
+    if (!new RegExp(`\\$\\{?P\\}?/${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(text)) {
+      fail(`${rel}: preserved path "${p}" is never copied aside by the re-vendor block — the list and the procedure have drifted`)
+    }
+  }
+  // and the reverse: anything the procedure rescues to /tmp must be explained in the list.
+  for (const m of text.matchAll(/^\s*cp\b[^\n]*?\$\{?P\}?\/([^"'\s]+)["']?\s+\/tmp\S*/gm)) {
+    const p = m[1].replace(/\/$/, '')
+    if (!listed.includes(p)) fail(`${rel}: re-vendor copies "${p}" aside but it is not in the preserve list — undocumented, so the next editor won't know it's ours`)
+  }
+}
+
+// --- 10. the repo's own guards match the guards it ships ----------------------
+// `.githooks/` is this repo's live guard; `skills/lab/assets/` is what we install for
+// users. v0.24.2 fixed a leak in the shipped `pre-push` and left `.githooks/` stale, so
+// the guard protecting this public repo kept the bug the CHANGELOG said was fixed —
+// while both docs claimed otherwise. A security fix applied to one copy is not a fix.
+//
+// `pre-commit` legitimately diverges by one repo-only block (ROUTER freshness), so the
+// comparison drops it. Anything else differing is drift, not a decision.
+const REPO_ONLY = /^# ---- Router freshness[\s\S]*?^fi\n\n/m
+for (const hook of ['pre-commit', 'pre-push']) {
+  const live = join(ROOT, '.githooks', hook)
+  const shipped = join(ROOT, 'skills', 'lab', 'assets', hook)
+  if (!existsSync(live) || !existsSync(shipped)) {
+    fail(`${hook}: missing from .githooks/ or skills/lab/assets/ — both copies must exist`)
+    continue
+  }
+  const norm = (p) => readFileSync(p, 'utf8').replace(REPO_ONLY, '')
+  if (norm(live) !== norm(shipped)) {
+    fail(
+      `.githooks/${hook} differs from skills/lab/assets/${hook} — the guard protecting ` +
+        `this repo is not the guard we ship. Sync them (a fix must land in both).`
+    )
   }
 }
 

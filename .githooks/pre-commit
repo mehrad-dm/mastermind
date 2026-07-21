@@ -37,7 +37,8 @@ fi
 # ---- Layer 2: content scan against the local denylist ------------------------
 if [ -f "$DENYLIST" ]; then
   # Build an alternation of non-comment, non-empty terms.
-  TERMS=$(grep -vE '^\s*(#|$)' "$DENYLIST" | sed 's/[].[^$\\*+?()|{}]/\\&/g' | paste -sd '|' -)
+  TERMS=$(tr -d '\r' < "$DENYLIST" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    | grep -vE '^(#|$)' | sed 's/[].[^$\\*+?()|{}]/\\&/g' | paste -sd '|' -)
   if [ -n "$TERMS" ]; then
     # Scan only ADDED lines of staged text (not whole files, not deletions).
     HITS=$(git diff --cached -U0 -- . ':(exclude)lab/**' 2>/dev/null \

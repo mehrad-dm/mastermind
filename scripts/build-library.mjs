@@ -100,6 +100,15 @@ if (CHECK) {
   process.exit(0)
 }
 
+// `mkdirSync(..., {recursive:true})` would happily invent the whole `../mastermind-site/`
+// tree, leaving a phantom repo beside the clone and printing success. A contributor without
+// the site checked out should get a clear error, not junk plus a green tick.
+const SITE = join(REPO, '..', 'mastermind-site')
+if (!existsSync(SITE)) {
+  console.error(`✖ ${SITE} is not checked out — nothing to write. Clone the site repo beside this one.`)
+  process.exit(1)
+}
+
 if (existsSync(OUT)) rmSync(OUT, { recursive: true }) // prune renamed/removed skills
 mkdirSync(OUT, { recursive: true })
 for (const [f, content] of wanted) writeFileSync(join(OUT, f), content)
