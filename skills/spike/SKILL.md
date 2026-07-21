@@ -19,7 +19,20 @@ design it twice). A spike buys knowledge cheaply — as long as you don't mistak
    tests, review). **Do not ship the spike.**
 
 ## Rules
-Time-box it. Keep it isolated (a scratch branch/dir) so it can't leak into production. The deliverable is
+**Time-box: 5 build-and-run attempts, roughly 30 minutes** — one question needs a handful of tries, not a
+day; proportionality over ceremony. An *attempt* is one edit → run → observe cycle against the named
+question; count them out loud as you go, so the box is observable and not a vibe. Attempt 5 finished
+without an answer = the box is spent, whatever the clock says.
+
+**When it expires, stop — that's a result, not a failure.** Report: what you learned, what is still
+unknown, and one recommendation — *proceed* (answer is yes, build it properly) / *different approach*
+(this path is wrong, here's the next one) / *needs more investigation* (name what a second spike would
+target). Then discard the code: it stays throwaway and does not ship, same as a spike that succeeded.
+
+**Extending the box is a decision, not drift.** Only extend when the attempts narrowed the question
+rather than wandering — say so explicitly, state the new bound (e.g. "3 more attempts"), and stop there.
+
+Keep it isolated (a scratch branch/dir) so it can't leak into production. The deliverable is
 the *learning*, not the code.
 
 ## Output

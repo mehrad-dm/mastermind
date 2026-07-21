@@ -87,9 +87,10 @@ documented positions — not vibes.
 
 **Four rules — none skippable:**
 
-1. **Documented, not fabricated.** Apply only style you can ground in their real public work. If you don't
-   actually know how they'd write something, say so and fall back to `mentors.md` / house style — **never
-   invent "they would do X"** or put words/opinions in a real person's mouth. Honesty over performance.
+1. **Documented, not fabricated.** Apply only style you can ground in their real public work — *grounded*
+   means a resolvable primary-source link in the output (see the **citation gate** below). If you don't
+   actually know how they'd write something, say so and fall back to Mode A / `mentors.md` / house style —
+   **never invent "they would do X"** or put words/opinions in a real person's mouth. Honesty over performance.
 2. **Style is a lens; correctness is not up for grabs.** A persona shapes *taste* — naming, structure,
    idiom. It never overrides `core/rigor.md`, security, or a11y. "They'd skip the null-check" is not a
    licence to ship a bug. If the persona and correctness conflict, correctness wins and you say why.
@@ -105,11 +106,24 @@ teaching-comments — per their public work"). Prefer their *principles* over su
 signature is how someone decides, not just how they format. It composes with the active field: persona sets
 taste, the field pack supplies the stack, rigor supplies the gate.
 
-**Self-check before you claim the style (guards against shallow mimicry):** for each trait, ask *"can I
-point to a real sample of their public work that shows it?"* — a repo, a talk, a post. If you can't ground
-a trait in something they actually wrote, **drop it** rather than inventing a plausible-sounding one. A
-stereotype of someone ("they'd use lots of patterns") is the failure mode; the real, cited habit is the
-goal. When in doubt, say which traits you're confident about and which you're inferring.
+**Citation gate — every trait ships a resolvable link, or it doesn't ship:**
+
+- **No citation, no rule.** Each trait you name carries a **URL to a primary source** *in the output* —
+  their repo/file/commit, their book, their talk, their own post, a style guide they authored. An actual
+  link the user can click, not "as documented by *X*". **A trait you cannot cite does not go in the
+  output**: dropped — not softened, not hedged, not included with a caveat.
+- **Verify, don't assert.** This skill declares no `allowed-tools`, so it inherits the session's. **If
+  `WebSearch`/`WebFetch` are available, actually fetch each link** and confirm it resolves and says what
+  you claim — a check you *run*, not one you report. If they aren't available, say so, cite only sources
+  you can name precisely enough for the user to check by hand (exact repo + path, book + chapter, talk +
+  title/year), and mark the set **unverified**. Never write "I checked / read / verified" for a check you
+  didn't run.
+- **No sources, no persona.** If you can't find primary sources for the named person at all, say that
+  plainly and stop — do **not** synthesize a plausible style from their fame or general reputation. Fall
+  back to **Mode A** (rules derived from the user's actual codebase) or house style / `mentors.md`, and
+  tell the user which.
+
+A stereotype ("they'd use lots of patterns") is the failure mode; the cited habit is the goal.
 
 ## Gotchas
 - **A convention is not a defect** — the commonest failure is "fixing" house style. When unsure, conform.
@@ -117,5 +131,5 @@ goal. When in doubt, say which traits you're confident about and which you're in
 - **One incident is not a pattern** — respect the promotion bar.
 - **Don't restate what tooling enforces** — if a lint rule/type/template guarantees it, strengthen that; keep only the "why."
 - **`code-reviewer` finds defects; this captures style.** Keep the layers separate.
-- **Mode B: homage, not forgery** — style you can cite, never invented opinions, never their name on the work. A cool signature that ships a bug still failed (rigor wins).
+- **Mode B: homage, not forgery** — every trait carries a working primary-source link or it's dropped; never invented opinions, never their name on the work. A cool signature that ships a bug still failed (rigor wins).
 - **Mode B ≠ Mode A** — a public figure's documented style is fair game; a named private colleague's style stays in the Lab (Mode A). Don't cross the streams.

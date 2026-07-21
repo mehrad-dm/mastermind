@@ -68,6 +68,9 @@ setup** — say *"init"* or just start working and it'll ask. Verify your instal
 `~/.mastermind/install.sh --check`.
 
 **Two optional preferences** (per project, both **off** by default, kept in `.mastermind/prefs.md`):
-- **cycle report** — a written write-up (markdown/html) at the end of a build/QA cycle. Turn on: *"reports on"*.
-- **plan-first** — on bigger tasks, MasterMind shows the plan and **waits for your OK before editing**, then
-  announces *`🧠 MasterMind ▸ implementing the plan`* and proceeds. Turn on: *"plan first from now on"*.
+- **cycle report** — a written write-up at the end of a build/QA cycle. Turn on: *"reports on"*.
+- **plan-first** — on bigger tasks, MasterMind shows the plan and waits for your OK before editing. Turn on:
+  *"plan first from now on"*.
+
+Both behave exactly as their implementations define them — `skills/build/SKILL.md` (plan-first gate) and
+`skills/report/SKILL.md` (report formats).

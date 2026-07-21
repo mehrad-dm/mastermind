@@ -76,15 +76,59 @@ from [easing.dev](https://easing.dev/) / [easings.co](https://easings.co/):
 --ease-drawer:  cubic-bezier(0.32, 0.72, 0, 1);      /* iOS-like drawer (Ionic) */
 ```
 
-**4. How fast?** — UI animations stay **under 300ms**:
+### CSS is the house vocabulary — GSAP names are a translation, not a default
 
-| Element | Duration |
-| --- | --- |
-| Button press feedback | 100–160ms |
-| Tooltips, small popovers | 125–200ms |
-| Dropdowns, selects | 150–250ms |
-| Modals, drawers | 200–500ms |
-| Marketing/explanatory | Can be longer |
+**Write easing as `cubic-bezier(...)`.** It's stack-agnostic, works in CSS transitions, WAAPI, and Motion
+alike, and matches the field's actual default (`stack-defaults.md`: **Motion / Framer Motion** for UI
+motion). **GSAP is *not* a stack default here** — its `power2.out`-style names show up in the vendored
+motion dataset (`ui-ux-pro-max`, `--domain gsap`) and in third-party code, so you need to *read* them, but
+don't adopt them as the house vocabulary. Translate to CSS at the boundary.
+
+These are **exact** equivalences, derived from GSAP's own ease definitions in `gsap@3` source
+(`Quad,Cubic,…` → `Power1,Power2,…`; `easeOut = 1 - (1 - p)^n`) and verified to floating-point precision —
+not eyeballed approximations:
+
+| GSAP name (secondary) | Exact CSS equivalent | Same curve as |
+| --- | --- | --- |
+| `power1.out` | `cubic-bezier(0.3333, 0.6667, 0.6667, 1)` | quad out |
+| `power1.in` | `cubic-bezier(0.3333, 0, 0.6667, 0.3333)` | quad in |
+| `power2.out` | `cubic-bezier(0.3333, 1, 0.6667, 1)` | cubic out |
+| `power2.in` | `cubic-bezier(0.3333, 0, 0.6667, 0)` | cubic in |
+| `back.out(n)` | `cubic-bezier(0.3333, (n+3)/3, 0.6667, 1)` — e.g. `back.out(1.4)` → `cubic-bezier(0.3333, 1.4667, 0.6667, 1)` | overshoot |
+| `none` / `linear` | `linear` | — |
+
+**Deliberately omitted, because no exact `cubic-bezier` exists** — don't let a lookup table lie to you:
+
+- **`power3` / `power4`** (quart/quint) are degree-4 and degree-5 polynomials; a cubic Bézier can't express
+  them. The values circulating online are ~2–4% off.
+- **`expo`** — GSAP's is a *custom blend*, not the textbook `2^(10(p-1))`, so the usual "easeOutExpo"
+  bezier doesn't match it at all.
+- **`sine`**, **`circ`** — transcendental/irrational, not polynomial.
+- **`elastic`**, **`bounce`** — they oscillate; a cubic Bézier is single-humped and mathematically cannot.
+- **`*.inOut` of anything** — GSAP defines these piecewise (two half-curves), which is two beziers, not one.
+
+For all of these, pick a CSS curve by *feel* from [easing.dev](https://easing.dev/) — don't pretend it's a
+conversion.
+
+**4. How fast?** — **duration scales with the area the motion covers.** One policy, three tiers. Grounded
+in the [Material 3 motion duration tokens](https://m3.material.io/styles/motion/easing-and-duration)
+(`short1` 50ms → `long4` 600ms) and Material's size rule: *large distances or dramatic changes in surface
+area take longer; short distances or minor changes take less.*
+
+| Tier | What it covers | Duration | M3 token band |
+| --- | --- | --- | --- |
+| **Small / local** | button press, toggle, checkbox, hover, icon swap, tooltip, small popover | **100–200ms** | `short2`–`short4` |
+| **Medium / component** | dropdown, select, modal, drawer, toast, card expand, accordion | **200–350ms** | `short4`–`medium3` |
+| **Large / full-screen** | route/page transition, overlay wipe, shared-element hero morph | **350–500ms** | `medium3`–`long2` |
+
+**600ms (`long4`) is the hard ceiling** — and Material's own guidance is that past ~400ms motion starts to
+*feel* slow on mobile, so only a genuine full-screen change of surface earns the top of the large tier. A
+modal is **medium, not large**: it's a centered component, not a new screen. Exit is always faster than enter.
+
+**Three kinds of motion this policy does not clock**, because they have no fixed duration by nature:
+**springs and elastic settle** (parameter-driven — see below), **scroll-scrubbed motion** (tied to scroll
+position, not time), and **ambient loops** (skeleton shimmer, marquee — keep one beat under ~1.5s so a long
+wait doesn't read as frozen). Marketing/explanatory animation sits outside UI timing entirely and can be longer.
 
 **Perceived performance:** a 180ms select feels more responsive than a 400ms one; a fast-spinning spinner
 makes loading *feel* faster at identical load time; `ease-out` at 200ms feels faster than `ease-in` at 200ms
@@ -133,7 +177,7 @@ Ideal for gestures the user might reverse mid-motion (expand an item, hit Escape
 ```css
 .toast {
   opacity: 1; transform: translateY(0);
-  transition: opacity 400ms ease, transform 400ms ease;
+  transition: opacity 300ms ease, transform 300ms ease;
   @starting-style { opacity: 0; transform: translateY(100%); }
 }
 ```
@@ -255,7 +299,9 @@ delays short — long ones feel slow. Stagger is decorative; never block interac
 | `ease-in` on UI | Switch to `ease-out` / custom curve |
 | `transform-origin: center` on popover | Trigger-anchored origin (modals stay centered) |
 | Animation on a keyboard action | Remove it entirely |
-| Duration > 300ms on UI | Reduce to 150–250ms |
+| Duration outside its tier | Re-tier it: small/local 100–200ms · medium/component 200–350ms · large/full-screen 350–500ms |
+| Any UI duration > 600ms | Over the ceiling — cut it, unless it's a spring, a scroll-scrub, or an ambient loop |
+| GSAP ease name in house code | Translate to `cubic-bezier(...)`; GSAP is not a stack default |
 | Hover animation without media query | Add `@media (hover: hover) and (pointer: fine)` |
 | Keyframes on a rapidly-triggered element | Use CSS transitions (interruptible) |
 | Framer Motion `x`/`y` under load | Use `transform: "translateX()"` for hardware acceleration |

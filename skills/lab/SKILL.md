@@ -49,6 +49,24 @@ Run from the target repo root. The skill's files live in `assets/` next to this 
 4. **Prove it works** (do this — a guard you haven't tested is a guard you don't have):
    - Stage a throwaway file containing a denylisted term and attempt a commit; confirm it's **blocked**,
      then unstage. Try staging a `lab/` file; confirm the quarantine **blocks** it.
+   - **Now prove `pre-push` too** — it's the layer that catches `--no-verify` and history committed
+     before the guard existed, so the pre-commit test does not cover it. Use a local throwaway remote
+     (no network, nothing is published — `--dry-run` still runs the hook):
+
+     ```bash
+     printf 'ACME_TERM internal notes\n' > leak-test.md   # swap in a real term from lab/.denylist
+     git add leak-test.md && git commit --no-verify -m "temp: pre-push test"
+     git init --bare /tmp/mm-throwaway.git
+     git push --dry-run /tmp/mm-throwaway.git HEAD:refs/heads/mm-test   # must FAIL
+     ```
+
+     Expect `✖ BLOCKED — commit <sha> temp: pre-push test contains confidential terms:`, then
+     `Push aborted …` and a non-zero exit. If the push succeeds, the guard is not live — check
+     `git config core.hooksPath`, that `.githooks/pre-push` is executable, and that the term is in
+     `lab/.denylist` (the hook scans every file type, but skips `lab/` itself — that's the quarantine).
+   - Clean up — **`--soft`, never `--hard`**: a hard reset here would discard any uncommitted work in
+     the user's repo. `git reset --soft HEAD~1 && git restore --staged leak-test.md && rm -f
+     leak-test.md && rm -rf /tmp/mm-throwaway.git`
 
 5. **Report** what was created/changed, and remind: raw data → `lab/`; only genericized output ships.
 

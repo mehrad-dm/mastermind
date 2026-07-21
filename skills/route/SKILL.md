@@ -14,13 +14,16 @@ token economy (`~/.mastermind/engineering/active-field.md`) — and it knows whe
 1. **Name the destination.** One line: what is this task actually producing? Scope before routing.
 2. **Refuse to over-plan.** If it's a one-line diff, a typo, or obviously covered by what's already in
    context — say *"no map needed, just do it"* and **exit.** Ceremony on a trivial task is waste (this is
-   the same instinct as `core/rigor.md`'s refuse-list and "keep the always-on layer tiny").
+   the same instinct as `~/.mastermind/engineering/core/rigor.md`'s refuse-list and "keep the always-on
+   layer tiny").
 3. **Detect the field** — `package.json`/configs/file types (usually free and decisive).
-4. **Build the load manifest — links, never summaries.** Consult `engineering/ROUTER.md` and pick, by
-   matching the task to each node's `route_when`:
+4. **Build the load manifest — links, never summaries.** Consult `~/.mastermind/engineering/ROUTER.md`
+   and pick, by matching the task to each node's `route_when`:
    - which **field-pack file(s)** to load (and their token cost — budget it),
-   - which **skill(s)** fit (the matching skill(s) from the index (build / debug / spec / learn / qa / review…)),
-   - which **core docs** the task genuinely needs (`mindset`/`principles`/`rigor`/`agent-loop`/`product-sense`),
+   - which **skill(s)** fit — pick from the index at `~/.mastermind/skills/README.md` (which also names
+     the isolated-context **agents** in `~/.mastermind/agents/`); never route off a remembered list,
+   - which **core docs** the task genuinely needs (`mindset`/`principles`/`rigor`/`agent-loop`/`product-sense`
+     in `~/.mastermind/engineering/core/`),
    - which **codebase areas** to read first.
    The manifest **points** to files to open; it never paraphrases them (so it can't drift out of sync).
 5. **Load progressively.** For a big/foggy task, load the entrance set only; name the next files *after*
@@ -31,8 +34,8 @@ token economy (`~/.mastermind/engineering/active-field.md`) — and it knows whe
 - **The manifest is a list of things to load, not a plan of work.** Wayfinder chooses *what knowledge to
   bring*; the actual building is `build` (which can call this first).
 - **Never load a file "just in case."** Every entry earns its tokens or it's cut.
-- **If `ROUTER.md` is missing/stale, fall back** to `field.md`'s load-on-demand map — routing is a
-  speed-up, never a dependency.
+- **If `ROUTER.md` is missing/stale, fall back** to the active field's `engineering/fields/<field>/field.md`
+  load-on-demand map — routing is a speed-up, never a dependency.
 
 ## Gotchas
 

@@ -50,13 +50,18 @@ There's no build step and no dependencies — you edit Markdown and test behavio
 The skill library grows freely — add one for any distinct, useful workflow. Hold the bar that keeps a
 large library lean: **one job, an unambiguous routing-rule description, a lean on-demand body, and a
 Gotchas section** (only what pushes the model off its defaults); don't duplicate an agent. Register it
-in `skills/README.md`. Full discipline: `levelup` → "Authoring a new skill".
+in `skills/README.md`. Full discipline: `skills/levelup/authoring.md`.
 
 ## Adding a field pack
 
-Copy the shape of `engineering/fields/frontend/` (`field.md`, `stack-defaults.md`, `mentors.md`,
-`curriculum.md`, `learning-sources.md`, `lessons.md`). Tag any file the router should serve with
-`route_when` frontmatter. The `levelup` skill can bootstrap and research a pack for you.
+Copy `engineering/fields/_template/` to `engineering/fields/<your-field>/` and fill in the
+angle-brackets — it ships every file a pack needs (`field.md`, `stack-defaults.md`, `audit-rules.md`,
+`mentors.md`, `curriculum.md`, `learning-sources.md`, `lessons.md`), each already carrying `route_when`
+frontmatter. **Retag that frontmatter for your field; don't drop it** — the router serves only tagged
+files, so an untagged file is invisible to the model. `field.md` is the one deliberate exception (it's
+the pack's table of contents). `check-integrity.mjs` fails if a pack breaks either rule.
+`engineering/fields/frontend/` is the reference implementation. The `levelup` skill can bootstrap and
+research a pack for you.
 
 ## The one hard rule: never commit private data
 
@@ -67,11 +72,24 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
 
 ## Before you open a PR
 
-1. **Run the checks** (the pre-commit hook runs these too):
+1. **Run the checks** (the pre-commit hook runs the first two):
 
    ```bash
-   node scripts/check-integrity.mjs   # indexes & cross-references are consistent
+   node scripts/check-integrity.mjs   # indexes, counts & cross-references are consistent
    node scripts/build-router.mjs      # regenerate ROUTER.md if you added/changed routed files
+   ```
+
+   Before a **release**, run the whole gate — all of it must pass:
+
+   ```bash
+   ./tests/install.test.sh                 # installer regression suite — must be all-green
+   node scripts/build-router.mjs --check   # router in sync
+   node scripts/build-library.mjs --check  # site library pages in sync with skills/*/ABOUT.md
+   node scripts/check-integrity.mjs        # skills, counts, field packs, references
+   node scripts/check-links.mjs            # every cited resource resolves
+   bash -n install.sh && bash -n hooks/session-start.sh
+   node scripts/update-scan.mjs            # refresh the published architecture map
+   cd ../mastermind-site && npm run build
    ```
 
 2. **Keep it lean** — smaller, sharper diffs merge faster than big ones.
@@ -82,3 +100,43 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
 There's no build — the test is **behavioral**. Make the edit, run the assistant on a relevant task, and
 confirm its behavior actually shifts the way you intended. If it doesn't, the wording is probably
 ambiguous or buried — tighten it.
+
+## Gotchas — learned the hard way
+
+Each of these cost real debugging time at least once. They're here so nobody rediscovers them.
+
+**Shell (the installer targets bash 3.2 — what macOS ships):**
+
+- `local a="$1" b="$a"` — `$a` expands **before** it's assigned. Split into two `local` statements.
+- An empty array under `set -u` counts as unbound. Use `${ARR[@]+"${ARR[@]}"}`.
+- `return` immediately after an arithmetic assignment returns 0: `COUNT=$((COUNT+1)); return` reports
+  success no matter what. Use an explicit `return 1`.
+- A trailing `[ x ] && cmd` as a function's **last** line can trip `set -e`. Use `if`.
+
+**Consistency:**
+
+- **Never bulk find-and-replace a version string.** Doing so once rewrote a comment recording *when*
+  eval numbers were measured, silently relabelling old results as a new release's. Change each
+  occurrence deliberately; `evals/` records history and must keep its original versions.
+- **Never bulk-fix spelling from a partial word list.** A pass that declared "0 remaining" had left
+  `memorise`, `licence`, `colour`, and `analyse` untouched.
+- **Don't restate a count — derive or assert it.** Hardcoded totals ("17 skills") drift the moment one
+  is added. `check-integrity.mjs` now fails on the ones we ship; keep it that way.
+- **Always use `git -C <path>`.** A `cd` mistake once tagged and released on the *site* repo instead of
+  this one.
+
+**Site (`../mastermind-site`):**
+
+- `pkill -f "astro preview"` never matches — the real process string is `astro.mjs preview`.
+- `astro preview` binds **IPv6 only** (`[::1]:4321`); `127.0.0.1:4321` returns nothing. Use
+  `http://localhost:4321`. If the port is taken it silently moves to 4322 — check the startup log.
+- Fonts must be preloaded, and imported with `?url` so Astro resolves the **hashed** filename; a
+  hardcoded path 404s silently on the next build.
+- A Lighthouse 98 is a real defect, not noise. Read the failing audit before dismissing a 2-point drop.
+
+**Evals:**
+
+- **A subagent is not a clean baseline** — it inherits the brain from the session harness, so a
+  "no MasterMind" control still emitted MasterMind's announce line. Park `~/.claude/CLAUDE.md` *and*
+  `~/.claude/skills`, then run `claude -p` as a **separate process** from an empty directory. See
+  `evals/README.md` → "Isolation".

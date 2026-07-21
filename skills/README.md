@@ -4,7 +4,7 @@
 skill automatically — no slash command required. This index is the map (for reference, and for power
 users who *want* to invoke one directly with `/name`). Each skill is one job with a lean routing-rule
 description and an on-demand body. Keep the map honest: a skill it never lists, or one it still lists
-after removal, is a router that lies. (Authoring discipline: `levelup` → "Authoring a new skill".)
+after removal, is a router that lies. (Authoring discipline: `levelup/authoring.md`.)
 
 > Skills are **inline workflows**. Isolated-context expert *roles* — `architect`, `code-reviewer`,
 > `refactorer`, `tech-scout` — are **agents** (`../agents/`), not skills.

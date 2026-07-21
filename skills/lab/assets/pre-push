@@ -36,7 +36,11 @@ while read -r _lref lsha _rref rsha; do
   fi
 
   for rev in $(git rev-list "$RANGE" 2>/dev/null); do
-    HIT=$(git grep -liE "$TERMS" "$rev" -- '*.md' '*.ts' '*.tsx' '*.js' '*.json' 2>/dev/null || true)
+    # Every file type, no extension allowlist — a secret in a .env/.py/.yaml would
+    # otherwise slip past the one layer guarding the irreversible step. `lab/` is
+    # excluded to match pre-commit: it is the quarantine, so it legitimately holds
+    # the very terms we scan for, and self-matching would block every future push.
+    HIT=$(git grep -liE "$TERMS" "$rev" -- . ':(exclude)lab/**' 2>/dev/null || true)
     if [ -n "$HIT" ]; then
       printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") contains confidential terms:${NC}"
       printf '%s\n' "$HIT" | sed 's/^/    /' | head -5

@@ -39,8 +39,20 @@ thumbs-up before fanning out across the package.
      (default values, which state hides what, reserved-but-unimplemented options, ordering constraints).
    - **Errors / accessibility / TypeScript** — as relevant to the unit's kind.
 4. **Prioritize the gotchas.** The API table can be inferred from types; the gotchas cannot. That's the value.
-5. **Keep it in sync.** The code is the SSOT; the doc is derived. Regenerate a unit's doc when its API
-   changes — a stale doc misleads confidently, worse than none.
+5. **Stamp it so drift is detectable.** The code is the SSOT; the doc is derived — so record *what* it
+   was derived from, the way `engineering/ROUTER.md` records a hash per node. End each doc with a
+   footer naming the source file(s), the repo commit SHA at generation time, and a short content hash
+   of each source (`git rev-parse --short HEAD`, `git hash-object <file>`):
+
+   ```html
+   <!-- generated-from: src/Button.tsx@a1b2c3d (hash 9f4e21bc) · regenerate if the hash differs -->
+   ```
+
+   **Detecting drift** is then a one-liner anyone (or any model) can run: re-hash the source and
+   compare to the footer — `git hash-object src/Button.tsx` — or `git log a1b2c3d..HEAD -- src/Button.tsx`
+   to see whether the unit changed since. Mismatch → treat the doc as **stale**: re-read the source and
+   regenerate that unit before trusting it. No build script required; if the repo already has a docs
+   check or pre-commit hook, wire the same comparison into it rather than inventing a second mechanism.
 
 ## Guardrails
 - **Derive from source, never invent.** Unconfirmable behavior → "unverified" or omit.

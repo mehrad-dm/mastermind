@@ -4,6 +4,88 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.24.2] — 2026-07-21
+
+Clears the rest of the backlog from the v0.24.0 documentation pass — ten design defects where a skill
+or agent contradicted its own stated rule, plus the first tests for the design engine. Two real bugs
+surfaced along the way that were not on the list.
+
+### Fixed
+
+- **The `lab` push guard only scanned five file extensions.** A secret in a `.env`, `.py`, `.yaml`, or
+  `.txt` walked straight past `pre-push` — the layer that exists to catch exactly what `--no-verify`
+  and pre-guard history let through. `pre-commit` had no such filter, so the two layers disagreed on
+  scope. Now scans every file type, excluding `lab/` itself (the quarantine legitimately contains the
+  terms, and self-matching would block every future push). Found while writing the guard's first test.
+- **`lab`'s own cleanup step could destroy uncommitted work** — it ended with `git reset --hard`,
+  run from the user's real repo mid-setup. Now `--soft` plus a targeted unstage.
+- **`lab` never tested its most important guard.** Its rule is *"a guard you haven't tested is a guard
+  you don't have"*, but only `pre-commit` was proven. `pre-push` now has a real test — against a local
+  throwaway remote, because a direct invocation silently passes (the hook reads refs from stdin, so
+  with no stdin the loop body never runs).
+- **`debug` had no exit when a bug can't be reproduced.** It said "no repro, no fix" and stopped there.
+  Now: ship instrumentation, state what was ruled out, hand back with evidence — never guess at a fix.
+  The hypothesize↔test loop also gained a budget of three refuted hypotheses, after which the framing
+  is wrong, not the ranking.
+- **`spike` had no time-box despite naming endless exploration as its failure mode.** Now 5 attempts
+  (≈30 min), with a defined expiry: stop, report what's known and unknown, recommend, discard the code.
+- **`signature`'s anti-fabrication guard was self-referential** — the model checked its own citations,
+  so a hallucinated rule came with a hallucinated verification. Now every claimed style trait needs a
+  resolvable primary-source link *in the output*, or it is dropped. No sources at all → say so and fall
+  back; never synthesize a persona from reputation. This matters because the mode attributes opinions
+  to real, named people.
+- **`levelup` violated two of its own authoring rules** (one job; lean body). 135 → 58 lines, with
+  `authoring.md`, `refresh.md`, and `bootstrap.md` loaded on demand. Its "refresh is upstream-only"
+  rule is now an explicit path allowlist plus a `git status` check, so a violation shows up in a diff.
+- **Motion advice contradicted itself.** `web-animations.md` allowed 200–500ms for modals while its own
+  checklist said "reduce >300ms", and `motion.csv` said 400–800ms for page transitions. One policy now
+  arbitrates, tiered by the area the motion covers (small 100–200ms · medium 200–350ms · large
+  350–500ms, 600ms ceiling), grounded in Material 3's duration tokens. A modal is medium, not large.
+  Added a verified CSS↔GSAP easing map — transcribed from GSAP's source, not from the widely-circulated
+  `power2.out ↔ cubic-bezier(0.215, 0.61, 0.355, 1)`, which is measurably wrong by 2.2%. Curves that
+  *cannot* be expressed as a cubic Bézier (elastic, bounce, every `inOut`) are listed as omitted rather
+  than approximated.
+- **`route` inlined a skill list that was wrong** (`review` is an agent, not a skill) while its own rule
+  is "point, never restate". Now points at the index. Its broken file references are corrected.
+- **`qa` wrote test files to disk before asking**, undercutting its own rule. Permission now comes first
+  — excluding the trivial case of adding a case to a suite that already exists.
+- **`spec` and the `architect` agent had no stated relationship** despite overlapping. Boundary and
+  handoff are now explicit: spec owns the *what*, architect the *how*.
+- **`perf` was the only skill that never ran `levelup`**, so performance lessons were never captured;
+  its suspect list was also web-biased. Now field-agnostic bottleneck classes plus a pointer to the
+  active pack; the frontend specifics moved into the frontend pack.
+- **`explain`'s "keep docs in sync" had no mechanism.** Now records the source commit and content hash
+  in the generated doc, so drift is detectable the same way `ROUTER.md` detects it.
+- **`code-reviewer`'s reproduce-gate was meaningless for architecture findings** — you cannot reproduce
+  a deep-module violation, so the gate either blocked real findings or got ignored. Correctness and
+  security keep the reproduce-gate; architecture findings now need a cited principle, a `file:line`,
+  and a concrete maintenance cost. Taste is not a principle and discomfort is not a cost.
+- **`refactorer` cited two external sites but has no web tools.** The guidance is inlined; the URLs
+  remain only as human-facing references, marked unfetchable.
+- **`tech-scout`'s rubric had no thresholds**, so it could weigh criteria but never actually decide.
+  Now a first-match-wins ladder to a verdict. It also listed RTL as a fixed constraint, against the
+  kernel's "RTL/i18n is decided per project's audience — never assumed"; now evaluated per project.
+- **`lessons.md` grew without pruning**, against the project's own "a pack that only grows is a bug".
+  Both the frontend pack and the template now carry a pruning trigger and four delete conditions.
+
+### Added
+
+- **First tests for the design engine** — 41 characterization tests over `design_system.py`, 1329 lines
+  that had none. They pin determinism, dial clamping and tier edges, no-match paths, and that
+  persistence writes only under its output dir. Standard library only; no new dependency. They pin
+  current behavior rather than assert it is correct: three of them document real bugs, including a
+  **path traversal** in `persist_design_system` where a crafted project name writes outside the tree.
+  Coverage is partial by design and `scripts/tests/README.md` says so — roughly 700 lines of output
+  formatting remain untested.
+
+### Removed
+
+- **`data/draft.csv`** (~104KB) — an unreferenced near-duplicate of `design.csv` that no code path
+  reads, and which documents its own deadness in a comment. `design.csv` is dead by the same evidence
+  and is queued in `BACKLOG.md`.
+- **The duplicated cycle-report / plan-first preference block**, restated in `init` and `help` where it
+  would drift. `build` and `report` keep the authoritative definitions; the others point.
+
 ## [0.24.1] — 2026-07-21
 
 Mechanical bug fixes found by reading the source during a documentation pass. No behavior change to

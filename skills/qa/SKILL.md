@@ -27,10 +27,20 @@ and add tests / do it test-first if you want.)"*
 **Found a bug?** Fix the **root cause** (or route to `debug` if it's not obvious) — never suppress a symptom
 to make a check pass. Verify against the **requirement**, not the code you just wrote (a hostile eye).
 
-## Mode 2 — Test-first / TDD (thorough by default; keeping the files is the opt-in)
+## Mode 2 — Test-first / TDD (thorough by default; writing the files is the opt-in)
 
-Test the product **fully and in detail** — writing tests (even test-first) to *prove* behavior across the
-happy path and every edge is good QA, not overreach. Red → Green → Refactor:
+Writing a test suite is a heavy optional step — **offer it, get a yes, then write.** You're in Mode 2 only
+because the user asked for tests / test-first, or said yes to the offer after a build. Inside it, test the
+product **fully and in detail** — writing tests (even test-first) to *prove* behavior across the happy path
+and every edge is good QA, not overreach.
+
+**Get the yes before the first file lands.** Name where the tests would live and what they'd cover —
+*"Want these as tests? They'd go in `<path>` and cover `<happy path + the edges that matter>`."* — and write
+nothing to disk before it. **Proportionality, not ceremony:** if the project already has a suite and the
+change belongs in it, adding the case *is* the normal way to work — do it and say so; the gate is for
+*starting* a suite, or putting test files in a repo that has none.
+
+Then Red → Green → Refactor:
 
 1. **Red** — one small failing test stating the next behavior (for a bug: a test that reproduces it). Watch
    it fail for the right reason.
@@ -40,14 +50,15 @@ happy path and every edge is good QA, not overreach. Red → Green → Refactor:
 Test **behavior/contracts, not internals** (brittle implementation tests are worse than none). Test names
 read like the spec. Struggling to make a test pass cleanly? The design is probably wrong — listen to it.
 
-> **But don't silently leave test files in the user's repo.** After verifying, **ask what to keep:**
-> *"Tested it thoroughly — want me to keep these tests as coverage, or remove them for now?"* Match the
+> **And don't silently leave test files in the user's repo.** They were agreed before they were written, so
+> nothing arrives as a surprise — but close the loop: say what now exists and confirm it stays — *"Tested it
+> thoroughly; keeping these tests in `<path>` as coverage unless you'd rather I remove them."* Match the
 > project: if it already has a suite, add to it; if it has none, don't impose one — the *files* are the
 > user's call, even though the *testing* wasn't optional.
 
 ## Output
 A plain verdict — works / doesn't — with the evidence and the edge cases exercised, plus any gaps you
-couldn't cover (and why). If tests were written: note what they cover, then **ask whether to keep or
-discard the test files** — never persist a test suite the user didn't agree to. If the project's
+couldn't cover (and why). If tests were written: note what they cover and confirm they stay — never write
+or persist a test suite the user didn't agree to first. If the project's
 **`cycle-report`** preference is on (`.mastermind/prefs.md`), also run the **`report`** skill to save a
 durable write-up; default off, so by default the verdict stays in chat.

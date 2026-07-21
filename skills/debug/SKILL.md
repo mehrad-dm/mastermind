@@ -16,6 +16,11 @@ coincidence, not a fix.
 1. **Reproduce deterministically.** Find the smallest reliable trigger and a check that goes red on the
    bug (a failing test, a script, a repro URL/steps). No repro → no fix; keep narrowing inputs until it
    fails on demand. This red check is also your definition of "fixed."
+   **If it still won't reproduce after honest effort:** stop — never guess at a fix for a bug you can't
+   reproduce, and never claim it's fixed. Ship instrumentation instead (logging/assertions at the suspect
+   boundaries) so the next occurrence is diagnosable, state explicitly what you ruled out and how, and
+   hand back with that evidence. "I couldn't reproduce it" is the honest answer, and usually a faster
+   route to the real cause than three speculative patches.
 
 2. **Localize.** Bisect the space — git bisect across commits, binary-search the code path, add
    instrumentation/logs at boundaries. Read the *actual* code and the *actual* data/state at the
@@ -27,7 +32,10 @@ coincidence, not a fix.
 
 4. **Test the hypothesis.** Prove or kill it with a targeted experiment — inspect the value, toggle the
    condition, add an assertion. Confirm the mechanism *before* fixing. If the experiment refutes it, go
-   back to (3) with what you learned. Don't shotgun-change multiple things.
+   back to (3) with what you learned. Don't shotgun-change multiple things. **Budget: three refuted
+   hypotheses.** Three misses means the framing is wrong, not the ranking — stop generating candidates and
+   widen the search: challenge an assumption you never verified, distrust the reported symptom, or return
+   to (2) and bisect harder (commits, environment, data) until the region shrinks.
 
 5. **Fix the root cause, not the symptom** (`~/.mastermind/engineering/core/rigor.md`). Address why the bad state was possible —
    ideally make it unrepresentable (types, invariants, a reshaped data structure so the edge case

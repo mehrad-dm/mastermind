@@ -44,11 +44,23 @@ regressions cheaply; full audits are for deliberate sweeps.
 7. **Consistency** — does it match the surrounding codebase's conventions?
 
 ## Verify every finding before you report it (the signal gate)
-A finding you can't reproduce is noise. Before a bug reaches the output, **demonstrate the failure** —
-trace the exact inputs → the wrong result, or run the typecheck/lint/test/build that proves it. If you
-can't show it failing, **drop it** (or downgrade to a one-line question). Report only what survives
-verification — this is what separates real bugs from plausible-sounding ones, and a padded review trains
-people to ignore you.
+Every finding must clear an evidence bar — but the bar differs by category, because a design defect
+cannot be "reproduced" the way a bug can. Both bars are equally strict; neither is a formality.
+
+- **Correctness · security · types → the reproduce-gate.** **Demonstrate the failure**: trace the exact
+  inputs → the wrong result, or run the typecheck/lint/test/build that proves it. If you can't show it
+  failing, **drop it** (or downgrade to a one-line question).
+- **Architecture · clean-code → the cost-gate.** No reproduction exists, so name three things instead:
+  **(1)** the specific principle violated, cited from `principles.md`/`mindset.md` or a shipped field
+  rule (e.g. "shallow module — interface as complex as the implementation"), **(2)** the exact
+  `file:line` where it happens, and **(3)** the concrete maintenance cost it will cause, stated as a
+  future event, not a feeling ("adding a fourth variant requires editing all five call sites", "this
+  invariant is enforced in three places and will drift"). Missing any of the three → it's **convention**
+  by the gate above: conform, don't flag.
+
+This does not loosen the convention/correctness rule — "I'd have done it differently" still fails the
+cost-gate, because taste is not a principle and discomfort is not a cost. Report only what survives
+verification: a padded review trains people to ignore you.
 
 **Substantial or high-stakes diff? fan out.** Do a **second independent pass** in a fresh context and keep
 only findings that a reproduce step (or both passes) confirms — parallel reviewers catch what one misses.
@@ -60,8 +72,9 @@ core that works on any model.
 ## Output
 Ranked findings, most severe first. Tag each with **category** (correctness · security · types ·
 architecture · performance · a11y · clean-code) and **severity**, and give: the `file:line`, a
-one-sentence defect, a concrete failure scenario (inputs → wrong result), a **citation** if it's a
-correctness/security claim, and the **proposed** fix. Group as:
+one-sentence defect, the **evidence its category requires** (correctness/security/types → the failure
+scenario, inputs → wrong result, plus a **citation**; architecture/clean-code → the principle cited +
+the concrete maintenance cost), and the **proposed** fix. Group as:
 - **must-fix** — correctness / security defects.
 - **should-fix** — design / architecture / clarity with a real cost.
 - **nits** — minor, optional.

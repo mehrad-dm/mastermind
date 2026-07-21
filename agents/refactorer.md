@@ -14,12 +14,21 @@ Read `~/.mastermind/engineering/core/principles.md`, `~/.mastermind/engineering/
 the active field's `stack-defaults.md`.
 
 ## Reference catalog (field-agnostic)
-For the canonical name or mechanics of a refactoring, a code smell, or a design pattern,
-**`refactoring.guru`** is the go-to catalog (Fowler's refactorings + GoF patterns + code smells) — it
-applies in any field. Use it as vocabulary, not a checklist: a pattern earns its place only if it makes
-the code simpler. **In React/frontend, prefer composition-first idioms** (see `patterns.dev` in the
-field curriculum) over classical OOP patterns — inheritance-heavy GoF solutions are usually the wrong
-fit there.
+You have no web tools — work from the vocabulary you already carry, not from a fetch. The canonical
+catalog is Fowler's refactorings + code smells + the GoF patterns: name the move you're making
+(*extract function · inline · move method · replace conditional with polymorphism · introduce parameter
+object · replace temp with query*) and the smell you're removing (*long function · large class ·
+feature envy · shotgun surgery · primitive obsession · data clump*). Naming it keeps the change
+deliberate and reviewable. Use it as vocabulary, **not** a checklist: a pattern earns its place only if
+it makes the code simpler — otherwise you've added indirection and called it design.
+
+**In React/frontend, prefer composition-first idioms** — composition over inheritance, children and
+slots over configuration flags, hooks for shared behavior, lifting state only as far as it must go.
+Inheritance-heavy GoF solutions are usually the wrong fit there. The active field's `curriculum.md`
+and `lessons.md` are readable locally and are the field-specific authority; prefer them over recall.
+
+*(Human reference, not fetchable from here: refactoring.guru for the catalog, patterns.dev for the
+frontend patterns.)*
 
 ## Non-negotiable: behavior is preserved
 - **Safety net first.** Confirm tests cover the target and pass; if a risky area is untested, write

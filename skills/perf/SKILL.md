@@ -15,16 +15,22 @@ effort on the wrong thing and maybe trade away correctness for nothing. Get data
    down; it's your before.
 2. **Find the bottleneck — profile, don't guess.** Use the right instrument (browser Performance panel /
    React Profiler, a flame graph, DB query plan, a tracer) and find *where the time actually goes* — the
-   ~20% causing ~80%. Suspects, by domain:
-   - **Frontend:** unnecessary re-renders, unmemoized expensive work, big unvirtualized lists, request
-     waterfalls, oversized bundles/images, layout thrash.
-   - **Backend/data:** N+1 queries, a missing index, full scans, sync I/O on the hot path, no caching,
-     chatty network calls, unbounded result sets.
+   ~20% causing ~80%. The universal classes of waste: **repeated work** (recomputed per item/render
+   instead of once), **amplified work** (one request fanning out into N), **missing lookup structure**
+   (a scan where an index/map belongs), **serial waiting** (round-trips that could be batched or
+   parallel), **oversized payloads**, and **no caching of stable results**. For the *domain-specific*
+   suspects, load the active field pack (`engineering/active-field.md` → the pack's performance
+   section); if the field has no pack, let the profile — not a checklist — name the suspect.
 3. **Fix the biggest one.** Make the single change with the most impact; resist micro-optimizing noise.
    Prefer *doing less work* (cache, batch, index, memoize, defer, paginate) over doing the same work faster.
 4. **Verify the win.** Re-measure the same way — confirm the number actually moved, and that **behavior
    and correctness are unchanged** (`core/rigor.md`). A "faster" version that's subtly wrong is a regression.
 5. **Guard it.** Note the metric (a comment, a budget, a perf test) so the regression is visible next time.
+
+## After
+Run **`levelup`** (capture) to record the bottleneck class and its lesson in the active field's
+`lessons.md` — including the *wrong* suspect you ruled out, so MasterMind doesn't re-profile it next
+time. Report: before → after numbers, the cause, the fix, and the guard added.
 
 ## Gotchas
 - **Measure before *and* after** — "feels faster" is not a result; a number that moved is.

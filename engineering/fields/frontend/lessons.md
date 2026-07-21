@@ -9,6 +9,14 @@ Durable lessons learned from real usage and `code-reviewer` findings. Each is a 
 the "why" in brackets. New lessons are appended by the `levelup` skill. When a lesson is
 general enough to be a default, also promote it into `stack-defaults.md`.
 
+**Pruning — a pack that only grows is a bug.** `levelup` reviews this file whenever it runs a refresh,
+and always before appending once the list passes **40 lessons**. Delete a lesson when any of these is
+true: (1) it has been promoted into `stack-defaults.md` — the default is now the rule, and the lesson is
+a duplicate; (2) it is about a library, version, or tool this field no longer uses; (3) the framework
+fixed it upstream, so the workaround is now wrong advice; (4) a newer lesson supersedes it — merge the
+two, keep one. Deleting is the default when a lesson is merely *true but never load-bearing*; keep only
+what would change a decision.
+
 - **Sliding indicators (segmented control, tabs underline) must measure real layout, not assume equal
   segment widths.** Drive the thumb from the active item's `offsetLeft`/`offsetWidth` + a
   `ResizeObserver`; `calc(100%/N)` + `translateX(index*100%)` only works when every segment is

@@ -27,6 +27,18 @@ not the code.
 Decide everything technical yourself; surface only genuine product trade-offs to the user (one line each).
 Keep it self-contained — a fresh session should be able to build from it alone.
 
+## Spec vs. the `architect` agent
+Spec is the **what**; `architect` (`~/.mastermind/agents/architect.md`) is the **how**. Spec produces the
+problem, scope, glossary, acceptance criteria, and edge cases; architect produces module/interface
+boundaries, the data model, key types, and the technical decisions behind them.
+
+- Ask is *fuzzy* → run `spec` first. Ask is *clear but the design isn't* → go straight to `architect`.
+- **Handoff:** feed the finished spec to `architect` as its input — it restates the problem from the spec's
+  scope and acceptance criteria instead of re-deriving them. Non-trivial work usually wants both, in that
+  order; a small, well-understood change needs neither.
+- Spec's "Interfaces & data" step stays at the level the spec needs (files touched, contracts the
+  acceptance criteria depend on). Don't design the modules here — that's architect's output, not spec's.
+
 ## Output
 A short `SPEC.md` (or inline): problem, scope, interfaces, acceptance, edge cases, verification. Decisive,
 not a menu — the blueprint an implementer follows without second-guessing.

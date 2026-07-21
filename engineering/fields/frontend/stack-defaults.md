@@ -256,6 +256,10 @@ metric that's actually failing; premature perf work is complexity with no payoff
 - **CLS — reserve space up front.** Always set `width`/`height` or `aspect-ratio` on images/media,
   reserve space for ads/embeds/late content, use `font-display: swap` **with a metric-matched fallback**
   (e.g. `next/font`, `size-adjust`), and never inject content above existing content.
+- **Bottleneck suspects, when profiling a frontend** (the `perf` skill's domain list — profile to
+  confirm, never assume): unnecessary re-renders and unmemoized expensive work, big unvirtualized
+  lists, request waterfalls (sequential fetches that should be parallel or hoisted), oversized
+  bundles/images, layout thrash (read/write cycles forcing sync reflow), and heavy hydration.
 - **Images — usually the biggest single win.** Modern formats (**AVIF → WebP → fallback** via
   `<picture>`), responsive `srcset`/`sizes`, `loading="lazy"` below the fold, and correct dimensions —
   never ship a 2000px image into a 400px slot.

@@ -70,11 +70,12 @@ After the ready report, offer these once — both skippable, both default **off*
 > *(1) a short written **report** at the end of each build/QA cycle? (markdown / html)*
 > *(2) **plan-first** — on bigger tasks, should I show the plan and wait for your OK before editing?"*
 
-Record in **`.mastermind/prefs.md`** (create it), one line each — `cycle-report: off|ask|markdown|html` and
-`plan-first: off|on`. Don't push it: if they don't care or don't answer, default both `off` and move straight
-on. They can change either anytime ("reports on", "plan first from now on"). The `report` skill reads
-`cycle-report`; the `build` skill's plan-first gate reads `plan-first`. (Keep it to this single light offer —
-never turn setup into an interrogation.)
+Record the answers in **`.mastermind/prefs.md`** (create it), one line each. Both preferences are defined by
+their implementations — **`skills/build/SKILL.md`** (plan-first gate) and **`skills/report/SKILL.md`**
+(`cycle-report` values); read those for the exact keys and accepted values rather than restating them here.
+Don't push it: if they don't care or don't answer, default both `off` and move straight on. They can change
+either anytime ("reports on", "plan first from now on"). (Keep it to this single light offer — never turn
+setup into an interrogation.)
 
 ## Gotchas
 - **Don't re-initialize** a project that's already set up — check for a loaded/matching field pack first.
