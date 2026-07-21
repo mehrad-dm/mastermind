@@ -134,8 +134,8 @@ surfaced along the way that were not on the list.
 ### Removed
 
 - **`data/draft.csv`** (~104KB) — an unreferenced near-duplicate of `design.csv` that no code path
-  reads, and which documents its own deadness in a comment. `design.csv` is dead by the same evidence
-  and is queued in `BACKLOG.md`.
+  reads, and which documents its own deadness in a comment. `design.csv` was dead by the same evidence
+  and is removed in v0.24.3.
 - **The duplicated cycle-report / plan-first preference block**, restated in `init` and `help` where it
   would drift. `build` and `report` keep the authoritative definitions; the others point.
 

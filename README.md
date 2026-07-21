@@ -172,6 +172,22 @@ Plain Markdown, no runtime — works with any model (Claude, GPT/Codex, Gemini, 
 Code gets native agents and skills; other tools read the same files and follow them as procedures. **One
 brain, every editor.**
 
+## Known limitations
+
+Stated plainly, because a tool about not overclaiming shouldn't overclaim about itself.
+
+- **The numbers are a self-administered eval, not a benchmark.** 8 tasks, N=3, three independent judges,
+  same base model on both sides. Trust the **delta** (both sides judged identically); treat absolutes as
+  directional. Method and full results: [`evals/`](./evals/). Mechanism runs that don't clear that bar are
+  marked in `evals/RESULTS.md` and are never quoted publicly.
+- **Cursor re-injection is unverified.** The `.cursor/rules/mastermind.mdc` rule works and is the
+  load-bearing path. The `sessionStart`/`preCompact` hook is wired to Cursor's published schema, but
+  Cursor has open upstream bug reports where a hook's `additional_context` is accepted and never reaches
+  the model — so we wire it and say so, rather than claim it works. The installer prints
+  `(unverified upstream)` when it wires it.
+- **Only one field pack ships** (`frontend`). The template is now routable and integrity-checked, so a
+  new pack works on day one — but nobody has built a second one yet.
+
 ## Credits
 
 Created and maintained by [**mehrad-dm**](https://github.com/mehrad-dm). Built with **Claude Code** (Anthropic).

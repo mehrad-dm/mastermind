@@ -69,8 +69,7 @@ python3 -m unittest discover -s engineering/fields/frontend/ui-ux-pro-max/script
      string still matches a longer real style name containing it.
      Test: `test_substring_match_is_directional`.
 
-  All three were found by the characterization suite and are recorded in `BACKLOG.md`. They
-  should also go upstream; until they do, this file is the only thing standing between a
+  All three were found by the characterization suite. They should also go upstream; until they do, this file is the only thing standing between a
   re-vendor and their silent return.
 
 MasterMind pairs this (the *what* — design data & recommendations) with the `build`

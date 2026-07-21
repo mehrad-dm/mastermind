@@ -101,6 +101,26 @@ There's no build — the test is **behavioral**. Make the edit, run the assistan
 confirm its behavior actually shifts the way you intended. If it doesn't, the wording is probably
 ambiguous or buried — tighten it.
 
+## Settled decisions — please don't relitigate
+
+Each of these was argued once and decided. Reopening one needs a new argument, not a preference.
+
+- **Per-project install is the default**; `--global` is opt-in.
+- **The project always wins.** On a skill-name collision the user's file is never displaced: ours
+  installs as `mastermind-<name>` and both work. If theirs is later removed, ours reclaims the plain
+  name and the alias is pruned.
+- **Skill descriptions state WHEN, never WHAT.** A description that summarizes its own workflow becomes
+  a shortcut the model takes *instead of* reading the skill body.
+- **Skills name actions, not tools** — this is what lets one body run on every harness.
+- **Proportionality over ceremony.** We deliberately rejected maximalism (mandatory TDD,
+  `<EXTREMELY-IMPORTANT>` shouting). Match effort to stakes.
+- **Adopt patterns, never Claude-only machinery.** Workflow APIs, `/loop`, worktrees and friends stay
+  optional accelerators, never dependencies.
+- **Site docs are generated, never hand-written** — `scripts/build-library.mjs` builds them from
+  `skills/*/ABOUT.md`, so a page cannot claim something the skill doesn't say.
+- **Prose column stays 768px** on the site; navigation may span the full container. 🧠 stays a literal
+  emoji in terminal lines; genuine UI uses the icon component.
+
 ## Gotchas — learned the hard way
 
 Each of these cost real debugging time at least once. They're here so nobody rediscovers them.

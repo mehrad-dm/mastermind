@@ -176,6 +176,13 @@ tool calls, 35k vs the ~27k norm).
 
 ## Run M1 — 2026-07-21 · v0.24.0 **mechanism** evals · Opus 4.8 gen · rubric pre-registered · N=2/cond
 
+> **⛔ This run does NOT clear the bar in `README.md` — never cite it publicly.** It is `N=2` with a
+> single judge, against a bar of **≥3 independent judges and N≥3, stable across two runs**. Two of its
+> five tests are additionally void by its own reporting (M1a hit the ceiling, M1c was an invalid probe).
+> Treat M1d and M1e as **directional in-house signal only** — evidence that an edit did *something*,
+> not a measurement of how much. Re-run at N≥3 with a 3-judge panel before any of it leaves this file.
+> The runs *above* do clear the bar; those are the ones on the website.
+
 A different class from the runs above. Those measure **output quality** (baseline vs treatment on a
 coding task). These measure whether a **specific v0.24.0 change alters behavior at all** — the question
 "did this edit do anything?", which output-quality evals are too coarse to answer.
