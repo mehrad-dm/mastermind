@@ -353,7 +353,7 @@
         "id": "installtests",
         "label": "Installer tests",
         "kind": "service",
-        "sub": "30 assertions",
+        "sub": "guards the install promises",
         "group": "Safety & honesty",
         "sourceRef": "tests/install.test.sh",
         "detail": "Guards the promises install.sh makes: never destroy your files, never lose a MasterMind capability, stay idempotent, merge settings instead of clobbering, and leave an unparseable config alone."
@@ -366,6 +366,24 @@
         "group": "Safety & honesty",
         "sourceRef": "scripts/build-library.mjs",
         "detail": "Generates one article per skill and agent from ABOUT.md files, so the public docs cannot claim a skill does something the skill does not. Refuses to build if a skill has no article; --check fails when the site is stale."
+      },
+      {
+        "id": "designdb",
+        "label": "Design database",
+        "kind": "store",
+        "sub": "vendored · UI/UX intelligence",
+        "group": "Knowledge",
+        "sourceRef": "engineering/fields/frontend/ui-ux-pro-max/",
+        "detail": "A vendored third-party design-intelligence database (MIT, NextLevelBuilder) behind the frontend pack: colour palettes, font pairings, UX guidelines, product types and chart types, plus per-stack guidance, searched by a local BM25 engine. Not authored here — SOURCE.md records the upstream, the re-vendor procedure, and the local fixes that must survive it."
+      },
+      {
+        "id": "designtests",
+        "label": "Design engine tests",
+        "kind": "service",
+        "sub": "characterization suite",
+        "group": "Safety & honesty",
+        "sourceRef": "engineering/fields/frontend/ui-ux-pro-max/scripts/tests/",
+        "detail": "Pins what the vendored selection logic actually does — dial clamping, determinism, no-match paths, and that persistence writes only under its output dir — so a re-vendor cannot silently change behaviour. Written against code that had no tests; it found a path traversal and two selection bugs, all since fixed and pinned."
       }
     ],
     "edges": [
@@ -566,12 +584,6 @@
         "label": "verifies"
       },
       {
-        "from": "library",
-        "to": "moreskills",
-        "kind": "reads",
-        "label": "generates docs from"
-      },
-      {
         "from": "ci",
         "to": "installtests",
         "kind": "triggers"
@@ -581,6 +593,24 @@
         "to": "library",
         "kind": "triggers",
         "label": "checks docs are in sync"
+      },
+      {
+        "from": "library",
+        "to": "kernel",
+        "kind": "reads",
+        "label": "one page per skill + agent"
+      },
+      {
+        "from": "field",
+        "to": "designdb",
+        "kind": "reads",
+        "label": "design intelligence"
+      },
+      {
+        "from": "designdb",
+        "to": "designtests",
+        "kind": "reads",
+        "label": "pinned by"
       }
     ]
   }
