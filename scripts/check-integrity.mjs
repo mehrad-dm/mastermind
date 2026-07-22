@@ -7,7 +7,7 @@
  *   1. every skills/<name>/ has a SKILL.md with valid frontmatter (name matches dir,
  *      description present & ≤1024 chars, only allowed keys — per the Agent Skills spec)
  *   2. skills/README.md lists exactly the skill dirs (no missing, no extra)
- *   3. the root README.md skills table lists exactly the skill dirs
+ *   3. no index (skills/README.md, README.md) cites a `mastermind-*` skill with no dir
  *   4. no broken ~/.mastermind / engineering / core / fields cross-references in the docs
  *   5. active-field.md declares a level
  *   6. help/SKILL.md's "<n> skills · <n> agents" header matches what actually ships
@@ -69,7 +69,6 @@ for (const dir of skillDirs) {
 
 // --- 2 & 3. index parity -----------------------------------------------------
 // skills/README.md is the AUTHORITATIVE index: every skill dir must appear (incl. vendored).
-// root README.md markets the first-party skills: every mastermind-* dir must appear there.
 // Parse the actual index ROWS, not a substring of the whole file: skill names like `qa`,
 // `build`, `route`, `learn`, `debug`, and `report` are ordinary English words that appear in
 // the surrounding prose, so `includes(dir)` passed even with the skill's row deleted — the
@@ -84,13 +83,10 @@ for (const dir of skillDirs) {
 for (const listed of listedSkills) {
   if (!skillDirs.includes(listed)) fail(`skills/README.md: lists "${listed}" — no such skill dir`)
 }
-const rootReadme = read('README.md')
-for (const dir of skillDirs) {
-  if (dir.startsWith('mastermind-') && !rootReadme.includes(dir)) fail(`README.md: first-party skill "${dir}" not listed`)
-}
-// flag any `mastermind-*` skill name claimed in an index that has no matching dir.
-// Only backticked refs count — that's how skills are cited — so URLs/slugs like
-// foglamp.dev/scan/mastermind-xyz don't trip it.
+// The root README is a curated overview, not a complete index — it deliberately lists only
+// some skills, so its completeness is NOT enforced (skills/README.md is the authoritative
+// index, guarded above). What we do guard: no index cites a `mastermind-*` skill that has no
+// dir. Only backticked refs count, so a URL slug like foglamp.dev/scan/mastermind-xyz is fine.
 for (const file of ['skills/README.md', 'README.md']) {
   for (const m of read(file).matchAll(/`(mastermind-[a-z-]+)`/g)) {
     if (!skillDirs.includes(m[1])) fail(`${file}: lists "${m[1]}" — no such skill dir`)
@@ -118,8 +114,10 @@ for (const f of docFiles) {
 }
 
 // --- 5. active-field declares a level ----------------------------------------
-if (!/level\s+\d+/i.test(read('engineering/active-field.md'))) {
-  fail('engineering/active-field.md: no level declared')
+// Match the explicit `**Level:** N` declaration, not "level N" anywhere — the "Level history"
+// section always contains old levels, so a loose match passed even with the real one deleted.
+if (!/^-?\s*\*\*Level:\*\*\s*\d+/m.test(read('engineering/active-field.md'))) {
+  fail('engineering/active-field.md: no current level declared (expected a `**Level:** N` line)')
 }
 
 // --- 6. the help menu's headline counts are true ------------------------------
@@ -230,15 +228,17 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
     fail(`${rel}: re-vendor \`rm -rf\`s this directory but no preserve list found — expected bullets of the form "- **\`path\`** — why" after a line saying what must survive`)
     continue
   }
+  // What the procedure actually rescues: paths in a `cp … $P/<path> … /tmp…` copy-aside line.
+  // Both directions check against THIS set, not a loose "mentioned somewhere" — a path named
+  // only in the later `diff` line isn't backed up.
+  const rescued = [...text.matchAll(/^\s*cp\b[^\n]*?\$\{?P\}?\/([^"'\s]+)["']?\s+\/tmp\S*/gm)].map((m) =>
+    m[1].replace(/\/$/, '')
+  )
   for (const p of listed) {
     if (!existsSync(join(ROOT, dir, p))) fail(`${rel}: preserved path "${p}" does not exist — the re-vendor would restore nothing`)
-    if (!new RegExp(`\\$\\{?P\\}?/${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(text)) {
-      fail(`${rel}: preserved path "${p}" is never copied aside by the re-vendor block — the list and the procedure have drifted`)
-    }
+    if (!rescued.includes(p)) fail(`${rel}: preserved path "${p}" is never copied aside by the re-vendor block — the list and the procedure have drifted`)
   }
-  // and the reverse: anything the procedure rescues to /tmp must be explained in the list.
-  for (const m of text.matchAll(/^\s*cp\b[^\n]*?\$\{?P\}?\/([^"'\s]+)["']?\s+\/tmp\S*/gm)) {
-    const p = m[1].replace(/\/$/, '')
+  for (const p of rescued) {
     if (!listed.includes(p)) fail(`${rel}: re-vendor copies "${p}" aside but it is not in the preserve list — undocumented, so the next editor won't know it's ours`)
   }
 }

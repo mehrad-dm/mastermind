@@ -37,6 +37,7 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 | Skill | What it does (auto-applies when you…) |
 | --- | --- |
 | [`signature`](./signature/SKILL.md) | …want MasterMind to fit your team. Capture the codebase's real patterns (Lab, patterns-not-people) → name-free rules the AI follows. Proposes, never auto-applies. |
+| [`persona`](./persona/SKILL.md) | …want code in a named public engineer's style ("write it like *X*"). Grounded in their documented work, cited; homage, never impersonation. |
 | [`explain`](./explain/SKILL.md) | …have an under-documented internal package. Generate AI-friendly per-unit usage docs so any model understands it. **Asks first.** |
 | [`lab`](./lab/SKILL.md) | …need to capture sensitive project data safely. Sets up a private, gitignored Lab + the safety guards. |
 | [`levelup`](./levelup/SKILL.md) | …teach MasterMind something durable. Capture a lesson / refresh a field / bootstrap a new field. |
@@ -45,6 +46,12 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 > **Frontend-field abilities** live in the frontend pack, not here — they load with that field via the
 > router: **`improve-ui`** (audit a UI against its own design language → a fix plan) and the
 > **`ui-ux-pro-max`** design-intelligence database.
+
+> **Coming soon — `sniper`.** One invocation that runs scope → implement → adversarial self-review →
+> verify, looping on red until green, so the *checking happens before handoff* rather than landing on
+> you. It is deliberately not a directory yet: an empty skill dir is installed and auto-invocable the
+> moment it exists. Design note and the three things that must land first:
+> [`README-sniper-planned.md`](./README-sniper-planned.md).
 
 The library grows freely — add a skill for any distinct, useful workflow (one job + lean routing-rule
 description + on-demand body). Register every new skill here.

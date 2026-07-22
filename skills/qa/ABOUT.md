@@ -68,7 +68,8 @@ You don't type a command. Say any of these and MasterMind reaches for `qa`:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ qa · define works → drive it → edges → evidence
+🧠 MasterMind ▸ proving it actually works before you trust it
+   └ qa · define works → drive it → edges → evidence
 ```
 
 ## When it does *not* fire

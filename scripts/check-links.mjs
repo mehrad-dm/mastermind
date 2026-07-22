@@ -28,7 +28,7 @@ const UA = 'Mozilla/5.0 (compatible; MasterMind-linkcheck/1.0; +https://mastermi
 
 // TLDs we treat as real when a bare domain appears in prose (allowlist = fewer false hits).
 const TLDS = 'com|dev|org|io|net|guru|gg|es|xyz'
-const SKIP = ['/ui-ux-pro-max/', '/lab/', '/_template/', 'ROUTER.md']
+const SKIP = ['/ui-ux-pro-max/', '/lab/', '/_', 'ROUTER.md']   // /_ skips all _-prefixed scaffolding
 
 // --- collect curated markdown files ------------------------------------------
 const walk = (d) =>

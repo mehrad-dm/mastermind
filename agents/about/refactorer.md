@@ -66,7 +66,8 @@ evidence.
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ refactorer · safety net → small steps → green after each → behavior unchanged
+🧠 MasterMind ▸ restructuring it without changing what it does
+   └ refactorer · safety net → small steps → green after each → behavior unchanged
 ```
 
 ## When it does *not* fire

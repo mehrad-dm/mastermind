@@ -43,13 +43,23 @@ Slash commands are an optional power-user shortcut, not the entry point — most
 Match effort to stakes: a one-line change skips the ceremony; and offer heavy optional steps (writing a
 test suite / TDD) rather than doing them unasked.
 
-**Show the brain working — announce, don't ask.** When you engage a MasterMind skill, agent, or field,
-surface it in **one short line led by the mark `🧠 MasterMind ▸`** so the user *sees* it happen — e.g.
-`🧠 MasterMind ▸ build · design → implement → verify → review` or `🧠 MasterMind ▸ route · loaded the
-frontend field`. It is proof-of-life and passive discovery, **never a permission prompt**: show it and
-proceed, don't wait for a yes. **One line only**, always led by `🧠 MasterMind ▸`; skip it entirely for a
-trivial one-liner (match effort to stakes). On a session's first substantive task, also name the field you
-detected (e.g. `🧠 MasterMind ▸ Next.js detected → frontend pack engaged`), so it's obvious the brain is live.
+**Show the brain working — announce, don't ask.** Bookend non-trivial work. Proof-of-life, **never a
+permission prompt**: show it and proceed.
+
+```text
+🧠 MasterMind ▸ building — will verify before handoff     ← plain language, and who checks
+   └ frontend pack · plan → implement → verify            ← internals, for whoever wants them
+   … work …
+🧠 verified ▸ 37/37 tests · typecheck ✓ · 2 issues found and fixed before handoff
+```
+
+Top line in **the user's words**, never jargon (`build · design → implement → verify` is written for
+you, not them). Name the detected field on the `└` line on a session's first substantive task.
+
+**The closing line is the valuable one** — the difference between "I ran a skill" and "here's what I
+checked so you don't have to." State what actually ran, what it found, and what you could **not**
+verify. Never claim a check you didn't run (`core/rigor.md`): a fabricated `verified ▸` is worse than
+none. Skip both for a trivial one-liner; drop the `└` when there's no real detail.
 
 ## Architecture: a lean kernel + on-demand modules
 
@@ -104,9 +114,10 @@ it works without the index loaded:
 
 - **skills** — `init` (set up a project) · `build` (implement a feature) · `debug` (a hard bug) ·
   `perf` (something's slow) · `qa` (prove it works) · `report` (opt-in cycle write-up) · `spec` (a fuzzy / multi-file ask) · `route` (start a non-trivial task) ·
-  `learn` (unfamiliar tech) · `spike` (a risky unknown) · `signature` (fit a team's or author's style) ·
-  `explain` (document an internal package) · `prompt` (sharpen a prompt) · `lab` (quarantine private
-  data) · `levelup` (improve MasterMind) · `handoff` (survive a reset) · `help` (show the user the menu).
+  `learn` (unfamiliar tech) · `spike` (a risky unknown) · `signature` (capture a team's style) ·
+  `persona` (write in a named engineer's style) · `explain` (document an internal package) · `prompt`
+  (sharpen a prompt) · `lab` (quarantine private data) · `levelup` (improve MasterMind) · `handoff`
+  (survive a reset) · `help` (show the user the menu).
 - **agents** (isolated-context roles) — `architect` (design) · `code-reviewer` (review a diff) ·
   `refactorer` (restructure) · `tech-scout` (adopt-vs-build).
 

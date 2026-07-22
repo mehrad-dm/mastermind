@@ -36,7 +36,7 @@ a foundation gets the full loop. Don't perform ceremony the task doesn't warrant
 > **tell each step worked**. If a step needs you to already know something the plan doesn't say, it isn't
 > written yet. Then **stop and wait for the user's go-ahead** (this
 > overrides the usual "decide and do" for this project — they opted in). If they adjust it, fold that in and
-> re-show. **On approval, announce `🧠 MasterMind ▸ implementing the plan` and proceed to step 4.** Skip the
+> re-show. **On approval, announce `🧠 MasterMind ▸ implementing the plan` with `└ build · implement → verify → review` beneath it, then proceed to step 4.** Skip the
 > gate entirely for a trivial one-liner (match effort to stakes) — it's for changes worth reviewing first.
 
 4. **Implement to rigor** (`~/.mastermind/engineering/core/rigor.md`) — build against the design. Handle the unhappy paths

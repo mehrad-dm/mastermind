@@ -61,7 +61,8 @@ into your real task without waiting.
 Or simply on your first real task in a project it hasn't seen. You'll see it in your terminal:
 
 ```
-🧠 MasterMind ▸ init · detect stack → load field pack → ready
+🧠 MasterMind ▸ setting up your project — will confirm what's wired
+   └ init · detect stack → load field pack → ready
 ```
 
 ## When it does *not* fire

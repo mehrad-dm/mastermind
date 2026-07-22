@@ -58,7 +58,8 @@ You don't type a command. Say something like this and MasterMind reaches for `sp
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ spike · name the question → smallest test → extract → discard
+🧠 MasterMind ▸ trying it for real to see if it holds up
+   └ spike · name the question → smallest test → extract → discard
 ```
 
 ## When it does *not* fire

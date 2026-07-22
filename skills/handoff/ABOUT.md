@@ -66,7 +66,8 @@ You don't type a command. Say something like:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ handoff · goal → state → decisions → map → gotchas → resume
+🧠 MasterMind ▸ saving what matters so this survives a reset
+   └ handoff · goal → state → decisions → map → gotchas → resume
 ```
 
 ## When it does *not* fire

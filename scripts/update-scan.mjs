@@ -71,6 +71,16 @@ const NEW_NODES = [
     detail:
       'Generates one article per skill and agent from ABOUT.md files, so the public docs cannot claim a skill does something the skill does not. Refuses to build if a skill has no article; --check fails when the site is stale.',
   },
+  // The catch-all for skills without their own node. Its label MUST stay count-free —
+  // this map is published publicly, and a hardcoded "+11 more skills" is exactly the
+  // stale-number lie the header forbids (it shipped "+11" while the library held 12).
+  {
+    id: 'moreskills',
+    label: 'more skills',
+    kind: 'tool',
+    sub: 'route·spec·learn·explain·spike·…',
+    group: 'Library',
+  },
 ]
 
 const NEW_EDGES = [
@@ -96,9 +106,9 @@ for (const n of NEW_NODES) {
   if (i >= 0) g.nodes[i] = n
   else g.nodes.push(n)
 }
-// Edges that were wrong and must be pruned. Nodes are replaced by id, but edges were only
-// ever appended — so a corrected edge used to leave the wrong one in place forever, and the
-// published map carried both. Prune first, then add.
+// Edges that were wrong and must be pruned. Nodes get replaced by id, but edges are only
+// ever appended — so a corrected edge would leave both the right and wrong one in the map.
+// Prune first, then add.
 const DEAD_EDGES = [
   'library->moreskills', // implied only the catch-all group fed the docs; it reads every skill + agent
 ]

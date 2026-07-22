@@ -10,14 +10,14 @@ lead with the one thing that matters most, then the tables. Keep it scannable. H
 
 ```
 🧠  MasterMind — a genius-builder brain for your AI
-    17 skills · 4 agents · one brain for every editor
+    18 skills · 4 agents · one brain for every editor
 ```
 
 ## The one rule: you don't run commands — you just talk
 
 MasterMind works by **recognizing intent**. Say what you want in plain language and it applies the right
-skill or agent itself, then shows a one-line note that it did (e.g. `🧠 MasterMind ▸ build · design →
-implement → verify`). The `/name` calls below are an **optional shortcut** — a way to *force* a specific skill — not
+skill or agent itself, then shows a short note that it did (e.g. `🧠 MasterMind ▸ building this — will verify
+before handoff`, with `└ build · design → implement → verify` beneath it). The `/name` calls below are an **optional shortcut** — a way to *force* a specific skill — not
 something you need to memorize. Every skill is **Auto** (the model can invoke it); you can also call any
 of them by hand.
 

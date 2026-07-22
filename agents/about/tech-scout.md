@@ -63,7 +63,8 @@ none.
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ tech-scout · fit → health → cost → vs. build it → verdict
+🧠 MasterMind ▸ deciding whether this is worth adopting
+   └ tech-scout · fit → health → cost → vs. build it → verdict
 ```
 
 ## When it does *not* fire

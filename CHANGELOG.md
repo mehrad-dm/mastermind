@@ -4,6 +4,91 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.26.0] — 2026-07-22
+
+Each project can now own its brain, and a monorepo can route a different field to each app —
+the two things that stop one client's lessons and stack from leaking into another's. The
+installer changed the most it has in a while; an adversarial review of the diff caught two
+critical bugs before they shipped, both fixed and pinned (see the note at the end).
+
+### Added
+
+- **Isolated per-project install — now the default.** A per-project install copies the engine into
+  `<project>/.mastermind/` and commits it, so the project owns its field, `lessons.md` and
+  `stack-defaults` — and a teammate cloning the repo gets the same brain. Updates happen only when you
+  re-run `install.sh` there, so nothing another project learns can change it. `--shared` opts back into
+  the single `~/.mastermind` clone every project reads. `--global` stays shared. On update, a **manifest**
+  removes only files we shipped that upstream retired, and never a file the project added; the project's
+  own lessons are always kept.
+- **Field + context routing for monorepos.** `.mastermind/routes.map` maps a path glob to a **context**
+  (`apps/web/** → web`). The installer **compiles** each rule into that app directory's own
+  tool-native anchor — a nested `CLAUDE.md` / `AGENTS.md` and a glob-scoped `.cursor/rules` — so the tool
+  attaches the right context **by file path**, not the model guessing. Selection is therefore
+  deterministic and identical across every tool that supports path rules (verified against Claude Code's
+  nested memory and Cursor's `globs:`, which its docs call *"deterministically attached"*). A **field**
+  holds stack knowledge once (shared by every app on it); a **context** holds one app's own lessons and
+  conventions. Web's lessons never reach api. A project with no `routes.map` is single-field and
+  nothing changes — the common case stays simple. Design: `engineering/isolation-and-contexts.md`.
+- **Install from anywhere in the repo.** `install.sh` resolves the **git root** and installs there, so a
+  monorepo gets one brain no matter which subfolder you run from — never one per app.
+- **`sniper` — coming soon.** A planned skill: one invocation that reviews and verifies its own work
+  before handoff, so you aren't the one finding the mistakes. Listed as coming-soon on the site and in
+  `skills/README-sniper-planned.md`; deliberately not a live skill dir yet.
+- **`scripts/preflight.sh`** — one command that runs the whole release gate (installer + design tests,
+  every check script, all shell parses, version agreement across repo *and* site, map freshness, site
+  build) and exits non-zero on any failure. The single answer to "did I test everything before shipping?".
+- **`persona` skill** — split out of `signature`, which was doing two different jobs. `signature` now does
+  one thing: capture *your team's* conventions (Lab-gated). `persona` is the other: write in the documented
+  public style of a *named engineer* you admire, citation-gated, homage not impersonation. Both keep the
+  full behavior they had; the split just makes each one job. 17 → 18 skills.
+
+### Changed
+
+- **Cursor now gets the full kernel**, inlined into `.cursor/rules/mastermind.mdc`, instead of a one-line
+  "Follow `~/.mastermind/CLAUDE.md`" pointer. The pointer left Cursor knowing only *where* the brain was,
+  not *what* it said — so the model often didn't load it and you'd type "use MasterMind" every prompt.
+  `--check` now flags a stale pointer-only rule. (`--global` still doesn't cover Cursor — it has no
+  user-level rules dir; run install per project. Documented.)
+- **The announce line is a two-line bookend.** A plain-language top line (`🧠 MasterMind ▸ building this —
+  will verify before handoff`), the internals indented under it, and a closing `🧠 verified ▸` that states
+  what was actually checked. The top line is in the user's words, never jargon; the closing line is the
+  one that matters — "here's what I checked so you don't have to."
+
+### Fixed (caught by the pre-ship review, before release)
+
+- **`--uninstall` could destroy the user's global wiring.** The new git-root walk-up matched
+  `$HOME/.mastermind` (the shared clone), so from any project *under* `$HOME` it resolved the project root
+  to `$HOME` — no-op'ing install and, on uninstall, deleting `~/.claude`. Now the walk stops at `$HOME`
+  and ignores a symlinked `.mastermind`. Regression test nests the project inside `$HOME` with the clone
+  present — the layout the suite could never reproduce before.
+- **The anchor block-editor could delete a project's own content.** It matched the `MASTERMIND` markers as
+  substrings, so a line that merely *mentioned* them was removed, and a lone unbalanced marker deleted
+  everything after it. Now it matches whole lines only and flushes an unbalanced block instead of dropping
+  it. Fuzzed with marker-containing content, lone markers, and no-trailing-newline files.
+- **A CRLF `routes.map` created a `\r` context** with unresolvable imports that `--check` reported healthy.
+  CR is now stripped in every reader.
+- **A `routes.map` typo aborted the whole install.** A one-token line (context omitted) or a context name
+  containing `/` was interpolated into a `sed` that errored under `set -e`, killing the installer — then a
+  re-run "healed" into a silently broken context. Malformed lines now warn and skip; the install completes.
+- **Three `check-integrity.mjs` checks were weaker than they claimed** (found by a deep test of the checks
+  themselves): the root-README parity check was dead code (its header claim was false — the root README is
+  a curated overview, not a complete index; corrected), the level check matched "level N" anywhere so a
+  deleted current-level declaration passed, and the `SOURCE.md` copy-aside check accepted a path mentioned
+  only in the later `diff` line. All three now verify what they say.
+- **The architecture map shipped a stale count.** The scan's catch-all node was hardcoded `+11 more skills`
+  — a literal count that broke the script's own "no counts in labels" rule and was already wrong (the
+  library held 12). It's now a count-free `more skills` node generated by `update-scan.mjs`, so it can
+  never go stale again.
+- **`preflight.sh` could never pass a legitimate uncommitted release.** Its map-freshness check compared
+  `scan.json` against `HEAD`, conflating "stale" with "not yet committed" — so the gate failed on the very
+  release it was meant to clear. It now checks the working file against a fresh regeneration, independent of
+  commit state.
+
+Installer regression tests: **37 → 110**, including every critical scenario above (each proven to fail
+against the unfixed code). A separate deep functional pass exercised install.sh across all modes and the
+five check scripts against their own broken invariants. This release is mechanism work — no new
+model-behavior eval was run, so the published eval numbers are unchanged, and `evals/RESULTS.md` says so.
+
 ## [0.25.0] — 2026-07-21
 
 Clears the entire backlog from the v0.24.0 documentation pass, then audits the files that pass never

@@ -71,7 +71,8 @@ You don't type a command. Say any of these and MasterMind reaches for `spec`:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ spec · outcome → scope → glossary → acceptance → edges
+🧠 MasterMind ▸ pinning down what we're actually building
+   └ spec · outcome → scope → glossary → acceptance → edges
 ```
 
 ## When it does *not* fire

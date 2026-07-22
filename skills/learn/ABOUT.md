@@ -59,7 +59,8 @@ You don't type a command. It engages when a task leans on unfamiliar ground:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ learn · detect stack → read primary docs → grill assumptions
+🧠 MasterMind ▸ reading the real docs before I touch this
+   └ learn · detect stack → read primary docs → grill assumptions
 ```
 
 ## When it does *not* fire

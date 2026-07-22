@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.25.0-7c6bff" alt="version 0.25.0" />
+  <img src="https://img.shields.io/badge/version-0.26.0-7c6bff" alt="version 0.26.0" />
   <img src="https://img.shields.io/badge/status-experimental-e0a800" alt="status: experimental" />
   <img src="https://img.shields.io/badge/license-MIT-555" alt="license MIT" />
 </p>
 
-<p align="center"><sub><b>⚗️ Experimental (v0.25.0).</b> Under active development — not yet stable, but usable. Its
+<p align="center"><sub><b>⚗️ Experimental (v0.26.0).</b> Under active development — not yet stable, but usable. Its
 effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md</a>); APIs and defaults may change.</sub></p>
 
 > **Make your AI coding assistant trustworthy.** MasterMind is plain Markdown that gives Claude Code,
@@ -86,14 +86,15 @@ curl -fsSL https://raw.githubusercontent.com/mehrad-dm/mastermind/master/bootstr
 curl -fsSL https://raw.githubusercontent.com/mehrad-dm/mastermind/master/bootstrap.sh | bash -s -- --global
 ```
 
-MasterMind installs **per project by default**: it wires the current repo's `.claude/` (Claude Code) plus
-`AGENTS.md` / `.cursor/rules` / `GEMINI.md` for the other tools you have — active only there. Run it in each
-project you want it in, or use `--global` once for all. The clone lives at **`~/.mastermind`** — the single
-source of truth every project links to.
+MasterMind installs **per project by default**, and **each project gets its own copy of the brain** in
+`<project>/.mastermind/` — its own field, lessons and stack, committed so your team shares it. It wires
+the current repo's `.claude/` (Claude Code) plus `AGENTS.md` / `.cursor/rules` / `GEMINI.md` for the
+tools you have — active only there. Prefer one shared brain for every project instead? add `--shared`.
+Want it everywhere at once? `--global`. You install **from** `~/.mastermind`; that clone is the source.
 
 It's **safe and self-healing** — re-run anytime: it **backs up** a real `CLAUDE.md`, **appends** (never
-overwrites) an existing `AGENTS.md`, and **prunes stale links + relinks** current skills/agents. Nothing
-personal (sessions/memory/settings) is touched or published.
+overwrites) an existing `AGENTS.md`, refreshes the engine while **keeping your project's own lessons**,
+and repairs any wiring. Nothing personal (sessions/memory/settings) is touched or published.
 
 ```bash
 cd ~/.mastermind && git pull && ~/.mastermind/install.sh   # update the brain + repair links
@@ -124,13 +125,59 @@ This registers the skills and agents as native commands (user-global). They read
 | --- | --- | --- |
 | **Claude Code** | project `.claude/` — native `skills/`, `agents/`, and the kernel `CLAUDE.md` | `install.sh` |
 | **Codex** | project `AGENTS.md` → the brain | `install.sh` |
-| **Cursor / Composer** | `.cursor/rules/mastermind.mdc` — frontmatter `alwaysApply: true`, body *"Follow `~/.mastermind/CLAUDE.md`."* | `install.sh` |
+| **Cursor / Composer** | `.cursor/rules/mastermind.mdc` — frontmatter `alwaysApply: true`, with the **kernel inlined** (a generated file, refreshed by re-running `install.sh`) | `install.sh` |
 | **Gemini CLI** | project `GEMINI.md` → the brain (or global `gemini extensions install github.com/mehrad-dm/mastermind`) | `install.sh` |
-| **GitHub Copilot** | `.github/copilot-instructions.md` → *"Follow `~/.mastermind/CLAUDE.md`."* | `install.sh copilot` |
+| **GitHub Copilot** | `.github/copilot-instructions.md` → symlinked to the kernel, plus `.github/hooks/mastermind.json` | `install.sh copilot` |
 | **Any AGENTS.md tool** | project `AGENTS.md` (Windsurf, Zed, Aider, JetBrains…) | `install.sh` |
 | **Plain chat (ChatGPT, …)** | paste `core/mindset.md` + `core/principles.md` + the field's `stack-defaults.md` | — |
 
 With `--global`, Claude Code + Codex are wired once in `~/` for every project instead.
+
+### Each project gets its own brain (isolated by default)
+
+A per-project install now **copies** the engine into `<project>/.mastermind/` — its own field, its
+own `lessons.md`, its own stack defaults — and commits it, so a teammate cloning the repo gets the
+same brain. Nothing a lesson learned in one client repo can leak into another.
+
+| | *(default)* isolated | `--shared` |
+| --- | --- | --- |
+| The brain lives in | `<project>/.mastermind/` — its own copy | `~/.mastermind` — one copy for all |
+| Field, `lessons.md`, `stack-defaults` | **owned by this project** | shared by every project |
+| Updating | re-run `install.sh` here, when you choose | `git pull` updates every project at once |
+| Committed to the repo? | yes — teammates get the same brain | nothing added |
+
+```bash
+cd my-project && ~/.mastermind/install.sh            # isolated — its own brain
+cd my-project && ~/.mastermind/install.sh --shared   # opt back into the single shared clone
+```
+
+`--check` tells you when an isolated project has drifted behind the clone. `lab/` stays gitignored
+either way. Run it from anywhere in the repo — it installs at the **git root**, so a monorepo gets
+one brain, not one per subfolder.
+
+### Monorepos: a different field per app
+
+When one repo holds apps on different stacks — or two React apps with different conventions — give
+each its own **context**. A `routes.map` in the project's brain maps path globs to contexts:
+
+```text
+# .mastermind/routes.map
+apps/web/**    web
+apps/api/**     api
+packages/**       shared
+```
+
+The installer **compiles** that into each app's own tool-native anchor — a nested `CLAUDE.md` /
+`AGENTS.md` and a glob-scoped `.cursor/rules` — so **the tool loads the right context by file path,
+not the model guessing.** Web's lessons never reach api; each app pulls only its own field +
+context, so it's isolated *and* uses fewer tokens. A missing context is created from a template using
+the default field; edit its `field.md` to point at another field once you've bootstrapped one.
+A project with no `routes.map` is single-field — nothing changes, the common case stays simple.
+
+> **Cursor is per-project only.** `--global` covers `~/.claude` and `~/.codex`; Cursor has no
+> equivalent user-level rules directory we can write, so run `install.sh` inside each repo you
+> want it in. Without that, Cursor has no MasterMind at all — and you end up typing
+> *"use MasterMind"* on every prompt to do by hand what the rule should do for you.
 
 ## Just talk — no commands to learn
 
@@ -146,7 +193,7 @@ matching skill. (Power users *can* type `/name` as a shortcut, but nobody has to
 | give a fuzzy ask | turns it into a crisp spec — problem, scope, terms, acceptance (`spec`) |
 | want a design pass | audits the UI against its own design language → a fix plan (a frontend-field capability) |
 | want code to fit your team | captures the codebase's real style → name-free rules it follows (`signature`) |
-| want code in a style you admire | writes in the documented public style of an engineer you name — e.g. Dan Abramov, Kent C. Dodds (`signature`) |
+| want code in a style you admire | writes in the documented public style of an engineer you name — e.g. Dan Abramov, Kent C. Dodds (`persona`) |
 
 Also auto-applied (and callable by name): `explain` (AI-friendly docs for an internal package), `lab`
 (a private, gitignored space for sensitive data), `handoff`, and `levelup` (teach MasterMind something durable).

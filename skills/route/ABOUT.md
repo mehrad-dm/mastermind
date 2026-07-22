@@ -65,7 +65,8 @@ You don't type a command. Say any of these and MasterMind reaches for `route`:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ route · destination → field → load manifest
+🧠 MasterMind ▸ working out what to read before starting
+   └ route · destination → field → load manifest
 ```
 
 ## When it does *not* fire

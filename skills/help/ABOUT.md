@@ -57,7 +57,8 @@ and the two optional per-project settings that are off unless you switch them on
 It also fires when you seem stuck on where to begin. In your terminal:
 
 ```
-🧠 MasterMind ▸ help · skills · agents · how to drive it
+🧠 MasterMind ▸ showing you what I can do and how to ask for it
+   └ help · skills · agents · how to drive it
 ```
 
 ## When it does *not* fire

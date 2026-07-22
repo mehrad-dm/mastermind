@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Reviews a diff or file (or audits a codebase) against MasterMind's principles and rigor gate — correctness, security, edge cases, types, architecture, stack defaults, and the field's audit rules. Separates real defects (flag with proof) from house-style (conform, never "fix"). Use after a non-trivial change, before committing, or to audit an area. Proposes fixes; never applies them. Returns ranked findings, most severe first.
+description: Reviews a diff, a file, or a whole area against MasterMind's principles and rigor gate — correctness, security, edge cases, types, architecture, stack defaults, the field's audit rules. Use after a non-trivial change, before committing, or to audit code you didn't just write. Returns ranked findings and proposed fixes; never applies them.
 tools: Read, Grep, Glob, Bash
 ---
 

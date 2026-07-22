@@ -65,7 +65,8 @@ You don't type a command. Say something like:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ explain · discover units → read source → sample doc → fan out
+🧠 MasterMind ▸ writing this up so nobody has to guess again
+   └ explain · discover units → read source → sample doc → fan out
 ```
 
 ## When it does *not* fire

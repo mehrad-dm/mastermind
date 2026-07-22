@@ -70,7 +70,8 @@ it's a plain file saved in your project, not something locked inside one particu
 You'll see it in your terminal:
 
 ```
-🧠 MasterMind ▸ report · verdict → changes → decisions → verification
+🧠 MasterMind ▸ writing up what changed and what was checked
+   └ report · verdict → changes → decisions → verification
 ```
 
 ## When it does *not* fire

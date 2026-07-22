@@ -1,5 +1,5 @@
 {
-  "version": "0.25.0",
+  "version": "0.26.0",
   "project": {
     "name": "MasterMind",
     "slug": "mastermind",
@@ -10,7 +10,7 @@
   "stats": {
     "agents": 4,
     "models": 1,
-    "tools": 17,
+    "tools": 18,
     "integrations": 6
   },
   "topModels": [
@@ -238,7 +238,7 @@
       },
       {
         "id": "moreskills",
-        "label": "+11 more skills",
+        "label": "more skills",
         "kind": "tool",
         "sub": "route·spec·learn·explain·spike·…",
         "group": "Library"

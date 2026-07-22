@@ -72,25 +72,20 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
 
 ## Before you open a PR
 
-1. **Run the checks** (the pre-commit hook runs the first two):
+1. **Run preflight — the one gate that must pass before anything ships:**
 
    ```bash
-   node scripts/check-integrity.mjs   # indexes, counts & cross-references are consistent
-   node scripts/build-router.mjs      # regenerate ROUTER.md if you added/changed routed files
+   ./scripts/preflight.sh
    ```
 
-   Before a **release**, run the whole gate — all of it must pass:
+   It runs everything and exits non-zero if any of it fails: the installer suite, the
+   design-engine tests, all shell parses, the router/library/integrity/link checks, that the
+   version strings agree across the repo *and* the site, that the architecture map is fresh,
+   and that the site builds. Add a check to `preflight.sh` the moment you find something a
+   release should never ship without — it's the single answer to "did I test everything?".
 
-   ```bash
-   ./tests/install.test.sh                 # installer regression suite — must be all-green
-   node scripts/build-router.mjs --check   # router in sync
-   node scripts/build-library.mjs --check  # site library pages in sync with skills/*/ABOUT.md
-   node scripts/check-integrity.mjs        # skills, counts, field packs, references
-   node scripts/check-links.mjs            # every cited resource resolves
-   bash -n install.sh && bash -n hooks/session-start.sh
-   node scripts/update-scan.mjs            # refresh the published architecture map
-   cd ../mastermind-site && npm run build
-   ```
+   (The pre-commit hook still runs `check-integrity` + `build-router` on every commit for fast
+   feedback; preflight is the full pre-release gate.)
 
 2. **Keep it lean** — smaller, sharper diffs merge faster than big ones.
 3. **Write a clear commit** — conventional style is appreciated (`feat(frontend): …`, `docs(core): …`).

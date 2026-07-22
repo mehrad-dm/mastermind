@@ -63,7 +63,8 @@ You don't type a command. Say something like:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ lab · quarantine → ignore → install guards → prove they block
+🧠 MasterMind ▸ walling this off so nothing leaks out
+   └ lab · quarantine → ignore → install guards → prove they block
 ```
 
 ## When it does *not* fire

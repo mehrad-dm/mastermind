@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "mastermind",
-  "description": "A genius-builder brain for your AI — skills and agents that add sharp defaults, real judgment, and the discipline to check their own work. Experimental (v0.25.0).",
-  "version": "0.25.0",
+  "description": "A genius-builder brain for your AI — skills and agents that add sharp defaults, real judgment, and the discipline to check their own work. Experimental (v0.26.0).",
+  "version": "0.26.0",
   "hooks": "./hooks/hooks.json",
   "author": {
     "name": "mehrad-dm"

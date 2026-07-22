@@ -56,7 +56,8 @@ You don't summon it. Say something like this and MasterMind reaches for it:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ architect · restate → design twice → specify boundaries, data, edges
+🧠 MasterMind ▸ designing this before any code gets written
+   └ architect · restate → design twice → specify boundaries, data, edges
 ```
 
 ## When it does *not* fire

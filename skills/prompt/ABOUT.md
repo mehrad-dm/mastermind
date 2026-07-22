@@ -61,7 +61,8 @@ You don't need a command. Any of these reaches for `prompt`:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ prompt · intent → rewrite → what changed
+🧠 MasterMind ▸ sharpening this before you send it
+   └ prompt · intent → rewrite → what changed
 ```
 
 ## When it does *not* fire

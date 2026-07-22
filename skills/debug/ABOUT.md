@@ -61,7 +61,8 @@ You don't type a command. Say any of these and MasterMind reaches for `debug`:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ debug · reproduce → localize → hypothesize → fix → guard
+🧠 MasterMind ▸ tracking down the real cause — evidence, not guesses
+   └ debug · reproduce → localize → hypothesize → fix → guard
 ```
 
 ## When it does *not* fire

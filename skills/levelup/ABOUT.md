@@ -63,7 +63,8 @@ You don't type a command. Say something like:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ levelup · capture · scan corrections → dedupe → promote defaults
+🧠 MasterMind ▸ folding that lesson in so it sticks
+   └ levelup · capture · scan corrections → dedupe → promote defaults
 ```
 
 ## When it does *not* fire

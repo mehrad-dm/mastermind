@@ -62,7 +62,8 @@ you the problem and the change it would make; the decision to make that change s
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ code-reviewer · read diff → reproduce each finding → rank, propose, never apply
+🧠 MasterMind ▸ reviewing this diff like an adversary
+   └ code-reviewer · read diff → reproduce each finding → rank, propose, never apply
 ```
 
 ## When it does *not* fire

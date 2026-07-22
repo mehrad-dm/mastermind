@@ -61,7 +61,8 @@ You don't type a command. Say something like this and MasterMind reaches for `pe
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ perf · measure → profile → fix the biggest → verify → guard
+🧠 MasterMind ▸ measuring first, then fixing what's actually slow
+   └ perf · measure → profile → fix the biggest → verify → guard
 ```
 
 ## When it does *not* fire

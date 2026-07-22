@@ -1,6 +1,6 @@
 ---
-title: Signature — deciding whose voice the code speaks in
-blurb: What MasterMind does when code needs to match your team's real conventions, or read in the documented style of an engineer you admire.
+title: Signature — turning your team's tacit style into rules
+blurb: What MasterMind does when code needs to match your team's real conventions — the style you keep correcting the AI toward but have never written down.
 ---
 
 ## The problem this solves
@@ -13,7 +13,8 @@ list their own conventions, but they spot a violation instantly.
 Which means you end up correcting your AI toward a style you've never articulated, over and over, and the
 correction never sticks. Same note, new session, forever.
 
-**Signature makes the voice explicit — either your team's, or a named engineer's documented public one.**
+**Signature makes your team's voice explicit** — so a correction you give once becomes a rule, not a
+repeated fix. (Want code written in a *named public engineer's* style instead? That's `persona`.)
 
 ## What goes wrong without it
 
@@ -28,12 +29,10 @@ correction never sticks. Same note, new session, forever.
 
 ## How it actually works
 
-There are two modes, and MasterMind picks based on what you asked for.
-
-**Mode A — your team's style.** It draws on two sources. The strongest signal is repeated corrections:
-what people tell the AI over and over, recurring review comments, changes humans made after the AI
-proposed something else. These are explicit and already human-validated. Weaker signal comes from patterns
-in the codebase itself — treated as candidates, since code being present doesn't mean anyone endorses it.
+It draws on two sources. The strongest signal is repeated corrections: what people tell the AI over and
+over, recurring review comments, changes humans made after the AI proposed something else. These are
+explicit and already human-validated. Weaker signal comes from patterns in the codebase itself — treated
+as candidates, since code being present doesn't mean anyone endorses it.
 
 Frequency is what separates a rule from noise. Something seen twenty times is a convention; something seen
 once is an incident.
@@ -52,24 +51,19 @@ permission before scanning a real codebase. **Identities never leave it.** And t
 The rule that never bends is *patterns, not people*. Rules describe what code does, never rate a
 contributor.
 
-**Mode B — a named engineer's public style.** You name someone whose work you admire, and MasterMind
-writes through the lens of their **documented public** style — grounded in their open-source work, talks,
-and published positions. Every trait has to be traceable to something they actually wrote; if it can't be,
-it's dropped rather than plausibly invented. It applies to any code, not just yours.
-
 ## When it fires
 
 You don't type a command. Say something like this:
 
 > *"make this match the rest of our codebase"*
 > *"you keep writing it wrong — this is the third time I've corrected this"*
-> *"write this the way Rich Hickey would"*
 > *"turn the notes we keep repeating into actual rules"*
 
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ signature · capture corrections → classify → sanitize → propose
+🧠 MasterMind ▸ learning your house style so I stop guessing
+   └ signature · capture corrections → classify → sanitize → propose
 ```
 
 ## When it does *not* fire
@@ -78,15 +72,10 @@ You'll see it engage in your terminal:
   Keeping them separate is what stops a style preference being reported as a defect.
 - **Updating MasterMind's permanent knowledge directly** — that's `levelup`. Signature *feeds* it, handing
   over proposed rules; levelup is where accepted rules land.
-- **Confusing the two modes.** A public figure's documented style is fair game. A named private colleague
-  is never profiled in Mode B — that goes through Mode A, Lab-gated and stripped of names.
-- **Impersonation, in any form.** Mode B produces work "in the documented style of" someone, stated as
-  such. Never a claim that they wrote it, endorsed it, or were involved. No invented quotes, no invented
-  opinions, no signing their name to anything. And style never overrides correctness — if the persona and
-  a real defect conflict, the defect wins and MasterMind says why.
+- **Writing in a named engineer's style** — that's `persona`. A public figure's documented style is a lens
+  on taste; a named private colleague is only ever profiled here, Lab-gated and stripped of names.
 
 ## What you get
 
-Corrections that stop repeating, expressed as durable rules you approved rather than notes you re-give.
-Or, in the other mode, code written through a named engineer's real published habits — with the traits
-leaned on stated plainly, so you can judge the lens rather than take it on trust.
+Corrections that stop repeating, expressed as durable rules you approved rather than notes you re-give —
+your team's voice, made explicit and kept honest.

@@ -10,6 +10,14 @@ must clear before any number goes on the website.
 > Trust the **Δ** (both sides judged identically); treat absolutes as directional. Detailed per-run logs
 > and the full method are below and in `README.md`.
 
+> **v0.26.0 — no new behavior eval.** This release is mechanism work (per-project isolation, monorepo
+> field/context routing, the Cursor kernel fix). It's covered by the 98-assertion installer suite
+> (`tests/install.test.sh`) — real regression tests, not model-behavior evals — plus the 46 design-engine
+> tests. **No new A/B behavior run was done, so the headline Δ numbers below are unchanged and still
+> reflect the runs named in them.** Field/context routing changes *which* pack a file loads, not what the
+> packs say, so it wouldn't move these task scores; measuring per-context routing would need its own
+> harness. Not run — stated so, not glossed.
+
 ## Headline — frontend tasks, with vs without MasterMind
 
 **Generator:** Claude Opus 4.8 (both conditions) · **Judges:** Sonnet 5 × 3 seats (median) · **N=3** ·
