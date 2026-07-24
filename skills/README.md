@@ -43,9 +43,10 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 | [`levelup`](./levelup/SKILL.md) | …teach MasterMind something durable. Capture a lesson / refresh a field / bootstrap a new field. |
 | [`handoff`](./handoff/SKILL.md) | …pause or hand off. A concise handoff so work survives a `/clear` or a new session. |
 
-> **Frontend-field abilities** live in the frontend pack, not here — they load with that field via the
-> router: **`improve-ui`** (audit a UI against its own design language → a fix plan) and the
-> **`ui-ux-pro-max`** design-intelligence database.
+> **Field-specific abilities** can live inside a field pack rather than here, and load with that field
+> via the router (for example, a frontend pack might carry a UI-audit ability and a design database).
+> MasterMind ships no field by default — `init` builds one for the project's stack — so a fresh install
+> has none of these until a pack is built.
 
 > **Coming soon — `sniper`.** One invocation that runs scope → implement → adversarial self-review →
 > verify, looping on red until green, so the *checking happens before handoff* rather than landing on

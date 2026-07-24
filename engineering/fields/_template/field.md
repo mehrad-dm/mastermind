@@ -3,7 +3,7 @@
 > **Template.** Copy this whole `_template/` directory to `fields/<your-field>/`, fill in the angle-
 > brackets, and point `active-field.md` at it. The universal `core/` never changes between fields — a
 > pack only supplies *what to know and which tools to reach for* in this domain. Delete this quote block
-> when done. (Frontend is the reference implementation — read `fields/frontend/` for the bar.)
+> when done.
 
 The domain knowledge MasterMind loads when its active field is **<FIELD NAME>**. The universal core
 (`engineering/core/*`) supplies *how to think and work*; this pack supplies *what to know and which

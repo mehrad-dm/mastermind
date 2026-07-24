@@ -4,6 +4,38 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.27.0] — 2026-07-24
+
+No field pack ships pre-baked anymore. A fresh install carries the engine and
+`engineering/fields/_template/` — nothing else — and `init` builds the project's field for its
+*real* stack. A pack tuned to someone else's stack was always worse than none: dead weight that
+misleads the model toward defaults the project never chose. This makes "the project owns its field"
+literally true.
+
+### Changed
+
+- **No field ships, and none lives in the repo anymore.** `engineering/fields/frontend/` was removed
+  entirely — the vendored `ui-ux-pro-max` design database, `web-animations`, `improve-ui`, and the field
+  knowledge. Only `engineering/fields/_template/` remains. `init` detects the stack and builds the field
+  from the template (its defaults, real pitfalls, review rules), then points `active-field.md` at it. The
+  design database was MIT-vendored and re-obtainable; the design-engine characterization suite (a preflight
+  check) went with it, so the release gate is now 9 checks, not 10.
+- **`active-field.md` and `ROUTER.md` are now project-owned, not engine.** Both are *derived* from the
+  project's own field, so refreshing them from the source would overwrite what the project generated.
+  They seed once (from a `*.seed.md` that declares "no field yet") and are then the project's to
+  regenerate. A new install starts field-less and says so.
+- **Fields are never refreshed or retired by an update.** Once a `fields/<name>/` directory exists it is
+  the project's, untouched forever — the only way "the project owns its field, lessons and stack" can be
+  true.
+
+### Migration (safe, automatic)
+
+- A project installed under a release that *did* ship the frontend pack keeps it: those files sit in the
+  project's manifest, and reconciliation now **never retires anything under `engineering/fields/`** (nor
+  `ROUTER.md`). So upgrading to 0.27.0 does not gut a pack you've been building on — it just stops
+  shipping a new one. Covered by a regression test that upgrades a pre-0.27 layout and asserts the pack
+  survives.
+
 ## [0.26.1] — 2026-07-24
 
 ### Fixed

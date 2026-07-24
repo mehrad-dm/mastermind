@@ -185,9 +185,17 @@ for (const pack of packs) {
 // is the file's only declarative statement of the active pack. Prose elsewhere mentions
 // `engineering/fields/<name>/` as a placeholder and `_template` as an example; neither is a
 // declaration, and neither matches this shape.
+// Field-less is a valid state: MasterMind ships no pack (only _template), and `init` builds one
+// per project. When "Current field" is **none** (or Level 0), there is deliberately no pack to
+// point at — so a missing/backtick-less Field pack line is correct, not a failure. Only when a
+// real field IS declared do we require the pointer to resolve to a pack on disk.
 const activeField = read('engineering/active-field.md')
+const fieldless =
+  /Current field:\s*\*\*\s*none/i.test(activeField) || /^\s*[-*]\s*\*\*Level:\*\*\s*0\b/m.test(activeField)
 const packRef = activeField.match(/^\s*[-*]\s*\*\*Field pack:\*\*\s*`([^`]+)`/m)
-if (!packRef) {
+if (fieldless) {
+  // no field by design — nothing to resolve
+} else if (!packRef) {
   fail('engineering/active-field.md: no `- **Field pack:** `<path>`` line — nothing declares the active pack')
 } else {
   const packPath = packRef[1].replace(/\/$/, '')

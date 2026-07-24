@@ -42,24 +42,17 @@ const NEW_NODES = [
       "Guards the promises install.sh makes: never destroy your files, never lose a MasterMind capability, stay idempotent, merge settings instead of clobbering, and leave an unparseable config alone.",
   },
   {
-    id: 'designdb',
-    label: 'Design database',
+    // No field ships pre-baked (0.27.0): only the scaffold. `init` builds the field for the
+    // project's real stack. So this node is the *concept* of a field pack, anchored at the
+    // template — not a shipped frontend pack, which no longer exists in the repo.
+    id: 'field',
+    label: 'Field pack',
     kind: 'store',
-    sub: 'vendored · UI/UX intelligence',
+    sub: 'built per project from the template',
     group: 'Knowledge',
-    sourceRef: 'engineering/fields/frontend/ui-ux-pro-max/',
+    sourceRef: 'engineering/fields/_template/',
     detail:
-      'A vendored third-party design-intelligence database (MIT, NextLevelBuilder) behind the frontend pack: colour palettes, font pairings, UX guidelines, product types and chart types, plus per-stack guidance, searched by a local BM25 engine. Not authored here — SOURCE.md records the upstream, the re-vendor procedure, and the local fixes that must survive it.',
-  },
-  {
-    id: 'designtests',
-    label: 'Design engine tests',
-    kind: 'service',
-    sub: 'characterization suite',
-    group: 'Safety & honesty',
-    sourceRef: 'engineering/fields/frontend/ui-ux-pro-max/scripts/tests/',
-    detail:
-      'Pins what the vendored selection logic actually does — dial clamping, determinism, no-match paths, and that persistence writes only under its output dir — so a re-vendor cannot silently change behaviour. Written against code that had no tests; it found a path traversal and two selection bugs, all since fixed and pinned.',
+      'A swappable domain pack: what to know and which tools, for one real stack. MasterMind ships NO field — a pack tuned to someone else\'s stack is worse than none — only the scaffold at engineering/fields/_template/. On the first task, `init` detects the stack and builds the field from the template (its defaults, pitfalls, review rules); the project then owns it, and an update never rewrites or retires it.',
   },
   {
     id: 'library',
@@ -93,12 +86,13 @@ const NEW_EDGES = [
   { from: 'library', to: 'kernel', kind: 'reads', label: 'one page per skill + agent' },
   { from: 'ci', to: 'installtests', kind: 'triggers' },
   { from: 'ci', to: 'library', kind: 'triggers', label: 'checks docs are in sync' },
-  // The design database is vendored, is the largest single component in the repo, and had
-  // no node at all — the map showed a field pack with nothing inside it.
-  { from: 'field', to: 'designdb', kind: 'reads', label: 'design intelligence' },
-  { from: 'designdb', to: 'designtests', kind: 'reads', label: 'pinned by' },
   { from: 'ci', to: 'integrity', kind: 'triggers' },
 ]
+
+// Nodes retired from the map. The vendored design database and its test suite lived inside the
+// frontend pack, which 0.27.0 removed from the repo (a project builds its own field from the
+// template). They persist in the committed scan.json from earlier runs, so prune them by id.
+const DEAD_NODES = ['designdb', 'designtests']
 
 const byId = (arr, id) => arr.findIndex((n) => n.id === id)
 for (const n of NEW_NODES) {
@@ -111,10 +105,16 @@ for (const n of NEW_NODES) {
 // Prune first, then add.
 const DEAD_EDGES = [
   'library->moreskills', // implied only the catch-all group fed the docs; it reads every skill + agent
+  'field->designdb', // the design DB was removed with the frontend pack (0.27.0)
+  'designdb->designtests',
 ]
 
+// Drop retired nodes, then any edge that would dangle to one of them.
+g.nodes = g.nodes.filter((n) => !DEAD_NODES.includes(n.id))
+const dead = new Set(DEAD_NODES)
+
 const key = (e) => `${e.from}->${e.to}`
-g.edges = g.edges.filter((e) => !DEAD_EDGES.includes(key(e)))
+g.edges = g.edges.filter((e) => !DEAD_EDGES.includes(key(e)) && !dead.has(e.from) && !dead.has(e.to))
 const have = new Set(g.edges.map(key))
 for (const e of NEW_EDGES) if (!have.has(key(e))) g.edges.push(e)
 

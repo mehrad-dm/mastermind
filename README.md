@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.26.1-7c6bff" alt="version 0.26.1" />
+  <img src="https://img.shields.io/badge/version-0.27.0-7c6bff" alt="version 0.27.0" />
   <img src="https://img.shields.io/badge/status-experimental-e0a800" alt="status: experimental" />
   <img src="https://img.shields.io/badge/license-MIT-555" alt="license MIT" />
 </p>
 
-<p align="center"><sub><b>⚗️ Experimental (v0.26.1).</b> Under active development — not yet stable, but usable. Its
+<p align="center"><sub><b>⚗️ Experimental (v0.27.0).</b> Under active development — not yet stable, but usable. Its
 effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md</a>); APIs and defaults may change.</sub></p>
 
 > **Make your AI coding assistant trustworthy.** MasterMind is plain Markdown that gives Claude Code,
@@ -63,11 +63,9 @@ engineering/
 ├── ROUTER.md                 # generated map: loads only the files a task needs
 ├── core/                     # UNIVERSAL — how to think & work (field-agnostic)
 │   ├── mindset · principles · rigor · agent-loop · product-sense
-└── fields/frontend/          # FIELD PACK — swap or add per domain
+└── fields/_template/         # FIELD SCAFFOLD — init builds your field from this
     ├── stack-defaults · mentors · curriculum · learning-sources · lessons
-    ├── audit-rules.md        # framework-specific defect checks (for code-reviewer)
-    ├── web-animations.md     # complete motion playbook
-    └── ui-ux-pro-max/        # design-intelligence database
+    └── audit-rules.md        # framework-specific defect checks (for code-reviewer)
 agents/                       # architect · code-reviewer · refactorer · tech-scout
 skills/                       # auto-applied workflows (you never have to type these)
 lab/                          # your private, gitignored space for sensitive project data
@@ -191,7 +189,6 @@ matching skill. (Power users *can* type `/name` as a shortcut, but nobody has to
 | finish something | proves it works end-to-end; **offers** tests/TDD rather than forcing them (`qa`) |
 | face an unknown | learns the real stack + grills its own assumptions against the source (`learn`, `spike`) |
 | give a fuzzy ask | turns it into a crisp spec — problem, scope, terms, acceptance (`spec`) |
-| want a design pass | audits the UI against its own design language → a fix plan (a frontend-field capability) |
 | want code to fit your team | captures the codebase's real style → name-free rules it follows (`signature`) |
 | want code in a style you admire | writes in the documented public style of an engineer you name — e.g. Dan Abramov, Kent C. Dodds (`persona`) |
 
@@ -232,8 +229,9 @@ Stated plainly, because a tool about not overclaiming shouldn't overclaim about 
   Cursor has open upstream bug reports where a hook's `additional_context` is accepted and never reaches
   the model — so we wire it and say so, rather than claim it works. The installer prints
   `(unverified upstream)` when it wires it.
-- **Only one field pack ships** (`frontend`). The template is now routable and integrity-checked, so a
-  new pack works on day one — but nobody has built a second one yet.
+- **No field pack ships** — only the scaffold at `engineering/fields/_template/`. `init` builds the field
+  for your project's real stack (a pack tuned to someone else's stack is worse than none). The template is
+  routable and integrity-checked, so a freshly built pack works on day one.
 
 ## Credits
 

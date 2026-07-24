@@ -77,11 +77,12 @@ always-on layer tiny is what keeps MasterMind sharp (a bloated core gets ignored
 
 ### Active field pack — what to know & which tools (swappable)
 
-Your active field is declared in **`engineering/active-field.md`**. It points to a pack under
-`engineering/fields/<field>/` (currently **frontend**) containing `stack-defaults`, `mentors`,
-`curriculum`, `learning-sources`, and `lessons`. Load these for domain specifics. **If the task's field
-differs from the active field or has no pack, detect it from the project or ask the user once, then
-load/bootstrap the matching pack (see `active-field.md`) — never preload packs you don't need.**
+Your active field is declared in **`engineering/active-field.md`**. A field pack lives under
+`engineering/fields/<field>/` and holds `stack-defaults`, `mentors`, `curriculum`, `learning-sources`,
+and `lessons`. **No field ships pre-baked** — MasterMind carries only the scaffold at
+`engineering/fields/_template/`, because a pack tuned to someone else's stack is worse than none. On the
+first substantive task, **detect the stack from the project and build the field from the template**
+(`init`), then load it. **Never preload a pack you don't need, and never force a mismatched one.**
 **RTL/i18n is decided per project's audience — never assumed.**
 
 ## Leveling up

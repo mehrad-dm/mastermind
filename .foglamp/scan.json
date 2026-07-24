@@ -1,5 +1,5 @@
 {
-  "version": "0.26.1",
+  "version": "0.27.0",
   "project": {
     "name": "MasterMind",
     "slug": "mastermind",
@@ -180,12 +180,12 @@
       },
       {
         "id": "field",
-        "label": "Frontend field",
-        "kind": "service",
-        "sub": "the one domain pack",
-        "group": "The brain",
-        "sourceRef": "engineering/fields/frontend/",
-        "detail": "Domain knowledge: stack-defaults, mentors, curriculum, lessons, audit-rules, web-animations, a design DB."
+        "label": "Field pack",
+        "kind": "store",
+        "sub": "built per project from the template",
+        "group": "Knowledge",
+        "sourceRef": "engineering/fields/_template/",
+        "detail": "A swappable domain pack: what to know and which tools, for one real stack. MasterMind ships NO field — a pack tuned to someone else's stack is worse than none — only the scaffold at engineering/fields/_template/. On the first task, `init` detects the stack and builds the field from the template (its defaults, pitfalls, review rules); the project then owns it, and an update never rewrites or retires it."
       },
       {
         "id": "template",
@@ -366,24 +366,6 @@
         "group": "Safety & honesty",
         "sourceRef": "scripts/build-library.mjs",
         "detail": "Generates one article per skill and agent from ABOUT.md files, so the public docs cannot claim a skill does something the skill does not. Refuses to build if a skill has no article; --check fails when the site is stale."
-      },
-      {
-        "id": "designdb",
-        "label": "Design database",
-        "kind": "store",
-        "sub": "vendored · UI/UX intelligence",
-        "group": "Knowledge",
-        "sourceRef": "engineering/fields/frontend/ui-ux-pro-max/",
-        "detail": "A vendored third-party design-intelligence database (MIT, NextLevelBuilder) behind the frontend pack: colour palettes, font pairings, UX guidelines, product types and chart types, plus per-stack guidance, searched by a local BM25 engine. Not authored here — SOURCE.md records the upstream, the re-vendor procedure, and the local fixes that must survive it."
-      },
-      {
-        "id": "designtests",
-        "label": "Design engine tests",
-        "kind": "service",
-        "sub": "characterization suite",
-        "group": "Safety & honesty",
-        "sourceRef": "engineering/fields/frontend/ui-ux-pro-max/scripts/tests/",
-        "detail": "Pins what the vendored selection logic actually does — dial clamping, determinism, no-match paths, and that persistence writes only under its output dir — so a re-vendor cannot silently change behaviour. Written against code that had no tests; it found a path traversal and two selection bugs, all since fixed and pinned."
       }
     ],
     "edges": [
@@ -599,18 +581,6 @@
         "to": "kernel",
         "kind": "reads",
         "label": "one page per skill + agent"
-      },
-      {
-        "from": "field",
-        "to": "designdb",
-        "kind": "reads",
-        "label": "design intelligence"
-      },
-      {
-        "from": "designdb",
-        "to": "designtests",
-        "kind": "reads",
-        "label": "pinned by"
       }
     ]
   }

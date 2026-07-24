@@ -59,7 +59,6 @@ echo "Preflight — everything that must pass before release"
 echo
 echo "Code & tests"
 step "installer regression suite"      bash "$REPO/tests/install.test.sh"
-step "design-engine tests"             python3 -m unittest discover -s "$REPO/engineering/fields/frontend/ui-ux-pro-max/scripts/tests"
 step "shell scripts parse"             shell_parses "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/skills/lab/assets/pre-push" "$REPO/skills/lab/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
 
 echo "Repo integrity"

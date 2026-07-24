@@ -7,7 +7,13 @@ description: Use on the first substantive work in a project MasterMind isn't set
 
 The goal: a new user goes from "installed" to "the brain is set up for my stack and knows what I'm
 building" in a **few quick steps** — never an interrogation. Detect what you can; ask only what you can't.
-Run **once per project**; if a matching field pack is already loaded, you're set — skip this.
+Run **once per project**; if this project already built its field, you're set — skip this.
+
+**Nothing ships pre-baked.** A fresh install carries only the engine and `engineering/fields/_template/`
+— no field, because a pack tuned to someone else's stack is worse than none (dead weight that misleads).
+So init's core job is to **build this project's field from the template**, tuned to the real stack. This
+is where the measured quality lift comes from; without it you still apply solid general judgment, but the
+domain pack is the difference.
 
 ## Keep it short (the #1 rule)
 **Detect before asking; never ask what you can read, and never hand the user a menu of technical options.**
@@ -18,13 +24,15 @@ like 20 seconds, then you're working.
 ## Path A — the project already has code
 1. **Detect the stack** — `package.json`/lockfile, configs, framework + versions, DB, test runner, folder
    shape (`core/agent-loop.md`). This is free; never ask what you can read.
-2. **Match it to a field pack:**
-   - **Pack exists and fits** → load it. Done.
-   - **Pack exists but mismatches** (e.g. the frontend pack on a Vue/Svelte app, or a Next.js app vs a
-     Turborepo profile) → **tailor it**: prune what doesn't apply, add what's missing (via `levelup`) —
-     never force a mismatched pack (`active-field.md`).
-   - **No pack for this field** → offer a **one-time bootstrap** (`levelup bootstrap`), stating the
-     trade-off: *"a few minutes now makes me much sharper on your stack; it's once per field, then reused."*
+2. **Set up its field:**
+   - **This project already built a field that fits** → load it. Done. (Nothing else ships, so this only
+     happens on a re-run of a project that was set up before.)
+   - **Otherwise — build one** from `engineering/fields/_template/`, tuned to the detected stack: a
+     **one-time bootstrap** (`levelup bootstrap`), stated as a trade-off, not a menu: *"a few minutes now
+     makes me much sharper on your stack — its real defaults, pitfalls, and review rules. It's once per
+     field, then reused for every task."* Build it to fit **one real stack**, and keep it lean — tailoring
+     **prunes as much as it adds** (`active-field.md`). Then point `active-field.md` at it and regenerate
+     the router from the source clone (`node scripts/build-router.mjs`).
 3. **Respect the project** — match its conventions; never impose a stack (`stack-defaults.md`: the
    project wins).
 
@@ -56,7 +64,7 @@ Both paths finish with a **~5-line** report so the setup is visible and the user
 ```
 ▸ MasterMind ready
   stack:       Next.js 15 · React 19 · Postgres/Prisma   (detected)
-  fields:      frontend (loaded) · backend (bootstrapped)
+  fields:      frontend + backend (built from _template for your stack)
   conventions: matched your existing style
   next:        tell me what to build — I'll run the build loop.
 ```

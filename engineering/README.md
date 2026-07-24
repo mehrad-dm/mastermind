@@ -36,18 +36,18 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
     │   ├── agent-loop.md         # how to execute: verify-loop, explore→plan→implement, context
     │   └── product-sense.md      # product & business literacy — scope tasks & specs right
     └── fields/
-        └── frontend/             # FIELD PACK — swap/add packs per domain
+        └── _template/            # FIELD SCAFFOLD — init builds a field from this
             ├── field.md          # pack manifest
             ├── stack-defaults.md # opinionated tool-by-tool defaults
             ├── mentors.md        # the field's authorities to align with
             ├── curriculum.md     # vetted, API-verified repos/books/people/docs
             ├── learning-sources.md
-            ├── web-animations.md # motion & animation craft (Emil Kowalski)
             ├── audit-rules.md    # framework-specific defect checks for code-reviewer
-            ├── improve-ui.md     # a UI design-consistency pass
-            ├── lessons.md        # durable lessons from real usage (the leveling record)
-            └── ui-ux-pro-max/    # vendored design database — searchable, MIT
+            └── lessons.md        # durable lessons from real usage (the leveling record)
 ```
+
+No field pack ships — a pack tuned to someone else's stack is worse than none. `init` builds the field
+for the project's real stack from this scaffold, and the project owns it thereafter.
 
 ## Load-on-demand map
 

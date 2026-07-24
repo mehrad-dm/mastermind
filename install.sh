@@ -498,8 +498,11 @@ fi
 # reconciliation below, which only ever touches paths WE shipped — so anything the project added
 # is invisible to it and is kept. Also surviving: a pack's lessons.md / stack-defaults.md and
 # ISO_OWNED (a project's own knowledge).
-ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/ROUTER.md engineering/core skills agents hooks)
-ISO_OWNED=(engineering/active-field.md)
+# ROUTER.md and active-field.md are ISO_OWNED, not engine: both are DERIVED from the project's
+# own field, so refreshing them from the source would overwrite what a project generated. They
+# seed once (from a *.seed.md that declares "no field yet") and are then the project's to regen.
+ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/core skills agents hooks)
+ISO_OWNED=(engineering/active-field.md engineering/ROUTER.md)
 
 sync_isolated_brain() {
   local dst="$PROJECT/.mastermind" d
@@ -539,31 +542,34 @@ sync_isolated_brain() {
     fi
   done
 
-  # Field packs: refresh each file, but never clobber lessons.md / stack-defaults.md — that's
-  # where a project's own knowledge lives. Walk RECURSIVELY (find, so dotfiles too) and apply
-  # the keep-test per file, so an owned file inside a pack subdir (ui-ux-pro-max/) survives too.
-  local pack
-  for pack in "$REPO"/engineering/fields/*/; do
-    [ -d "$pack" ] || continue
-    local name; name="$(basename "$pack")"
-    local pdst="$dst/engineering/fields/$name"
-    mkdir -p "$pdst"
-    local f rel
-    while IFS= read -r f; do
-      rel="${f#"$pack"}"
-      case "$(basename "$rel")" in
-        lessons.md|stack-defaults.md)
-          [ -e "$pdst/$rel" ] && { printf '%s\n' "engineering/fields/$name/$rel" >> "$SHIPPED"; continue; } ;;
-      esac
-      mkdir -p "$(dirname "$pdst/$rel")"
-      cp "$f" "$pdst/$rel"
-      printf '%s\n' "engineering/fields/$name/$rel" >> "$SHIPPED"
-    done < <(find "$pack" -type f)
-  done
+  # Fields are the PROJECT's, not ours. We ship no field: a pre-baked pack on a project it
+  # doesn't fit is worse than none (it carries dead weight and misleads), so `init` builds the
+  # right field for the detected stack from _template. We only ever seed the scaffold, once.
+  #
+  # Once a field directory exists it is untouched forever — not refreshed, not retired. That is
+  # what "the project owns its field, lessons and stack" has to mean; anything else lets an
+  # update reach in and change knowledge the project earned. Packs a project already has (from
+  # an older release that did ship one) are therefore preserved as-is, and never gutted.
+  local tsrc="$REPO/engineering/fields/_template"
+  if [ -d "$tsrc" ] && [ ! -d "$dst/engineering/fields/_template" ]; then
+    mkdir -p "$dst/engineering/fields/_template"
+    local tf trel
+    while IFS= read -r tf; do
+      trel="${tf#"$tsrc"/}"
+      mkdir -p "$(dirname "$dst/engineering/fields/_template/$trel")"
+      cp -p "$tf" "$dst/engineering/fields/_template/$trel"
+    done < <(find "$tsrc" -type f)
+  fi
 
-  # Project-owned singletons: seed once, then leave alone.
+  # Project-owned singletons: seed once, then leave alone. A `<name>.seed.md` beside the file is
+  # what a NEW project starts from — the repo's own copy describes the repo's field, which is not
+  # what someone else's project should inherit. Seeded active-field declares no field yet.
+  local seed
   for d in "${ISO_OWNED[@]}"; do
-    [ -e "$dst/$d" ] || { mkdir -p "$(dirname "$dst/$d")"; cp -R "$REPO/$d" "$dst/$d"; }
+    [ -e "$dst/$d" ] && continue
+    mkdir -p "$(dirname "$dst/$d")"
+    seed="$REPO/${d%.md}.seed.md"
+    if [ -f "$seed" ]; then cp -p "$seed" "$dst/$d"; else cp -Rp "$REPO/$d" "$dst/$d"; fi
   done
 
   # Point the copied docs at THIS project's brain instead of the shared clone.
@@ -591,7 +597,12 @@ sync_isolated_brain() {
     local gone
     while IFS= read -r gone; do
       [ -n "$gone" ] || continue
-      case "$(basename "$gone")" in lessons.md|stack-defaults.md|active-field.md|prefs.md) continue ;; esac
+      case "$(basename "$gone")" in lessons.md|stack-defaults.md|active-field.md|prefs.md|ROUTER.md) continue ;; esac
+      # Fields belong to the project. Releases before 0.27.0 shipped a frontend pack, so its
+      # files sit in those projects' manifests — retiring them here would gut a pack the project
+      # has been building on. Never retire anything under engineering/fields/. (ROUTER.md moved
+      # from engine to project-owned in 0.27.0, so it's excluded above for the same reason.)
+      case "$gone" in engineering/fields/*) continue ;; esac
       # in the OLD manifest, still on disk, but no longer shipped → ours, and retired
       if [ -e "$dst/$gone" ] && ! grep -qxF "$gone" "$newman"; then
         rm -f "$dst/$gone"
@@ -657,8 +668,12 @@ mm_write_block() {
 generate_context_anchors() {
   local map="$BRAIN/routes.map"
   [ -f "$map" ] || return 0
-  local default_field="frontend"
-  [ -d "$BRAIN/engineering/fields/frontend" ] || default_field="$(basename "$(find "$BRAIN/engineering/fields" -maxdepth 1 -mindepth 1 -type d ! -name '_*' | head -1)")"
+  # No field ships by default (0.27.0), so there's no fixed fallback: a context inherits the
+  # project's first real (non-scaffold) field, if it has built one. Empty if none yet — the
+  # per-context loop below then warns and skips until `init` builds a field.
+  local first_field default_field=""
+  first_field="$(find "$BRAIN/engineering/fields" -maxdepth 1 -mindepth 1 -type d ! -name '_*' 2>/dev/null | head -1)"
+  [ -n "$first_field" ] && default_field="$(basename "$first_field")"
 
   local glob ctx line
   while IFS= read -r line; do
@@ -693,8 +708,8 @@ generate_context_anchors() {
       sed "s/<name>/$ctx/g" "$tpl/lessons.md" > "$cdir/lessons.md"
     fi
     local field; field="$(sed -n 's/^field:[[:space:]]*//p' "$cdir/field.md" | head -1)"; field="${field:-$default_field}"
-    if [ ! -d "$BRAIN/engineering/fields/$field" ]; then
-      warn "context '$ctx' names field '$field', which isn't in this brain — skipped. Add the pack, or fix $cdir/field.md."
+    if [ -z "$field" ] || [ ! -d "$BRAIN/engineering/fields/$field" ]; then
+      warn "context '$ctx' needs a field this brain doesn't have yet (${field:-none set}). Run init to build a field, then re-run install — skipped for now."
       ISSUES=$((ISSUES + 1)); continue
     fi
 

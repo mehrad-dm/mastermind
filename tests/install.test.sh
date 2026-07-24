@@ -159,19 +159,27 @@ run "$P" claude >/dev/null 2>&1
 is "idempotent — no duplicate aliases" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILLS"
 yes_ "stays isolated without the flag" "$(readlink "$P/.claude/skills/build" | grep -o '\.mastermind/skills/build')"
 
-echo "── isolated: an update refreshes the engine, never the project's knowledge"
-echo "- OUR LESSON" >> "$P/.mastermind/engineering/fields/frontend/lessons.md"
-echo "- OUR STACK RULE" >> "$P/.mastermind/engineering/fields/frontend/stack-defaults.md"
+echo "── isolated: no field is shipped — the project builds its own, and keeps it"
+# Nothing is pre-baked: a pack tuned to someone else's stack is worse than none. Only the
+# scaffold ships; `init` builds the real field. Whatever the project then creates is ITS
+# knowledge, and an update must never refresh, rewrite or retire it.
+is "scaffold shipped"        "$([ -d "$P/.mastermind/engineering/fields/_template" ] && echo y)" "y"
+is "no default field shipped" "$([ -d "$P/.mastermind/engineering/fields/frontend" ] && echo present || echo absent)" "absent"
+mkdir -p "$P/.mastermind/engineering/fields/myfield"
+echo "- OUR LESSON"     > "$P/.mastermind/engineering/fields/myfield/lessons.md"
+echo "- OUR STACK RULE" > "$P/.mastermind/engineering/fields/myfield/stack-defaults.md"
 echo "OUR FIELD CHOICE" >> "$P/.mastermind/engineering/active-field.md"
 echo "TAMPERED" >> "$P/.mastermind/engineering/core/mindset.md"
 run "$P" claude >/dev/null 2>&1
-is "project lessons preserved"     "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/frontend/lessons.md")" "1"
-is "project stack rules preserved" "$(grep -c 'OUR STACK RULE' "$P/.mastermind/engineering/fields/frontend/stack-defaults.md")" "1"
+is "project lessons preserved"     "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/myfield/lessons.md" 2>/dev/null || echo 0)" "1"
+is "project stack rules preserved" "$(grep -c 'OUR STACK RULE' "$P/.mastermind/engineering/fields/myfield/stack-defaults.md" 2>/dev/null || echo 0)" "1"
 is "project field choice preserved" "$(grep -c 'OUR FIELD CHOICE' "$P/.mastermind/engineering/active-field.md")" "1"
 is "engine refreshed, not preserved" "$(grep -c 'TAMPERED' "$P/.mastermind/engineering/core/mindset.md")" "0"
 
 echo "── isolated: real isolation — one project cannot change another"
-is "the shared clone is untouched" "$(grep -c 'OUR LESSON' "$REPO/engineering/fields/frontend/lessons.md")" "0"
+# The project wrote OUR LESSON into its own field and TAMPERED into its own core; neither may
+# reach the shared clone. Assert against a file that exists in the clone (core is always there).
+is "the shared clone is untouched" "$(grep -rc 'OUR LESSON\|TAMPERED\|OUR FIELD CHOICE' "$REPO/engineering/core" | grep -cv ':0$')" "0"
 yes_ "--isolated --global is refused" "$( (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --isolated --global 2>&1 || true) | grep -o 'per-project by definition')"
 is "uninstall keeps the project's own brain" "$([ -d "$P/.mastermind" ] && echo kept)" "kept"
 
@@ -271,18 +279,25 @@ echo "── isolated update: retire what upstream dropped, keep what the projec
 CLONE="$TMP/clone"; rm -rf "$CLONE"; cp -R "$REPO/." "$CLONE/" 2>/dev/null
 P=$(proj retire)
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" --isolated claude >/dev/null 2>&1)
-echo "OURS" > "$P/.mastermind/engineering/fields/frontend/our-team-notes.md"
-echo "OUR LESSON" >> "$P/.mastermind/engineering/fields/frontend/lessons.md"
-rm -f "$CLONE/engineering/fields/frontend/web-animations.md"
+# The project's own field — what `init` builds in real use.
+mkdir -p "$P/.mastermind/engineering/fields/myfield"
+echo "OURS" > "$P/.mastermind/engineering/fields/myfield/our-team-notes.md"
+echo "OUR LESSON" >> "$P/.mastermind/engineering/fields/myfield/lessons.md"
 rm -rf "$CLONE/skills/spike"
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
-is "retired pack file removed" "$([ -f "$P/.mastermind/engineering/fields/frontend/web-animations.md" ] && echo kept || echo gone)" "gone"
 is "retired skill removed"     "$([ -d "$P/.mastermind/skills/spike" ] && echo kept || echo gone)" "gone"
-is "project's own doc kept"    "$(cat "$P/.mastermind/engineering/fields/frontend/our-team-notes.md" 2>/dev/null)" "OURS"
-is "project's lesson kept"     "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/frontend/lessons.md" 2>/dev/null)" "1"
+is "project's own doc kept"    "$(cat "$P/.mastermind/engineering/fields/myfield/our-team-notes.md" 2>/dev/null)" "OURS"
+is "project's lesson kept"     "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/myfield/lessons.md" 2>/dev/null || echo 0)" "1"
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
-is "still kept after repeat updates" "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/frontend/lessons.md" 2>/dev/null)" "1"
+is "still kept after repeat updates" "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/myfield/lessons.md" 2>/dev/null || echo 0)" "1"
+# Upgrading from a release that DID ship a pack must not gut it: those files are in the old
+# manifest, so without the fields/ guard reconciliation would delete the project's whole pack.
+mkdir -p "$P/.mastermind/engineering/fields/frontend"
+echo "LEGACY" > "$P/.mastermind/engineering/fields/frontend/web-animations.md"
+printf 'engineering/fields/frontend/web-animations.md\n' >> "$P/.mastermind/.manifest"
+(cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
+is "a pre-0.27 pack is never gutted" "$(cat "$P/.mastermind/engineering/fields/frontend/web-animations.md" 2>/dev/null)" "LEGACY"
 
 echo "── project under \$HOME with the shared clone present — must NOT resolve PROJECT=\$HOME"
 # The shared clone is $HOME/.mastermind (a symlink). A walk-up from a project UNDER $HOME
@@ -324,6 +339,10 @@ echo "── field+context: routes.map compiles into tool-enforced per-app ancho
 # glob-scoped Cursor rule). Selection is by file path — the AI never reads the map.
 P=$(proj fc); mkdir -p "$P/apps/web/src" "$P/apps/api" "$P/packages/ui"; (cd "$P" && git init -q .)
 run "$P" --isolated claude >/dev/null 2>&1
+# A context attaches to a field, and 0.27.0 ships none — so the project must have built one
+# first (what init does). Stand up a minimal field so routing has something to point at.
+mkdir -p "$P/.mastermind/engineering/fields/webstack"
+printf '# webstack field\n' > "$P/.mastermind/engineering/fields/webstack/field.md"
 printf 'apps/web/**  web\napps/api/**  api\npackages/**  shared\n' > "$P/.mastermind/routes.map"
 run "$P" claude >/dev/null 2>&1
 is "context dir created per route" "$(ls "$P/.mastermind/engineering/contexts" | wc -l | tr -d ' ')" "3"
@@ -373,6 +392,9 @@ echo "── field+context: a malformed routes.map line warns and skips, never a
 # sed and abort the whole install under set -e, then "heal" into a broken context on re-run.
 P=$(proj badroute); mkdir -p "$P/apps/a"; (cd "$P" && git init -q .)
 run "$P" claude >/dev/null 2>&1
+# a field must exist for a context to attach to (init's job; none ships as of 0.27.0)
+mkdir -p "$P/.mastermind/engineering/fields/webstack"
+printf '# webstack field\n' > "$P/.mastermind/engineering/fields/webstack/field.md"
 printf 'apps/a/**\n' > "$P/.mastermind/routes.map"        # context name missing
 run "$P" claude >/dev/null 2>&1
 is "install still completes"     "$([ -d "$P/.claude/skills" ] && echo y)" "y"

@@ -58,7 +58,7 @@ to these paths in the MasterMind repo, and **nothing else**:
 - `engineering/fields/<field>/stack-defaults.md` — promoting a default is `capture`'s job; a refresh
   reports that an authority moved, it does not silently rewrite your defaults.
 - Any **vendored** pack data — any directory carrying a `SOURCE.md` (e.g.
-  `engineering/fields/frontend/ui-ux-pro-max/`). It is owned by its upstream; edits are lost on re-vendor.
+  a pack's `SOURCE.md`). It is owned by its upstream; edits are lost on re-vendor.
 - `engineering/fields/_template/**` — scaffolding; changing it is a deliberate decision, not a side effect.
 - Any **other** field's pack — a refresh is scoped to one field.
 - Any other skill's or agent's body (`skills/*/SKILL.md`, `agents/*.md`) — rewriting a workflow is an

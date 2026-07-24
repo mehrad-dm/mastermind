@@ -60,7 +60,7 @@ angle-brackets — it ships every file a pack needs (`field.md`, `stack-defaults
 frontmatter. **Retag that frontmatter for your field; don't drop it** — the router serves only tagged
 files, so an untagged file is invisible to the model. `field.md` is the one deliberate exception (it's
 the pack's table of contents). `check-integrity.mjs` fails if a pack breaks either rule.
-`engineering/fields/frontend/` is the reference implementation. The `levelup` skill can bootstrap and
+MasterMind ships no field pack — only the scaffold at `engineering/fields/_template/` — and `init` builds one per project. The `levelup` skill can bootstrap and
 research a pack for you.
 
 ## The one hard rule: never commit private data
@@ -88,7 +88,7 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    feedback; preflight is the full pre-release gate.)
 
 2. **Keep it lean** — smaller, sharper diffs merge faster than big ones.
-3. **Write a clear commit** — conventional style is appreciated (`feat(frontend): …`, `docs(core): …`).
+3. **Write a clear commit** — conventional style is appreciated (`feat(install): …`, `docs(core): …`).
 
 ## Testing a change
 
