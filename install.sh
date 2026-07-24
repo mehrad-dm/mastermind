@@ -492,9 +492,12 @@ fi
 # lessons and stack instead of sharing one clone. Paths are rewritten project-relative, never
 # absolute, so a teammate who pulls the repo gets working paths, not this machine's home.
 #
-# ISO_ENGINE dirs are overwritten every run — that's how updates land. What survives: a pack's
-# lessons.md / stack-defaults.md and ISO_OWNED (a project's own knowledge). A file dropped into
-# an engine dir like core/ or skills/ is NOT kept — a project's own skills belong in .claude/.
+# ISO_ENGINE paths are refreshed every run — that's how updates land. Refreshed FILE-BY-FILE,
+# never by wiping the directory: a project may add its own skill or agent inside the brain, and
+# that work must survive an update. Files upstream retired are removed by the manifest
+# reconciliation below, which only ever touches paths WE shipped — so anything the project added
+# is invisible to it and is kept. Also surviving: a pack's lessons.md / stack-defaults.md and
+# ISO_OWNED (a project's own knowledge).
 ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/ROUTER.md engineering/core skills agents hooks)
 ISO_OWNED=(engineering/active-field.md)
 
@@ -513,14 +516,26 @@ sync_isolated_brain() {
   fi
   mkdir -p "$dst"
 
-  # Engine: always refreshed.
+  # Engine: always refreshed — but file-by-file, NEVER by wiping the directory. `rm -rf` here
+  # would delete a skill or agent the project added to its own brain, and it short-circuited the
+  # manifest reconciliation that exists precisely to protect those. -p keeps the mode bits, so
+  # hooks/session-start.sh stays executable; -R and `-type l` keep AGENTS.md a symlink.
+  local ef erel
   for d in "${ISO_ENGINE[@]}"; do
-    if [ -e "$REPO/$d" ]; then
-      rm -rf "$dst/${d:?}"
+    [ -e "$REPO/$d" ] || continue
+    if [ -d "$REPO/$d" ] && [ ! -L "$REPO/$d" ]; then
+      while IFS= read -r ef; do
+        erel="${ef#"$REPO/$d/"}"
+        mkdir -p "$(dirname "$dst/$d/$erel")"
+        rm -rf "$dst/$d/${erel:?}"
+        cp -Rp "$ef" "$dst/$d/$erel"
+        printf '%s\n' "$d/$erel" >> "$SHIPPED"
+      done < <(find "$REPO/$d" \( -type f -o -type l \))
+    else
       mkdir -p "$(dirname "$dst/$d")"
-      cp -R "$REPO/$d" "$dst/$d"
-      if [ -d "$dst/$d" ]; then ( cd "$dst" && find "$d" -type f ) >> "$SHIPPED"
-      else printf '%s\n' "$d" >> "$SHIPPED"; fi
+      rm -rf "$dst/${d:?}"
+      cp -Rp "$REPO/$d" "$dst/$d"
+      printf '%s\n' "$d" >> "$SHIPPED"
     fi
   done
 
@@ -554,11 +569,15 @@ sync_isolated_brain() {
   # Point the copied docs at THIS project's brain instead of the shared clone.
   # Portable and git-safe: `.mastermind/...` resolves from the project root on any machine.
   local file
-  # -I skips binaries (GNU grep -rl lists them; piping those to perl -pi corrupts them)
-  # and --include limits the rewrite to prose, never to vendored data or scripts.
+  # Only files WE shipped are rewritten — the installer never edits a project's own notes.
+  # -I skips binaries (piping those to perl -pi corrupts them); the .md filter keeps this to
+  # prose, never vendored data or scripts.
   while IFS= read -r file; do
-    perl -pi -e 's|~/\.mastermind|.mastermind|g' "$file"
-  done < <(grep -rlI --include='*.md' '~/\.mastermind' "$dst" 2>/dev/null || true)
+    case "$file" in *.md) ;; *) continue ;; esac
+    [ -f "$dst/$file" ] || continue
+    grep -qI '~/\.mastermind' "$dst/$file" 2>/dev/null || continue
+    perl -pi -e 's|~/\.mastermind|.mastermind|g' "$dst/$file"
+  done < "$SHIPPED"
 
   # --- reconcile deletions, using the manifest of what WE installed -------------
   # Only paths that are BOTH in the previous manifest (we put them there) and absent from

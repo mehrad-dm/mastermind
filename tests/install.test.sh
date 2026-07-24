@@ -211,6 +211,32 @@ echo NESTED > "$P/.mastermind/engineering/fields/frontend/ui-ux-pro-max/lessons.
 run "$P" claude >/dev/null 2>&1
 is "nested lessons.md preserved" "$(cat "$P/.mastermind/engineering/fields/frontend/ui-ux-pro-max/lessons.md" 2>/dev/null)" "NESTED"
 
+echo "── isolated: a project's OWN skills/agents inside the brain survive an update"
+# The engine dirs were `rm -rf`'d wholesale, so anything a project added to its own brain was
+# destroyed on the next install — and that wipe short-circuited the manifest reconciliation
+# built to protect exactly these files. Users must be able to add their own skills.
+P=$(proj isoadd); run "$P" --isolated claude >/dev/null 2>&1
+mkdir -p "$P/.mastermind/skills/our-skill" "$P/.mastermind/agents"
+printf 'OUR SKILL BODY\n'                 > "$P/.mastermind/skills/our-skill/SKILL.md"
+printf 'OUR AGENT\n'                      > "$P/.mastermind/agents/our-agent.md"
+printf 'OUR CORE NOTE\n'                  > "$P/.mastermind/engineering/core/our-note.md"
+printf 'see ~/.mastermind for details\n'  > "$P/.mastermind/skills/our-skill/NOTES.md"
+run "$P" claude >/dev/null 2>&1
+is "project skill survives update" "$(grep -c 'OUR SKILL BODY' "$P/.mastermind/skills/our-skill/SKILL.md" 2>/dev/null || echo 0)" "1"
+is "project agent survives update" "$(grep -c 'OUR AGENT' "$P/.mastermind/agents/our-agent.md" 2>/dev/null || echo 0)" "1"
+is "project file in core survives" "$(grep -c 'OUR CORE NOTE' "$P/.mastermind/engineering/core/our-note.md" 2>/dev/null || echo 0)" "1"
+# the installer rewrites ~/.mastermind paths only in files IT shipped, never a project's prose
+is "project notes not rewritten"   "$(grep -c '~/\.mastermind' "$P/.mastermind/skills/our-skill/NOTES.md" 2>/dev/null || echo 0)" "1"
+# …while the engine itself is still genuinely refreshed and intact
+is "shipped skill still installed" "$([ -f "$P/.mastermind/skills/build/SKILL.md" ] && echo y)" "y"
+yes_ "hook stays executable"       "$([ -x "$P/.mastermind/hooks/session-start.sh" ] && echo yes)"
+yes_ "AGENTS.md stays a symlink"   "$([ -L "$P/.mastermind/AGENTS.md" ] && echo yes)"
+# a retired upstream file is still removed (the manifest must keep doing its job)
+printf 'x\n' > "$P/.mastermind/skills/ghost-skill.md"
+printf 'skills/ghost-skill.md\n' >> "$P/.mastermind/.manifest"
+run "$P" claude >/dev/null 2>&1
+is "retired shipped file still removed" "$([ -e "$P/.mastermind/skills/ghost-skill.md" ] && echo present || echo gone)" "gone"
+
 echo "── per-project installs are ISOLATED by default"
 P=$(proj defiso); run "$P" codex claude >/dev/null 2>&1
 is "plain install creates its own brain" "$([ -f "$P/.mastermind/VERSION" ] && echo y)" "y"

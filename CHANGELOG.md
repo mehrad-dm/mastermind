@@ -4,6 +4,29 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.26.1] — 2026-07-24
+
+### Fixed
+
+- **An update destroyed a project's own skills and agents.** The engine paths (`skills/`, `agents/`,
+  `engineering/core`, …) were refreshed by `rm -rf`-ing the whole directory and re-copying it — so
+  anything a project added inside its own brain was deleted on the next `install.sh`. Worse, that wipe
+  **short-circuited the manifest reconciliation built precisely to protect those files**, making the
+  release note ("never a file the project added") untrue for exactly the case it described. Engine
+  paths are now refreshed **file by file**; retirement is left to the manifest, which only ever removes
+  paths we shipped before, so a project-added file is invisible to it and survives. Found by adding a
+  custom skill to a real project brain and re-running the installer.
+- **The installer rewrote the project's own prose.** The `~/.mastermind` → `.mastermind` path rewrite
+  walked every `.md` under the brain, including files the project wrote. It is now scoped to the files
+  we shipped — the installer never edits a project's own notes.
+- Mode bits and symlinks are preserved on refresh (`cp -Rp`, `-type l`), so `hooks/session-start.sh`
+  stays executable and `AGENTS.md` stays a symlink.
+
+Installer regression tests: **110 → 118**. The eight new assertions cover a project-added skill, agent
+and core file surviving an update, project prose being left alone, the hook staying executable, the
+symlink staying a symlink, and — the other direction — a genuinely retired upstream file still being
+removed. All four data-loss assertions were proven to fail against the unfixed installer.
+
 ## [0.26.0] — 2026-07-22
 
 Each project can now own its brain, and a monorepo can route a different field to each app —
