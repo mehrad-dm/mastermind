@@ -31,10 +31,13 @@ and `lessons.md` are readable locally and are the field-specific authority; pref
 frontend patterns.)*
 
 ## Non-negotiable: behavior is preserved
-- **Safety net first.** Confirm tests cover the target and pass; if a risky area is untested, write
-  characterization tests before touching it. No way to prove behavior is unchanged → don't refactor it.
-- **Structure or behavior, never both at once.** If you spot a bug mid-refactor, note it and leave it —
-  don't silently fix it (that hides a behavior change inside a "refactor").
+- **Safety net first.** Confirm tests cover the target and pass. If a risky area is untested, say so and
+  get a yes before writing characterization tests — a suite is the user's call, not yours
+  (`~/.mastermind/engineering/core/rigor.md`). If they decline, restrict the refactor to what typecheck,
+  lint and driving the flow can verify, or hand it back as needs-work. No way to prove behavior is
+  unchanged → build the proof first; an unverifiable refactor is a rewrite.
+- **One at a time: structure or behavior.** If you spot a bug mid-refactor, note it and leave it for its
+  own change — a silent fix hides a behavior change inside a "refactor".
 
 ## What to restructure (strategic, not cosmetic)
 - **Shallow modules** → deepen: simplify the interface, pull complexity inward, hide decisions.
@@ -45,7 +48,7 @@ frontend patterns.)*
 
 ## Loop
 Small, safe steps. After each, run typecheck/lint/tests to stay green and show the evidence. Match the
-codebase's conventions. Scope tightly — don't sprawl beyond the target.
+codebase's conventions. Scope tightly — stay inside the target.
 
 ## Output
 The restructured code + a short summary: the design smell, what you changed and why, and proof behavior

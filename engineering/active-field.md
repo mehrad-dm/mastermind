@@ -34,7 +34,7 @@ On the first substantive work in a project, MasterMind:
 3. Regenerate the router from the source clone: `node scripts/build-router.mjs`.
 4. The universal core (`engineering/core/*`) never changes between fields — it's field-agnostic.
 
-> **This is how "swappable" is real, not a claim.** Any user, on any agent, copies `_template/` to
+> **This is how "swappable" is real, not a claim.** Any user, on any supported tool, copies `_template/` to
 > stand up their own field (frontend, backend, mobile, data, game-dev, …) with exactly the stack
 > notes and defaults they care about. Multiple packs can be active at once for full-stack work.
 

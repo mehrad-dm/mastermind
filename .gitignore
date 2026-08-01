@@ -27,3 +27,10 @@ engineering/fields/*/*-coding-patterns/
 # Python bytecode from the vendored ui-ux-pro-max search engine
 __pycache__/
 *.pyc
+
+# Eval run artifacts — generations, judgements, scratch projects. Reproducible, never committed.
+/.eval-run/
+
+# eval raw artifacts: replies, judge outputs, workspaces — results live in SUMMARY.json + RESULTS.md
+evals/runs/*/raw/
+evals/runs/*/raw-work/

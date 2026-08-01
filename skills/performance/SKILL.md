@@ -1,5 +1,5 @@
 ---
-name: perf
+name: performance
 description: Use when something is slow — "why is this slow", "optimize this", "make it faster", jank, lag, a slow query, slow page load, slow render, slow build, high memory, a timeout. Not for correctness bugs; that's debug.
 ---
 
@@ -13,7 +13,7 @@ effort on the wrong thing and maybe trade away correctness for nothing. Get data
 1. **Reproduce + measure.** Get a real number under a realistic scenario — wall-clock, FPS/frame time,
    query ms (`EXPLAIN ANALYZE`), request latency, bundle size, memory. No number, no optimizing. Write it
    down; it's your before.
-2. **Find the bottleneck — profile, don't guess.** Use the right instrument (browser Performance panel /
+2. **Find the bottleneck — profile it.** Use the right instrument (browser Performance panel /
    React Profiler, a flame graph, DB query plan, a tracer) and find *where the time actually goes* — the
    ~20% causing ~80%. The universal classes of waste: **repeated work** (recomputed per item/render
    instead of once), **amplified work** (one request fanning out into N), **missing lookup structure**
@@ -34,7 +34,7 @@ time. Report: before → after numbers, the cause, the fix, and the guard added.
 
 ## Gotchas
 - **Measure before *and* after** — "feels faster" is not a result; a number that moved is.
-- **Profile, don't pattern-match.** The obvious suspect is often not the bottleneck — the profiler decides.
+- **Profile over pattern-matching.** The obvious suspect is often not the bottleneck — the profiler decides.
 - **Correctness is not on the table.** Never trade a correct result for speed; if a fix changes behavior,
   it's not a perf fix.
 - **Biggest first.** One 10× hotspot beats ten 5% tweaks; stop when the number is good enough (match effort

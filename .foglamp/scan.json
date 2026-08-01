@@ -1,5 +1,5 @@
 {
-  "version": "0.27.0",
+  "version": "0.28.0",
   "project": {
     "name": "MasterMind",
     "slug": "mastermind",
@@ -10,7 +10,7 @@
   "stats": {
     "agents": 4,
     "models": 1,
-    "tools": 18,
+    "tools": 22,
     "integrations": 6
   },
   "topModels": [
@@ -134,13 +134,6 @@
         "label": "Cursor",
         "kind": "external",
         "domain": "cursor.com",
-        "sub": "kernel + bootstrap hook"
-      },
-      {
-        "id": "copilot",
-        "label": "Copilot",
-        "kind": "external",
-        "domain": "github.com",
         "sub": "kernel + bootstrap hook"
       },
       {
@@ -287,7 +280,7 @@
       },
       {
         "id": "lab",
-        "label": "Lab quarantine",
+        "label": "Quarantine",
         "kind": "store",
         "sub": "private data, gitignored",
         "group": "Safety & honesty",
@@ -335,19 +328,13 @@
         "sourceRef": "skills/init/"
       },
       {
-        "id": "gemini",
-        "label": "Gemini CLI",
-        "kind": "external",
-        "domain": "google.com"
-      },
-      {
         "id": "bootstrap",
         "label": "Bootstrap hook",
         "kind": "service",
         "sub": "re-injects on compaction",
         "group": "Safety & honesty",
         "sourceRef": "hooks/session-start.sh",
-        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact. Without it the brain is read once and fades as the window fills, so long sessions silently run without MasterMind. Verified on Claude Code; wired for Cursor and Copilot CLI."
+        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact. Without it the brain is read once and fades as the window fills, so long sessions silently run without MasterMind. Verified on Claude Code; wired for Cursor."
       },
       {
         "id": "installtests",
@@ -366,6 +353,14 @@
         "group": "Safety & honesty",
         "sourceRef": "scripts/build-library.mjs",
         "detail": "Generates one article per skill and agent from ABOUT.md files, so the public docs cannot claim a skill does something the skill does not. Refuses to build if a skill has no article; --check fails when the site is stale."
+      },
+      {
+        "id": "cli",
+        "label": "npx mastermind-brain",
+        "kind": "entry",
+        "sub": "versioned npm CLI",
+        "group": "",
+        "sourceRef": "cli/"
       }
     ],
     "edges": [
@@ -400,11 +395,6 @@
       },
       {
         "from": "cursor",
-        "to": "kernel",
-        "kind": "reads"
-      },
-      {
-        "from": "copilot",
         "to": "kernel",
         "kind": "reads"
       },
@@ -544,10 +534,6 @@
         "to": "field"
       },
       {
-        "from": "gemini",
-        "to": "kernel"
-      },
-      {
         "from": "install",
         "to": "bootstrap",
         "kind": "writes",
@@ -581,6 +567,24 @@
         "to": "kernel",
         "kind": "reads",
         "label": "one page per skill + agent"
+      },
+      {
+        "from": "cli",
+        "to": "install",
+        "kind": "triggers",
+        "label": "drives the engine"
+      },
+      {
+        "from": "install",
+        "to": "cursor",
+        "kind": "writes",
+        "label": ".cursor/rules (kernel inlined)"
+      },
+      {
+        "from": "install",
+        "to": "codex",
+        "kind": "writes",
+        "label": "AGENTS.md → the brain"
       }
     ]
   }

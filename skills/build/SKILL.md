@@ -9,11 +9,14 @@ The single "do it the genius way, end to end" workflow. It runs the loop from `~
 pulling in the specialist agents and the field pack at each phase. Task: **$ARGUMENTS**.
 
 Scale effort to the task (`~/.mastermind/engineering/core/principles.md`): a trivial change skips straight to implement+verify;
-a foundation gets the full loop. Don't perform ceremony the task doesn't warrant.
+a foundation gets the full loop. Match the ceremony to what the task warrants.
 
 ## The loop
 
-1. **Understand** — restate the real problem and its scope/lifespan; do the asked task and nothing more
+1. **Understand — and say how you read it.** Open with one line stating your interpretation, so a
+   misread surfaces now instead of after the code exists: *"Reading this as: a bulk-import screen for
+   ops staff, optimised for recovering from bad rows rather than for speed."* Then restate the real
+   problem and its scope/lifespan; do the asked task and nothing more
    (`~/.mastermind/engineering/core/rigor.md` → Stay in scope). Read the relevant existing code and conventions first (delegate
    wide reading to a subagent to protect context); learn the stack if unfamiliar (`~/.mastermind/engineering/core/agent-loop.md`
    → Learn the stack first). Match the codebase.
@@ -26,7 +29,7 @@ a foundation gets the full loop. Don't perform ceremony the task doesn't warrant
    fully works; deviate only for a stated reason. Consult `mentors.md` if a call is contested.
 
 > **Plan-first gate (opt-in, off by default).** If the project's **`plan-first`** preference is on
-> (`.mastermind/prefs.md`: `plan-first: on`) — or the user asks to "plan first" — **do not start editing yet.**
+> (`.mastermind/prefs.md`: `plan-first: on`) — or the user asks to "plan first" — **plan first, then edit.**
 > Present a concise plan from steps 1–3: the **goal**, the **approach**, the **files you'll touch**, the
 > **steps**, and any risk/decision worth a look.
 >
@@ -53,12 +56,38 @@ a foundation gets the full loop. Don't perform ceremony the task doesn't warrant
    real must-fix findings (correctness/security/a11y); treat gap-hunting nits as optional to avoid
    over-engineering. Re-verify after fixes.
 
+   **Close the loop in a bounded number of rounds — three.** Fix, re-review, repeat. If findings are
+   still open after the third, stop looping and **decide each one in writing**: fixed · *parked* (why
+   it's real but not blocking, in one line) · *blocked* (it's load-bearing and needs the human). Three
+   rounds without convergence means the disagreement isn't about this diff — it's about the design, and
+   more rounds just relitigate it more expensively.
+
+   Two things this loop must never do: **adjudicate early** to escape another round — that's
+   pre-judging with a nicer name — and **drop a finding silently**. Every finding exits as fixed,
+   parked-with-a-reason, or escalated, and the user can see which.
+
 7. **Capture & report** — run the **`levelup`** skill (capture) to fold any durable lesson
    or correction into the active field's `lessons.md`. Report honestly in a few lines: what shipped,
    the evidence it works, and anything deferred. Commit / open a PR only if asked. If the project's
    **`cycle-report`** preference is on (`.mastermind/prefs.md`: `markdown`/`html`, or `ask` → offer once),
    also run the **`report`** skill to write a durable file — **default is off**, so most cycles just get
    this in-chat verdict. Skip it entirely for a one-line change.
+
+## What you noticed but left alone
+
+You will pass broken windows on the way — a stale import, a misleading name, a function that wants
+splitting. Fixing them buries the change you were asked for in a diff nobody can review. **Collect them
+instead**, and hand the list back at the end:
+
+```text
+Noticed, not touched:
+  · src/utils/format.ts — unused import, unrelated to this change
+  · OrderRow re-renders on every parent tick — pre-existing, would need its own slice
+→ Want tasks for these?
+```
+
+Costs one line, keeps the diff honest, and the user gets the observation without paying for unrequested
+work — a reviewer can then see the whole change and believe it.
 
 ## Non-negotiables
 Correctness, security, accessibility are never traded for speed. Speed is the reward for rigor. If an

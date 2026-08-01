@@ -27,6 +27,18 @@ Every file above except this one carries `route_when` frontmatter — that is wh
 (`scripts/build-router.mjs`). **Keep the frontmatter and retag it for your field**; a file without
 `route_when` is invisible to routing, and `check-integrity.mjs` will fail the build if one is missing.
 
+## Where things are (fill during `init` — this section is why the pack saves tokens)
+Missing context is the expensive thing: a model that has to *discover* structure spends tokens
+reasoning about the gap, greps, and retries. Kill the discovery phase with pointers — locations only,
+never summaries (summaries drift; paths get checked):
+
+- Components/UI: `<path>`
+- Routes/pages: `<path>`
+- State/data access: `<path>`
+- Tests: `<path>` · run with `<command>`
+- Config/env: `<path>`
+- The one file that explains the architecture fastest: `<path>`
+
 ## Default posture
 Match the codebase first. Where there's no house style, apply `stack-defaults.md`. Correctness and
 security are never traded for speed (`core/rigor.md`). <Add this field's own non-negotiables, if any.>

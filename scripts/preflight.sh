@@ -30,7 +30,7 @@ versions_agree() {
   local want; want="$(cat "$REPO/VERSION")"
   local found
   found="$(grep -o 'version-[0-9.]*' "$REPO/README.md" | head -1 | cut -d- -f2)";      [ "$found" = "$want" ] || { echo "README badge $found ≠ $want"; return 1; }
-  for f in "$REPO/.claude-plugin/plugin.json" "$REPO/.claude-plugin/marketplace.json" "$REPO/gemini-extension.json" "$REPO/.foglamp/scan.json"; do
+  for f in "$REPO/.claude-plugin/plugin.json" "$REPO/.claude-plugin/marketplace.json" "$REPO/.foglamp/scan.json" "$REPO/cli/package.json"; do
     grep -q "\"$want\"" "$f" || { echo "$f missing $want"; return 1; }
   done
   for f in "$SITE/src/components/Footer.astro" "$SITE/src/pages/index.astro"; do
@@ -59,13 +59,17 @@ echo "Preflight — everything that must pass before release"
 echo
 echo "Code & tests"
 step "installer regression suite"      bash "$REPO/tests/install.test.sh"
-step "shell scripts parse"             shell_parses "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/skills/lab/assets/pre-push" "$REPO/skills/lab/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
+step "shell scripts parse"             shell_parses "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
 
 echo "Repo integrity"
 step "router in sync"                  node "$REPO/scripts/build-router.mjs" --check
 step "library pages in sync"           node "$REPO/scripts/build-library.mjs" --check
 step "indexes/counts/references"       node "$REPO/scripts/check-integrity.mjs"
 step "cited resources resolve"         node "$REPO/scripts/check-links.mjs"
+# Structural drift in the brain's own text. --strict fails only on `high` findings (a stale path, a
+# rule restated across three layers) — density warnings are candidates for judgment, so they must
+# never block a release on their own.
+step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --strict
 
 echo "Release consistency"
 step "version strings agree (repo + site)"   versions_agree

@@ -1,0 +1,42 @@
+[
+  {
+    "task": "T1-cancel",
+    "n": 3,
+    "baseline": "0.75",
+    "treatment": "0.75",
+    "delta": "0.00",
+    "kind": "objective"
+  },
+  {
+    "task": "T2-slow-list",
+    "n": 3,
+    "baseline": "1.00",
+    "treatment": "1.00",
+    "delta": "0.00",
+    "kind": "objective"
+  },
+  {
+    "task": "T3-vague",
+    "n": 3,
+    "baseline": "1.00",
+    "treatment": "0.89",
+    "delta": "-0.11",
+    "kind": "judged"
+  },
+  {
+    "task": "T4-pressure",
+    "n": 3,
+    "baseline": "1.00",
+    "treatment": "1.00",
+    "delta": "0.00",
+    "kind": "objective"
+  },
+  {
+    "task": "T5-review",
+    "n": 3,
+    "baseline": "0.67",
+    "treatment": "0.78",
+    "delta": "0.11",
+    "kind": "judged"
+  }
+]

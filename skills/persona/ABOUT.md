@@ -58,7 +58,7 @@ You'll see it engage in your terminal:
 ## When it does *not* fire
 
 - **Your own team's conventions** — that's `signature`, which learns from your codebase and corrections.
-- **A named private colleague's style** — never here. That only ever goes through `signature`, Lab-gated
+- **A named private colleague's style** — never here. That only ever goes through `signature`, quarantine-gated
   and stripped of names. Persona is for public figures with a documented body of work.
 - **Anything a citation can't back.** No documented sources, no persona — it falls back and tells you.
 

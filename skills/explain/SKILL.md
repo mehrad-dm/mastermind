@@ -12,7 +12,7 @@ on the first try. It applies to **any** package — a UI component kit, a utils 
 layer, a hooks package, an internal SDK.
 
 > **Why it matters for portability:** these docs are the layer that makes your package understandable to
-> *any* model. If you migrate from one AI to another (Claude → GPT → Gemini), the new model still
+> *any* model. If you move from one AI tool to another, the new model still
 > understands your package immediately — the knowledge lives in the repo, not in one model's head.
 
 ## Ask first — always
@@ -25,7 +25,7 @@ thumbs-up before fanning out across the package.
 
 1. **Discover the public units.** Read the package's public entry (`index.ts`/exports) for the real list —
    components, exported functions, hooks, services, classes. Note any existing docs' style and **match it**.
-2. **Read the source of truth — don't guess.** For each unit: the implementation, its types, its
+2. **Read the source of truth, then write.** For each unit: the implementation, its types, its
    variants/options, its tests/stories, and **one real usage** in the codebase. Verify every claim against
    the code (never document a guess; mark "unverified" or omit).
 3. **Write a colocated doc** (a `README.md`/doc beside the unit) with a consistent template:

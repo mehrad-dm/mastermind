@@ -1,13 +1,13 @@
 ---
 name: signature
-description: Use when code should match a team's real conventions the user keeps correcting the AI toward — "make it match our codebase", "follow our patterns", "you keep writing it wrong" — or when repeated corrections should become durable rules. Private, Lab-gated. For writing in a named public engineer's style, use `persona`.
+description: Use when code should match a team's real conventions the user keeps correcting the AI toward — "make it match our codebase", "follow our patterns", "you keep writing it wrong" — or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`.
 ---
 
 # Signature — capture a team's style, turn it into rules the AI follows
 
 A codebase has a *real* style that's rarely written down — people can't list their own conventions, but
 recognize a violation instantly. This skill surfaces that tacit style and makes it durable: **a correction
-you give once becomes a permanent rule, not a repeated fix.** Two phases — capture (private, in the Lab),
+you give once becomes a permanent rule, not a repeated fix.** Two phases — capture (private, in the quarantine),
 then distil (name-free, into a field pack).
 
 > **The rule that never bends: patterns, not people.** Describe what the code does ("this codebase resolves
@@ -15,10 +15,10 @@ then distil (name-free, into a field pack).
 > incidental — and a file that judges a named person is a career-risk if it leaks. Group by contributor
 > only as a *source of signal*, phrased neutrally.
 
-## Phase 1 — Capture (private, stays in the Lab)
+## Phase 1 — Capture (private, stays in the quarantine)
 
 1. **Consent + Lab first.** Ask before scanning a real, possibly-private codebase (and which paths). All
-   output has names, so it lands in `lab/` (gitignored) — if there's no Lab, set one up (`lab` skill) first.
+   output has names, so it lands in `lab/` (gitignored) — if there's no Lab, set one up (`quarantine` skill) first.
 2. **Two sources — the second is the gold:**
    - **Repeated corrections (highest value).** What people tell the AI over and over — "do X not Y",
      "always…", "stop doing…", recurring review comments, AI diffs reverted-and-redone. Explicit,
@@ -33,8 +33,8 @@ then distil (name-free, into a field pack).
 ## Phase 2 — Distil into rules (three gates, none skippable)
 
 **Gate 1 — Classify: convention or correctness.**
-- **Convention** (style — naming, layout, which primitive) → the rule is "match the house style," **never
-  framed as a fix**; justification *is* "the team does it this way."
+- **Convention** (style — naming, layout, which primitive) → the rule is "match the house style,"
+  **framed as conformance**; justification *is* "the team does it this way."
 - **Correctness** (a real defect — a11y gap, unsafe input, a cache/lifecycle bug) → allowed **only** with a
   **primary-source citation + a concrete failure scenario**. No citation/failure → demote to convention or
   drop. The test: *"Can I cite a source saying this is wrong AND name a failure it causes?"*
@@ -45,9 +45,9 @@ against recent examples to confirm it holds. Use all three signals: **correction
 **approvals** (confirm an existing rule is right — stop second-guessing it), and **implicit edits** (human
 shipped it differently than proposed — the richest source of unstated conventions).
 
-**Gate 3 — Sanitize (identities never leave the Lab).** Strip every project/product/person/package/host
+**Gate 3 — Sanitize (identities never leave the quarantine).** Strip every project/product/person/package/host
 name and replace with a generic description before anything reaches a field pack. If a rule can't be
-expressed without an internal name, **it stays in the Lab.** The guards are the backstop, not a license.
+expressed without an internal name, **it stays in the quarantine.** The guards are the backstop, not a license.
 
 ## Output — propose, never apply
 Hand surviving rules to **`levelup`** as **proposed** pack edits (`category · kind · generic rule · why
@@ -58,6 +58,6 @@ correctness-with-citation → same, tagged for the `code-reviewer` audit. Fronte
 - **A convention is not a defect** — the commonest failure is "fixing" house style. When unsure, conform.
 - **Negative signal dominates** — capture approvals too, or rules drift into timid nitpicks; retire a rule that keeps getting dismissed.
 - **One incident is not a pattern** — respect the promotion bar.
-- **Don't restate what tooling enforces** — if a lint rule/type/template guarantees it, strengthen that; keep only the "why."
+- **Let tooling own what tooling enforces** — if a lint rule/type/template guarantees it, strengthen that; keep only the "why."
 - **`code-reviewer` finds defects; this captures style.** Keep the layers separate.
-- **A named private colleague's style stays here (Lab-gated), never in `persona`.** `persona` is for public figures with a documented body of work; a real coworker's style is Mode-A material and never leaves the Lab.
+- **A named private colleague's style stays here (quarantine-gated), never in `persona`.** `persona` is for public figures with a documented body of work; a real coworker's style is Mode-A material and never leaves the quarantine.

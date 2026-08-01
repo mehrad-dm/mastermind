@@ -67,7 +67,7 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **You want your code optimized.** That's `perf` — measuring and fixing slow software. `prompt` never
+- **You want your code optimized.** That's `performance` — measuring and fixing slow software. `prompt` never
   touches your code; it only touches text you send to a model. The names sound adjacent; the jobs share
   nothing.
 - **The ask is fuzzy but it's a build task, not a prompt.** If you want *MasterMind itself* to build

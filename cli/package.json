@@ -1,0 +1,15 @@
+{
+  "name": "mastermind-brain",
+  "version": "0.28.0",
+  "description": "MasterMind — a genius-builder brain for your AI coding tools (Claude Code, Cursor, Codex). Versioned, provenance-signed installer.",
+  "bin": { "mastermind": "bin/mastermind.mjs" },
+  "type": "module",
+  "files": ["bin/", "README.md"],
+  "engines": { "node": ">=18" },
+  "repository": { "type": "git", "url": "git+https://github.com/mehrad-dm/mastermind.git", "directory": "cli" },
+  "homepage": "https://mastermind.mehrad.me",
+  "bugs": "https://github.com/mehrad-dm/mastermind/issues",
+  "license": "MIT",
+  "keywords": ["claude-code", "cursor", "codex", "agent-skills", "ai-coding", "code-review", "engineering-discipline"],
+  "publishConfig": { "access": "public", "provenance": true }
+}

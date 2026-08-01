@@ -26,8 +26,8 @@ It refreshes **one field** — the one named in the argument, else the active fi
    - **Newly shipped capabilities** — new tool types, skill/agent/hook mechanisms, slash-commands, MCP,
      subagents, and workflow primitives worth *adopting into MasterMind's architecture* to get better.
 
-   **Stay tool-agnostic — this is a hard constraint, not a preference.** MasterMind runs on Codex, Cursor,
-   Copilot, Gemini, and any AGENTS.md tool; the shared brain is portable Markdown that must load and work
+   **Stay tool-agnostic — this is a hard constraint, not a preference.** MasterMind supports Claude Code,
+   Cursor and Codex; the shared brain is portable Markdown that must load and work
    *everywhere*. So extract the **durable, portable principle**, never the vendor mechanism. A
    Claude-Code-only feature (hooks, native skills, slash-commands) may *sharpen the Claude path* as an
    additive enhancement, but must **never** become a hard dependency, or leave a rule that only makes sense

@@ -22,16 +22,27 @@ files under different rules, and blending them is how a lesson lands in the wron
 
 Adding or rewriting a **skill or agent** is not a mode — it's a separate discipline: read `authoring.md`.
 
+## Two memory layers — the episode, then the lesson
+
+- **`.mastermind/journal.md` — what happened** (episodic). Dated one-liners appended at each verdict:
+  the decision, the reason, the outcome. Cheap, append-only, and the project's own file.
+- **`fields/<field>/lessons.md` — what to do next time** (semantic). Distilled *from* the journal.
+
+Keeping both is what lets MasterMind say *"we tried that in March and it failed because X"* — a lesson
+alone states a rule but can no longer justify it, so it gets argued with or quietly dropped. The journal
+is the evidence behind the rule; distil it forward and let the old entries age out.
+
 ## `capture` (default) — harvest lessons from this session/recent work
 
-1. Scan the recent work for durable, generalizable lessons: user corrections ("no, do X"), real
-   `code-reviewer` findings, bugs fixed, and choices that proved right. Ignore one-off/project-specific
-   noise — only keep what will apply to *future* tasks.
+1. Read **`.mastermind/journal.md`** first, then scan the recent work, for durable generalizable lessons:
+   user corrections ("no, do X"), real `code-reviewer` findings, bugs fixed, and choices that proved
+   right. The journal is the higher-signal source — it is what actually happened, already dated and
+   deduplicated. Skip one-off/project-specific noise; keep only what applies to *future* tasks.
 2. For each: append a one-line rule + bracketed "why" to
    `~/.mastermind/engineering/fields/<field>/lessons.md`. Deduplicate against existing lessons.
 3. If a lesson is a general default (not just a gotcha), **promote** it into `stack-defaults.md` at the
    right section — that's where it will actually change behavior.
-4. Keep it tight. A lesson that isn't load-bearing is noise; don't hoard.
+4. Keep it tight. A lesson that isn't load-bearing is noise; keep only what earns its place.
 
 `capture` is the one mode that may run on a user's install and stay local; it writes only to that field's
 `lessons.md` and `stack-defaults.md`.
@@ -43,8 +54,8 @@ heavier. On each change:
 
 - **Only load-bearing lines survive.** For each line ask *"would removing it change behavior?"* — if
   not, cut it. Prefer a sharper sentence over a longer one, a rule over an example, a pointer over a copy.
-- **Kernel stays tiny.** New depth goes into on-demand modules/field packs, never the always-loaded
-  `CLAUDE.md`. Deduplicate — one idea, one home (SSOT); cross-link instead of repeating.
+- **Kernel stays tiny.** New depth goes into on-demand modules/field packs, leaving the always-loaded
+  `CLAUDE.md` as-is. Deduplicate — one idea, one home (SSOT); cross-link instead of repeating.
 - **Net-zero-or-lighter.** When you add, hunt for something stale to remove; retire superseded
   lessons/resources rather than stacking them. Signal density beats volume — a bloated brain gets ignored.
 

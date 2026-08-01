@@ -29,6 +29,12 @@ field is declared in `active-field.md`). Consult the field's `mentors.md` when a
 5. **Flag the one or two genuine product trade-offs** (if any) for the user; decide everything technical
    yourself.
 
+**Two tests before you commit to a boundary.** *Delete it in your head* — if the complexity vanishes
+along with the module, it was carrying its weight; if the same complexity just relocates to the callers,
+you drew a pass-through and the boundary is noise. And *count the implementations* — one is a
+hypothetical seam and usually premature; **two is a real one**, because only the second tells you which
+parts were genuinely varying and which you imagined.
+
 ## Output
 A tight design doc: the chosen approach, boundaries/interfaces, state & data model, key types, the
 edge-case list, and a one-line "why" per significant decision. No code beyond illustrative type/interface

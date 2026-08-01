@@ -6,7 +6,7 @@ For any technical decision, work through this — briefly, out loud, then commit
 
 1. **What is the real problem?** Restate it. Half of bad architecture solves the wrong problem.
 2. **What is the scope & lifespan?** A throwaway script, a feature, or a foundation others build on?
-   Effort must match stakes. Don't gold-plate a prototype; don't hack a foundation.
+   Effort must match stakes: keep a prototype rough, build a foundation to last.
 3. **What are the 2–3 real options?** Not every option — the credible ones. Name the trade-off of each.
 4. **Which is best on total cost — not speed-to-type?** Judge each option by cost to *use*, to
    *maintain*, and to *evolve*, plus performance and clarity — then pick the one that **fully works
@@ -16,7 +16,7 @@ For any technical decision, work through this — briefly, out loud, then commit
 6. **Decide, state the one-line "why," move.** No analysis paralysis. A good decision now beats a
    perfect one late. Record non-obvious "why"s where the next reader will look.
 
-> The user may not be a software engineer. **Do not ask them to make technical choices.** Make the best
+> The user may not be a software engineer. **Own every technical choice yourself.** Make the best
 > call, apply it, and explain the "why" in one plain sentence. Only surface a decision when it's a
 > genuine product/business trade-off they alone can own.
 
@@ -38,7 +38,7 @@ The single measure of good design is how much complexity it hides behind a simpl
 - **Single Source of Truth (SSOT)** — every piece of knowledge has exactly one authoritative home.
   Derive, don't duplicate. This is the most important one.
 - **DRY — done right.** DRY is about *knowledge*, not *characters*. Two snippets that look alike but
-  change for different reasons are **not** duplication — do not couple them. Abstract on the **rule
+  change for different reasons are **not** duplication — keep them separate. Abstract on the **rule
   of three**, not the second occurrence. Premature abstraction is worse than duplication.
 - **KISS / YAGNI** — build what's needed now. Speculative generality is debt you pay interest on.
 - **Separation of concerns / colocation** — split by *reason to change*. Keep things that change
@@ -55,17 +55,18 @@ The single measure of good design is how much complexity it hides behind a simpl
 - **Make illegal states unrepresentable** — model with types so wrong states can't compile. Prefer
   discriminated unions over boolean soup. (See `stack-defaults.md` → TypeScript.)
 - **Errors are values** — handle failure paths deliberately; never swallow. Fail loud and early.
-- **Boy-scout rule** — leave touched code cleaner than you found it, scoped to the task. Don't sprawl.
+- **Boy-scout rule** — leave touched code no worse than you found it. Cleanups beyond the ask are
+  *listed*, not folded into the diff (`rigor.md` → Stay in scope).
 
 ## Understand before you use
 
-Never reach for a tool, library, framework, or package — third-party **or** internal (our own UI kit, a
-shared module) — before reading its docs/source enough to use it correctly and to its intended standard.
+Before reaching for any tool, library, framework, or package — third-party **or** internal (our own UI
+kit, a shared module) — read its docs/source enough to use it correctly and to its intended standard.
 Cargo-culting an API you haven't understood is how misuse and subtle bugs get in; research and *understand*
 it first, then use it the standard way. Weigh **build vs. buy**: when you can build a small,
 self-maintainable module/component yourself for less total cost than *owning* a heavier third-party (its
 weight, breakage surface, and upkeep), build it — sometimes the best dependency is none (see the decision
-framework and the `tech-scout` agent). And never over-engineer either path — the simplest thing that fully
+framework and the `tech-scout` agent). Keep either path minimal — the simplest thing that fully
 solves the *real* problem wins (KISS/YAGNI); speculative flexibility is debt.
 
 ## Naming

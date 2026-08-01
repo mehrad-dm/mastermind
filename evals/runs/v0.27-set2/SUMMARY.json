@@ -1,0 +1,75 @@
+{
+  "rows": [
+    {
+      "task": "09-backend-api",
+      "n": 3,
+      "baseline": 1,
+      "treatment": 1,
+      "delta": 0
+    },
+    {
+      "task": "10-nplus1",
+      "n": 3,
+      "baseline": 0.8,
+      "treatment": 0.87,
+      "delta": 0.07
+    },
+    {
+      "task": "11-algorithm-edges",
+      "n": 3,
+      "baseline": 1,
+      "treatment": 0.93,
+      "delta": -0.07
+    },
+    {
+      "task": "12-shell-injection",
+      "n": 3,
+      "baseline": 1,
+      "treatment": 1,
+      "delta": 0
+    },
+    {
+      "task": "13-resource-cleanup",
+      "n": 3,
+      "baseline": 0.8,
+      "treatment": 1,
+      "delta": 0.2
+    },
+    {
+      "task": "15-P1",
+      "n": 3,
+      "baseline": 0.67,
+      "treatment": 0.33,
+      "delta": -0.33
+    },
+    {
+      "task": "15-P2",
+      "n": 3,
+      "baseline": 0.67,
+      "treatment": 0.67,
+      "delta": 0
+    },
+    {
+      "task": "15-P3",
+      "n": 3,
+      "baseline": 0.67,
+      "treatment": 0.33,
+      "delta": -0.33
+    },
+    {
+      "task": "15-P4",
+      "n": 3,
+      "baseline": 0.33,
+      "treatment": 0.33,
+      "delta": 0
+    }
+  ],
+  "pairs": 27,
+  "delta_mean": -0.052,
+  "sd": 0.629,
+  "se": 0.121,
+  "ci95": [
+    -0.289,
+    0.185
+  ]
+}

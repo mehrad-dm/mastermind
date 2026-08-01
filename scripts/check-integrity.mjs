@@ -17,7 +17,7 @@
  *      well-formed (field.md + audit-rules.md, same bar as check 7)
  *   9. every SOURCE.md with a destructive re-vendor procedure carries a preserve list, every
  *      listed path exists, and the list and the procedure agree in both directions
- *  10. .githooks/ (this repo's live guards) matches skills/lab/assets/ (what we ship),
+ *  10. .githooks/ (this repo's live guards) matches skills/quarantine/assets/ (what we ship),
  *      so a security fix cannot land in one copy and leave the other vulnerable
  */
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
@@ -252,7 +252,7 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
 }
 
 // --- 10. the repo's own guards match the guards it ships ----------------------
-// `.githooks/` is this repo's live guard; `skills/lab/assets/` is what we install for
+// `.githooks/` is this repo's live guard; `skills/quarantine/assets/` is what we install for
 // users. a fix landed in the shipped `pre-push` and left `.githooks/` stale, so
 // the guard protecting this public repo kept the bug the CHANGELOG said was fixed —
 // while both docs claimed otherwise. A security fix applied to one copy is not a fix.
@@ -262,15 +262,15 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
 const REPO_ONLY = /^# ---- Router freshness[\s\S]*?^fi\n\n/m
 for (const hook of ['pre-commit', 'pre-push']) {
   const live = join(ROOT, '.githooks', hook)
-  const shipped = join(ROOT, 'skills', 'lab', 'assets', hook)
+  const shipped = join(ROOT, 'skills', 'quarantine', 'assets', hook)
   if (!existsSync(live) || !existsSync(shipped)) {
-    fail(`${hook}: missing from .githooks/ or skills/lab/assets/ — both copies must exist`)
+    fail(`${hook}: missing from .githooks/ or skills/quarantine/assets/ — both copies must exist`)
     continue
   }
   const norm = (p) => readFileSync(p, 'utf8').replace(REPO_ONLY, '')
   if (norm(live) !== norm(shipped)) {
     fail(
-      `.githooks/${hook} differs from skills/lab/assets/${hook} — the guard protecting ` +
+      `.githooks/${hook} differs from skills/quarantine/assets/${hook} — the guard protecting ` +
         `this repo is not the guard we ship. Sync them (a fix must land in both).`
     )
   }

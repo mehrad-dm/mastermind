@@ -78,7 +78,7 @@ You'll see it engage in your terminal:
   QA asks *"does this do what it's supposed to?"* and answers yes or no with evidence. Debug starts once
   the answer is no and the reason isn't obvious, and its job is finding the cause. QA finds that
   something's wrong; debug finds out why. QA hands off to debug when a failure isn't self-explanatory.
-- **Something works but is slow** — that's `perf`. QA checks correctness; slowness is a measurement
+- **Something works but is slow** — that's `performance`. QA checks correctness; slowness is a measurement
   problem with a different method.
 - **A one-line copy change** — running the whole battery on a changed label is ceremony. Effort matches
   stakes.

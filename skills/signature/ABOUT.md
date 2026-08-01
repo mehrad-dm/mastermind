@@ -73,7 +73,7 @@ You'll see it engage in your terminal:
 - **Updating MasterMind's permanent knowledge directly** — that's `levelup`. Signature *feeds* it, handing
   over proposed rules; levelup is where accepted rules land.
 - **Writing in a named engineer's style** — that's `persona`. A public figure's documented style is a lens
-  on taste; a named private colleague is only ever profiled here, Lab-gated and stripped of names.
+  on taste; a named private colleague is only ever profiled here, quarantine-gated and stripped of names.
 
 ## What you get
 

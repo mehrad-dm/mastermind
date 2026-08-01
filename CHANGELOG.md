@@ -4,6 +4,164 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.28.0] — 2026-08-01
+
+### Added
+- **`npx mastermind-brain`** is the only documented install (per-project by default; `--global`
+  available). `bootstrap.sh` and every `curl | bash` path removed from the docs; the npm CLI pins
+  fresh installs to this release's git tag and drives the same engine, so old installs keep working.
+- **Skill names de-shorthanded**: `perf` → **`performance`**, `lab` → **`quarantine`**,
+  `map` → **`roadmap`** (the on-disk `lab/` folder contract is unchanged). Router, indexes, kernel
+  menus, site library and links all regenerated.
+- Site §07: entrance transition ported from the reference timeline (mark back-out pop, band
+  scale-in), compositor-only; frame loop rewritten earlier the same day (25→4 rect reads/frame,
+  mobile TBT 90ms→0). Prompts on the "before" cards rewritten to real user phrasing.
+- **Eval V4 — real-task suite** (`evals/runs/v0.27-real/`): multi-file seed service with planted
+  hazards, five real tasks, objective scripted checks first, judges only where unavoidable.
+  Single-shot tasks 01–13 formally retired.
+- **`npx mastermind-brain`** — the new headline install: a 5 KB zero-dependency npm CLI
+  (`cli/`) that pins fresh installs to the release's git tag and drives the same `install.sh`
+  engine, so every existing flow (git pull, `--check`, `--uninstall`, global installs) keeps
+  working unchanged. `curl | bash` demoted to an inspect-first fallback. Preflight now guards
+  the CLI version string too.
+- Core: **no load-bearing guesses (evidence before action)** — provenance test, fact classes,
+  labelled assumptions, source-authority hierarchy (`rigor.md` + one kernel sentence).
+- `code-reviewer`: pinned model seat, scope baseline, `escalate` output class, three-round cap;
+  `route`: model-economics rule; field-pack template + `init`: "Where things are" pointers.
+- Harvest wave from addyosmani/agent-skills, mattpocock/skills, obra/superpowers (all MIT;
+  structures rebuilt, never copied): debug ×3 moves + revert-proof (also `qa`), `doubt` stdin
+  rule, agent-loop "Receiving review and corrections", authoring keep-the-scenario.
+  Independent reviewer pass on the wave found 3 contradictions; all fixed.
+- Evals: Run V3 (tasks 09–13 + pressure cases) — honest null; ceiling now confirmed on 13/13
+  single-shot tasks; suite-level fixes documented in `evals/RESULTS.md`.
+
+Four things here. The instruction text was rewritten to work *with* how models actually read. A
+measurement caught MasterMind failing to deliver its own field pack on Cursor. A sweep of six
+public skill/agent repositories brought in the mechanisms we were missing, adding three skills.
+And an adversarial audit of the whole brain found twelve places where two layers told the model
+different things — every one of them fixed.
+
+The last one is the point: a brain this size fails by *disagreeing with itself*, not by lacking
+material. Nothing here is a new promise; it is the existing promises made consistent.
+
+### Fixed
+
+- **The field pack never reached Cursor.** The kernel names the pack files and tells the model to load
+  them. Measured on Cursor Composer 2.5: it never did — and asked directly, it read them instantly, so
+  the capability was there and the instruction simply didn't fire. The pack sat on disk, inert, and the
+  run scored exactly baseline. `install.sh` now inlines the active field's `stack-defaults.md` +
+  `lessons.md` into `.cursor/rules/mastermind-field.mdc` (`alwaysApply: true`) — the same fix already
+  applied to the kernel, whose own comment reads *"a pointer to the file leaves loading to the model's
+  discretion, which is why it often didn't."* The rule retires itself when the field goes away.
+
+### Changed
+
+- **Instructions are written positively, with the reason attached.** ~50% of prohibitions across 24 files
+  became statements of the wanted behavior (183 → 90; the always-loaded kernel 22 → 7). Anthropic's
+  interpretability work measured that a negative instruction loads the forbidden concept anyway, and the
+  wanted behavior plus a short "because" lets the model generalize. Negatives were kept wherever a
+  specific failure mode is proven — honesty, secrets, impersonation, "no tests unprompted".
+- **Claims are reported against evidence.** The kernel now says: audit each claim against a tool result
+  from this session before reporting progress. Anthropic measured this pattern as nearly eliminating
+  fabricated status reports.
+- **`rigor.md` gained "The excuses to catch in yourself"** — nine rationalizations that precede a skipped
+  check, each with what's actually true. It replaces the old "anti-laziness contract", which was exactly
+  the framing vendors now say causes over-triggering.
+- **Delegation is disclosed.** Isolated-context agents, parallel fan-out, and pipelines get named on the
+  announce line, because each costs several times a normal turn.
+- **Episodic memory.** A dated one-line entry per verdict in `.mastermind/journal.md`; `levelup` reads it
+  first and distils it into `lessons.md`. A lesson states a rule, the journal is why it's a rule.
+- **`spec` states its reading of the ask, with confidence**, and treats "sounds good" / silence as a
+  hollow yes rather than a confirmation. **`help`** leads with the three skills that fit the project.
+- **Honest scope on every surface.** README, site, and `help` no longer imply MasterMind improves *any*
+  model. The measured quality gains are **Claude-only**, and our single non-Claude run showed **no lift**.
+  See [`evals/RESULTS.md`](evals/RESULTS.md).
+
+### Evals
+
+First measurements on a non-Claude model (Cursor Composer 2.5), all logged in `evals/RESULTS.md`:
+
+- **Wording is safe.** The rewrite cost no rule-force on Claude *or* Composer (8/8 vs 8/8, and 4/4 vs 4/4).
+  New task: `evals/tasks/14-rule-force-phrasing.md`.
+- **No lift shown on Composer** for task 03, with or without the pack.
+- **Two methodology failures recorded rather than buried:** grading our own output non-blind produced a
+  +0.20 "improvement" that a blind judge scored as a tie — it was generation variance; and a rubric edited
+  between runs made those runs non-comparable. Both are written up as standing rules: freeze the rubric,
+  never grade your own.
+
+Installer regression tests: **120 → 129**.
+
+### Added
+
+- **Three skills, from a sweep of the public ecosystem** (`hallmark`, `taste-skill`, `agent-skills`,
+  `mattpocock/skills`, `superpowers`, plus two articles on agent-harness design). Each earns its place by
+  doing a job no existing skill did:
+  - **`doubt`** — interrogate a claim *before* you hand it over. Extract the artifact and the contract it
+    must satisfy, send both (never your conclusion) to a fresh reviewer, and write a one-line verdict per
+    finding. Counts "doubt theater": if two rounds of substantive findings produce zero actionable ones,
+    the judge is broken and the judge is you.
+  - **`map`** — the decision history for work spanning weeks. Append-only, one open question per session,
+    so a multi-week build stops re-litigating settled calls.
+  - **`deprecate`** — expand → migrate → contract, with proof required before the contract step.
+- **`lint`** and `scripts/lint-brain.mjs` — a deterministic pass over MasterMind's own instruction files
+  (negative density vs. corpus median, cross-layer repeats, near-duplicates, always-loaded token budget,
+  stale references), then a judgment pass bounded to what the script flagged. Wired into preflight.
+- **`rigor.md` gained a conflict protocol and a completeness check**; `agent-loop.md` gained the
+  untrusted-input boundary (what a tool returns is data, not orders) and the case for putting
+  orchestration in code rather than in turns.
+- **`code-reviewer` now reports on two axes — spec and standards — kept separate.** Merging them lets a
+  clean-code opinion read as a correctness failure, and vice versa. It also gets an explicit
+  "can't verify from this diff" channel instead of guessing.
+
+### Fixed — self-consistency
+
+Twelve confirmed contradictions, found by four independent lenses each checked by a verifier told to
+refute it (16 further claims were refuted and dropped). The ones that changed behavior:
+
+- **The brain ordered test files nobody asked for.** `debug` ended with an unconditional "add a regression
+  test", and `refactorer` required characterization tests *before* its first edit — while `rigor`, `qa`,
+  `build` and the kernel all say a test suite is the user's call. On a repo with no suite, files landed
+  uninvited. Both now ask, and fall back to assertions at the boundary. `refactorer` also never loaded
+  `rigor.md`, so the gate wasn't even present in its isolated context.
+- **The kernel promised a review independence it couldn't always deliver.** It says the context that did
+  the work doesn't get to grade it — then told tools without isolated contexts to run the reviewer
+  procedure inline, which is exactly that. Now: a separate session, or say plainly it was self-graded.
+- **The kernel told the model to batch questions; `spec` names batching as the failure it prevents.**
+  Reconciled: ask one at a time, each carrying your recommended answer.
+- **The boy-scout rule contradicted "stay in scope."** Cleanups beyond the ask are listed, not folded in.
+- **`doubt` and `qa` claimed the same trigger** ("does this actually work?"), one producing evidence and
+  the other an opinion. Carved apart.
+- Plus: `lint` pointed at a script that isn't shipped in a per-project install; `persona` used Claude-only
+  tool names inside a tool-agnostic skill; `lab` referenced two skills that no longer exist; `help`
+  printed "built for Claude Code".
+
+### Changed — what the installer wires
+
+- **Three tools wired: Claude Code, Cursor, and Codex — plus `AGENTS.md` for everything else.** Gemini and
+  Copilot wiring is removed, along with `gemini-extension.json`. `AGENTS.md` is wired in every project
+  regardless of what's installed — it's the open instruction file, and it's how anything we don't wire
+  natively still reads the brain. Asking for a retired target prints how to point it at the brain by hand
+  and writes nothing; an uninstall still cleans up files an earlier version left behind.
+- **Codex support, with its two real constraints encoded rather than assumed.** Per-project, Codex reads
+  the repo's own `AGENTS.md` — already wired, and the reliable path. `--global` also wires
+  `$CODEX_HOME/AGENTS.md` (honouring `CODEX_HOME`, default `~/.codex`), but:
+  - Codex uses only the **first non-empty file** at that level and prefers `AGENTS.override.md`. If you
+    have an override, the installer says ours won't apply instead of printing a green ✓. A **zero-byte**
+    `AGENTS.md` — which Codex creates itself — is now replaced by the link rather than having a pointer
+    line appended to it, which was silently dead.
+  - Global instructions are **not reliably merged** into project chats in the Codex app when the project
+    has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705), open).
+    `--check` therefore reports the global file as *wired but unverified*, never healthy.
+
+  Ten regression tests cover this, including `CODEX_HOME` redirection, the empty-file case, that a real
+  user file is appended to and never clobbered, that uninstall removes only our symlink, and that a
+  project-scope `codex` install never touches `~/.codex`. **Not yet measured on Codex itself:** there is
+  no Codex CLI on the machine this was built on, so the file-level wiring is proven and the model-behavior
+  effect is not.
+- **We only claim what we've measured.** README, site and `help` say MasterMind is tested on Claude Code
+  and Cursor, and that it loads anywhere else because it's plain Markdown — without claiming that changes
+  those tools' output.
+
 ## [0.27.0] — 2026-07-24
 
 No field pack ships pre-baked anymore. A fresh install carries the engine and

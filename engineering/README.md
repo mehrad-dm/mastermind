@@ -1,8 +1,8 @@
 # MasterMind — a portable, field-parameterized genius-builder brain
 
 This folder is **MasterMind**: a **model-agnostic knowledge base** that turns any capable AI into a
-dedicated genius builder + software architect. It is plain Markdown on purpose — it works with Claude
-Code, Cursor, Copilot, ChatGPT, or a raw system prompt.
+dedicated genius builder + software architect. It is plain Markdown on purpose — no tool-specific
+mechanisms inside, so it loads from a file, a rule, or a pasted system prompt alike.
 
 ## Design principle: encode judgment, not knowledge
 
@@ -22,7 +22,7 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
 ```
 ~/.mastermind/                    # canonical, tool-neutral (symlink → the repo)
 ├── CLAUDE.md                     # the kernel — always loaded, tiny
-├── AGENTS.md                     # → CLAUDE.md (entry file for Codex & generic agents)
+├── AGENTS.md                     # → CLAUDE.md (the open entry file for agentic tools)
 ├── agents/                       # specialist roles (architect, code-reviewer, refactorer, tech-scout)
 ├── skills/                       # growable library (build, debug, spec, learn, qa, … + levelup)
 └── engineering/
@@ -77,9 +77,10 @@ Run `install.sh` once to symlink the brain to `~/.mastermind/` + each tool's ent
 `README.md` for the full table). Then:
 
 - **Claude Code** — auto-loaded via `~/.claude/CLAUDE.md` → the repo. Nothing more to do.
-- **Codex** — reads `~/.codex/AGENTS.md` → the repo. Nothing more to do.
-- **Cursor / Copilot** — add a one-line rule pointing at `~/.mastermind/CLAUDE.md`.
-- **ChatGPT / any chat** — paste `core/mindset.md` + `core/principles.md` + the field's
-  `stack-defaults.md` at the top of a session.
+- **Cursor** — `install.sh` generates `.cursor/rules/mastermind.mdc` with the kernel inlined.
+
+- **Codex** — reads the project's `AGENTS.md` → the brain. `--global` also wires `$CODEX_HOME/AGENTS.md`.
+
+Those three are the supported set. Anything else is unwired and unclaimed.
 
 Keep every file tight and high-signal. If a rule isn't load-bearing, delete it.

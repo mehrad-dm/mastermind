@@ -57,7 +57,7 @@ A lesson stays in its context; when it's true for the whole stack, promote it up
 input only — the AI never reads it.** `generate_context_anchors()` compiles each rule into that app
 directory's native, tool-enforced file:
 
-- **Claude Code / Codex:** a nested `CLAUDE.md` / `AGENTS.md` holding `@`-imports of the kernel + the
+- **Claude Code / `AGENTS.md` tools:** a nested `CLAUDE.md` / `AGENTS.md` holding `@`-imports of the kernel + the
   context's field + the context's own files. Claude Code loads nested memory by path automatically.
 - **Cursor:** a small `.cursor/rules/mastermind.mdc` with `globs: <the app glob>` — Cursor's docs call
   glob-scoped rules *"deterministically attached."* Deliberately small (a pointer, not the full
@@ -70,7 +70,7 @@ the `../..` depth so the `@`-imports resolve from the app dir. Anchors are writt
 `CLAUDE.md` content outside the markers is preserved, and re-running replaces only our block.
 
 **Why this is reliable across every model:** selection is a pure function of the file path, computed
-by the tool before the model sees anything — the same pattern ESLint/EditorConfig/Cursor/Copilot all
+by the tool before the model sees anything — the same pattern ESLint, EditorConfig and Cursor rules all
 converged on. The model never chooses which context applies; it only consumes what the tool attached.
 What still varies between models is how faithfully each *follows* the (correctly-selected) context —
 that's the models themselves, and no layer erases it.

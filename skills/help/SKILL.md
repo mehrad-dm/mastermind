@@ -10,8 +10,24 @@ lead with the one thing that matters most, then the tables. Keep it scannable. H
 
 ```
 🧠  MasterMind — a genius-builder brain for your AI
-    18 skills · 4 agents · one brain for every editor
+    22 skills · 4 agents · Claude Code · Cursor · Codex
 ```
+
+## Lead with what fits *this* project
+
+Before the full menu, name **up to three** skills that would earn their keep here right now, each with
+the reason it applies — read from what's actually in front of you (the stack, the current task, what the
+last few turns were about, whether a field pack exists yet):
+
+```text
+Most useful here right now
+  · init      — no field pack yet for this Django project; one-time setup, then I'm sharper on it
+  · lab       — there's client data in this repo; this keeps it out of git
+  · handoff   — this session is long; a handoff survives the reset
+```
+
+A full menu is a catalogue; three fitting picks are advice. Then give the tables below — the catalogue
+still matters, because the point is that the user learns what they already own.
 
 ## The one rule: you don't run commands — you just talk
 
@@ -35,11 +51,16 @@ of them by hand.
 | **route** | load only the files/skills a task actually needs | a task is non-trivial or you're unsure where to start | *"route this"* |
 | **learn** | get up to speed fast on an unfamiliar stack/API, verify assumptions | the tech is new, fast-moving, or you're guessing | *"learn how the Stripe API handles refunds"* |
 | **spike** | build a throwaway spike to learn, then rebuild properly | the right approach is genuinely unknown | *"spike a quick prototype of this"* |
-| **signature** | write in your team's style, or a named engineer's documented style | you ask it to fit your conventions / "write like X" | *"write this like Kent C. Dodds"* |
+| **signature** | capture your team's real conventions as durable rules it follows | you ask it to match your codebase / keep correcting the same thing | *"make it match our patterns"* |
+| **persona** | write in the documented public style of a named engineer, cited | you ask for someone's style ("write like X") | *"write this like Kent C. Dodds"* |
 | **explain** | write AI-friendly usage docs beside an internal package | an internal package has little/no docs (asks first) | *"explain this package"* |
 | **prompt** | sharpen a vague prompt into a precise, AI-ready one | you ask to optimize/fix a prompt for an AI | *"improve this prompt"* |
 | **lab** | set up a private, gitignored quarantine for confidential data | before capturing project/client-specific notes | *"set up a lab here"* |
 | **levelup** | improve MasterMind's own knowledge (lessons, curriculum, new field) | after a correction/review, or to refresh standards | *"levelup — remember this"* |
+| **doubt** | interrogate a claim before handing it over — adversarial, reviewer never sees your conclusion | you're about to say "it works", or a review came back suspiciously clean | *"doubt this"* |
+| **deprecate** | remove/migrate/retire safely — expand → migrate → contract | deleting a feature, column, flag, or endpoint | *"can we delete this?"* |
+| **map** | a durable decision map for multi-week work | work spanning many sessions; "why did we decide X?" | *"map this project"* |
+| **lint** | check MasterMind's own files for bloat, repeated rules, contradictions | before a release, or the brain feels bloated | *"lint the brain"* |
 | **handoff** | write a concise handoff so work survives a reset/teammate | before a long-task `/clear`, pausing, or handing off | *"write a handoff"* |
 | **help** | show this menu — what every skill/agent does and when it fires | you ask "what can you do?" / "help" / "how do I use this" | *"what can you do?"* |
 

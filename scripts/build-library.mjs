@@ -62,6 +62,20 @@ items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name
 // Neighbours for prev/next, wrapping around so the library is browsable end to end.
 const short = (t) => t.split(/\s+—\s+/)[1] ?? t
 
+// <title> is a search result, not a headline. Google truncates it around 60 characters, and
+// these headings are full editorial sentences — "Code reviewer — the second pair of eyes that
+// never saw your reasoning · MasterMind" is 82. Keep the whole thing when it fits; otherwise
+// fall back to the part before the em-dash. The long form still renders on the page, from
+// `heading`, so nothing is lost to the reader.
+const seoTitle = (t) => {
+  const full = `${t} · MasterMind`
+  return full.length <= 60 ? full : `${t.split(/\s+—\s+/)[0]} · MasterMind`
+}
+
+// Meta descriptions get cut near 160 characters; 300 guaranteed a mid-word ellipsis in the
+// SERP. Trim on a word boundary instead.
+const metaDesc = (s) => (s.length <= 155 ? s : `${s.slice(0, 155).replace(/\s+\S*$/, '')}…`)
+
 const page = (it, i, all) => {
   const prev = all[(i - 1 + all.length) % all.length]
   const next = all[(i + 1) % all.length]
@@ -70,8 +84,8 @@ layout: ../../layouts/Library.astro
 name: ${q(it.name)}
 kind: ${q(it.kind)}
 heading: ${q(it.title)}
-title: ${q(`${it.title} · MasterMind`)}
-description: ${q(it.blurb.slice(0, 300))}
+title: ${q(seoTitle(it.title))}
+description: ${q(metaDesc(it.blurb))}
 blurb: ${q(it.blurb)}
 prevName: ${q(prev.name)}
 prevBlurb: ${q(short(prev.title))}

@@ -2,21 +2,25 @@
 # MasterMind installer — safe, idempotent, self-healing.
 #
 # Two scopes:
-#   (default) PER-PROJECT — wires MasterMind into the CURRENT project, for every AI
-#             tool you have (Claude Code, Codex, Cursor, Gemini, Copilot). Active only
-#             here. Run it in each project you want it in.
-#   --global              — wires ~/.claude / ~/.codex, so Claude Code + Codex get it
-#             in EVERY project. (Cursor/Copilot/Gemini config is per-project by design.)
+#   (default) PER-PROJECT — wires MasterMind into the CURRENT project: Claude Code
+#             (.claude/), Cursor (.cursor/rules/), and AGENTS.md — the open instruction
+#             file every other agentic tool reads. Active only here. Run it in each
+#             project you want it in.
+#   --global              — wires ~/.claude, so Claude Code gets it in EVERY project.
+#             (Cursor rules and AGENTS.md are per-project by design.)
+#
+# Supported: Claude Code, Cursor, Codex. The brain is plain Markdown, so another tool that reads
+# an instruction file may load it too — but we don't wire it, test it, or claim it.
 #
 # You install FROM the clone at ~/.mastermind. Re-run anytime — ESPECIALLY after `git pull`
 # — to refresh. It NEVER destroys your data: a real CLAUDE.md is backed up, an existing
-# AGENTS.md / GEMINI.md / copilot file is appended to (never overwritten), and a project's
-# own lessons are kept across updates.
+# AGENTS.md is appended to (never overwritten), and a project's own lessons are kept
+# across updates.
 #
 # Usage:
 #   cd my-project && ~/.mastermind/install.sh          # this project, all your tools (isolated)
 #   cd my-project && ~/.mastermind/install.sh --shared # opt into the one shared clone instead
-#   ~/.mastermind/install.sh --global                  # Claude+Codex in every project (shared)
+#   ~/.mastermind/install.sh --global                  # Claude Code in every project (shared)
 #   ~/.mastermind/install.sh --check                   # doctor (add --global to check global)
 #   ~/.mastermind/install.sh --uninstall               # remove from this project (or --global)
 #   cd my-project && ~/.mastermind/install.sh cursor   # only the named tool(s)
@@ -86,12 +90,17 @@ else
   PROJECT="$(find_project_root)"
 fi
 
-# Scope → where Claude/Codex get wired (project-local by default, home with --global).
+# Scope → where Claude gets wired (project-local by default, home with --global).
+# AGENTS.md is a PROJECT file by convention, so it stays empty under --global and every use of
+# it is guarded. Codex is the one tool with a real global instruction file of its own
+# (`$CODEX_HOME/AGENTS.md`, default ~/.codex) — see wire_codex_global below for the caveat.
 if [ "$SCOPE" = global ]; then
-  CLAUDE_DIR="$HOME/.claude"; CODEX_AGENTS="$HOME/.codex/AGENTS.md"
+  CLAUDE_DIR="$HOME/.claude"; AGENTS_FILE=""
 else
-  CLAUDE_DIR="$PROJECT/.claude";  CODEX_AGENTS="$PROJECT/AGENTS.md"
+  CLAUDE_DIR="$PROJECT/.claude";  AGENTS_FILE="$PROJECT/AGENTS.md"
 fi
+CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
+CODEX_GLOBAL="$CODEX_HOME_DIR/AGENTS.md"
 
 # Which brain does this project actually read? The shared clone, or its own copy.
 # Resolved HERE, before anything that inspects links: `is_ours` and the uninstall block
@@ -168,9 +177,9 @@ link_skill() {
   return 0
 }
 
-# Wire an instruction file (AGENTS.md / GEMINI.md / copilot-instructions.md) to the
-# brain WITHOUT clobbering: if absent, symlink to the full brain; if the project
-# already has one, append a one-line pointer (idempotent).
+# Wire an instruction file (AGENTS.md) to the brain WITHOUT clobbering: if absent,
+# symlink to the full brain; if the project already has one, append a one-line pointer
+# (idempotent).
 wire_brain_file() {
   local dst="$1" src="$2"
   if [ "$MODE" = check ]; then
@@ -179,10 +188,37 @@ wire_brain_file() {
     return
   fi
   mkdir -p "$(dirname "$dst")"
-  if [ ! -e "$dst" ] || [ -L "$dst" ]; then ln -sfn "$src" "$dst"; ok "$(basename "$dst") linked"
+  # A zero-byte file is nothing to preserve — link over it rather than appending a pointer to
+  # an empty file. Codex creates an empty ~/.codex/AGENTS.md on its own, and the old behaviour
+  # left it as a one-line pointer that Codex may not follow.
+  if [ ! -e "$dst" ] || [ -L "$dst" ] || { [ -f "$dst" ] && [ ! -s "$dst" ]; }; then
+    ln -sfn "$src" "$dst"; ok "$(basename "$dst") linked"
   elif grep -q 'mastermind/CLAUDE.md' "$dst"; then ok "$(basename "$dst") already wired"
   else printf '\n%s\n' "$HINT" >> "$dst"; ok "appended MasterMind pointer to your $(basename "$dst")"
   fi
+}
+
+# Codex's own global instruction file. Two vendor behaviours this has to respect, both from
+# the Codex docs (developers.openai.com/codex/guides/agents-md), not from guesswork:
+#
+#  1. Codex reads AGENTS.override.md FIRST and uses only the first non-empty file at that level.
+#     If the user has an override, ours is dead text — say so instead of printing a green ✓.
+#  2. Global instructions are NOT reliably merged into project chats in the Codex app when the
+#     project has its own AGENTS.md (openai/codex#27705, open). So the project-level file is the
+#     load-bearing path; this one is a bonus, and --check reports it as unverified rather than
+#     healthy. Do not claim global Codex wiring works until that issue closes.
+wire_codex_global() {
+  local ovr="$CODEX_HOME_DIR/AGENTS.override.md"
+  if [ "$MODE" = check ]; then
+    if [ -s "$ovr" ]; then warn "$CODEX_HOME_DIR/AGENTS.override.md takes priority — MasterMind's global file is ignored by Codex"; return 0; fi
+    if is_wired "$CODEX_GLOBAL"; then warn "$CODEX_GLOBAL wired (may not reach project chats — openai/codex#27705)"
+    else bad "$CODEX_GLOBAL not wired to MasterMind"; ISSUES=$((ISSUES + 1)); fi
+    return 0
+  fi
+  wire_brain_file "$CODEX_GLOBAL" "$BRAIN/AGENTS.md"
+  [ -s "$ovr" ] && warn "you have AGENTS.override.md — Codex reads that instead, so this file won't apply"
+  warn "Codex may not merge global instructions into a project that has its own AGENTS.md (openai/codex#27705) — run install.sh inside each project for the reliable path"
+  return 0
 }
 
 # Cursor rule (its own file, always ours) — needs alwaysApply frontmatter to load.
@@ -206,24 +242,51 @@ wire_cursor() {
     cat "$BRAIN/CLAUDE.md"
   } > "$dst"
   ok ".cursor/rules/mastermind.mdc — full kernel inlined"
+  wire_cursor_field
   wire_cursor_hook
 }
 
-# Copilot CLI reads every .github/hooks/*.json, so we ship our OWN file — no merging into
-# anyone's config and no clobber risk. Its sessionStart hook injects stdout's
-# `additionalContext` as a prepended user message (the `sdk` shape).
-#
-# Copilot exposes no compaction event, so this is startup-only: the brain reloads per
-# session but may still fade inside a long one. Reported as such by --check.
-wire_copilot_hook() {
-  local dst="$PROJECT/.github/hooks/mastermind.json"
-  if [ "$MODE" = check ]; then
-    if [ -f "$dst" ]; then ok ".github/hooks/mastermind.json (startup only)"; fi
-    return 0
+# The field pack, inlined for Cursor — same lesson as the kernel above, learned again the hard way.
+# The kernel *names* the pack files and tells the model to load them. Measured 2026-07-26 on Cursor
+# Composer 2.5: it never did. Asked directly, it read them instantly — so the capability was there and
+# the instruction simply didn't fire, leaving the pack inert and the run scoring exactly baseline.
+# Anything that must reach the model belongs in what the harness injects, not in prose it may decline.
+# Only the two files the kernel calls behavior-changing go here; mentors/curriculum/databases stay
+# on-disk and on-demand, so this costs a bounded amount of context rather than the whole pack.
+wire_cursor_field() {
+  local dst="$PROJECT/.cursor/rules/mastermind-field.mdc"
+  local af="$BRAIN/engineering/active-field.md" field pdir
+  field="$(sed -n 's/^[[:space:]]*[-*][[:space:]]*\*\*Field pack:\*\*[[:space:]]*`\([^`]*\)`.*/\1/p' "$af" 2>/dev/null | head -1)"
+  field="${field%/}"; field="${field##*/}"
+
+  # No field yet (a fresh install ships none) → nothing to inline, and a stale rule must go.
+  if [ -z "$field" ] || [ ! -d "$BRAIN/engineering/fields/$field" ]; then
+    [ "$MODE" = check ] || rm -f "$dst"
+    return
   fi
-  mkdir -p "$PROJECT/.github/hooks"
-  printf '{\n  "version": 1,\n  "hooks": {\n    "sessionStart": [\n      {\n        "type": "command",\n        "bash": "%s/hooks/session-start.sh sdk"\n      }\n    ]\n  }\n}\n' "$BRAIN" > "$dst"
-  ok ".github/hooks/mastermind.json — reloads each session (no compaction event in Copilot)"
+  pdir="$BRAIN/engineering/fields/$field"
+
+  if [ "$MODE" = check ]; then
+    if [ -f "$dst" ]; then ok ".cursor/rules/mastermind-field.mdc — $field pack inlined"
+    else bad "field pack '$field' exists but is not delivered to Cursor — re-run install.sh"; ISSUES=$((ISSUES + 1)); fi
+    return
+  fi
+
+  local f had=0
+  { printf -- '---\nalwaysApply: true\n---\n'
+    printf -- '<!-- Generated by ~/.mastermind/install.sh — do not edit. Re-run install.sh to refresh. -->\n'
+    printf -- '\n# Active field pack: %s\n\nThe stack knowledge for this project. Apply it as your default;\n' "$field"
+    printf -- 'the rest of the pack (mentors, curriculum, audit rules) is on disk under\n`.mastermind/engineering/fields/%s/` and loads on demand.\n' "$field"
+    for f in stack-defaults.md lessons.md; do
+      [ -f "$pdir/$f" ] || continue
+      printf -- '\n\n---\n\n<!-- %s -->\n\n' "$f"; cat "$pdir/$f"; had=1
+    done
+  } > "$dst"
+
+  if [ "$had" = 0 ]; then rm -f "$dst"; return; fi
+  local kb=$(( $(wc -c < "$dst") / 1024 ))
+  ok ".cursor/rules/mastermind-field.mdc — $field pack inlined (${kb}KB)"
+  [ "$kb" -gt 60 ] && warn "that pack is large for always-on context — prune it with levelup, or Cursor pays it every request"
   return 0
 }
 
@@ -409,23 +472,27 @@ remove_context_anchors() {
 
 # --- Uninstall (scoped): remove MasterMind links, leave your own files -------
 if [ "$MODE" = uninstall ]; then
-  printf 'Removing MasterMind from %s%s%s…\n' "$g" "$([ "$SCOPE" = global ] && echo "global (~/.claude, ~/.codex)" || echo "this project")" "$x"
+  printf 'Removing MasterMind from %s%s%s…\n' "$g" "$([ "$SCOPE" = global ] && echo "global (~/.claude)" || echo "this project")" "$x"
   n=0
   remove_link "$CLAUDE_DIR/CLAUDE.md"   && n=$((n + 1))
   remove_link "$CLAUDE_DIR/engineering" && n=$((n + 1))
   shopt -s nullglob
   for l in "$CLAUDE_DIR"/skills/* "$CLAUDE_DIR"/agents/*; do remove_link "$l" && n=$((n + 1)); done
   shopt -u nullglob
-  remove_link "$CODEX_AGENTS"                          && n=$((n + 1))
+  [ -n "$AGENTS_FILE" ] && { remove_link "$AGENTS_FILE" && n=$((n + 1)); }
+  # Codex's global file is ours only when it's our symlink; remove_link leaves a real file alone.
+  [ "$SCOPE" = global ] && { remove_link "$CODEX_GLOBAL" && n=$((n + 1)); }
   # Project-scoped artifacts: only ever touch these when uninstalling THIS project.
   # They live under $PROJECT, so removing them during a --global uninstall would silently
   # de-wire whatever directory the user happened to run the command from.
   if [ "$SCOPE" = project ]; then
     remove_context_anchors    # keeps each app's own CLAUDE.md content
+    if [ -f "$PROJECT/.cursor/rules/mastermind.mdc" ]; then rm -f "$PROJECT/.cursor/rules/mastermind.mdc"; ok "removed .cursor/rules/mastermind.mdc"; n=$((n + 1)); fi
+    if [ -f "$PROJECT/.cursor/rules/mastermind-field.mdc" ]; then rm -f "$PROJECT/.cursor/rules/mastermind-field.mdc"; ok "removed .cursor/rules/mastermind-field.mdc"; n=$((n + 1)); fi
+    # Retired targets (Gemini/Copilot) from earlier installs — cleaned up so an upgrade
+    # doesn't strand a file pointing at a brain that no longer wires it.
     remove_link "$PROJECT/GEMINI.md"                       && n=$((n + 1))
     remove_link "$PROJECT/.github/copilot-instructions.md" && n=$((n + 1))
-    if [ -f "$PROJECT/.cursor/rules/mastermind.mdc" ]; then rm -f "$PROJECT/.cursor/rules/mastermind.mdc"; ok "removed .cursor/rules/mastermind.mdc"; n=$((n + 1)); fi
-    # Copilot's hook file is wholly ours — no merge, so no filtering needed.
     if [ -f "$PROJECT/.github/hooks/mastermind.json" ]; then rm -f "$PROJECT/.github/hooks/mastermind.json"; ok "removed .github/hooks/mastermind.json"; n=$((n + 1)); fi
     # Cursor's hooks.json is shared: filter our entries out rather than deleting the file.
     if [ -f "$PROJECT/.cursor/hooks.json" ] && command -v node >/dev/null 2>&1; then
@@ -458,7 +525,7 @@ if [ "$MODE" = uninstall ]; then
       fs.writeFileSync(p, JSON.stringify(s,null,2)+"\n");
     ' 2>/dev/null && { ok "unwired the bootstrap hook from settings.json"; n=$((n + 1)); }
   fi
-  for f in "$CODEX_AGENTS" "$PROJECT/GEMINI.md" "$PROJECT/.github/copilot-instructions.md"; do
+  for f in ${AGENTS_FILE:+"$AGENTS_FILE"} "$PROJECT/GEMINI.md" "$PROJECT/.github/copilot-instructions.md"; do
     [ -f "$f" ] && grep -q 'mastermind/CLAUDE.md' "$f" && warn "left your $(basename "$f") in place — it still has a MasterMind pointer line you can remove by hand"
   done
   printf '\n%s✓ removed %d link(s).%s Your own files were left untouched. (~/.mastermind stays; delete the clone to remove the brain.)\n' "$g" "$n" "$x"
@@ -483,7 +550,7 @@ if [ "$SCOPE" = project ] && [ "$MODE" = install ] && { [ "$PROJECT" -ef "$REPO"
   printf 'MasterMind brain → ~/.mastermind  %s✓ ready%s\n\n' "$g" "$x"
   printf 'Now add it to a project:\n'
   printf '  cd your-project && ~/.mastermind/install.sh      (just that project — recommended)\n'
-  printf '  ~/.mastermind/install.sh --global                (Claude + Codex, every project)\n'
+  printf '  ~/.mastermind/install.sh --global                (Claude Code, every project)\n'
   exit 0
 fi
 
@@ -597,7 +664,7 @@ sync_isolated_brain() {
     local gone
     while IFS= read -r gone; do
       [ -n "$gone" ] || continue
-      case "$(basename "$gone")" in lessons.md|stack-defaults.md|active-field.md|prefs.md|ROUTER.md) continue ;; esac
+      case "$(basename "$gone")" in lessons.md|stack-defaults.md|active-field.md|prefs.md|ROUTER.md|journal.md) continue ;; esac
       # Fields belong to the project. Releases before 0.27.0 shipped a frontend pack, so its
       # files sit in those projects' manifests — retiring them here would gut a pack the project
       # has been building on. Never retire anything under engineering/fields/. (ROUTER.md moved
@@ -775,10 +842,9 @@ if [ ${#TOOLS[@]} -eq 0 ]; then
   if [ "$MODE" = check ]; then
     # verify only what's actually wired here (or globally with --global)
     is_wired "$CLAUDE_DIR/CLAUDE.md" && TOOLS+=("claude")
-    is_wired "$CODEX_AGENTS" && TOOLS+=("codex")
+    [ -n "$AGENTS_FILE" ] && is_wired "$AGENTS_FILE" && TOOLS+=("agents")
     [ -f "$PROJECT/.cursor/rules/mastermind.mdc" ] && TOOLS+=("cursor")
-    is_wired "$PROJECT/GEMINI.md" && TOOLS+=("gemini")
-    is_wired "$PROJECT/.github/copilot-instructions.md" && TOOLS+=("copilot")
+    [ "$SCOPE" = global ] && is_wired "$CODEX_GLOBAL" && TOOLS+=("codex")
     if [ ${#TOOLS[@]} -eq 0 ]; then
       bad "MasterMind isn't set up $([ "$SCOPE" = global ] && echo globally || echo 'in this project') yet."
       echo "  Run:  ~/.mastermind/install.sh$([ "$SCOPE" = global ] && echo ' --global')"
@@ -787,10 +853,14 @@ if [ ${#TOOLS[@]} -eq 0 ]; then
   else
     # install: wire the tools you have
     { command -v claude >/dev/null 2>&1 || [ -d "$HOME/.claude" ]; } && TOOLS+=("claude")
-    { command -v codex  >/dev/null 2>&1 || [ -d "$HOME/.codex" ]; }  && TOOLS+=("codex")
+    # Codex only needs wiring of its own in global scope; per-project it reads AGENTS.md,
+    # which the `agents` entry below always wires.
+    [ "$SCOPE" = global ] && { command -v codex >/dev/null 2>&1 || [ -d "$CODEX_HOME_DIR" ]; } && TOOLS+=("codex")
     if [ "$SCOPE" = project ]; then
       { command -v cursor >/dev/null 2>&1 || [ -d "$HOME/.cursor" ]; } && TOOLS+=("cursor")
-      { command -v gemini >/dev/null 2>&1 || [ -d "$HOME/.gemini" ]; } && TOOLS+=("gemini")
+      # AGENTS.md always: it's the open instruction file, it costs one symlink, and it's how
+      # every tool we don't wire natively still reads the brain.
+      TOOLS+=("agents")
     fi
     if [ ${#TOOLS[@]} -eq 0 ]; then
       warn "No supported tool detected."
@@ -805,17 +875,21 @@ fi
 for tool in ${TOOLS[@]+"${TOOLS[@]}"}; do
   case "$tool" in
     claude)  wire_claude "$CLAUDE_DIR" ;;
-    codex)   printf '\nCodex:\n';  wire_brain_file "$CODEX_AGENTS" "$BRAIN/AGENTS.md" ;;
-    gemini)
-      printf '\nGemini:\n'
-      if [ "$SCOPE" = global ]; then warn "global Gemini uses the extension:  gemini extensions install github.com/mehrad-dm/mastermind"
-      else wire_brain_file "$PROJECT/GEMINI.md" "$BRAIN/CLAUDE.md"; fi ;;
+    agents|agents.md)
+      printf '\nAGENTS.md:\n'
+      if [ -z "$AGENTS_FILE" ]; then warn "AGENTS.md is per-project — run this inside a project"
+      else wire_brain_file "$AGENTS_FILE" "$BRAIN/AGENTS.md"; fi ;;
     cursor)
       if [ "$SCOPE" = global ]; then printf '\nCursor:\n'; warn "Cursor rules are per-project — run this inside a project"
       else printf '\nCursor:\n'; wire_cursor; fi ;;
-    copilot)
-      if [ "$SCOPE" = global ]; then printf '\nCopilot:\n'; warn "Copilot instructions are per-project — run this inside a project"
-      else printf '\nGitHub Copilot:\n'; wire_brain_file "$PROJECT/.github/copilot-instructions.md" "$BRAIN/CLAUDE.md"; wire_copilot_hook; fi ;;
+    codex)
+      printf '\nCodex:\n'
+      # Project scope: Codex reads the repo's own AGENTS.md — the same file `agents` wires, so
+      # naming either tool gets Codex working. Global scope has its own file.
+      if [ "$SCOPE" = global ]; then wire_codex_global
+      else wire_brain_file "$AGENTS_FILE" "$BRAIN/AGENTS.md"; fi ;;
+    gemini|copilot)
+      warn "$tool is no longer wired automatically — MasterMind is plain Markdown, so point it at $([ "$ISOLATED" = 1 ] && echo '.mastermind/CLAUDE.md' || echo '~/.mastermind/CLAUDE.md') and it works the same." ;;
     *) warn "skipping unknown tool: $tool";;
   esac
 done
@@ -870,8 +944,8 @@ if [ "$MODE" = check ]; then
 fi
 
 if [ "$SCOPE" = project ]; then
-  printf '\n%sActive in THIS project.%s  Add another: cd there && ~/.mastermind/install.sh   ·   Claude+Codex everywhere: --global\n' "$g" "$x"
-  printf 'Using Copilot here? add it with:  ~/.mastermind/install.sh copilot\n'
+  printf '\n%sActive in THIS project.%s  Add another: cd there && ~/.mastermind/install.sh   ·   Claude Code everywhere: --global\n' "$g" "$x"
+  printf 'On another tool? It reads AGENTS.md, or point it at %s.\n' "$([ "$ISOLATED" = 1 ] && echo '.mastermind/CLAUDE.md' || echo '~/.mastermind/CLAUDE.md')"
 fi
 printf 'Update: cd ~/.mastermind && git pull && ~/.mastermind/install.sh   ·   Verify: ~/.mastermind/install.sh --check\n'
 printf "\nDone — now RESTART your tool. (Until you restart, the brain isn't loaded yet.)\n"

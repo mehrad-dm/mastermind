@@ -12,13 +12,13 @@ It's the same content as the in-chat verdict, made durable and shareable.
 
 - **On request** — "give me a report", "write up what you did", "summarize this cycle".
 - **Automatically** at the end of `build` / `qa` **only if** the project preference says so (below).
-  Default is **off** — never auto-generate otherwise.
+  Default is **off** — otherwise the in-chat verdict is the whole deliverable.
 
 ## Preference (per project) — off by default
 
 Read **`.mastermind/prefs.md`** in the project root for a `cycle-report:` line — one of:
 
-- `off` (default, and the assumption if the file/key is missing) — never auto-report.
+- `off` (default, and the assumption if the file/key is missing) — report only on explicit request.
 - `ask` — at the end of a report-worthy cycle, offer once: *"want a report? markdown / html / no"*.
 - `markdown` — always write a Markdown report.
 - `html` — always write a self-contained HTML report.
@@ -31,7 +31,7 @@ The `init` skill sets this once, at the first task. The user can change it anyti
 1. **Title + verdict** — ship / needs-work / redirect, one line why.
 2. **What changed** — files touched (path + one-line what), grouped by area.
 3. **Key decisions** — the non-obvious calls and the one-line reason (not what the model already knows).
-4. **How it was verified** — what was actually run/observed end-to-end (never "looks right").
+4. **How it was verified** — what was actually run/observed end-to-end, and what it produced.
 5. **Follow-ups / risks** — anything left, edge cases, TODOs.
 
 Keep it tight — a bloated report gets ignored (same rule as the brain: signal density beats volume).
@@ -43,7 +43,7 @@ Keep it tight — a bloated report gets ignored (same rule as the brain: signal 
 - **HTML (on request / `cycle-report: html`)** — one **self-contained** file (inline CSS, no external
   assets or scripts), lightly MasterMind-styled, so it opens in any browser. Costs more tokens.
 
-Tool-agnostic: always a plain file on disk — never rely on a tool-specific artifact surface.
+Tool-agnostic: always a plain file on disk, so it survives whatever tool wrote it.
 
 ## Cost & restraint
 

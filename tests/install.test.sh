@@ -116,23 +116,27 @@ is "all skills linked via the symlink path" "$(ls "$H/.claude/skills" 2>/dev/nul
 echo "── uninstall removes what it wired, and keeps what it didn't"
 P=$(proj unwire); mkdir -p "$P/.claude"
 printf '{"model":"opus","hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo MINE"}]}]}}' > "$P/.claude/settings.json"
-run "$P" claude cursor copilot >/dev/null 2>&1
-run "$P" --uninstall claude cursor copilot >/dev/null 2>&1
+run "$P" claude cursor >/dev/null 2>&1
+# An earlier install left this behind; uninstall must still clean it up.
+mkdir -p "$P/.github/hooks"; printf '{}\n' > "$P/.github/hooks/mastermind.json"
+run "$P" --uninstall claude cursor >/dev/null 2>&1
 is "bootstrap hook unwired" "$(python3 -c "
 import json;d=json.load(open('$P/.claude/settings.json'))
 print(len([e for e in d.get('hooks',{}).get('SessionStart',[]) if 'session-start.sh' in json.dumps(e)]))")" "0"
 is "their settings survive uninstall" "$(python3 -c "
 import json;d=json.load(open('$P/.claude/settings.json'));print(d.get('model'),'PreToolUse' in d.get('hooks',{}))")" "opus True"
-is "copilot hook file removed" "$([ -f "$P/.github/hooks/mastermind.json" ] && echo present || echo gone)" "gone"
+is "legacy copilot hook file removed" "$([ -f "$P/.github/hooks/mastermind.json" ] && echo present || echo gone)" "gone"
 
 echo "── --global --uninstall must not delete project files"
-# HOME is overridden to a throwaway dir: --global operates on ~/.claude and ~/.codex, so
-# running this against the real $HOME would uninstall the developer's own global setup —
-# which is exactly what happened once. This file promises it touches nothing in $HOME.
+# HOME is overridden to a throwaway dir: --global operates on ~/.claude, so running this
+# against the real $HOME would uninstall the developer's own global setup — which is exactly
+# what happened once. This file promises it touches nothing in $HOME.
+# AGENTS.md is the live case now: it is a PROJECT file with no global counterpart, so a
+# --global uninstall must leave it alone rather than resolving it against $PROJECT.
 P=$(proj gscope); GH="$TMP/globalhome"; mkdir -p "$GH"
-(cd "$P" && HOME="$GH" "$INSTALL" gemini >/dev/null 2>&1) || true
+(cd "$P" && HOME="$GH" "$INSTALL" agents >/dev/null 2>&1) || true
 (cd "$P" && HOME="$GH" "$INSTALL" --global --uninstall >/dev/null 2>&1) || true
-is "project GEMINI.md survives a global uninstall" "$([ -e "$P/GEMINI.md" ] && echo present || echo deleted)" "present"
+is "project AGENTS.md survives a global uninstall" "$([ -e "$P/AGENTS.md" ] && echo present || echo deleted)" "present"
 
 echo "── hook emits the right JSON shape per host"
 for pair in "cursor additional_context" "claude hookSpecificOutput" "sdk additionalContext"; do
@@ -199,8 +203,8 @@ yes_ "and it refuses out loud"   "$(run "$P" --isolated claude 2>&1 | grep -o 'i
 yes_ "no silent isolation via symlink" "$(run "$P" claude 2>&1 | grep -o 'is a symlink' || echo skipped)"
 
 echo "── isolated: the copied brain has no dangling references"
-P=$(proj isodeps); run "$P" --isolated claude codex >/dev/null 2>&1
-# route/SKILL.md points at ROUTER.md and Codex is wired to AGENTS.md; neither was copied,
+P=$(proj isodeps); run "$P" --isolated claude agents >/dev/null 2>&1
+# route/SKILL.md points at ROUTER.md and AGENTS.md is the wired instruction file; neither was copied,
 # so the isolated brain shipped broken references to its own most-used entry point.
 is "ROUTER.md copied" "$([ -f "$P/.mastermind/engineering/ROUTER.md" ] && echo y)" "y"
 is "AGENTS.md copied" "$([ -e "$P/.mastermind/AGENTS.md" ] && echo y)" "y"
@@ -246,17 +250,20 @@ run "$P" claude >/dev/null 2>&1
 is "retired shipped file still removed" "$([ -e "$P/.mastermind/skills/ghost-skill.md" ] && echo present || echo gone)" "gone"
 
 echo "── per-project installs are ISOLATED by default"
-P=$(proj defiso); run "$P" codex claude >/dev/null 2>&1
+P=$(proj defiso); run "$P" agents claude >/dev/null 2>&1
 is "plain install creates its own brain" "$([ -f "$P/.mastermind/VERSION" ] && echo y)" "y"
 yes_ "and wires to it" "$(readlink "$P/AGENTS.md" | grep -o '\.mastermind/AGENTS\.md')"
 
 echo "── --shared opts back into the single shared clone"
 # Asserted against the CLONE path specifically: an earlier version of this test grepped for
 # 'AGENTS.md$', which matches both the clone and the project copy, so it passed either way.
-P=$(proj sharedreg); run "$P" --shared codex >/dev/null 2>&1
+P=$(proj sharedreg); run "$P" --shared agents >/dev/null 2>&1
 is "no project brain created" "$([ -e "$P/.mastermind" ] && echo created || echo none)" "none"
 is "AGENTS.md targets the clone" "$(readlink "$P/AGENTS.md")" "$REPO/AGENTS.md"
-yes_ "--check calls it healthy"  "$(run "$P" --check --shared codex 2>&1 | grep -o 'healthy here')"
+yes_ "--check calls it healthy"  "$(run "$P" --check --shared agents 2>&1 | grep -o 'healthy here')"
+# `codex` was the old name for this exact target — the alias keeps old commands working.
+P=$(proj alias); run "$P" --shared codex >/dev/null 2>&1
+is "codex alias still wires AGENTS.md" "$(readlink "$P/AGENTS.md")" "$REPO/AGENTS.md"
 
 echo "── monorepo: one brain per REPO, wherever you run install from"
 # Wiring whichever directory you stood in gave one repo several brains: the root on its own
@@ -421,20 +428,80 @@ yes_ "rule is kernel-sized, not a stub" "$([ "$(wc -l < "$P/.cursor/rules/master
 printf -- '---\nalwaysApply: true\n---\nFollow ~/.mastermind/CLAUDE.md\n' > "$P/.cursor/rules/mastermind.mdc"
 yes_ "--check flags the old pointer-only rule" "$(run "$P" --check cursor 2>&1 | grep -o 'pointer-only' | head -1)"
 run "$P" cursor >/dev/null 2>&1
+
+echo "── cursor gets the FIELD PACK too, not just the kernel"
+# Measured 2026-07-26 on Composer 2.5: the kernel names the pack files and tells the model to load
+# them, and it never did — asked directly it read them instantly, so the pack sat inert and the run
+# scored exactly baseline. Same fix as the kernel: inline it, don't point at it.
+is "no field yet → no field rule" "$([ -f "$P/.cursor/rules/mastermind-field.mdc" ] && echo present || echo absent)" "absent"
+mkdir -p "$P/.mastermind/engineering/fields/webstack"
+printf 'DEFAULT-MARKER\n' > "$P/.mastermind/engineering/fields/webstack/stack-defaults.md"
+printf 'LESSON-MARKER\n'  > "$P/.mastermind/engineering/fields/webstack/lessons.md"
+printf '# Active Field\n\n- **Field pack:** `engineering/fields/webstack/`\n- **Level:** 1.\n' \
+  > "$P/.mastermind/engineering/active-field.md"
+run "$P" cursor >/dev/null 2>&1
+is "field rule written"          "$([ -f "$P/.cursor/rules/mastermind-field.mdc" ] && echo y)" "y"
+is "alwaysApply on the field rule" "$(head -2 "$P/.cursor/rules/mastermind-field.mdc" 2>/dev/null | tail -1)" "alwaysApply: true"
+is "stack-defaults inlined"      "$(grep -c 'DEFAULT-MARKER' "$P/.cursor/rules/mastermind-field.mdc" | tr -d ' ')" "1"
+is "lessons inlined"             "$(grep -c 'LESSON-MARKER' "$P/.cursor/rules/mastermind-field.mdc" | tr -d ' ')" "1"
+# and it must retire itself when the field goes away, or Cursor keeps serving a dead pack
+printf '# Active Field\n\n- **Field pack:** _none_\n- **Level:** 0.\n' > "$P/.mastermind/engineering/active-field.md"
+run "$P" cursor >/dev/null 2>&1
+is "field rule removed when field goes" "$([ -f "$P/.cursor/rules/mastermind-field.mdc" ] && echo present || echo gone)" "gone"
 is "re-running install repairs it" "$(grep -c 'Prime directives' "$P/.cursor/rules/mastermind.mdc" | tr -d ' ')" "1"
 
 echo "── cursor hooks.json"
 P=$(proj cursor); run "$P" cursor >/dev/null
 is "sessionStart + preCompact wired" "$(python3 -c "import json;d=json.load(open('$P/.cursor/hooks.json'));print(len(d['hooks']['sessionStart'])+len(d['hooks']['preCompact']))" 2>/dev/null)" "2"
 
-echo "── copilot hooks file (own file, no merge)"
-P=$(proj copilot); run "$P" copilot >/dev/null
-is "written to .github/hooks" "$([ -f "$P/.github/hooks/mastermind.json" ] && echo y)" "y"
-is "matches documented schema" "$(python3 -c "
-import json;d=json.load(open('$P/.github/hooks/mastermind.json'));e=d['hooks']['sessionStart'][0]
-print(d['version']==1 and e['type']=='command' and 'bash' in e)" 2>/dev/null)" "True"
-is "invokes the sdk shape Copilot reads" "$(python3 -c "
-import json;print(json.load(open('$P/.github/hooks/mastermind.json'))['hooks']['sessionStart'][0]['bash'].endswith('sdk'))" 2>/dev/null)" "True"
+echo "── codex: per-project reads the repo's own AGENTS.md"
+# Codex has no project-level file of its own — it reads AGENTS.md, so naming either tool must
+# produce the same wiring. Asking for `codex` in a project must NOT touch ~/.codex.
+P=$(proj codexproj); CH="$TMP/codexhome"; mkdir -p "$CH"
+(cd "$P" && HOME="$SANDBOX_HOME" CODEX_HOME="$CH" "$INSTALL" codex >/dev/null 2>&1) || true
+yes_ "AGENTS.md wired by name 'codex'" "$([ -L "$P/AGENTS.md" ] && echo yes)"
+is   "and CODEX_HOME untouched in project scope" "$([ -e "$CH/AGENTS.md" ] && echo present || echo none)" "none"
+
+echo "── codex: --global wires CODEX_HOME/AGENTS.md, honouring CODEX_HOME"
+P=$(proj codexglob); GH2="$TMP/cghome"; CH2="$TMP/cgcodex"; mkdir -p "$GH2" "$CH2"
+(cd "$P" && HOME="$GH2" CODEX_HOME="$CH2" "$INSTALL" --global codex >/dev/null 2>&1) || true
+yes_ "CODEX_HOME/AGENTS.md linked to the brain" "$([ -L "$CH2/AGENTS.md" ] && echo yes)"
+# The docs say Codex uses only the first NON-EMPTY file at that level, and Codex creates an
+# empty one itself — a pointer appended to a 0-byte file was the old, silently-dead behaviour.
+P=$(proj codexempty); CH3="$TMP/cgempty"; GH3="$TMP/cgemptyhome"; mkdir -p "$CH3" "$GH3"; : > "$CH3/AGENTS.md"
+(cd "$P" && HOME="$GH3" CODEX_HOME="$CH3" "$INSTALL" --global codex >/dev/null 2>&1) || true
+yes_ "an empty AGENTS.md is replaced by the link, not appended to" "$([ -L "$CH3/AGENTS.md" ] && echo yes)"
+# A real file the user wrote is still never clobbered.
+P=$(proj codexown); CH4="$TMP/cgown"; GH4="$TMP/cgownhome"; mkdir -p "$CH4" "$GH4"; printf 'MY OWN RULES\n' > "$CH4/AGENTS.md"
+(cd "$P" && HOME="$GH4" CODEX_HOME="$CH4" "$INSTALL" --global codex >/dev/null 2>&1) || true
+yes_ "their own global AGENTS.md content survives" "$(grep -c 'MY OWN RULES' "$CH4/AGENTS.md")"
+yes_ "and gets a MasterMind pointer appended"     "$(grep -c 'mastermind/CLAUDE.md' "$CH4/AGENTS.md")"
+# AGENTS.override.md wins in Codex, so a green ✓ there would be a lie.
+P=$(proj codexovr); CH5="$TMP/cgovr"; GH5="$TMP/cgovrhome"; mkdir -p "$CH5" "$GH5"; printf 'OVERRIDE\n' > "$CH5/AGENTS.override.md"
+OUT5=$( (cd "$P" && HOME="$GH5" CODEX_HOME="$CH5" "$INSTALL" --global codex 2>&1) || true )
+yes_ "warns that AGENTS.override.md takes priority" "$(printf '%s' "$OUT5" | grep -o 'AGENTS.override.md')"
+yes_ "discloses the global-merge bug"               "$(printf '%s' "$OUT5" | grep -o 'openai/codex#27705')"
+
+echo "── codex: --global --uninstall removes only our link"
+(cd "$P" && HOME="$GH2" CODEX_HOME="$CH2" "$INSTALL" --global --uninstall >/dev/null 2>&1) || true
+is "our global codex link removed" "$([ -e "$CH2/AGENTS.md" ] && echo present || echo gone)" "gone"
+(cd "$P" && HOME="$GH4" CODEX_HOME="$CH4" "$INSTALL" --global --uninstall >/dev/null 2>&1) || true
+yes_ "their own file left in place" "$(grep -c 'MY OWN RULES' "$CH4/AGENTS.md")"
+
+echo "── retired tools are declined cleanly, never half-wired"
+# We wire only what we test (Claude, Cursor, AGENTS.md). Asking for a retired target must
+# say so and write NOTHING — a half-wired file that no longer refreshes is worse than none.
+P=$(proj retired)
+yes_ "gemini explains itself"  "$(run "$P" gemini 2>&1 | grep -o 'no longer wired automatically')"
+is   "and writes no GEMINI.md" "$([ -e "$P/GEMINI.md" ] && echo present || echo none)" "none"
+yes_ "copilot explains itself" "$(run "$P" copilot 2>&1 | grep -o 'no longer wired automatically')"
+is   "and writes no copilot file" "$([ -e "$P/.github/copilot-instructions.md" ] && echo present || echo none)" "none"
+
+echo "── AGENTS.md is wired even with no tool installed"
+# The brain is plain Markdown; AGENTS.md is how every tool we don't wire natively reads it.
+P=$(proj noagent); mkdir -p "$TMP/emptyhome"
+(cd "$P" && HOME="$TMP/emptyhome" "$INSTALL" >/dev/null 2>&1) || true
+is "AGENTS.md wired anyway" "$([ -e "$P/AGENTS.md" ] && echo y || echo n)" "y"
 
 echo
 if [ "$FAIL" -eq 0 ]; then printf '%s✓ %d passed%s\n' "$g" "$PASS" "$x"; exit 0

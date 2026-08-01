@@ -32,11 +32,11 @@ problem, and potentially a legal one.
 
 Two pieces: a quarantined space, and guards that watch the exits.
 
-**The space.** A `lab` folder inside the project holds the raw material — captured code, working notes,
+**The space.** A `lab/` folder (the quarantine's home on disk) inside the project holds the raw material — captured code, working notes,
 anything with real names in it. That folder is added to the project's ignore list, meaning your version
 control system treats it as invisible and will never include it in a save.
 
-**The list.** Inside the Lab you keep a private list of your sensitive terms: the company name, product
+**The list.** Inside the quarantine you keep a private list of your sensitive terms: the company name, product
 names, colleagues' names, internal domains. That list itself is never published either.
 
 **The guards.** Two automatic checks are installed. The first runs every time you save work, and refuses
@@ -47,7 +47,7 @@ first check was skipped. Two layers, because one can be bypassed.
 **The proof.** MasterMind deliberately tries to commit something forbidden and confirms it is blocked. A
 guard nobody has tested is not a guard; it is a belief.
 
-Underneath all of it sits one rule: **patterns leave the Lab, identities never do.** You are welcome to
+Underneath all of it sits one rule: **patterns leave the quarantine, identities never do.** You are welcome to
 extract a general lesson from confidential work — "systems of this shape tend to fail this way" — as
 long as every name has been removed. The insight travels. The identity stays behind.
 

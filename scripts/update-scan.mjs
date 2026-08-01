@@ -21,6 +21,8 @@ const d = JSON.parse(readFileSync(P, 'utf8'))
 const g = d.graph
 
 const NEW_NODES = [
+  { id: 'cli', label: 'npx mastermind-brain', kind: 'entry', sub: 'versioned npm CLI', group: '', sourceRef: 'cli/' },
+  { id: 'lab', label: 'Quarantine', kind: 'store', sub: 'private data, gitignored', group: 'Safety & honesty', sourceRef: 'lab/' },
   {
     id: 'bootstrap',
     label: 'Bootstrap hook',
@@ -29,7 +31,7 @@ const NEW_NODES = [
     group: 'Safety & honesty',
     sourceRef: 'hooks/session-start.sh',
     detail:
-      'SessionStart hook that re-injects the kernel on startup, clear, and compact. Without it the brain is read once and fades as the window fills, so long sessions silently run without MasterMind. Verified on Claude Code; wired for Cursor and Copilot CLI.',
+      'SessionStart hook that re-injects the kernel on startup, clear, and compact. Without it the brain is read once and fades as the window fills, so long sessions silently run without MasterMind. Verified on Claude Code; wired for Cursor.',
   },
   {
     id: 'installtests',
@@ -77,6 +79,11 @@ const NEW_NODES = [
 ]
 
 const NEW_EDGES = [
+  { from: 'cli', to: 'install', kind: 'triggers', label: 'drives the engine' },
+  { from: 'install', to: 'cursor', kind: 'writes', label: '.cursor/rules (kernel inlined)' },
+  { from: 'install', to: 'codex', kind: 'writes', label: 'AGENTS.md → the brain' },
+  { from: 'cursor', to: 'kernel', kind: 'reads' },
+  { from: 'codex', to: 'kernel', kind: 'reads' },
   { from: 'install', to: 'bootstrap', kind: 'writes', label: 'registers the hook' },
   { from: 'bootstrap', to: 'kernel', kind: 'writes', label: 're-injects the brain' },
   { from: 'installtests', to: 'install', kind: 'reads', label: 'verifies' },
@@ -92,7 +99,7 @@ const NEW_EDGES = [
 // Nodes retired from the map. The vendored design database and its test suite lived inside the
 // frontend pack, which 0.27.0 removed from the repo (a project builds its own field from the
 // template). They persist in the committed scan.json from earlier runs, so prune them by id.
-const DEAD_NODES = ['designdb', 'designtests']
+const DEAD_NODES = ['designdb', 'designtests', 'copilot', 'gemini'] // tool scope is Claude Code · Cursor · Codex since 0.27
 
 const byId = (arr, id) => arr.findIndex((n) => n.id === id)
 for (const n of NEW_NODES) {
@@ -118,8 +125,7 @@ g.edges = g.edges.filter((e) => !DEAD_EDGES.includes(key(e)) && !dead.has(e.from
 const have = new Set(g.edges.map(key))
 for (const e of NEW_EDGES) if (!have.has(key(e))) g.edges.push(e)
 
-// Cursor and Copilot now get the bootstrap too — reflect that they're first-class.
-for (const t of ['cursor', 'copilot']) {
+for (const t of ['cursor']) {
   const i = byId(g.nodes, t)
   if (i >= 0) g.nodes[i].sub = 'kernel + bootstrap hook'
 }

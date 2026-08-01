@@ -16,27 +16,27 @@ APIs drift, so learn the version that's actually here.
 
 ## 2. Map the skill-tree
 Use the relevant **roadmap.sh** role/topic map as the checklist of what matters and to spot your gaps.
-Don't learn the whole tree — learn the branch the task touches.
+Learn just the branch the task touches; the rest of the tree waits.
 
 ## 3. Learn to current standards
 Read the **primary docs** for the specific APIs the task needs (verify against the installed version)
 and skim one battle-tested example (the field's `curriculum.md` lists them). Prefer primary sources;
-never rely on stale memory (the field's `learning-sources.md`).
+read them fresh, since memory goes stale (the field's `learning-sources.md`).
 
 ## 4. Ground it in this codebase
 Grep for how the pattern is already used here and match it. Consistency beats novelty.
 
 ## 5. Grill your assumptions before you build
-The costly bugs come from assumptions you never checked. Before committing code:
+The costly bugs come from unchecked assumptions. Before committing code:
 
 - **List what you believe** about the APIs you'll use (behavior, signatures, return values, limits,
   versions, edge cases) — specifically ("`getFile` streams any size" — true?).
 - **Answer from the source yourself first** — verify each against the docs/types/actual source (for the
-  *installed* version). Confirm ✓, correct ✗, or mark unknown ❓. Never ask the user what the code/docs answer.
-- **For each remaining unknown, propose — don't just flag.** State a best-guess resolution **+ confidence**
-  ("probably streams; ~70%") so a human can confirm or correct, not author it. Serve interdependent
-  unknowns one at a time. Anything still unconfirmed becomes an explicit risk or a tiny `spike` — never a
-  silent guess. **No load-bearing assumption ships unverified.**
+  *installed* version). Confirm ✓, correct ✗, or mark unknown ❓. Anything the code/docs answer, you answer.
+- **For each remaining unknown, propose a resolution — a bare flag is half the job.** State a best guess
+  **+ confidence** ("probably streams; ~70%") so a human can confirm or correct, not author it. Serve
+  interdependent unknowns one at a time. Anything still unconfirmed becomes an explicit risk or a tiny
+  `spike` — never a silent guess. **No load-bearing assumption ships unverified.**
 
 ## Output & economy
 Return a tight working brief: the stack + versions, the few APIs/patterns the task needs, the gotchas

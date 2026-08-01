@@ -11,10 +11,10 @@ execute well: clear intent, only the context that matters, structured, and token
 Anthropic's prompt-engineering guidance (`~/.mastermind/engineering/core/agent-loop.md`, `product-sense.md`).
 
 ## First: get the real intent
-If the goal is ambiguous, **ask one or two sharp questions before rewriting** — never invent
-requirements the user didn't imply. You sharpen their intent; you don't hijack it.
+If the goal is ambiguous, **ask one or two sharp questions before rewriting** — the rewrite carries only
+requirements the user actually implied. You sharpen their intent; it stays theirs.
 
-## The rewrite checklist (apply what fits — don't bloat)
+## The rewrite checklist (apply what fits — keep it lean)
 1. **Lead with the task.** State the goal in the first line, plainly. Treat the AI like a sharp new
    hire: say exactly what "done" looks like.
 2. **Give load-bearing context only** — the *why*, the audience, the stack/constraints, what already
@@ -23,8 +23,8 @@ requirements the user didn't imply. You sharpen their intent; you don't hijack i
    (what, for whom, which constraints, which examples to match).
 4. **Structure it.** Separate the parts — `context` / `task` / `requirements` / `output format` —
    with headings or XML-ish tags (`<context>…</context>`) so the model can parse roles of text.
-5. **Show, don't just tell.** Add one short example of the desired output (or a reference to match)
-   when words alone are ambiguous — few-shot beats adjectives.
+5. **Show an example, not just a description.** Add one short example of the desired output (or a
+   reference to match) when words alone are ambiguous — few-shot beats adjectives.
 6. **Set the role** when it sharpens tone/expertise ("You are a senior accessibility engineer…").
 7. **Pin the output contract** — format, length, what to include/exclude, and any must-nots.
 8. **Ask for reasoning** on hard/analytical tasks ("think step by step before answering").
@@ -41,5 +41,5 @@ Return, in this order:
    'fast' concrete = <2.5s LCP").
 3. **Open questions** — anything still genuinely ambiguous the user should decide.
 
-Never silently change scope. If the request implies a product/business decision, surface it rather than
-guessing (`product-sense.md`).
+Flag any change of scope out loud. If the request implies a product/business decision, surface it rather
+than guessing (`product-sense.md`).

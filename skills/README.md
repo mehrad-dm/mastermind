@@ -20,10 +20,12 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 | --- | --- |
 | [`build`](./build/SKILL.md) | …ask to build a feature. The flagship: design → implement-to-rigor → verify → review → capture. |
 | [`debug`](./debug/SKILL.md) | …hit a hard bug. Structured six-phase debugging — evidence over guessing. |
-| [`perf`](./perf/SKILL.md) | …something's slow ("why is this slow?"). Measure → find the real bottleneck → fix the biggest → verify. Not a correctness bug (that's `debug`). |
+| [`performance`](./performance/SKILL.md) | …something's slow ("why is this slow?"). Measure → find the real bottleneck → fix the biggest → verify. Not a correctness bug (that's `debug`). |
 | [`qa`](./qa/SKILL.md) | …finish something / want it tested. Prove it works end-to-end; tests / TDD only if you say so (offered after a build). |
 | [`report`](./report/SKILL.md) | …ask for a report / write-up of a cycle (or automatically at the end of build/qa, if you turned it on). A shareable record — Markdown default, HTML optional. Opt-in, off by default. |
 | [`spike`](./spike/SKILL.md) | …face a risky unknown. A fast throwaway spike to learn, then rebuild properly. |
+| [`doubt`](./doubt/SKILL.md) | …are about to claim something works, or a review came back suspiciously clean. Interrogates the claim *before* handoff — the reviewer never sees your conclusion. |
+| [`deprecate`](./deprecate/SKILL.md) | …need to remove, migrate, or retire something. Expand → migrate → contract, and proof that nothing still reads it. |
 
 ## Think first
 | Skill | What it does (auto-applies when you…) |
@@ -39,8 +41,10 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 | [`signature`](./signature/SKILL.md) | …want MasterMind to fit your team. Capture the codebase's real patterns (Lab, patterns-not-people) → name-free rules the AI follows. Proposes, never auto-applies. |
 | [`persona`](./persona/SKILL.md) | …want code in a named public engineer's style ("write it like *X*"). Grounded in their documented work, cited; homage, never impersonation. |
 | [`explain`](./explain/SKILL.md) | …have an under-documented internal package. Generate AI-friendly per-unit usage docs so any model understands it. **Asks first.** |
-| [`lab`](./lab/SKILL.md) | …need to capture sensitive project data safely. Sets up a private, gitignored Lab + the safety guards. |
+| [`quarantine`](./quarantine/SKILL.md) | …need to capture sensitive project data safely. Sets up a private, gitignored `lab/` quarantine + the safety guards. |
 | [`levelup`](./levelup/SKILL.md) | …teach MasterMind something durable. Capture a lesson / refresh a field / bootstrap a new field. |
+| [`lint`](./lint/SKILL.md) | …suspect MasterMind's own files have drifted — bloat, a rule repeated across layers, two layers disagreeing. Counts first, judges only what it flagged, and **proposes; never edits**. |
+| [`roadmap`](./roadmap/SKILL.md) | …work spans weeks and the decisions are piling up. A durable decision map that survives dozens of sessions — what's decided, what's still open, what's deliberately out. |
 | [`handoff`](./handoff/SKILL.md) | …pause or hand off. A concise handoff so work survives a `/clear` or a new session. |
 
 > **Field-specific abilities** can live inside a field pack rather than here, and load with that field

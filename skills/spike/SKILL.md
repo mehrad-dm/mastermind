@@ -6,17 +6,17 @@ description: Use when the right approach is genuinely unknown and reality will t
 # MasterMind — Prototype
 
 Tight feedback loops beat big plans when the path is unclear (`~/.mastermind/engineering/core/agent-loop.md`, `mindset.md` →
-design it twice). A spike buys knowledge cheaply — as long as you don't mistake it for the product.
+design it twice). A spike buys knowledge cheaply — the discipline is keeping it knowledge, not product.
 
 ## Method
 
 1. **Name the question** — the ONE risky unknown this spike will answer ("can the Worker stream a >20 MB
-   file?", "does this library handle X?"). If there's no question, you don't need a prototype.
+   file?", "does this library handle X?"). One named question is the entry price — find it first.
 2. **Build the smallest thing that answers it** — hard-code, skip error handling, skip tests, skip
    polish. Speed over quality; it's throwaway.
 3. **Extract the learning** — what did reality teach? Write down the answer and any surprises.
 4. **Throw it away and rebuild to standard** — the real version gets the full loop (design, rigor,
-   tests, review). **Do not ship the spike.**
+   tests, review). **Ship the rebuild; the spike gets discarded.**
 
 ## Rules
 **Time-box: 5 build-and-run attempts, roughly 30 minutes** — one question needs a handful of tries, not a

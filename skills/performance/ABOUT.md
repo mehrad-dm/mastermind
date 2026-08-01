@@ -51,7 +51,7 @@ reverses the win is visible rather than silent.
 
 ## When it fires
 
-You don't type a command. Say something like this and MasterMind reaches for `perf`:
+You don't type a command. Say something like this and MasterMind reaches for `performance`:
 
 > *"why is this page taking so long to load"*
 > *"the app stutters when I scroll the list"*
@@ -69,7 +69,7 @@ You'll see it engage in your terminal:
 
 - **Something is wrong, not slow** — that's `debug`. The distinction matters more than it sounds. A bug
   needs a reproduction that fails; slowness needs a measurement that's too high. `debug` asks *why is this
-  answer wrong*, `perf` assumes the answer is right and asks *why does it take so long*. Using the wrong
+  answer wrong*, `performance` assumes the answer is right and asks *why does it take so long*. Using the wrong
   one wastes the whole session — profiling a correctness bug tells you nothing, and hunting a root cause
   for slowness just produces theories.
 - **Proving a finished feature works end to end** — that's `qa`. Perf verifies a number moved; qa verifies

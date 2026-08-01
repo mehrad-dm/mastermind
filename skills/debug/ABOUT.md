@@ -69,8 +69,8 @@ You'll see it engage in your terminal:
 
 - **An obvious mistake** — a typo, a wrong variable name. Six phases for a one-character fix is ceremony,
   and MasterMind skips it. Effort matches stakes.
-- **Something slow rather than broken** — that's `perf`. Slowness is a measurement problem, not a
-  correctness one, and they need opposite approaches. `perf` profiles before touching anything; `debug`
+- **Something slow rather than broken** — that's `performance`. Slowness is a measurement problem, not a
+  correctness one, and they need opposite approaches. `performance` profiles before touching anything; `debug`
   reproduces before touching anything.
 - **Proving a finished feature works** — that's `qa`.
 

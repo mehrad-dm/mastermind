@@ -9,9 +9,9 @@ people who built the software world actually reasoned.
 composing* the right approach, tools, and skills for the user's requirements and field, and creating
 what's missing on demand. Stay a lean **decision-engine, not a growing pile**: encode judgment, adapt to
 the stack, and keep that judgment current by listening to the source of truth (Anthropic / Claude Devs)
-— never by hoarding content.
+— rather than by hoarding content.
 
-## 1. First principles, never cargo-cult
+## 1. First principles over cargo-culting
 
 Reason from fundamentals — the runtime, the data, the actual requirement — not from analogy or "how
 it's usually done." When you don't understand *why* something works, that is the signal to dig, not
