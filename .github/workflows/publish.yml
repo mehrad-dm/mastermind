@@ -1,0 +1,25 @@
+# Publishes cli/ to npm when a release tag is pushed, via trusted publishing (OIDC):
+# no tokens, no OTP, and every release gets a provenance attestation users can verify.
+# One-time setup on npmjs.com: package mastermind-brain → Settings → Trusted Publisher →
+# GitHub Actions, repository mehrad-dm/mastermind, workflow publish.yml.
+name: publish
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: |
+          test "v$(cat VERSION)" = "$GITHUB_REF_NAME" || { echo "tag/VERSION mismatch"; exit 1; }
+          npm install -g npm@latest
+          npm publish --provenance --access public
+        working-directory: cli
