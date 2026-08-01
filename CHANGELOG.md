@@ -4,6 +4,16 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.28.1] — 2026-08-01
+
+### Fixed
+- `npx mastermind-brain` on native Windows now fails with a clear WSL/Git-Bash message instead
+  of a cryptic bash spawn error.
+- `update` on a locally-modified `~/.mastermind` now explains the stash/discard choice instead
+  of a bare git refusal.
+- Generated-file banners recommend `npx mastermind-brain` for refreshes.
+- All three tools live-verified on the published artifacts (Claude Code · cursor-agent · codex-cli).
+
 ## [0.28.0] — 2026-08-01
 
 ### Added

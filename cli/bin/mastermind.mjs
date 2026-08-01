@@ -42,6 +42,9 @@ const fail = (msg) => {
   process.exit(1)
 }
 
+if (process.platform === 'win32') {
+  fail('Native Windows is not supported yet — run this inside WSL (or Git Bash), where it works as-is.')
+}
 try {
   execFileSync('git', ['--version'], { stdio: 'ignore' })
 } catch {
@@ -60,7 +63,10 @@ if (!existsSync(MM_HOME)) {
     console.log('↓ updating the brain')
     let onBranch = true
     try { git(['symbolic-ref', '-q', 'HEAD']) } catch { onBranch = false }
-    if (onBranch) run('git', ['pull', '--ff-only'], { cwd: MM_HOME })
+    if (onBranch) {
+      const st = run('git', ['pull', '--ff-only'], { cwd: MM_HOME })
+      if (st !== 0) fail(`update refused — ${MM_HOME} has local changes. Keep them: git -C ${MM_HOME} stash && npx mastermind-brain update. Discard them: git -C ${MM_HOME} checkout -- . && npx mastermind-brain update`)
+    }
     else {
       run('git', ['fetch', '--tags', '--depth', '1', 'origin', `refs/tags/${PIN}:refs/tags/${PIN}`], { cwd: MM_HOME })
       run('git', ['checkout', '-q', PIN], { cwd: MM_HOME })

@@ -1,6 +1,6 @@
 {
   "name": "mastermind-brain",
-  "version": "0.28.0",
+  "version": "0.28.1",
   "description": "MasterMind — a genius-builder brain for your AI coding tools (Claude Code, Cursor, Codex). Versioned, provenance-signed installer.",
   "bin": { "mastermind": "bin/mastermind.mjs" },
   "type": "module",
