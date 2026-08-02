@@ -30,7 +30,9 @@ versions_agree() {
   local want; want="$(cat "$REPO/VERSION")"
   local found
   found="$(grep -o 'version-[0-9.]*' "$REPO/README.md" | head -1 | cut -d- -f2)";      [ "$found" = "$want" ] || { echo "README badge $found ≠ $want"; return 1; }
-  for f in "$REPO/.claude-plugin/plugin.json" "$REPO/.claude-plugin/marketplace.json" "$REPO/.foglamp/scan.json" "$REPO/cli/package.json"; do
+  # scan.json is NOT in this list: its `version` field is foglamp's schema version (the
+  # literal 1, required by the API), not the repo version.
+  for f in "$REPO/.claude-plugin/plugin.json" "$REPO/.claude-plugin/marketplace.json" "$REPO/cli/package.json"; do
     grep -q "\"$want\"" "$f" || { echo "$f missing $want"; return 1; }
   done
   for f in "$SITE/src/components/Footer.astro" "$SITE/src/pages/index.astro"; do

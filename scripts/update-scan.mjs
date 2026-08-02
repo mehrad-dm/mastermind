@@ -1,8 +1,9 @@
 // Refresh .foglamp/scan.json — the architecture map published on every push. Idempotent:
 // re-running replaces the same nodes/edges by id rather than duplicating them.
 //
-// Version and counts are read from the repo, never written here: this file publishes a
-// public map, so a stale literal would ship a lie on the first skill added after a release.
+// Counts are read from the repo, never written here: this file publishes a public map, so
+// a stale literal would ship a lie on the first skill added after a release. (`version` is
+// the API's schema version, not the repo's — see the bottom.)
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
@@ -21,7 +22,9 @@ const d = JSON.parse(readFileSync(P, 'utf8'))
 const g = d.graph
 
 const NEW_NODES = [
-  { id: 'cli', label: 'npx mastermind-brain', kind: 'entry', sub: 'versioned npm CLI', group: '', sourceRef: 'cli/' },
+  // No group key: entry points (claude, cursor, codex) float ungrouped, and the API rejects
+  // an empty-string group outright.
+  { id: 'cli', label: 'npx mastermind-brain', kind: 'entry', sub: 'versioned npm CLI', sourceRef: 'cli/' },
   { id: 'lab', label: 'Quarantine', kind: 'store', sub: 'private data, gitignored', group: 'Safety & honesty', sourceRef: 'lab/' },
   {
     id: 'bootstrap',
@@ -31,7 +34,7 @@ const NEW_NODES = [
     group: 'Safety & honesty',
     sourceRef: 'hooks/session-start.sh',
     detail:
-      'SessionStart hook that re-injects the kernel on startup, clear, and compact. Without it the brain is read once and fades as the window fills, so long sessions silently run without MasterMind. Verified on Claude Code; wired for Cursor.',
+      'SessionStart hook that re-injects the kernel on startup, clear, and compact — without it the brain is read once and fades as the context fills. Verified on Claude Code; wired for Cursor.',
   },
   {
     id: 'installtests',
@@ -54,7 +57,7 @@ const NEW_NODES = [
     group: 'Knowledge',
     sourceRef: 'engineering/fields/_template/',
     detail:
-      'A swappable domain pack: what to know and which tools, for one real stack. MasterMind ships NO field — a pack tuned to someone else\'s stack is worse than none — only the scaffold at engineering/fields/_template/. On the first task, `init` detects the stack and builds the field from the template (its defaults, pitfalls, review rules); the project then owns it, and an update never rewrites or retires it.',
+      'A swappable domain pack: what to know and which tools, for one real stack. No field ships — on the first task `init` detects the stack and builds the pack from the template; the project owns it.',
   },
   {
     id: 'library',
@@ -64,7 +67,7 @@ const NEW_NODES = [
     group: 'Safety & honesty',
     sourceRef: 'scripts/build-library.mjs',
     detail:
-      'Generates one article per skill and agent from ABOUT.md files, so the public docs cannot claim a skill does something the skill does not. Refuses to build if a skill has no article; --check fails when the site is stale.',
+      'Generates one article per skill and agent from ABOUT.md files, so public docs cannot claim what a skill does not do. Refuses to build without an article; --check fails when the site is stale.',
   },
   // The catch-all for skills without their own node. Its label MUST stay count-free —
   // this map is published publicly, and a hardcoded "+11 more skills" is exactly the
@@ -80,7 +83,7 @@ const NEW_NODES = [
 
 const NEW_EDGES = [
   { from: 'cli', to: 'install', kind: 'triggers', label: 'drives the engine' },
-  { from: 'install', to: 'cursor', kind: 'writes', label: '.cursor/rules (kernel inlined)' },
+  { from: 'install', to: 'cursor', kind: 'writes', label: '.cursor/rules (kernel)' },
   { from: 'install', to: 'codex', kind: 'writes', label: 'AGENTS.md → the brain' },
   { from: 'cursor', to: 'kernel', kind: 'reads' },
   { from: 'codex', to: 'kernel', kind: 'reads' },
@@ -90,7 +93,7 @@ const NEW_EDGES = [
   // build-library.mjs reads EVERY skill's ABOUT.md and every agents/about/*.md — not the
   // `moreskills` catch-all, which is only a display grouping for the skills without their
   // own node. Pointing the edge at it implied the other skills' docs come from somewhere else.
-  { from: 'library', to: 'kernel', kind: 'reads', label: 'one page per skill + agent' },
+  { from: 'library', to: 'kernel', kind: 'reads', label: 'a page per skill + agent' },
   { from: 'ci', to: 'installtests', kind: 'triggers' },
   { from: 'ci', to: 'library', kind: 'triggers', label: 'checks docs are in sync' },
   { from: 'ci', to: 'integrity', kind: 'triggers' },
@@ -122,20 +125,42 @@ const dead = new Set(DEAD_NODES)
 
 const key = (e) => `${e.from}->${e.to}`
 g.edges = g.edges.filter((e) => !DEAD_EDGES.includes(key(e)) && !dead.has(e.from) && !dead.has(e.to))
-const have = new Set(g.edges.map(key))
-for (const e of NEW_EDGES) if (!have.has(key(e))) g.edges.push(e)
+// Replace by key, like nodes — append-only meant a corrected label never reached the
+// committed scan.json.
+for (const e of NEW_EDGES) {
+  const i = g.edges.findIndex((x) => key(x) === key(e))
+  if (i >= 0) g.edges[i] = e
+  else g.edges.push(e)
+}
 
 for (const t of ['cursor']) {
   const i = byId(g.nodes, t)
   if (i >= 0) g.nodes[i].sub = 'kernel + bootstrap hook'
 }
 
-d.version = readFileSync(join(ROOT, 'VERSION'), 'utf8').trim()
+// `version` is foglamp's SCHEMA version — the API requires the literal 1. Writing the repo
+// version here broke every republish for weeks while CI reported green.
+d.version = 1
 d.stats = {
   ...d.stats,
   agents: count('agents', (e) => e.isFile() && e.name.endsWith('.md')),
   tools: count('skills', (e) => e.isDirectory()),
 }
 
+// The API's contract, enforced here so preflight fails loudly instead of CI publishing
+// nothing: version === 1, node detail ≤ 200 chars, no empty group, edge label ≤ 24 chars.
+const bad = []
+if (d.version !== 1) bad.push('version must be the literal 1')
+for (const n of g.nodes) {
+  if (n.detail && n.detail.length > 200) bad.push(`node ${n.id}: detail ${n.detail.length} > 200 chars`)
+  if (n.group === '') bad.push(`node ${n.id}: empty group — omit the key instead`)
+}
+for (const e of g.edges)
+  if (e.label && e.label.length > 24) bad.push(`edge ${key(e)}: label ${e.label.length} > 24 chars`)
+if (bad.length) {
+  console.error('✗ foglamp contract violated:\n  ' + bad.join('\n  '))
+  process.exit(1)
+}
+
 writeFileSync(P, JSON.stringify(d, null, 2) + '\n')
-console.log(`✓ scan.json → ${g.nodes.length} nodes, ${g.edges.length} edges (v${d.version})`)
+console.log(`✓ scan.json → ${g.nodes.length} nodes, ${g.edges.length} edges`)

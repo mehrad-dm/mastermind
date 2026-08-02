@@ -27,8 +27,14 @@ jobs:
             echo "FOGLAMP_EDIT_TOKEN not set — add it as a repo secret to enable. Skipping."
             exit 0
           fi
+          # jq -e fails the job when the API rejects the payload — a 422 used to print
+          # "refreshed → null" and stay green, leaving the public map silently stale.
           jq -n --slurpfile d .foglamp/scan.json --arg t "$TOKEN" \
             '{data: $d[0], editToken: $t}' \
-          | curl -sS -X POST https://api.foglamp.dev/scan \
+          | curl -sS --fail-with-body -X POST https://api.foglamp.dev/scan \
               -H 'content-type: application/json' --data @- \
-          | jq -r '"refreshed → \(.url) · expires \(.expiresAt)"'
+          > /tmp/foglamp.json
+          # never cat the raw response: on success it echoes the edit token
+          jq -e '.url and .expiresAt' /tmp/foglamp.json > /dev/null \
+            || { echo "API rejected the scan:"; jq '{error, details}' /tmp/foglamp.json; exit 1; }
+          jq -r '"refreshed → \(.url) · expires \(.expiresAt)"' /tmp/foglamp.json

@@ -1,5 +1,5 @@
 {
-  "version": "0.28.1",
+  "version": 1,
   "project": {
     "name": "MasterMind",
     "slug": "mastermind",
@@ -178,7 +178,7 @@
         "sub": "built per project from the template",
         "group": "Knowledge",
         "sourceRef": "engineering/fields/_template/",
-        "detail": "A swappable domain pack: what to know and which tools, for one real stack. MasterMind ships NO field — a pack tuned to someone else's stack is worse than none — only the scaffold at engineering/fields/_template/. On the first task, `init` detects the stack and builds the field from the template (its defaults, pitfalls, review rules); the project then owns it, and an update never rewrites or retires it."
+        "detail": "A swappable domain pack: what to know and which tools, for one real stack. No field ships — on the first task `init` detects the stack and builds the pack from the template; the project owns it."
       },
       {
         "id": "template",
@@ -334,7 +334,7 @@
         "sub": "re-injects on compaction",
         "group": "Safety & honesty",
         "sourceRef": "hooks/session-start.sh",
-        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact. Without it the brain is read once and fades as the window fills, so long sessions silently run without MasterMind. Verified on Claude Code; wired for Cursor."
+        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact — without it the brain is read once and fades as the context fills. Verified on Claude Code; wired for Cursor."
       },
       {
         "id": "installtests",
@@ -352,14 +352,13 @@
         "sub": "docs generated from source",
         "group": "Safety & honesty",
         "sourceRef": "scripts/build-library.mjs",
-        "detail": "Generates one article per skill and agent from ABOUT.md files, so the public docs cannot claim a skill does something the skill does not. Refuses to build if a skill has no article; --check fails when the site is stale."
+        "detail": "Generates one article per skill and agent from ABOUT.md files, so public docs cannot claim what a skill does not do. Refuses to build without an article; --check fails when the site is stale."
       },
       {
         "id": "cli",
         "label": "npx mastermind-brain",
         "kind": "entry",
         "sub": "versioned npm CLI",
-        "group": "",
         "sourceRef": "cli/"
       }
     ],
@@ -566,7 +565,7 @@
         "from": "library",
         "to": "kernel",
         "kind": "reads",
-        "label": "one page per skill + agent"
+        "label": "a page per skill + agent"
       },
       {
         "from": "cli",
@@ -578,7 +577,7 @@
         "from": "install",
         "to": "cursor",
         "kind": "writes",
-        "label": ".cursor/rules (kernel inlined)"
+        "label": ".cursor/rules (kernel)"
       },
       {
         "from": "install",
