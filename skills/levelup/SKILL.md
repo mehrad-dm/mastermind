@@ -34,7 +34,10 @@ is the evidence behind the rule; distil it forward and let the old entries age o
 
 ## `capture` (default) — harvest lessons from this session/recent work
 
-1. Read **`.mastermind/journal.md`** first, then scan the recent work, for durable generalizable lessons:
+1. Read the **`· wrong ·`** lines of `.mastermind/journal.md` before anything else (`mastermind
+   wrong-log`). A miss with its catcher named is the highest-signal lesson there is — it already
+   states the rule that was missing. Then read the rest of the journal and scan recent work for
+   durable generalizable lessons:
    user corrections ("no, do X"), real `code-reviewer` findings, bugs fixed, and choices that proved
    right. The journal is the higher-signal source — it is what actually happened, already dated and
    deduplicated. Skip one-off/project-specific noise; keep only what applies to *future* tasks.

@@ -83,6 +83,19 @@ done
 out=$(cd "$ROOT" && "${CLI[@]}" route "anything at all" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d["skills"]) > 10)' 2>/dev/null)
 check "large piped json is not truncated" "$out" "True"
 
+# The calibration record: only lines that record a miss, and an empty log must say "nothing was
+# logged" rather than implying nothing went wrong.
+# The header deliberately contains prose about `· wrong ·` entries: an unanchored filter
+# counted that sentence as a miss.
+printf '# Journal\n\nLines marked · wrong · are the calibration record.\n\n2026-08-04 · shipped a thing · ship\n2026-08-04 · wrong · claimed X · caught by test Y · do Z\n' \
+  > "$PROJ/.mastermind/journal.md"
+out=$(cd "$PROJ" && "${CLI[@]}" wrong-log --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["count"])')
+check "wrong-log returns only the misses" "$out" "1"
+
+rm -f "$PROJ/.mastermind/journal.md"
+out=$(cd "$PROJ" && "${CLI[@]}" wrong-log | grep -c "not that nothing was wrong")
+check "empty wrong-log does not imply a clean record" "$out" "1"
+
 GONE="$WORK/gone"; mkdir -p "$GONE"
 out=$( (cd "$GONE" && rm -rf "$GONE" && "${CLI[@]}" skills 2>&1 >/dev/null) | head -1 )
 case "$out" in *"uv_cwd"*|*"internal/bootstrap"*) bad "deleted cwd crashes with a node stack";; *) ok "deleted cwd fails cleanly";; esac

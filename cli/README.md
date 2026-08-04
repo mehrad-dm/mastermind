@@ -23,6 +23,7 @@ mastermind skills                    # the routing table: every skill, one line 
 mastermind skill performance         # one skill's full instructions
 mastermind agents                    # the isolated-context roles
 mastermind route "why is this slow?" # the table again, with keyword matches arrowed
+mastermind wrong-log                 # every time MasterMind was wrong, and what caught it
 ```
 
 Add `--json` to any of them for structured output. They are read-only: no install, no

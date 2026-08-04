@@ -34,7 +34,7 @@ const REPO_URL = process.env.MASTERMIND_REPO || 'https://github.com/mehrad-dm/ma
 const MM_HOME = process.env.MASTERMIND_HOME || join(homedir(), '.mastermind')
 const PIN = process.env.MASTERMIND_REF || `v${VERSION}`
 
-const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route']
+const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route', 'wrong-log']
 const COMMANDS = [...READ_CMDS, 'check', 'update', 'uninstall', 'init']
 const argv = process.argv.slice(2)
 // Find the command wherever it sits, not just at argv[0]. Matching only the first token made
@@ -181,6 +181,28 @@ if (READ_CMDS.includes(cmd)) {
     process.exit(1)
   }
   if (!brain) refuse('no brain found — run `npx mastermind-brain` in this project first')
+  // The calibration record: every time a claim of MasterMind's was falsified, with the catcher
+  // named (core/rigor.md). It answers "how often is this thing wrong, and about what?" with
+  // history instead of self-assessment — which is the only form of that answer worth having.
+  if (cmd === 'wrong-log') {
+    // `.mastermind/journal.md` — inside the brain that owns it, so an isolated project keeps
+    // its own record and a shared clone keeps one across projects (core/rigor.md).
+    const journal = join(brain, 'journal.md')
+    // Anchored to a dated entry: an unanchored match also caught the journal's own header
+    // prose describing the format, inflating the miss count with a sentence about misses.
+    const lines = existsSync(journal)
+      ? readFileSync(journal, 'utf8')
+          .split(/\r?\n/)
+          .filter((l) => /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(l.trim()))
+      : []
+    emit(
+      { journal, count: lines.length, entries: lines },
+      lines.length
+        ? lines.join('\n')
+        : `no misses recorded yet in ${journal} — that means nothing has been logged, not that nothing was wrong`,
+    )
+  }
+
   const kind = cmd === 'agent' || cmd === 'agents' ? 'agent' : 'skill'
   const items = listCapabilities(brain, kind)
 

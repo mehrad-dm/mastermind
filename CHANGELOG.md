@@ -12,6 +12,15 @@ history lives in git.
   network, no writes — and they answer from the project's own `.mastermind/` before the shared
   clone, so an isolated brain never returns another project's knowledge. This is what Cursor
   and Codex were missing: an agent can ask for the one skill it needs instead of guessing a path.
+- `mastermind wrong-log`: the calibration record — every claim of MasterMind's that was
+  falsified, with the catcher named (test, reviewer, user, or measurement). Kept in the
+  project's journal, read first by `levelup`, and surfaced on the site as the honest answer to
+  "can I trust this?". Self-graded entries are explicitly worthless: an entry must name what
+  caught it.
+- Autonomy calibrated to reversibility (`core/rigor.md`): a fourth tier above "say first, then
+  do" — anything you cannot take back or that leaves this machine (push, publish, delete what
+  you did not create, spend a one-use credential, write outside the project) needs consent, not
+  notification, and approval once is not approval again.
 - `bin/mastermind` shim so the cloned brain is callable without npx or a global install.
 - Gates wired into preflight: `tests/agent-surface.test.sh` (17 assertions) and two evals —
   interface cost, and routing measured on organically-phrased requests, not paraphrases of the
