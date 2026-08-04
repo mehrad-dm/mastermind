@@ -24,7 +24,15 @@ const g = d.graph
 const NEW_NODES = [
   // No group key: entry points (claude, cursor, codex) float ungrouped, and the API rejects
   // an empty-string group outright.
-  { id: 'cli', label: 'npx mastermind-brain', kind: 'entry', sub: 'versioned npm CLI', sourceRef: 'cli/' },
+  {
+    id: 'cli',
+    label: 'npx mastermind-brain',
+    kind: 'entry',
+    sub: 'installer + agent lookups',
+    sourceRef: 'cli/',
+    detail:
+      'Installs the brain, and answers read-only lookups an agent makes mid-task (skills, skill, agents, agent, route) from whichever brain the current directory belongs to. Never writes.',
+  },
   { id: 'lab', label: 'Quarantine', kind: 'store', sub: 'private data, gitignored', group: 'Safety & honesty', sourceRef: 'lab/' },
   {
     id: 'bootstrap',

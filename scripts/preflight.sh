@@ -61,7 +61,9 @@ echo "Preflight — everything that must pass before release"
 echo
 echo "Code & tests"
 step "installer regression suite"      bash "$REPO/tests/install.test.sh"
-step "shell scripts parse"             shell_parses "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
+step "agent-callable surface"          bash "$REPO/tests/agent-surface.test.sh"
+step "skill routing accuracy"          node "$REPO/evals/agent-surface-routing.mjs"
+step "shell scripts parse"             shell_parses "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/tests/agent-surface.test.sh" "$REPO/bin/mastermind" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
 
 echo "Repo integrity"
 step "router in sync"                  node "$REPO/scripts/build-router.mjs" --check

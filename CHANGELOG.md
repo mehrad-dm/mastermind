@@ -4,6 +4,24 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [Unreleased]
+
+### Added
+- Agent-callable CLI surface: `mastermind skills · skill <name> · agents · agent <name> ·
+  route "<request>"`, plus `--json` on any of them. Read-only by construction — no install, no
+  network, no writes — and they answer from the project's own `.mastermind/` before the shared
+  clone, so an isolated brain never returns another project's knowledge. This is what Cursor
+  and Codex were missing: an agent can ask for the one skill it needs instead of guessing a path.
+- `bin/mastermind` shim so the cloned brain is callable without npx or a global install.
+- Gates wired into preflight: `tests/agent-surface.test.sh` (17 assertions) and two evals —
+  interface cost, and routing measured on organically-phrased requests, not paraphrases of the
+  skills' own trigger words.
+
+### Notes
+- `route` returns the whole table with keyword matches arrowed rather than a shortlist:
+  measured on natural phrasing, keyword overlap hinted correctly for only 2 of 8 requests, so
+  filtering by it would have hidden the right skill behind a confident guess.
+
 ## [0.28.1] — 2026-08-01
 
 ### Fixed

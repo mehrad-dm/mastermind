@@ -568,7 +568,11 @@ fi
 # ROUTER.md and active-field.md are ISO_OWNED, not engine: both are DERIVED from the project's
 # own field, so refreshing them from the source would overwrite what a project generated. They
 # seed once (from a *.seed.md that declares "no field yet") and are then the project's to regen.
-ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/core skills agents hooks)
+# bin/ + cli/ ride along so the lookup surface is runnable from INSIDE the project. Agents
+# run sandboxed to the workspace — Claude Code refuses to execute ~/.mastermind/bin/mastermind
+# because it resolves outside the allowed directories — so a shim that only exists in the
+# shared clone is unusable exactly where it was meant to help. ~14KB.
+ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/core skills agents hooks bin cli)
 ISO_OWNED=(engineering/active-field.md engineering/ROUTER.md)
 
 sync_isolated_brain() {

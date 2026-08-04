@@ -126,7 +126,15 @@ skills; agents are isolated-context roles.)
 MasterMind supports **Claude Code, Cursor and Codex**. In Claude Code the agents and skills are native
 (invoke them). In Cursor and Codex they aren't native mechanisms — **but they still apply**: recognize the
 intent from the menu below, then **read that file under `~/.mastermind/skills/<name>/SKILL.md` or
-`~/.mastermind/agents/<name>.md` and follow it as a step-by-step procedure.** Where a tool has no isolated
+`~/.mastermind/agents/<name>.md` and follow it as a step-by-step procedure.**
+
+If you can run commands, ask the brain instead of hunting for paths — `.mastermind/bin/mastermind`
+in this project (or `~/.mastermind/bin/mastermind`; sandboxed tools can only run the in-project one)
+resolves whichever brain this directory belongs to and
+prints only what you asked for: `skills` (the routing table), `skill <name>` (one skill's
+instructions), `agent <name>`, `route "<the user's request>"` (the same table with keyword matches
+arrowed — the arrows are unreliable on natural phrasing, so read the descriptions and judge).
+`--json` for parsing. Read-only: it never installs or changes anything. Where a tool has no isolated
 context, run a reviewer procedure in a **separate session** given only the diff and the requirement; if
 even that isn't possible, say the review was self-graded and report at reduced confidence — never state or
 imply it was independent. The menu is inlined here so it works without the index loaded:

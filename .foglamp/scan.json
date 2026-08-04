@@ -358,8 +358,9 @@
         "id": "cli",
         "label": "npx mastermind-brain",
         "kind": "entry",
-        "sub": "versioned npm CLI",
-        "sourceRef": "cli/"
+        "sub": "installer + agent lookups",
+        "sourceRef": "cli/",
+        "detail": "Installs the brain, and answers read-only lookups an agent makes mid-task (skills, skill, agents, agent, route) from whichever brain the current directory belongs to. Never writes."
       }
     ],
     "edges": [

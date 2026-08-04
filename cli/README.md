@@ -12,6 +12,29 @@ npx mastermind-brain update     # refresh the brain + repair links
 npx mastermind-brain uninstall  # clean removal
 ```
 
+## Commands an agent calls for itself
+
+Cursor and Codex have no native skill mechanism, so an agent there either pastes the whole
+library into context or guesses a path. These lookups answer from whichever brain the current
+directory belongs to — the project's own `.mastermind/` first, then the shared clone:
+
+```bash
+mastermind skills                    # the routing table: every skill, one line each
+mastermind skill performance         # one skill's full instructions
+mastermind agents                    # the isolated-context roles
+mastermind route "why is this slow?" # the table again, with keyword matches arrowed
+```
+
+Add `--json` to any of them for structured output. They are read-only: no install, no
+network, no writes — if no brain is installed they say so and exit non-zero. Without a global
+install, call the shim in the clone: `~/.mastermind/bin/mastermind skills`.
+
+`route` deliberately does not shortlist. Keyword overlap picks the right skill for requests
+phrased like the descriptions, but only hints correctly for 2 of 8 requests phrased the way
+people actually talk ("the invoice screen takes nine seconds to open"), so it marks candidates
+and always returns every option — hiding the right skill behind a confident guess would be
+worse than not guessing. The model routes; this just puts the table in front of it.
+
 Why npx over `curl | bash`: every release is a versioned, immutable, provenance-signed npm
 artifact, and fresh installs pin the brain to the matching git tag — you always know exactly
 what ran. The brain lives at `~/.mastermind` (a plain git repo you can read end to end);
