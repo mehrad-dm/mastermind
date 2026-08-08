@@ -87,6 +87,14 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    (The pre-commit hook still runs `check-integrity` + `build-router` on every commit for fast
    feedback; preflight is the full pre-release gate.)
 
+   **What preflight cannot tell you:** every check above inspects *files* — that the right
+   things landed in the right place. None of them starts an agent, so none proves a tool
+   actually loads the brain. `scripts/verify-tools.sh` does: it installs into a throwaway
+   project, asks a real Cursor/Codex session whether it is running as MasterMind, and fails if
+   the answer is no. It needs each tool's CLI and a logged-in account, so it stays a local
+   command rather than a CI gate, and skips whatever isn't installed. Run it when you change
+   anything about how a tool is wired — `.cursor/rules`, `hooks.json`, `AGENTS.md`.
+
 2. **Keep it lean** — smaller, sharper diffs merge faster than big ones.
 3. **Write a clear commit** — conventional style is appreciated (`feat(install): …`, `docs(core): …`).
 
