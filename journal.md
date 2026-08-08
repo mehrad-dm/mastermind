@@ -1,7 +1,9 @@
 # Journal — what happened, dated, one line each
 
-Episodic memory (`engineering/core/rigor.md`). Appended at each verdict; `· wrong ·` lines are the
-calibration record, read back with `mastermind wrong-log` and distilled by `levelup`.
+Episodic memory (`engineering/core/rigor.md`). Appended at each verdict. Entries marked as misses
+(date, then the word between middot separators) are the calibration record, read back with
+`mastermind wrong-log` and distilled by `levelup`. This sentence deliberately does not spell that
+marker out: when it did, every naive count of the file included the sentence describing it.
 
 2026-08-04 · agent-callable brain (skills/skill/agents/agent/route/wrong-log) · Cursor and Codex had no native skill mechanism, so an agent inlined the library or guessed paths · ship — 19 assertions, live-verified on Claude Code, Cursor and Codex
 2026-08-04 · wrong · claimed route-then-skill cost 97% less than reading the index · caught by evals/agent-surface-cost.mjs after route was redesigned to return the full table — it is ~41% MORE than the index path · measure the shipped design, never the prototype, before quoting a number
@@ -27,3 +29,4 @@ calibration record, read back with `mastermind wrong-log` and distilled by `leve
 2026-08-08 · wrong · the Alpine CI step asserted the no-bash guard against `skills`, a read-only lookup that needs a BRAIN rather than bash, so it saw "no brain found" and proved nothing · caught by an external audit running the tagged workflow in node:22-alpine · point a guard test at the code path that owns the guard, and assert the specific message
 2026-08-09 · wrong · my live-tool check grepped for "mastermind" and passed the sentence "I'm running as Codex, not MasterMind" — a denial scored as a success · caught by reading the actual answer instead of the ✓ · assert on the CLAIM, not on a word that appears in both the affirmative and the negative
 2026-08-09 · wrong · the same check wired the probe project with `claude cursor`, omitting `agents` — so AGENTS.md never existed and Codex was asked to load a brain it could not see · caught by the denial above, once the assertion stopped hiding it · a probe must assert its own preconditions before it asks the question, or a broken setup reads as a broken product
+2026-08-09 · wrong · told the user the wrong-log held 26 entries — it holds 22 · caught by counting it before repeating the number, prompted by the user asking me to explain the claim · never quote a count from memory when the command that produces it is one call away

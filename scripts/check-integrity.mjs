@@ -305,6 +305,23 @@ for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'RE
   }
 }
 
+// The wrong-log is the calibration record, so a count of it must be exact. `mastermind wrong-log`
+// anchors on the entry format; anything else counting the file (a grep, a human, me) counts every
+// line containing the marker. Those two numbers must be the same number, and they were not: the
+// header sentence quoted the marker while explaining it, so prose inflated the count. Keep them
+// equal — if a line carries the marker, it is an entry.
+const journal = readIfPresent('journal.md')
+if (journal !== null) {
+  const lines = journal.split('\n')
+  const entries = lines.filter((l) => /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(l.trim()))
+  const mentions = lines.filter((l) => l.includes('\u00b7 wrong \u00b7'))
+  if (entries.length !== mentions.length) {
+    const stray = mentions.filter((l) => !entries.includes(l)).map((l) => l.trim().slice(0, 60))
+    fail(`journal.md: ${mentions.length} lines carry the miss marker but only ${entries.length} `
+      + `are entries — prose inflates every count of the log: "${stray[0]}…"`)
+  }
+}
+
 // The markdown menus above are matched on `**name**`/`` `name` `` markup. The plugin manifests
 // advertise the same menu as a bare comma-separated list inside a JSON string, so neither the
 // file list nor the markup pattern covered them — and a description naming `spec` and `doubt`
