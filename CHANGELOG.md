@@ -4,6 +4,102 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.29.1] — 2026-08-08
+
+### Fixed — every fresh install of 0.29.0 failed (release blocker)
+`npx mastermind-brain` clones the brain to `~/.mastermind` and runs that clone's `install.sh`, so
+`REPO` equals `$HOME/.mastermind` — and a guard against self-linking compared path **strings** and
+aborted with *"refusing to link ~/.mastermind to itself"*. The project was left unwired. It reached
+release because every sandbox sat under `/tmp` or mktemp's `/var/folders`, both symlinks to
+`/private/...`: `pwd -P` rewrote one side, the strings differed, and the broken branch never ran.
+A real `$HOME` has no such symlink, so the failure was universal.
+
+The guard now compares resolved paths and treats "already at the canonical location" as the no-op
+it is. A second hazard surfaced with it: when a *different* clone occupies `~/.mastermind`,
+`ln -sfn` writes a link *inside* that directory — now refused with an explanation. Both are tested,
+and the tests use a canonical sandbox path so they can actually fail.
+
+### Fixed — isolated init could not finish
+`init` and `levelup bootstrap` tell the model to run `node scripts/build-router.mjs` and
+`check-integrity.mjs`, but the isolated brain shipped no `scripts/`. A real init did the whole job
+and then dead-ended on the missing module. Both scripts now ship (they resolve their root relative
+to themselves, so they regenerate *that* project's brain); `build-library` stays out, since it
+writes into the website repo. `check-integrity` also stopped hard-reading files a project brain
+never has — `README.md`, `.githooks/` — while keeping every one of those checks in this repo.
+
+### Fixed — the Alpine CI guard proved nothing
+It asserted the no-bash refusal against `skills`, a read-only lookup that needs a *brain*, not
+bash: the answer was "no brain found", the grep for the `apk add` guidance never matched. It now
+exercises the install path that owns the guard, demands the exact message, checks nothing was
+written before refusing, and then completes a real install. Verified in `node:22-alpine`.
+
+### Fixed — MASTERMIND_HOME could be silently ignored
+`findBrain` walked up from the cwd before falling back to the override, and every directory under
+the home directory has `$HOME/.mastermind` as an ancestor — so an explicit override still answered
+from the user's installed brain. Routing QA certified the wrong brain that way. An explicit
+`MASTERMIND_HOME` now wins outright.
+
+### Fixed — Git Bash was advertised, and rejected
+Node reports `win32` inside Git Bash, so the guard rejected it while its own message recommended
+it. The refusal now names WSL only and says plainly why Git Bash lands in the same place.
+
+### Fixed — the site contradicted the installer
+The homepage said Cursor and Codex both "stay per-project"; `--global` does wire Codex's
+`~/.codex/AGENTS.md` (verified by running it). Only Cursor is per-project.
+
+### Security — site
+Astro 7.0.7 → 7.1.6 clears GHSA-4g3v-8h47-v7g6 (reflected XSS via View Transitions; no exploitable
+path here, since the site does not use them). The upgrade needed a direct `cookie` pin — Astro 7.1
+imports `parseCookie`, and pnpm resolved a hoisted 1.x without it. The advisory gate now fails on
+**moderate** as well as high. The deployment also serves a CSP, `X-Content-Type-Options`,
+`Referrer-Policy`, `Permissions-Policy`, and a framing policy; previously only HSTS.
+
+### Fixed — two public numbers were wrong
+The README claimed the CLI is "~5 KB" (it is 9.6 KB packed, 25.9 KB unpacked) and the OG metadata
+declared 1200×630 for a file that is 2400×1260. Both now match what `npm pack` and the PNG report.
+
+### Fixed — `prompt` could rewrite text you meant it to run
+`prompt` is auto-invoked from its description, and that description matched any under-specified
+request aimed at an AI. Paste a prompt for MasterMind to *execute* and it could rewrite it instead —
+answering a question you never asked and replacing your wording with a paraphrase. The skill now
+fires only on an explicit "improve this prompt", and carries a table of the cases where it must
+stay out of the way.
+
+The rule is not local to that skill. `core/rigor.md` § Stay in scope now states it once — **the
+user's own words are not yours to rewrite**: fire only on an explicit ask, propose rather than
+apply, and name every requirement added or cut. It binds `prompt`, `interview`, `signature`,
+`persona`, `explain`, `quarantine` and `deprecate`, and each of those now carries the pointer.
+
+It is also **measured, not asserted**: the eval gained `forbidden` cases (a case that passes only
+when a named skill does *not* fire), and the new one — a prompt pasted to be executed — is green.
+`ONLY=<substring>` runs a single case so a routing rule can be checked without the whole matrix.
+
+### Changed — `prompt` guidance rewritten for current models
+The old checklist was 2023-era advice that current models now read literally, so some of it was
+actively harmful. Added a keyword-effects table: emphasis inflation (`CRITICAL:`/`MUST` several
+times over) causes over-triggering; "think step by step" is redundant on reasoning models;
+"double-check your work" now causes over-verification; "try to" reads as permission to skip.
+Plus long-context placement (documents first, question last) and why a stable prefix is what makes
+caching hit.
+
+### Changed — `levelup refresh` tracks all three tools, not one
+MasterMind installs into Claude Code, Cursor and Codex, but the refresh step listened only to
+Anthropic. It now carries a source table per tool — Codex (`developers.openai.com/codex`,
+`agents.md`, the CLI releases) and Cursor (docs, changelog, blog) alongside the Anthropic sources.
+A change in any of the three can quietly break an install path. Every URL was checked to resolve.
+
+### Fixed — plugin manifests advertised two retired skill names
+The marketplace description still listed `spec` and `doubt`, renamed two releases ago; both fail
+when typed. The retired-name gate only scanned four Markdown menus for backticked names, so a
+comma-separated list inside a JSON string was invisible to it. The gate now parses the manifest
+menus and rejects any token that is not a skill or agent on disk — verified by reintroducing a
+dead name and watching it fail.
+
+### Fixed — npm package page
+Its README still described MasterMind as a "genius-builder brain" (the pre-0.29 voice), and the
+package had no `author`. The description-drift gate now covers `cli/README.md`, comparing
+whitespace- and case-insensitively so a line-wrapped sentence isn't a false positive.
+
 ## [0.29.0] — 2026-08-08
 
 ### Security — filesystem containment

@@ -35,6 +35,7 @@ const PINNED_COMMIT = PKG.commit || process.env.MASTERMIND_COMMIT || ''
 
 // Overridable for tests and forks; defaults are the published truth.
 const REPO_URL = process.env.MASTERMIND_REPO || 'https://github.com/mehrad-dm/mastermind'
+const MM_HOME_EXPLICIT = !!process.env.MASTERMIND_HOME
 const MM_HOME = process.env.MASTERMIND_HOME || join(homedir(), '.mastermind')
 const PIN = process.env.MASTERMIND_REF || `v${VERSION}`
 
@@ -86,8 +87,12 @@ const fail = (msg) => {
 
 // verifyCommit throws through fail() -> process.exit, so cleanup must happen before it runs.
 
+// Node reports win32 inside Git Bash too, so this rejects it — the old message claimed Git Bash
+// "works as-is", which was advice this very line made impossible to follow. WSL runs a Linux
+// Node (platform 'linux') and genuinely passes.
 if (process.platform === 'win32') {
-  fail('Native Windows is not supported yet — run this inside WSL (or Git Bash), where it works as-is.')
+  fail('Native Windows is not supported yet — run this inside WSL, where it works as-is.\n'
+    + '  Git Bash will not work either: it runs the Windows build of Node, which lands here too.')
 }
 
 // ── the agent-callable surface ──────────────────────────────────────────────────
@@ -100,6 +105,11 @@ if (process.platform === 'win32') {
 // shared clone instead would quietly return another project's knowledge. Walk up so it
 // works from any subdirectory, exactly like git.
 const findBrain = () => {
+  // An explicit MASTERMIND_HOME is an instruction, not a fallback. Without this the walk-up
+  // below reaches $HOME/.mastermind — every cwd under the home directory has it as an ancestor —
+  // and answered from the user's installed brain instead of the checkout under test. Routing QA
+  // certified the wrong brain that way.
+  if (MM_HOME_EXPLICIT) return existsSync(join(MM_HOME, 'VERSION')) ? MM_HOME : null
   let dir
   // cwd can be gone (deleted under a watcher, a stale CI worktree). Node throws a raw
   // ENOENT stack from process.cwd() — answer through this file's own error path instead.

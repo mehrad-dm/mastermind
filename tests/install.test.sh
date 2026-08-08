@@ -122,6 +122,48 @@ is "brain link still points at the real clone" "$(readlink "$H/.mastermind")" "$
 is "no literal-glob links created" "$(ls "$H/.claude/skills" 2>/dev/null | grep -c '^\*' | tr -d ' ')" "0"
 is "all skills linked via the symlink path" "$(ls "$H/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
 
+echo "── the npx path: the brain IS ~/.mastermind and install.sh runs from inside it"
+# THE 0.29.0 RELEASE BLOCKER. `npx mastermind-brain` clones the brain to ~/.mastermind and then
+# runs that clone's install.sh, so REPO == $HOME/.mastermind. A string comparison treated that
+# as the self-link catastrophe and aborted: every new user got "refusing to link ~/.mastermind
+# to itself" and an unwired project. It survived the suite because sandboxes sat under /tmp,
+# which `pwd -P` rewrites to /private/tmp — the strings differed, so the case was never hit.
+# This test puts the brain at the canonical location, which is what a real HOME looks like.
+# The HOME must be a CANONICAL path. On macOS both /tmp and mktemp's /var/folders are
+# symlinks (-> /private/...), so `pwd -P` yields a different string than "$HOME/.mastermind"
+# and the broken comparison slips through — which is exactly how this shipped.
+TMP_REAL="$(cd "$TMP" && pwd -P)"
+H="$TMP_REAL/npxhome"; mkdir -p "$H/.mastermind"
+tar -C "$REPO" --exclude=.git --exclude=node_modules -cf - . | tar -C "$H/.mastermind" -xf -
+P=$(proj npxwired)
+(cd "$P" && HOME="$H" "$H/.mastermind/install.sh" claude >/dev/null 2>&1); rc=$?
+is "install from ~/.mastermind exits 0" "$rc" "0"
+is "the project actually got wired" "$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+is "~/.mastermind is still the real clone" "$([ -d "$H/.mastermind" ] && [ ! -L "$H/.mastermind" ] && echo dir)" "dir"
+is "no link written inside the brain" "$([ -e "$H/.mastermind/mastermind" ] && echo present || echo gone)" "gone"
+
+echo "── a DIFFERENT brain already at ~/.mastermind is refused, not written into"
+H2="$TMP_REAL/otherbrain"; mkdir -p "$H2/.mastermind/skills"
+P=$(proj otherwired)
+out=$( (cd "$P" && HOME="$H2" "$INSTALL" claude 2>&1) || true )
+is "refused with a clear reason" "$(printf '%s' "$out" | grep -c 'different brain')" "1"
+is "nothing written inside their clone" "$([ -e "$H2/.mastermind/mastermind" ] && echo present || echo gone)" "gone"
+
+echo "── the isolated brain can run the commands init tells the model to run"
+# Release blocker: ISO_ENGINE shipped no scripts/, but `init` and `levelup bootstrap` instruct
+# `node scripts/build-router.mjs` / `check-integrity.mjs`. A real init did all the work and then
+# dead-ended on "Cannot find module '.mastermind/scripts/build-router.mjs'". check-integrity also
+# hard-read repo-only files (README.md, .githooks/) that a project brain does not ship.
+P=$(proj isoscripts); run "$P" claude >/dev/null 2>&1
+is "build-router ships"    "$([ -f "$P/.mastermind/scripts/build-router.mjs" ] && echo yes)" "yes"
+is "check-integrity ships" "$([ -f "$P/.mastermind/scripts/check-integrity.mjs" ] && echo yes)" "yes"
+is "build-library does NOT ship (it writes into the site repo)" \
+   "$([ -f "$P/.mastermind/scripts/build-library.mjs" ] && echo present || echo gone)" "gone"
+(cd "$P" && node .mastermind/scripts/build-router.mjs >/dev/null 2>&1)
+is "build-router regenerates the PROJECT brain" "$?" "0"
+(cd "$P" && node .mastermind/scripts/check-integrity.mjs >/dev/null 2>&1)
+is "check-integrity passes on a fresh isolated brain" "$?" "0"
+
 echo "── uninstall removes what it wired, and keeps what it didn't"
 P=$(proj unwire); mkdir -p "$P/.claude"
 printf '{"model":"opus","hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo MINE"}]}]}}' > "$P/.claude/settings.json"

@@ -20,8 +20,19 @@ It refreshes **one field** — the one named in the argument, else the active fi
 2. Diff against the current `curriculum.md`: add what's newly best-in-class, drop what's archived/dead,
    flag anything that changed. Update `learning-sources.md` and `mentors.md` if authorities shifted.
 3. Note the refresh date in `curriculum.md`'s verification note.
-4. **Listen to the source of truth for agent engineering** — Anthropic / Claude Code docs + changelog, the
-   engineering blog, and **Claude Devs** (Anthropic's developer content) — on two axes:
+4. **Listen to the sources of truth for agent engineering — all three tools we support**, not just one.
+   MasterMind installs into Claude Code, Cursor and Codex, so a practice verified against one vendor's
+   docs is verified for one third of the users. Check each on its own cadence; primary sources only:
+
+   | Tool | Check | For |
+   | --- | --- | --- |
+   | Claude Code | [code.claude.com/docs](https://code.claude.com/docs) + changelog, [anthropic.com/engineering](https://www.anthropic.com/engineering), **Claude Devs** | skills, agents, hooks, MCP, model/effort, context management |
+   | Codex | [developers.openai.com/codex](https://developers.openai.com/codex), [platform.openai.com/docs](https://platform.openai.com/docs), [github.com/openai/codex](https://github.com/openai/codex) releases, [agents.md](https://agents.md) | AGENTS.md conventions, CLI surface, config + sandbox behavior |
+   | Cursor | [cursor.com/docs](https://cursor.com/docs), [cursor.com/changelog](https://cursor.com/changelog), [cursor.com/blog](https://cursor.com/blog) | rules format (`.mdc`, `alwaysApply`), context handling, agent mode |
+
+   A change in any of the three can quietly break an install path — `AGENTS.md` semantics, the Cursor
+   rules front-matter, a renamed skills directory. Verify against the doc, not against memory; note the
+   check date. Read them on two axes:
    - **Evolving best practices** — prompting, model/effort, skills, context management.
    - **Newly shipped capabilities** — new tool types, skill/agent/hook mechanisms, slash-commands, MCP,
      subagents, and workflow primitives worth *adopting into MasterMind's architecture* to get better.

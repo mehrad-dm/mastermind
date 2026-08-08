@@ -67,6 +67,10 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
+- **You pasted a prompt for MasterMind to answer or run.** This is the important one. A prompt in your
+  message is usually a *task*, not a rewrite request — so `prompt` stays out of the way unless you
+  actually ask for it to be improved. Rewriting text you meant to be executed would replace your work
+  with a paraphrase and answer a question you never asked.
 - **You want your code optimized.** That's `performance` — measuring and fixing slow software. `prompt` never
   touches your code; it only touches text you send to a model. The names sound adjacent; the jobs share
   nothing.
@@ -84,3 +88,9 @@ what changed and why, and an honest list of anything still ambiguous that only y
 
 Scope is never silently expanded. If sharpening the request surfaces a real product decision, MasterMind
 puts it in front of you rather than quietly picking for you.
+
+**Your prompt stays yours.** The rewrite is handed back, never run — MasterMind doesn't execute it, doesn't
+overwrite your original, and doesn't act on it in the same turn. Every requirement you wrote survives or
+is named as cut, and anything added is named as added, so you can always see exactly what changed. That
+rule isn't local to this skill: it binds every skill that touches your own words — your spec, your style
+profile, your docs.

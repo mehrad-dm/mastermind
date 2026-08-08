@@ -8,7 +8,7 @@
  *      description present & ≤1024 chars, only allowed keys — per the Agent Skills spec)
  *   2. skills/README.md lists exactly the skill dirs (no missing, no extra)
  *   3. no index (skills/README.md, README.md) cites a `mastermind-*` skill with no dir
- *   4. no broken ~/.mastermind / engineering / core / fields cross-references in the docs
+ *   4. no broken brain-root / engineering / core / fields cross-references in the docs
  *   5. active-field.md declares a level
  *   6. help/SKILL.md's "<n> skills · <n> agents" header matches what actually ships
  *   7. every field-pack file (except field.md) carries `route_when`, and every pack
@@ -29,6 +29,11 @@ const ALLOWED_FM_KEYS = new Set(['name', 'description', 'license', 'allowed-tool
 const errors = []
 const fail = (m) => errors.push(m)
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
+// The isolated per-project brain ships the engine, not the repo: no README.md, no
+// .claude-plugin/, no cli/. `init` runs this script from inside that brain, so a hard read of a
+// repo-only file crashed the very check it was told to run. Absent means "not applicable here";
+// present means checked exactly as before, so the dev gate is unchanged.
+const readIfPresent = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), 'utf8') : null)
 
 // --- parse the simple `key: value` frontmatter block at the top of a file ----
 function frontmatter(text) {
@@ -73,7 +78,7 @@ for (const dir of skillDirs) {
 // `build`, `route`, `learn`, `debug`, and `report` are ordinary English words that appear in
 // the surrounding prose, so `includes(dir)` passed even with the skill's row deleted — the
 // exact drift this check exists to catch. Compare sets both ways so "no extra" is real too.
-const skillsReadme = read('skills/README.md')
+const skillsReadme = readIfPresent('skills/README.md') ?? ''
 const listedSkills = new Set(
   [...skillsReadme.matchAll(/\[`([a-z0-9-]+)`\]\(\.\/([a-z0-9-]+)\/SKILL\.md\)/g)].map((m) => m[2])
 )
@@ -88,7 +93,9 @@ for (const listed of listedSkills) {
 // index, guarded above). What we do guard: no index cites a `mastermind-*` skill that has no
 // dir. Only backticked refs count, so a URL slug like foglamp.dev/scan/mastermind-xyz is fine.
 for (const file of ['skills/README.md', 'README.md']) {
-  for (const m of read(file).matchAll(/`(mastermind-[a-z-]+)`/g)) {
+  const text = readIfPresent(file)
+  if (text === null) continue
+  for (const m of text.matchAll(/`(mastermind-[a-z-]+)`/g)) {
     if (!skillDirs.includes(m[1])) fail(`${file}: lists "${m[1]}" — no such skill dir`)
   }
 }
@@ -260,7 +267,11 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
 // `pre-commit` legitimately diverges by one repo-only block (ROUTER freshness), so the
 // comparison drops it. Anything else differing is drift, not a decision.
 const REPO_ONLY = /^# ---- Router freshness[\s\S]*?^fi\n\n/m
-for (const hook of ['pre-commit', 'pre-push']) {
+// Parity is a REPO invariant: `.githooks/` only exists in this checkout. A project's isolated
+// brain ships the assets and no `.githooks/`, so demanding both copies there reported two
+// failures for a correctly-installed brain. Skip the pair when the live side is absent.
+const hasLiveHooks = existsSync(join(ROOT, '.githooks'))
+for (const hook of hasLiveHooks ? ['pre-commit', 'pre-push'] : []) {
   const live = join(ROOT, '.githooks', hook)
   const shipped = join(ROOT, 'skills', 'quarantine', 'assets', hook)
   if (!existsSync(live) || !existsSync(shipped)) {
@@ -294,15 +305,35 @@ for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'RE
   }
 }
 
+// The markdown menus above are matched on `**name**`/`` `name` `` markup. The plugin manifests
+// advertise the same menu as a bare comma-separated list inside a JSON string, so neither the
+// file list nor the markup pattern covered them — and a description naming `spec` and `doubt`
+// shipped for two releases. Parse the list instead of pattern-matching it: every token must be
+// a skill or agent that exists on disk.
+for (const manifest of ['.claude-plugin/marketplace.json', '.claude-plugin/plugin.json']) {
+  const file = join(ROOT, manifest)
+  if (!existsSync(file)) continue
+  const blob = JSON.stringify(JSON.parse(readFileSync(file, 'utf8')))
+  const listed = blob.match(/(?:Skills|skills & agents):([^.]+)/)?.[1]
+  if (!listed) continue
+  for (const token of listed.split(/[,+]/).map((t) => t.trim().replace(/^agents:\s*/, '')))
+    if (/^[a-z][a-z-]{2,}$/.test(token) && !realNames.has(token))
+      fail(`${manifest} advertises "${token}", which is not a skill or agent on disk`)
+}
+
 // One sentence describes this product, and it lives in four places that ship separately (npm,
 // the plugin manifest, the marketplace listing, the GitHub About). They drifted: the About was
 // still advertising Copilot support removed in 0.27. Keep them one string.
 const CANON = 'A markdown brain that gives your AI coding tools judgment and rigor'
-for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json', 'cli/package.json']) {
+for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json', 'cli/package.json', 'cli/README.md']) {
   const file = join(ROOT, f)
   if (!existsSync(file)) continue
+  // Compare with whitespace and case normalised: the same sentence is line-wrapped in prose
+  // and capitalised differently mid-sentence, and neither is drift.
   const text = readFileSync(file, 'utf8')
-  if (!text.includes(CANON)) fail(`${f}: description drifted from the canonical one-liner ("${CANON}…")`)
+  const flat = (v) => v.replace(/\s+/g, ' ').toLowerCase()
+  if (!flat(text).includes(flat(CANON)))
+    fail(`${f}: description drifted from the canonical one-liner ("${CANON}…")`)
   for (const dead of ['Copilot', 'Gemini']) {
     if (new RegExp(`"[^"]*${dead}[^"]*"`).test(text))
       fail(`${f}: still advertises ${dead} — supported tools are Claude Code, Cursor and Codex`)

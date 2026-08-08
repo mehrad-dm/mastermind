@@ -142,5 +142,22 @@ echo "0.0.0-test" > "$CLEAN/.mastermind/VERSION"
 out=$(cd "$CLEAN" && HOME="$CLEAN" "${CLI[@]}" conflicts | head -1)
 case "$out" in *"nothing to collide"*) ok "a clean install says so plainly";; *) bad "clean install: $out";; esac
 
+# An explicit MASTERMIND_HOME must beat the walk-up. findBrain climbs from cwd looking for
+# `.mastermind`, and every directory under the home dir has $HOME/.mastermind as an ancestor —
+# so with the override set it still answered from the user's installed brain. Routing QA
+# certified an older install instead of the checkout it was pointed at.
+OVER="$WORK/override"; mkdir -p "$OVER/home/.mastermind" "$OVER/home/proj" "$OVER/checkout"
+echo "0.0.0-user-install" > "$OVER/home/.mastermind/VERSION"
+echo "9.9.9-under-test"   > "$OVER/checkout/VERSION"
+out=$(cd "$OVER/home/proj" && HOME="$OVER/home" MASTERMIND_HOME="$OVER/checkout" "${CLI[@]}" skills --json | head -3)
+case "$out" in *"$OVER/checkout"*) ok "MASTERMIND_HOME wins over the walk-up";; *) bad "override ignored: $out";; esac
+out=$(cd "$OVER/home/proj" && HOME="$OVER/home" "${CLI[@]}" skills --json | head -3)
+case "$out" in *"$OVER/home/.mastermind"*) ok "without the override the walk-up still finds ~/.mastermind";; *) bad "walk-up broke: $out";; esac
+
+# The win32 refusal used to tell people to use Git Bash — but Git Bash runs the Windows build of
+# Node, so it hits this same branch. Advertising a path the guard rejects is worse than silence.
+msg=$(grep -A3 "process.platform === 'win32'" "$ROOT/cli/bin/mastermind.mjs" | grep -c "Git Bash will not work")
+case "$msg" in 1) ok "the Windows refusal no longer advertises Git Bash as working";; *) bad "Git Bash still advertised";; esac
+
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

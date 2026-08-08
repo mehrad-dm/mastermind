@@ -61,12 +61,29 @@ jobs:
     container: node:22-alpine
     steps:
       - name: no-bash guard, then full install once bash exists
+        shell: sh
         run: |
+          set -eu
           apk add --no-cache git >/dev/null
-          git clone -q "https://github.com/${GITHUB_REPOSITORY}" /brain && cd /brain && git checkout -q "$GITHUB_SHA" || true
+          git clone -q "https://github.com/${GITHUB_REPOSITORY}" /brain
+          cd /brain && git checkout -q "$GITHUB_SHA"
           mkdir -p /work/proj && cd /work/proj && git init -q .
-          if node /brain/cli/bin/mastermind.mjs skills 2>msg; then echo "expected refusal"; exit 1; fi
-          grep -q "apk add" msg && echo "no-bash guard OK: $(cat msg)"
+
+          # The guard under test belongs to the INSTALL path — install.sh needs bash. 0.29.0
+          # asserted it against `skills`, a read-only lookup that needs a BRAIN, not bash: it
+          # answered "no brain found", the grep for apk guidance never matched, and the step
+          # proved nothing. Invoke the installer with no bash present and demand the real message.
+          if node /brain/cli/bin/mastermind.mjs >out 2>msg; then
+            echo "expected a refusal with no bash installed"; cat out msg; exit 1
+          fi
+          grep -q "apk add" msg || { echo "wrong refusal:"; cat msg; exit 1; }
+          echo "no-bash guard OK: $(cat msg)"
+          # It must refuse BEFORE writing anything.
+          [ ! -e .mastermind ] || { echo "wrote a brain despite refusing"; exit 1; }
+
           apk add --no-cache bash >/dev/null
           bash /brain/install.sh >/dev/null 2>&1
-          ./.mastermind/bin/mastermind skills | wc -l
+          [ -f .mastermind/VERSION ] || { echo "install produced no brain"; exit 1; }
+          n=$(./.mastermind/bin/mastermind skills | wc -l)
+          [ "$n" -gt 20 ] || { echo "skills table looks empty: $n lines"; exit 1; }
+          echo "alpine full install OK — $n lines"

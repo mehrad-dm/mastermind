@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.29.0-7c6bff" alt="version 0.29.0" />
+  <img src="https://img.shields.io/badge/version-0.29.1-7c6bff" alt="version 0.29.1" />
   <img src="https://img.shields.io/badge/status-experimental-e0a800" alt="status: experimental" />
   <img src="https://img.shields.io/badge/license-MIT-555" alt="license MIT" />
 </p>
 
-<p align="center"><sub><b>⚗️ Experimental (v0.29.0).</b> Under active development — not yet stable, but usable. Its
+<p align="center"><sub><b>⚗️ Experimental (v0.29.1).</b> Under active development — not yet stable, but usable. Its
 effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md</a>); APIs and defaults may change.</sub></p>
 
 > **Make your AI coding assistant trustworthy.** MasterMind is plain Markdown that gives **Claude Code,
@@ -87,7 +87,7 @@ npx mastermind-brain --global
 
 Every npm release is a **versioned, immutable, provenance-signed artifact**, and a fresh install pins
 the brain to the matching git tag — you always know exactly what ran, and you can read all of it first
-(`npm pack mastermind-brain` — the whole CLI is ~5 KB on top of this repo).
+(`npm pack mastermind-brain` — the whole CLI is ~10 KB packed, 26 KB unpacked, on top of this repo).
 
 
 MasterMind installs **per project by default**, and **each project gets its own copy of the brain** in

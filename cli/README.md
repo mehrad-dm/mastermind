@@ -1,7 +1,12 @@
 # mastermind-brain
 
-The trusted installer for [MasterMind](https://mastermind.mehrad.me) — a genius-builder brain
-for Claude Code, Cursor and Codex.
+Installs [MasterMind](https://mastermind.mehrad.me) — a markdown brain that gives your AI coding
+tools judgment and rigor: sharp defaults, real decisions, and the discipline to verify before
+saying done. For Claude Code, Cursor and Codex.
+
+You don't learn commands. You describe what you want, and it applies the right discipline — 22
+skills and 4 specialist agents it reaches for on its own, from debugging to review to keeping
+secrets out of git.
 
 ```bash
 cd my-project

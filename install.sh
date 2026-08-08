@@ -635,11 +635,28 @@ fi
 # be unreachable; it stays as a hard stop because the failure mode is catastrophic and
 # completely silent (the installer still prints ✓ while linking a literal `*`).
 if [ "$MODE" != check ]; then
-  if [ "$REPO" = "$HOME/.mastermind" ]; then
-    printf '%s✖ refusing to link ~/.mastermind to itself.%s Run install.sh from the real clone path.\n' "$r" "$x" >&2
+  mm_link="$HOME/.mastermind"
+  # Compare RESOLVED paths, not strings. The string form shipped in 0.29.0 and broke every
+  # real install: `npx mastermind-brain` clones the brain straight to ~/.mastermind and runs
+  # this script from there, so REPO == $HOME/.mastermind and the installer aborted. It slipped
+  # through testing because sandboxes used /tmp, which `pwd -P` rewrites to /private/tmp — the
+  # two strings differed and the link was created. A real HOME has no such symlink.
+  mm_link_real=""
+  [ -e "$mm_link" ] && mm_link_real="$(cd "$mm_link" 2>/dev/null && pwd -P || true)"
+
+  if [ "$mm_link_real" = "$REPO" ]; then
+    # Already the brain: either ~/.mastermind IS this clone (the npx path), or it is a symlink
+    # already pointing here. Nothing to link — linking is what would create the loop.
+    :
+  elif [ -d "$mm_link" ] && [ ! -L "$mm_link" ]; then
+    # A different real clone lives there. `ln -sfn` would silently create a link INSIDE it
+    # (~/.mastermind/mastermind) and leave the brain unfound, so stop and say what to do.
+    printf '%s✖ %s is a different brain%s (%s).\n' "$r" "$mm_link" "$x" "${mm_link_real:-unreadable}" >&2
+    printf '  Remove or move it first, then re-run — refusing to write inside someone else'"'"'s clone.\n' >&2
     exit 1
+  else
+    ln -sfn "$REPO" "$mm_link"
   fi
-  ln -sfn "$REPO" "$HOME/.mastermind"
 fi
 
 # --- Per-project sanity: need a real project dir, not the clone or ~ ----------
@@ -669,7 +686,13 @@ fi
 # run sandboxed to the workspace — Claude Code refuses to execute ~/.mastermind/bin/mastermind
 # because it resolves outside the allowed directories — so a shim that only exists in the
 # shared clone is unusable exactly where it was meant to help. ~14KB.
-ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/core skills agents hooks bin cli)
+# `scripts/*` earns its place here: `init` and `levelup bootstrap` tell the model to run
+# build-router and check-integrity, and without them an isolated init dead-ends on
+# "Cannot find module '.mastermind/scripts/build-router.mjs'" after doing all the work.
+# Both resolve their root relative to themselves, so a copy inside .mastermind regenerates
+# THAT brain. build-library is deliberately absent — it writes into the website repo.
+ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/core skills agents hooks bin cli
+            scripts/build-router.mjs scripts/check-integrity.mjs)
 ISO_OWNED=(engineering/active-field.md engineering/ROUTER.md)
 
 sync_isolated_brain() {

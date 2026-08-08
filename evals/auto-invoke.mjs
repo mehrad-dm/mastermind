@@ -32,6 +32,14 @@ const POOL = Number(process.env.POOL || 4)
 
 // Written the way users talk, aimed at the seeded orderdesk app. `expected` may list several:
 // some asks legitimately land in more than one seat.
+//
+// A case may instead carry `forbidden`: the named skills must NOT fire. That is how a
+// do-not-hijack rule gets measured rather than asserted — `prompt` rewriting a prompt the user
+// pasted to be *executed* would replace their words with a paraphrase, so the eval checks that
+// it stays out of the way. Anything else firing (or nothing) passes.
+const isHit = (c, got) => (c.forbidden ? !c.forbidden.includes(got) : !!(got && c.expected.includes(got)))
+const label = (c) => (c.forbidden ? `not:${c.forbidden.join('|')}` : c.expected.join('|'))
+
 const CORE = [
   { prompt: 'add a way to mark an order as urgent', expected: ['build'] },
   { prompt: 'cancelling an order sometimes leaves the stock count wrong, I cannot see why', expected: ['debug'] },
@@ -52,9 +60,16 @@ const EXTRA = [
   // was instead of recording nothing. State the correction in the prompt.
   { prompt: 'we always use 2-space indent in this repo, you used tabs — keep that in mind from now on', expected: ['levelup', 'signature'] },
   { prompt: 'sharpen this prompt before I send it: summarize customer feedback by theme', expected: ['prompt'] },
+  // The mirror of the case above: same words, opposite intent. Pasting a prompt to be *run* must
+  // not trigger a rewrite of it — that would answer a question the user never asked.
+  { prompt: 'summarize the customer feedback in this repo by theme and list the top 3 complaints', forbidden: ['prompt'] },
   { prompt: 'what can you actually do for me here?', expected: ['help'] },
 ]
-const CASES = FULL ? [...CORE, ...EXTRA] : CORE
+const ONLY = process.env.ONLY
+// ONLY=<substring> runs just the matching cases — enough to check one routing rule without
+// paying for the whole matrix. It bypasses the CORE/EXTRA split, so it is a probe, not a gate.
+const ALL = FULL ? [...CORE, ...EXTRA] : CORE
+const CASES = ONLY ? [...CORE, ...EXTRA].filter((c) => c.prompt.includes(ONLY)) : ALL
 
 // Deliberately plausible neighbours, not strawmen: each is a skill someone really ships, and
 // each overlaps a MasterMind trigger. If routing survives these, it survives a real machine.
@@ -170,10 +185,10 @@ for (const c of CASES) for (let r = 0; r < REPS; r++) jobs.push({ ...c, r })
 let results = await runBatch(jobs)
 
 if (!FULL) {
-  const missed = results.filter((r) => !(r.got && r.expected.includes(r.got)))
+  const missed = results.filter((r) => !isHit(r, r.got))
   if (missed.length) {
-    const second = await runBatch(missed.map(({ prompt, expected }) => ({ prompt, expected, r: 1 })))
-    results = results.map((r) => second.find((x) => x.prompt === r.prompt && x.got && x.expected.includes(x.got)) || r)
+    const second = await runBatch(missed.map(({ prompt, expected, forbidden }) => ({ prompt, expected, forbidden, r: 1 })))
+    results = results.map((r) => second.find((x) => x.prompt === r.prompt && isHit(x, x.got)) || r)
   }
 }
 
@@ -184,7 +199,7 @@ const decoyNames = new Set(DECOYS.map(([n]) => n))
 // sessions starts at the same moment, and a flaky environment must not read as a verdict.
 let broken = results.filter((r) => r.infra)
 if (broken.length) {
-  const retried = await runBatch(broken.map(({ prompt, expected }) => ({ prompt, expected, r: 9 })))
+  const retried = await runBatch(broken.map(({ prompt, expected, forbidden }) => ({ prompt, expected, forbidden, r: 9 })))
   results = results.map((r) => {
     if (!r.infra) return r
     const again = retried.find((x) => x.prompt === r.prompt)
@@ -204,14 +219,14 @@ let hit = 0, none = 0, foreign = 0
 const flaky = []
 for (const c of CASES) {
   const mine = results.filter((r) => r.prompt === c.prompt)
-  const good = mine.filter((r) => r.got && c.expected.includes(r.got)).length
+  const good = mine.filter((r) => isHit(c, r.got)).length
   hit += good
   none += mine.filter((r) => !r.got).length
   foreign += mine.filter((r) => r.got && decoyNames.has(r.got)).length
-  if (mine.length > 1 && good > 0 && good < mine.length) flaky.push(`${c.expected[0]} (${good}/${mine.length})`)
+  if (mine.length > 1 && good > 0 && good < mine.length) flaky.push(`${label(c)} (${good}/${mine.length})`)
   rows.push({
     prompt: c.prompt.slice(0, 44),
-    expected: c.expected.join('|'),
+    expected: label(c),
     fired: mine.map((r) => r.got || '—').join(','),
     hit: mine.length > 1 ? `${good}/${mine.length}` : (good ? 'yes' : 'no'),
   })
@@ -224,7 +239,7 @@ if (REPS > 1) {
   const perRep = Array.from({ length: REPS }, (_, i) =>
     CASES.filter((c) => {
       const r = results.filter((x) => x.prompt === c.prompt)[i]
-      return r && r.got && c.expected.includes(r.got)
+      return r && isHit(c, r.got)
     }).length)
   console.log(`per-rep: ${perRep.map((n) => `${n}/${CASES.length}`).join(' · ')} — read the range, not the mean`)
   if (flaky.length) console.log(`unstable across reps: ${flaky.join(', ')}`)
@@ -232,7 +247,7 @@ if (REPS > 1) {
 if (process.env.CROWDED) console.log(`a foreign skill won: ${foreign}/${total}`)
 if (FULL) {
   const fired = new Set(results.map((r) => r.got).filter(Boolean))
-  const never = KNOWN.filter((k) => !fired.has(k) && CASES.some((c) => c.expected.includes(k)))
+  const never = KNOWN.filter((k) => !fired.has(k) && CASES.some((c) => c.expected?.includes(k)))
   if (never.length) console.log('prompted but NEVER fired (fix or cut):', never.join(', '))
 }
 // A session can skip the formal skill-load and still do the discipline — measured live, the
