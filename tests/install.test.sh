@@ -117,7 +117,7 @@ echo "── invoking via the ~/.mastermind symlink must not self-link the brain
 # one that destroyed the install.
 H="$TMP/fakehome"; mkdir -p "$H"
 ln -sfn "$REPO" "$H/.mastermind"
-(cd "$H" && HOME="$H" "$H/.mastermind/install.sh" --global >/dev/null 2>&1) || true
+(cd "$H" && HOME="$H" "$H/.mastermind/install.sh" --global claude >/dev/null 2>&1) || true
 is "brain link still points at the real clone" "$(readlink "$H/.mastermind")" "$REPO"
 is "no literal-glob links created" "$(ls "$H/.claude/skills" 2>/dev/null | grep -c '^\*' | tr -d ' ')" "0"
 is "all skills linked via the symlink path" "$(ls "$H/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
@@ -322,7 +322,7 @@ echo "── project under \$HOME with the shared clone present — must NOT res
 # inside HOME, so it couldn't see this. This does.
 AH="$TMP/anchorhome"; mkdir -p "$AH/Projects/proj/src"
 ln -sfn "$REPO" "$AH/.mastermind"                       # the shared clone, as a symlink
-(cd "$AH" && HOME="$AH" "$REPO/install.sh" --global >/dev/null 2>&1)   # global wiring exists
+(cd "$AH" && HOME="$AH" "$REPO/install.sh" --global claude >/dev/null 2>&1)  # global wiring exists
 (cd "$AH/Projects/proj" && HOME="$AH" "$REPO/install.sh" claude >/dev/null 2>&1)
 is "install wired the project, not \$HOME" "$([ -d "$AH/Projects/proj/.mastermind" ] && echo y)" "y"
 (cd "$AH/Projects/proj/src" && HOME="$AH" "$REPO/install.sh" --uninstall claude >/dev/null 2>&1)

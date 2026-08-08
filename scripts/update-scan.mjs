@@ -84,7 +84,7 @@ const NEW_NODES = [
     id: 'moreskills',
     label: 'more skills',
     kind: 'tool',
-    sub: 'route·interview·learn·explain·prototype·…',
+    sub: 'route·interview·learn·explain·…',
     group: 'Library',
   },
   {
@@ -206,6 +206,8 @@ const bad = []
 if (d.version !== 1) bad.push('version must be the literal 1')
 for (const n of g.nodes) {
   if (n.detail && n.detail.length > 200) bad.push(`node ${n.id}: detail ${n.detail.length} > 200 chars`)
+  if (n.sub && n.sub.length > 40) bad.push(`node ${n.id}: sub ${n.sub.length} > 40 chars`)
+  if (n.label && n.label.length > 40) bad.push(`node ${n.id}: label ${n.label.length} > 40 chars`)
   if (n.group === '') bad.push(`node ${n.id}: empty group — omit the key instead`)
 }
 for (const e of g.edges)

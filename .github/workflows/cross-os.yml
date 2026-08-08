@@ -52,6 +52,9 @@ jobs:
           if ($LASTEXITCODE -eq 0) { throw "expected a non-zero exit on native Windows" }
           if ("$out" -notmatch "WSL") { throw "expected the WSL pointer in: $out" }
           Write-Host "guard message OK: $out"
+          # GitHub's pwsh wrapper exits with $LASTEXITCODE, which is node's 1 — the correct
+          # refusal. The assertions above already decided the outcome, so end deliberately.
+          exit 0
 
   alpine:
     runs-on: ubuntu-latest
