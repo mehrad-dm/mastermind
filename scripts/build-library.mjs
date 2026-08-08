@@ -101,6 +101,13 @@ let stale = 0
 const wanted = new Map(items.map((it, i) => [`${it.name}.md`, page(it, i, items)]))
 
 if (CHECK) {
+  // The pages live in the SITE repo, which a CI runner checking out only this one does not
+  // have. Without this, every page reads as "stale" and the release gate fails for a reason
+  // that has nothing to do with the release.
+  if (!existsSync(join(REPO, '..', 'mastermind-site'))) {
+    console.log('· site repo not checked out beside this one — skipping the library check')
+    process.exit(0)
+  }
   const have = existsSync(OUT) ? new Set(readdirSync(OUT).filter((f) => f.endsWith('.md'))) : new Set()
   for (const [f, want] of wanted) {
     if (!have.has(f) || readFileSync(join(OUT, f), 'utf8') !== want) stale++
