@@ -37,7 +37,7 @@ library, so it's the right place — and the only place — to say something.
 
 Offer only when **every** gate holds:
 
-- **It changes the outcome, not the ceremony.** "This is a risky unknown — want a throwaway spike first?"
+- **It changes the outcome, not the ceremony.** "This is a risky unknown — want a throwaway prototype first?"
   earns its line. "You could also run qa" does not.
 - **They didn't already ask for it**, and haven't turned it down this session. One decline retires that
   offer for good.

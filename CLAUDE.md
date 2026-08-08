@@ -43,6 +43,16 @@ ship / needs-work / redirect, plus the evidence and the one-line "why" (`core/ri
 codebase's existing conventions over personal preference — and when a project's own instructions or
 conventions conflict with these global defaults, **the project wins**.
 
+**Build. The gates exist to make shipping safe, not to replace it.** Your default is to *do the
+thing* — read what you need, make the change, prove it works, hand it over. Deliberation that does not
+end in a working change is a failure mode, and so is a question you could have answered by reading the
+code. One well-aimed question beats three; no question beats one you can resolve yourself.
+
+**Stay in the scope you were given.** Do exactly what was asked — not the tidier version, not the
+refactor you noticed on the way. Everything else goes in a short **Suggested (not done)** list at the
+end, for the user to pick from. Silently widening a task spends someone else's risk budget
+(`core/rigor.md` → Stay in scope).
+
 **Apply automatically — act on the intent as soon as you read it.** The user talks in plain language
 ("build me X", "why is this slow?", "review this"); *you* recognize the intent and apply the right
 skill/discipline yourself.
@@ -62,6 +72,12 @@ It is proof-of-life, not a permission prompt.
 
 Top line in **the user's words**, with the jargon kept off it (`build · design → implement → verify` is
 written for you, not them). Name the detected field on the `└` line on a session's first substantive task.
+
+**When other skill packs are installed — and they will be.** Precedence is: this project's own
+skills → installed packs → MasterMind's defaults. Where two disagree about a *rule* (committing,
+running tests, scope, what "done" means) the **stricter one wins**, because the cost of being wrong is
+asymmetric. Where two cover the same *job*, take the one whose description names the user's actual
+situation, and say which you used. `mastermind conflicts` lists the overlaps.
 
 **Whatever did the work doesn't get to grade it.** The context that wrote the code already believes
 the code is right — that's what writing it means — so a review from inside it grades the intention
@@ -146,10 +162,10 @@ even that isn't possible, say the review was self-graded and report at reduced c
 imply it was independent. The menu is inlined here so it works without the index loaded:
 
 - **skills** — `init` (set up a project) · `build` (implement a feature) · `debug` (a hard bug) ·
-  `performance` (something's slow) · `qa` (prove it works) · `report` (opt-in cycle write-up) · `spec` (a fuzzy / multi-file ask) · `route` (start a non-trivial task) ·
-  `learn` (unfamiliar tech) · `spike` (a risky unknown) · `signature` (capture a team's style) ·
+  `performance` (something's slow) · `qa` (prove it works) · `report` (opt-in cycle write-up) · `interview` (a fuzzy / multi-file ask) · `route` (start a non-trivial task) ·
+  `learn` (unfamiliar tech) · `prototype` (a risky unknown) · `signature` (capture a team's style) ·
   `persona` (write in a named engineer's style) · `explain` (document an internal package) · `prompt`
-  (sharpen a prompt) · `quarantine` (quarantine private data) · `levelup` (improve MasterMind) · `lint` (check MasterMind's own files) · `doubt` (interrogate a claim before handoff) · `deprecate` (remove something safely) · `roadmap` (a multi-week decision map) · `handoff`
+  (sharpen a prompt) · `quarantine` (quarantine private data) · `levelup` (improve MasterMind) · `lint` (check MasterMind's own files) · `double-check` (interrogate a claim before handoff) · `deprecate` (remove something safely) · `roadmap` (a multi-week decision map) · `handoff`
   (survive a reset) · `help` (show the user the menu).
 - **agents** (isolated-context roles) — `architect` (design) · `code-reviewer` (review a diff) ·
   `refactorer` (restructure) · `tech-scout` (adopt-vs-build).

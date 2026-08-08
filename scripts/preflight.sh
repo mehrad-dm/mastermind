@@ -26,6 +26,19 @@ step() {
 
 shell_parses() { local f; for f in "$@"; do bash -n "$f" || return 1; done; }
 
+# Some checks depend on a live model session. Exit 2 from those means the ENVIRONMENT failed
+# (logged out, rate-limited), which is not a release blocker — a real regression exits 1.
+step_live() {
+  local name="$1"; shift
+  "$@" >"$LOG" 2>&1
+  case $? in
+    0) printf '  %s✓%s %s\n' "$g" "$x" "$name"; PASS=$((PASS + 1)) ;;
+    2) printf '  %s⚠%s %s — environment could not run it (not a regression)\n' "$y" "$x" "$name"
+       sed 's/^/        /' "$LOG" | tail -2 ;;
+    *) printf '  %s✗%s %s\n' "$r" "$x" "$name"; sed 's/^/        /' "$LOG" | tail -6; FAIL=$((FAIL + 1)) ;;
+  esac
+}
+
 versions_agree() {
   local want; want="$(cat "$REPO/VERSION")"
   local found
@@ -63,6 +76,7 @@ echo "Code & tests"
 step "installer regression suite"      bash "$REPO/tests/install.test.sh"
 step "agent-callable surface"          bash "$REPO/tests/agent-surface.test.sh"
 step "skill routing accuracy"          node "$REPO/evals/agent-surface-routing.mjs"
+step_live "skills auto-invoke (live)"  node "$REPO/evals/auto-invoke.mjs"
 step "shell scripts parse"             shell_parses "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/tests/agent-surface.test.sh" "$REPO/bin/mastermind" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
 
 echo "Repo integrity"
@@ -78,6 +92,7 @@ step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --str
 echo "Release consistency"
 step "version strings agree (repo + site)"   versions_agree
 step "architecture map is fresh"             scan_is_fresh
+step "site numbers match the results file" node "$REPO/scripts/sync-evals.mjs" --check
 step "site builds"                           site_builds
 
 echo

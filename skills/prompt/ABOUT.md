@@ -71,7 +71,7 @@ You'll see it engage in your terminal:
   touches your code; it only touches text you send to a model. The names sound adjacent; the jobs share
   nothing.
 - **The ask is fuzzy but it's a build task, not a prompt.** If you want *MasterMind itself* to build
-  something and the requirements are unclear, that's `spec` — it turns a vague ask into a buildable
+  something and the requirements are unclear, that's `interview` — it turns a vague ask into a buildable
   specification. `prompt` is for when the finished text is the deliverable and you'll send it somewhere
   else.
 - **You want to teach MasterMind a lasting preference.** That's `levelup`. A rewritten prompt is a

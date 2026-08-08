@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.28.1-7c6bff" alt="version 0.27.0" />
+  <img src="https://img.shields.io/badge/version-0.29.0-7c6bff" alt="version 0.29.0" />
   <img src="https://img.shields.io/badge/status-experimental-e0a800" alt="status: experimental" />
   <img src="https://img.shields.io/badge/license-MIT-555" alt="license MIT" />
 </p>
 
-<p align="center"><sub><b>⚗️ Experimental (v0.27.0).</b> Under active development — not yet stable, but usable. Its
+<p align="center"><sub><b>⚗️ Experimental (v0.29.0).</b> Under active development — not yet stable, but usable. Its
 effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md</a>); APIs and defaults may change.</sub></p>
 
 > **Make your AI coding assistant trustworthy.** MasterMind is plain Markdown that gives **Claude Code,
@@ -193,8 +193,8 @@ matching skill. (Power users *can* type `/name` as a shortcut, but nobody has to
 | ask to build a feature | designs → implements to rigor → verifies → reviews → captures lessons (`build`) |
 | hit a hard bug | runs structured, evidence-first debugging (`debug`) |
 | finish something | proves it works end-to-end; **offers** tests/TDD rather than forcing them (`qa`) |
-| face an unknown | learns the real stack + grills its own assumptions against the source (`learn`, `spike`) |
-| give a fuzzy ask | turns it into a crisp spec — problem, scope, terms, acceptance (`spec`) |
+| face an unknown | learns the real stack + challenges its own assumptions against the source (`learn`, `prototype`) |
+| give a fuzzy ask | turns it into a crisp spec — problem, scope, terms, acceptance (`interview`) |
 | want code to fit your team | captures the codebase's real style → name-free rules it follows (`signature`) |
 | want code in a style you admire | writes in the documented public style of an engineer you name — e.g. Dan Abramov, Kent C. Dodds (`persona`) |
 
@@ -202,6 +202,32 @@ Also auto-applied (and callable by name): `explain` (AI-friendly docs for an int
 (a private, gitignored space for sensitive data), `handoff`, and `levelup` (teach MasterMind something durable).
 Specialist **agents** — `architect`, `code-reviewer`, `refactorer`, `tech-scout` — handle deep,
 isolated-context work. Full index: [`skills/README.md`](skills/README.md).
+
+## Checking on it
+
+You never need these — MasterMind calls them itself, which is the point: in Cursor and Codex,
+which have no native skill mechanism, it can ask for the one skill it needs instead of pasting the
+whole library into context. They are read-only, so nothing installs or changes when you run them.
+
+```bash
+mastermind skills                      # the routing table — every skill, one line each
+mastermind skill performance           # the instructions it actually follows
+mastermind route "why is this slow?"   # the table again, with keyword matches arrowed
+mastermind conflicts                   # what else is installed, and where it overlaps
+mastermind wrong-log                   # every time it got something wrong, and what caught it
+```
+
+Add `--json` to parse any of them. Without a global npm install, call the copy in your project:
+`.mastermind/bin/mastermind skills`.
+
+**When you have other skill packs installed** — and most people will — precedence is: your
+project's own skills → installed packs → MasterMind's defaults. Where two disagree about a *rule*
+(committing, running tests, scope), the stricter one wins. `mastermind conflicts` shows the
+overlaps; measured routing barely moves in a crowded install, so it reports rather than resolves.
+
+**`wrong-log` is the honest answer to "can I trust this?"** — a record of misses with the thing
+that caught each one named, not a self-assessment. Empty means nothing was logged, not that
+nothing went wrong.
 
 ## How it levels up
 

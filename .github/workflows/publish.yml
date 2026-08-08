@@ -10,7 +10,40 @@ permissions:
   contents: read
   id-token: write
 jobs:
+  # Publishing used to check only the version string. Everything a release promises is
+  # verified here first, and publish depends on it — a red gate means nothing reaches npm.
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          test "v$(cat VERSION)" = "$GITHUB_REF_NAME" || { echo "tag/VERSION mismatch"; exit 1; }
+      - run: bash tests/install.test.sh
+      - run: bash tests/agent-surface.test.sh
+      - run: node scripts/check-integrity.mjs
+      - run: node scripts/build-router.mjs --check
+      - run: node scripts/build-library.mjs --check
+      - run: node scripts/check-links.mjs
+      - run: node scripts/lint-brain.mjs --strict
+      - run: node evals/agent-surface-routing.mjs
+      - name: the published tarball contains exactly what we intend
+        working-directory: cli
+        run: |
+          npm pack --dry-run --json > /tmp/pack.json
+          node -e '
+            const p = require("/tmp/pack.json")[0];
+            const files = p.files.map(f => f.path).sort();
+            const want = ["README.md", "bin/mastermind.mjs", "package.json"].sort();
+            if (JSON.stringify(files) !== JSON.stringify(want))
+              { console.error("unexpected tarball contents:", files); process.exit(1) }
+            console.log("tarball OK:", files.join(", "));
+          '
+
   publish:
+    needs: gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +51,21 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      # The tarball ships the CLI only; the brain is cloned at install time, so provenance
+      # alone does not cover the code users execute. Stamp the exact commit this tag points
+      # at — the CLI refuses to install a clone whose HEAD does not match it, which closes
+      # the moved-tag hole. Written into the published package only, never committed.
+      - name: stamp the immutable commit into the package
+        working-directory: cli
+        run: |
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.commit = process.env.GITHUB_SHA;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+            console.log("pinned to", pkg.commit);
+          '
       - run: |
-          test "v$(cat VERSION)" = "$GITHUB_REF_NAME" || { echo "tag/VERSION mismatch"; exit 1; }
           npm install -g npm@latest
           npm publish --provenance --access public
         working-directory: cli

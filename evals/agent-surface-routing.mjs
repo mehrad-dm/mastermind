@@ -23,14 +23,14 @@ const PARAPHRASE = [
   ['does it actually work? drive it end to end before we ship', 'qa'],
   ['this is sensitive client data, do not commit it', 'quarantine'],
   ['we need to remove the old v1 endpoint, is anything still using it?', 'deprecate'],
-  ['I am about to say this is fixed — are you sure?', 'doubt'],
+  ['I am about to say this is fixed — are you sure?', 'double-check'],
   ['set up mastermind for this project', 'init'],
   ['write docs for our internal package so people stop misusing it', 'explain'],
   ['I am pausing this, make it survive the next session', 'handoff'],
   ['what can you do? show me the options', 'help'],
   ['improve this prompt before I send it to the model', 'prompt'],
   ['make it match our team conventions, you keep writing it wrong', 'signature'],
-  ['I do not know if this approach will even work, try something quick', 'spike'],
+  ['I do not know if this approach will even work, try something quick', 'prototype'],
   ['remember this correction for next time', 'levelup'],
 ]
 
@@ -43,7 +43,7 @@ const ORGANIC = [
   ['before this goes to the client I want proof it holds up', 'qa'],
   ['nobody knows whether we can drop the legacy sync job', 'deprecate'],
   ['our new hire cannot work out how the payments module is meant to be used', 'explain'],
-  ['I might be wrong about what is causing this', 'doubt'],
+  ['I might be wrong about what is causing this', 'double-check'],
   ['my laptop died and I lost the thread of what I was doing', 'handoff'],
 ]
 
@@ -51,8 +51,10 @@ const ORGANIC = [
 // always present. Two different things are measured: recall (is it in the output at all —
 // must be 100%, that is the design) and the hint arrows (advisory only, and measurably weak
 // on natural phrasing — which is exactly why they never filter the list).
+// Pinned to the checkout — with a dangling global brain this measured the machine, not the code.
 const route = (q) => {
-  const r = JSON.parse(execFileSync('node', [CLI, 'route', q, '--json'], { cwd: ROOT, encoding: 'utf8' }))
+  const r = JSON.parse(execFileSync('node', [CLI, 'route', q, '--json'],
+    { cwd: ROOT, encoding: 'utf8', env: { ...process.env, MASTERMIND_HOME: ROOT } }))
   return { all: r.skills.map((s) => s.name), hints: r.hints }
 }
 

@@ -1,5 +1,5 @@
 ---
-title: Spike — buying knowledge cheaply, then throwing the receipt away
+title: Prototype — buying knowledge cheaply, then throwing the receipt away
 blurb: What MasterMind does when nobody knows whether an approach will work, and why the code it writes is meant to be deleted.
 ---
 
@@ -29,7 +29,7 @@ accident, and nobody ever decides to let that happen.
 
 ## How it actually works
 
-**1. Name the one question.** A spike answers a single risky unknown, stated plainly enough that the
+**1. Name the one question.** A prototype answers a single risky unknown, stated plainly enough that the
 answer is yes or no. "Can this handle a twenty-megabyte upload without timing out?" If there's no
 question, there's no need for a prototype — and that check alone kills a lot of pointless work.
 
@@ -48,7 +48,7 @@ It's time-boxed throughout. The deliverable is the *learning*, never the code.
 
 ## When it fires
 
-You don't type a command. Say something like this and MasterMind reaches for `spike`:
+You don't type a command. Say something like this and MasterMind reaches for `prototype`:
 
 > *"will this even work"*
 > *"can you try something quick before we commit to this"*
@@ -59,19 +59,19 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ trying it for real to see if it holds up
-   └ spike · name the question → smallest test → extract → discard
+   └ prototype · name the question → smallest test → extract → discard
 ```
 
 ## When it does *not* fire
 
 - **Building something real** — that's `build`, and confusing the two is the expensive mistake. `build`
-  produces code intended to live: designed, tested, reviewed, maintained. `spike` produces code intended
-  to die, and its shortcuts are only safe *because* it dies. The moment a spike ships, every one of those
+  produces code intended to live: designed, tested, reviewed, maintained. `prototype` produces code intended
+  to die, and its shortcuts are only safe *because* it dies. The moment a prototype ships, every one of those
   shortcuts becomes debt you never chose to take on. If the path is already clear, skip the spike and
   build it properly the first time.
 - **The answer is in the documentation** — that's `learn`. Spikes are for questions only running code can
   settle. Writing a prototype to discover something the docs state plainly is slower, not faster.
-- **Something is broken and you need to know why** — that's `debug`. A spike explores an unknown future;
+- **Something is broken and you need to know why** — that's `debug`. A prototype explores an unknown future;
   debug investigates a known failure.
 
 ## What you get

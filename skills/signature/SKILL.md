@@ -1,9 +1,12 @@
 ---
 name: signature
-description: Use when code should match a team's real conventions the user keeps correcting the AI toward — "make it match our codebase", "follow our patterns", "you keep writing it wrong" — or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`.
+description: Use when code should match a team's real code style and conventions the user keeps correcting the AI toward — "make it match our codebase", "follow our patterns", "you keep writing it wrong" — or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`.
 ---
 
-# Signature — capture a team's style, turn it into rules the AI follows
+# Signature — capture a team's code style, turn it into rules the AI follows
+
+*A signature is your team's code style and conventions — the way your code recognizably looks and
+reads, like handwriting. The name is MasterMind's; the thing it captures is plain old code style.*
 
 A codebase has a *real* style that's rarely written down — people can't list their own conventions, but
 recognize a violation instantly. This skill surfaces that tacit style and makes it durable: **a correction

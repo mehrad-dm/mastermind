@@ -62,13 +62,13 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **When the question is "what are we even building?"** — that's the `spec` skill. Spec pins down the
+- **When the question is "what are we even building?"** — that's the `interview` skill. Spec pins down the
   *requirement*: what counts as done, what's in scope, what the words mean. Architect assumes the
   requirement is settled and decides the *technical shape* that satisfies it. Fuzzy ask, use spec; clear
   ask with an unclear structure, use architect.
 - **A small, contained change.** Adding a field, fixing a label. Ceremony for a five-minute job is waste.
-- **When the real unknown is "will this approach even work?"** — that's a `spike`: build a rough throwaway
-  and find out. Architect designs from things you know; a spike goes and learns them.
+- **When the real unknown is "will this approach even work?"** — that's a `prototype`: build a rough throwaway
+  and find out. Architect designs from things you know; a prototype goes and learns them.
 
 ## What you get
 

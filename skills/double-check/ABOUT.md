@@ -1,5 +1,5 @@
 ---
-title: Doubt — attacking your own answer before you hand it over
+title: Double-check — attacking your own answer before you hand it over
 blurb: When MasterMind is about to tell you something works, it first tries to prove itself wrong — with a reviewer that never gets told what the answer is supposed to be.
 ---
 
@@ -64,7 +64,7 @@ work is clean. It proves the judge is broken, and the judge is the model.
 ## When it fires
 
 You don't type a command. Say any of these — or put MasterMind in a position where the next sentence out
-of it is a promise — and it reaches for `doubt`:
+of it is a promise — and it reaches for `double-check`:
 
 > *"are you sure this actually works?"*
 > *"you told me this was fixed last time"*
@@ -75,7 +75,7 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ trying to break this before I hand it to you
-   └ doubt · claim → artifact + contract → adversarial pass → reconcile
+   └ double-check · claim → artifact + contract → adversarial pass → reconcile
 ```
 
 ## When it does *not* fire

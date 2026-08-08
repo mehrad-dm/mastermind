@@ -62,7 +62,7 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ measuring first, then fixing what's actually slow
-   └ perf · measure → profile → fix the biggest → verify → guard
+   └ performance · measure → profile → fix the biggest → verify → guard
 ```
 
 ## When it does *not* fire

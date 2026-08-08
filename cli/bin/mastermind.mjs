@@ -20,21 +20,25 @@
 // agent either inlines the whole library or guesses a path. Add --json for structured output.
 
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, writeSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, realpathSync, rmSync, writeSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, dirname, parse as parsePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const VERSION = JSON.parse(
+const PKG = JSON.parse(
   readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'),
-).version
+)
+const VERSION = PKG.version
+// Provenance signs this CLI, not the brain it clones — so publish stamps the exact commit
+// and every clone is checked against it, closing the moved-tag hole.
+const PINNED_COMMIT = PKG.commit || process.env.MASTERMIND_COMMIT || ''
 
 // Overridable for tests and forks; defaults are the published truth.
 const REPO_URL = process.env.MASTERMIND_REPO || 'https://github.com/mehrad-dm/mastermind'
 const MM_HOME = process.env.MASTERMIND_HOME || join(homedir(), '.mastermind')
 const PIN = process.env.MASTERMIND_REF || `v${VERSION}`
 
-const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route', 'wrong-log']
+const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route', 'wrong-log', 'conflicts']
 const COMMANDS = [...READ_CMDS, 'check', 'update', 'uninstall', 'init']
 const argv = process.argv.slice(2)
 // Find the command wherever it sits, not just at argv[0]. Matching only the first token made
@@ -44,6 +48,28 @@ const argv = process.argv.slice(2)
 const cmdAt = argv.findIndex((a) => !a.startsWith('-'))
 const cmd = cmdAt >= 0 && COMMANDS.includes(argv[cmdAt]) ? argv.splice(cmdAt, 1)[0] : 'init'
 const passthrough = argv // --global, --shared, etc. go straight to the engine
+
+// install.sh takes bare tool names, so an unknown word used to trigger a full install
+// (`mastermind skilss`). Lookups are exempt — there a bare word is the argument.
+const TOOLS = ['claude', 'cursor', 'codex']
+const distance = (a, b) => {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
+  for (let j = 0; j <= b.length; j++) d[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return d[a.length][b.length]
+}
+for (const word of READ_CMDS.includes(cmd) ? [] : passthrough.filter((a) => !a.startsWith('-'))) {
+  if (TOOLS.includes(word)) continue
+  const near = [...COMMANDS, ...TOOLS]
+    .map((c) => [c, distance(word, c)])
+    .filter(([, d]) => d <= 2)
+    .sort((u, v) => u[1] - v[1])[0]
+  const hint = near ? ` Did you mean \`${near[0]}\`?` : ` Commands: ${COMMANDS.join(', ')}.`
+  console.error(`✖ unknown argument "${word}".${hint} Nothing was installed or changed.`)
+  process.exit(2)
+}
 
 const run = (bin, args, opts = {}) => {
   const r = spawnSync(bin, args, { stdio: 'inherit', ...opts })
@@ -56,6 +82,12 @@ const git = (args, opts = {}) =>
 const fail = (msg) => {
   console.error(`✖ ${msg}`)
   process.exit(1)
+}
+
+// verifyCommit throws through fail() -> process.exit, so cleanup must happen before it runs.
+
+if (process.platform === 'win32') {
+  fail('Native Windows is not supported yet — run this inside WSL (or Git Bash), where it works as-is.')
 }
 
 // ── the agent-callable surface ──────────────────────────────────────────────────
@@ -203,6 +235,68 @@ if (READ_CMDS.includes(cmd)) {
     )
   }
 
+  // What else is installed beside us, and where do we collide? Measured routing barely moves
+  // in a crowded install (evals/auto-invoke.mjs CROWDED=1), so this reports rather than
+  // resolves: the model picks, the user gets to see the field it picked from.
+  if (cmd === 'conflicts') {
+    const ours = listCapabilities(brain, 'skill')
+    const ourNames = new Set(ours.map((s) => s.name))
+    // A skill is ours if it resolves into ANY brain — the project's copy or the shared clone
+    // (a global install symlinks into the clone, which is not the project brain).
+    const brainRoots = []
+    for (const b of [brain, MM_HOME]) {
+      try { if (existsSync(b)) brainRoots.push(realpathSync(b)) } catch { /* unreadable */ }
+    }
+    const foreign = []
+    const seen = new Set()
+    for (const root of [join(dirname(brain), '.claude', 'skills'), join(homedir(), '.claude', 'skills')]) {
+      if (!existsSync(root)) continue
+      for (const e of readdirSync(root, { withFileTypes: true })) {
+        const file = join(root, e.name, 'SKILL.md')
+        if (!existsSync(file)) continue
+        let real = ''
+        try { real = realpathSync(file) } catch { continue }
+        if (brainRoots.some((b) => real.startsWith(b + '/'))) continue
+        const fm = frontmatter(readFileSync(file, 'utf8'))
+        const name = fm.name || e.name
+        if (seen.has(name)) continue
+        seen.add(name)
+        foreign.push({ name, description: fm.description || '', path: real, from: root })
+      }
+    }
+    const overlap = (a, b) => {
+      const A = new Set(words(a)), B = new Set(words(b))
+      if (!A.size || !B.size) return 0
+      let shared = 0
+      for (const w of A) if (B.has(w)) shared++
+      return shared / Math.min(A.size, B.size)
+    }
+    const collisions = []
+    for (const f of foreign) {
+      if (ourNames.has(f.name)) collisions.push({ kind: 'name', foreign: f.name, ours: f.name, path: f.path })
+      const near = ours
+        .map((o) => ({ name: o.name, score: overlap(o.description, f.description) }))
+        .filter((o) => o.score >= 0.25) // 0.29 is a genuine overlap (an 'optimize' pack vs `performance`); tuned against real descriptions, not a guess
+        .sort((a, b) => b.score - a.score)[0]
+      if (near) collisions.push({ kind: 'overlap', foreign: f.name, ours: near.name, share: +near.score.toFixed(2), path: f.path })
+    }
+    emit(
+      { brain, foreign: foreign.map(({ name, from }) => ({ name, from })), collisions,
+        note: 'Precedence: this project\'s own skills → installed packs → MasterMind defaults. On a rule conflict the stricter rule wins.' },
+      foreign.length === 0
+        ? 'no other skill packs installed — nothing to collide with'
+        : [
+            `${foreign.length} foreign skill(s) installed beside ${ours.length} MasterMind skills`,
+            ...collisions.map((c) => c.kind === 'name'
+              ? `name   ${c.foreign} — same name as ours (yours is used; ours is mastermind-${c.foreign})`
+              : `overlap ${c.foreign} ≈ ${c.ours} (${Math.round(c.share * 100)}% shared triggers)`),
+            '',
+            'Precedence: your project\'s skills → installed packs → MasterMind defaults.',
+            'On a rule conflict (committing, tests, scope) the stricter rule wins.',
+          ].join('\n'),
+    )
+  }
+
   const kind = cmd === 'agent' || cmd === 'agents' ? 'agent' : 'skill'
   const items = listCapabilities(brain, kind)
 
@@ -259,20 +353,44 @@ if (READ_CMDS.includes(cmd)) {
   }
 }
 
-if (process.platform === 'win32') {
-  fail('Native Windows is not supported yet — run this inside WSL (or Git Bash), where it works as-is.')
-}
 try {
   execFileSync('git', ['--version'], { stdio: 'ignore' })
 } catch {
   fail('git is required (the brain is a git repo — that is also how you audit it).')
 }
+// install.sh is the engine, and Alpine — the usual CI base image — ships without bash.
+try {
+  execFileSync('bash', ['--version'], { stdio: 'ignore' })
+} catch {
+  fail('bash is required to install. On Alpine: `apk add --no-cache bash git`.')
+}
 
 // ── 1. make sure the shared brain exists (MASTERMIND_HOME, $HOME/.mastermind by default) ──
+const verifyCommit = (where, { cleanupOnMismatch = false } = {}) => {
+  // fail() exits the process, so anything that must happen first happens here.
+  const bail = (msg) => {
+    if (cleanupOnMismatch) rmSync(where, { recursive: true, force: true })
+    fail(msg)
+  }
+  if (!PINNED_COMMIT) return // local checkout / unpublished: nothing to verify against
+  let head = ''
+  try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: where, encoding: 'utf8' }).trim() }
+  catch { bail(`cannot read the commit at ${where} — refusing to install unverified code.`) }
+  if (head !== PINNED_COMMIT)
+    bail(`brain at ${where} is commit ${head.slice(0, 12)}, but this release pins ${PINNED_COMMIT.slice(0, 12)}.\n`
+      + '  The tag may have moved. Refusing to install code this release did not publish.')
+}
+
 if (!existsSync(MM_HOME)) {
   console.log(`↓ fetching the brain at ${PIN} → ${MM_HOME}`)
   const st = run('git', ['clone', '--depth', '1', '--branch', PIN, REPO_URL, MM_HOME])
-  if (st !== 0) fail(`clone of ${REPO_URL} at ${PIN} failed`)
+  if (st !== 0) {
+    // A half-written clone counts as "existing" on the next run, so the rejected code would
+    // install on the second attempt. Leave nothing behind.
+    rmSync(MM_HOME, { recursive: true, force: true })
+    fail(`clone of ${REPO_URL} at ${PIN} failed`)
+  }
+  verifyCommit(MM_HOME, { cleanupOnMismatch: true })
 } else if (!existsSync(join(MM_HOME, 'install.sh'))) {
   fail(`${MM_HOME} exists but doesn't look like the MasterMind repo — move it aside and re-run.`)
 } else if (existsSync(join(MM_HOME, '.git'))) {
@@ -285,10 +403,16 @@ if (!existsSync(MM_HOME)) {
       if (st !== 0) fail(`update refused — ${MM_HOME} has local changes. Keep them: git -C ${MM_HOME} stash && npx mastermind-brain update. Discard them: git -C ${MM_HOME} checkout -- . && npx mastermind-brain update`)
     }
     else {
-      run('git', ['fetch', '--tags', '--depth', '1', 'origin', `refs/tags/${PIN}:refs/tags/${PIN}`], { cwd: MM_HOME })
-      run('git', ['checkout', '-q', PIN], { cwd: MM_HOME })
+      const f = run('git', ['fetch', '--tags', '--depth', '1', 'origin', `refs/tags/${PIN}:refs/tags/${PIN}`], { cwd: MM_HOME })
+      if (f !== 0) fail(`could not fetch ${PIN} from ${REPO_URL} — the brain is unchanged; nothing was installed.`)
+      const c = run('git', ['checkout', '-q', PIN], { cwd: MM_HOME })
+      if (c !== 0) fail(`could not check out ${PIN} — the brain is unchanged; nothing was installed.`)
+      verifyCommit(MM_HOME)
     }
   }
+  // Verified on EVERY path that ends in running install.sh, not only after a fresh clone: an
+  // existing checkout at another commit reached the engine unverified.
+  verifyCommit(MM_HOME)
   try {
     const have = git(['describe', '--tags', '--always'])
     if (!have.startsWith(PIN) && cmd !== 'update')

@@ -14,16 +14,34 @@ set -uo pipefail
 RED=$'\033[0;31m'; YEL=$'\033[0;33m'; GRN=$'\033[0;32m'; NC=$'\033[0m'
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 DENYLIST="$REPO_ROOT/lab/.denylist"
+# Credential shapes that always run, denylist or not. Narrow on purpose: a hook that cries
+# wolf gets bypassed, and a bypassed guard protects nothing.
+mm_secret_patterns() {
+  cat <<'PATTERNS'
+gh[pousr]_[A-Za-z0-9]{36,}
+github_pat_[A-Za-z0-9_]{20,}
+npm_[A-Za-z0-9]{36}
+xox[baprs]-[A-Za-z0-9-]{10,}
+sk-[A-Za-z0-9]{32,}
+sk-ant-[A-Za-z0-9_-]{20,}
+AKIA[0-9A-Z]{16}
+ASIA[0-9A-Z]{16}
+-----BEGIN [A-Z ]*PRIVATE KEY-----
+AIza[0-9A-Za-z_-]{35}
+PATTERNS
+}
 
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
   printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1 — push guard BYPASSED.${NC}"
   exit 0
 fi
 
-[ -f "$DENYLIST" ] || exit 0
-TERMS=$(tr -d '\r' < "$DENYLIST" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
-  | grep -vE '^(#|$)' | sed 's/[].[^$\\*+?()|{}]/\\&/g' | paste -sd '|' -)
-[ -n "$TERMS" ] || exit 0
+# No early exit when the denylist is missing: the built-in patterns are the floor. A guard
+# that reports "clean" because it was unconfigured is worse than no guard at all.
+TERMS="$({ mm_secret_patterns
+  [ -f "$DENYLIST" ] && tr -d '\r' < "$DENYLIST" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    | grep -vE '^(#|$)' | sed 's/[].[^$\\*+?()|{}]/\\&/g'
+  } | grep -vE '^$' | paste -sd '|' -)"
 
 FAIL=0
 # stdin: <local ref> <local sha> <remote ref> <remote sha>
@@ -43,8 +61,15 @@ while read -r _lref lsha _rref rsha; do
     # the very terms we scan for, and self-matching would block every future push.
     HIT=$(git grep -liE "$TERMS" "$rev" -- . ':(exclude)lab/**' 2>/dev/null || true)
     if [ -n "$HIT" ]; then
-      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") contains confidential terms:${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") contains confidential terms or credentials:${NC}"
       printf '%s\n' "$HIT" | sed 's/^/    /' | head -5
+      FAIL=1
+    fi
+    # The quarantine itself must never travel, however it got committed.
+    QHIT=$(git ls-tree -r --name-only "$rev" 2>/dev/null | grep -E '^lab/' || true)
+    if [ -n "$QHIT" ]; then
+      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") carries quarantined files:${NC}"
+      printf '%s\n' "$QHIT" | sed 's/^/    /' | head -5
       FAIL=1
     fi
   done

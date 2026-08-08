@@ -41,7 +41,7 @@ the installed version, plus one well-built real example. Documentation over reco
 **4. Ground it in your code.** Search for how this pattern already appears in your project and match it.
 Consistency with the surrounding code beats a cleverer approach in isolation.
 
-**5. Grill the assumptions before writing anything.** This is the step that earns the rest. Every belief
+**5. Challenge the assumptions before writing anything.** This is the step that earns the rest. Every belief
 about how the API behaves gets listed explicitly, then verified against the source. Each one comes back
 confirmed, corrected, or still unknown. Anything unresolved is either flagged as a stated risk or settled
 with a tiny experiment — never quietly guessed at. Where something genuinely can't be verified, you get a
@@ -60,7 +60,7 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ reading the real docs before I touch this
-   └ learn · detect stack → read primary docs → grill assumptions
+   └ learn · detect stack → read primary docs → challenge assumptions
 ```
 
 ## When it does *not* fire
@@ -70,7 +70,7 @@ You'll see it engage in your terminal:
   lets it go. `levelup` writes durable lessons into MasterMind's long-term knowledge so they apply to
   every future project. Learn is reading for one job; levelup is remembering forever. They chain naturally
   — if something learned turns out to be broadly reusable, learn hands it to levelup.
-- **Testing a risky unknown by building something** — that's `spike`. Learn answers questions the docs can
+- **Testing a risky unknown by building something** — that's `prototype`. Learn answers questions the docs can
   answer. Spike answers questions only running code can.
 - **Familiar territory.** If the stack is well-known and current, this step is skipped. It's a response to
   genuine uncertainty, not a ritual.

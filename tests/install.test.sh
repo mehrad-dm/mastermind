@@ -22,7 +22,6 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL="$REPO/install.sh"
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
 
 PASS=0; FAIL=0
 g=$'\033[0;32m'; r=$'\033[0;31m'; x=$'\033[0m'
@@ -38,6 +37,16 @@ proj() { local d="$TMP/$1"; rm -rf "$d"; mkdir -p "$d"; printf '%s' "$d"; }
 # developer's own setup. A `--global --uninstall` case once wiped a real global install.
 # This is what makes the "touches nothing in $HOME" promise at the top of this file true.
 SANDBOX_HOME="$TMP/home"; mkdir -p "$SANDBOX_HOME"
+# install.sh repoints $HOME/.mastermind at whatever repo runs it. A case that forgets
+# HOME="$SANDBOX_HOME" therefore rewires the developer's real global brain — it happened twice.
+# Fail loudly instead of silently damaging the machine.
+REAL_HOME_LINK="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
+trap 'now="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
+      if [ "$now" != "$REAL_HOME_LINK" ]; then
+        printf "\n\033[0;31m✖ a test modified the real ~/.mastermind (%s → %s) — restoring\033[0m\n" "$REAL_HOME_LINK" "$now" >&2
+        [ "$REAL_HOME_LINK" = none ] || ln -sfn "$REAL_HOME_LINK" "$HOME/.mastermind"
+      fi
+      rm -rf "$TMP"' EXIT
 run()  { (cd "$1" && shift && HOME="$SANDBOX_HOME" "$INSTALL" "$@" 2>&1); }
 
 # Derived from the repo, never hand-written: the promise is "every skill/agent we ship gets
@@ -290,9 +299,9 @@ P=$(proj retire)
 mkdir -p "$P/.mastermind/engineering/fields/myfield"
 echo "OURS" > "$P/.mastermind/engineering/fields/myfield/our-team-notes.md"
 echo "OUR LESSON" >> "$P/.mastermind/engineering/fields/myfield/lessons.md"
-rm -rf "$CLONE/skills/spike"
+rm -rf "$CLONE/skills/prototype"
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
-is "retired skill removed"     "$([ -d "$P/.mastermind/skills/spike" ] && echo kept || echo gone)" "gone"
+is "retired skill removed"     "$([ -d "$P/.mastermind/skills/prototype" ] && echo kept || echo gone)" "gone"
 is "project's own doc kept"    "$(cat "$P/.mastermind/engineering/fields/myfield/our-team-notes.md" 2>/dev/null)" "OURS"
 is "project's lesson kept"     "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/myfield/lessons.md" 2>/dev/null || echo 0)" "1"
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
@@ -502,6 +511,61 @@ echo "── AGENTS.md is wired even with no tool installed"
 P=$(proj noagent); mkdir -p "$TMP/emptyhome"
 (cd "$P" && HOME="$TMP/emptyhome" "$INSTALL" >/dev/null 2>&1) || true
 is "AGENTS.md wired anyway" "$([ -e "$P/AGENTS.md" ] && echo y || echo n)" "y"
+
+# ── filesystem trust boundary ───────────────────────────────────────────────────
+# Both attacks below were reproduced by an external audit: the installer wrote OUTSIDE the
+# project. Keep them adversarial.
+echo "── routes.map may not escape the project"
+P=$(proj traversal); mkdir -p "$TMP/outside-victim"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+printf '../outside-victim/**   escape\n' > "$P/.mastermind/routes.map"
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
+yes_ "traversal rule is refused" "$(printf '%s' "$out" | grep -o "may not contain")"
+is   "nothing written outside the project" "$(ls -A "$TMP/outside-victim" | wc -l | tr -d ' ')" "0"
+printf '/etc/**   absolute\n' > "$P/.mastermind/routes.map"
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
+yes_ "absolute route is refused" "$(printf '%s' "$out" | grep -o "must be a relative path")"
+
+echo "── a symlinked path inside the brain is never written through"
+P=$(proj symlinked); mkdir -p "$TMP/brain-victim"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+touch "$TMP/brain-victim/precious.txt"
+rm -rf "$P/.mastermind/skills" && ln -s "$TMP/brain-victim" "$P/.mastermind/skills"
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
+yes_ "escaping symlink is refused" "$(printf '%s' "$out" | grep -o "points outside the brain")"
+is   "the symlink target is untouched" "$([ -f "$TMP/brain-victim/precious.txt" ] && echo kept || echo GONE)" "kept"
+P=$(proj ownlink)
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
+is "re-install still succeeds with our own symlinks" "$(printf '%s' "$out" | grep -c 'Refusing to write through')" "0"
+
+echo "── uninstall gives back what install displaced"
+H="$TMP/restore-home"; mkdir -p "$H/.claude"
+printf '# global notes\nprecious\n' > "$H/.claude/CLAUDE.md"
+(HOME="$H" "$INSTALL" --global >/dev/null 2>&1) || true
+(HOME="$H" "$INSTALL" --global --uninstall >/dev/null 2>&1) || true
+is "a displaced file is restored" "$(grep -c 'precious' "$H/.claude/CLAUDE.md" 2>/dev/null || echo 0)" "1"
+is "no backup left orphaned" "$(ls -1 "$H/.claude/"CLAUDE.md.bak-* 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+echo "── another tool's session hook is never deleted"
+P=$(proj foreignhook); mkdir -p "$P/.claude"
+printf '{"hooks":{"SessionStart":[{"matcher":"startup","hooks":[{"type":"command","command":"/their/tool/session-start.sh"}]}]}}\n' > "$P/.claude/settings.json"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+is "theirs survives install" "$(grep -c '/their/tool/session-start.sh' "$P/.claude/settings.json")" "1"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --uninstall >/dev/null 2>&1) || true
+is "theirs survives uninstall" "$(grep -c '/their/tool/session-start.sh' "$P/.claude/settings.json")" "1"
+
+echo "── uninstall works when the project path crosses a symlink"
+# Links are written resolved (/private/tmp/...) while BRAIN is computed logically (/tmp/...).
+# Comparing the raw strings made is_ours() false for every link, so uninstall removed nothing
+# and reported success. macOS /tmp, symlinked homes and network mounts all hit this.
+LINKDIR="$TMP/real-proj"; mkdir -p "$LINKDIR"
+ln -sfn "$LINKDIR" "$TMP/via-link"
+(cd "$TMP/via-link" && git init -q . && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+is "installed through the symlinked path" "$([ -e "$TMP/via-link/AGENTS.md" ] && echo y || echo n)" "y"
+out="$(cd "$TMP/via-link" && HOME="$SANDBOX_HOME" "$INSTALL" --uninstall 2>&1)" || true
+is "uninstall removed the links"  "$([ -e "$TMP/via-link/AGENTS.md" ] && echo left || echo gone)" "gone"
+case "$out" in *"removed 0 link"*) bad "uninstall claimed success while removing nothing";; *) ok "uninstall reported real removals";; esac
 
 echo
 if [ "$FAIL" -eq 0 ]; then printf '%s✓ %d passed%s\n' "$g" "$PASS" "$x"; exit 0

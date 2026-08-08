@@ -1,6 +1,6 @@
 ---
 name: quarantine
-description: Use before capturing anything confidential in a repo — a client's internal patterns, private project data, real names, proprietary code — or when the user says "this is sensitive", "don't commit this", "set up the lab". Also when a `lab/` folder already exists but its guards are missing or broken. (The quarantine lives on disk as `lab/` — the name existing projects already have.)
+description: Use whenever secrets or confidential material must be kept out of git — API keys, tokens, credentials, a client's internal patterns, private project data, real names, proprietary code. Triggers: "these keys must never end up in a commit", "make sure this never gets pushed", "this is sensitive", "don't commit this", "set up the lab", or any request to guard against leaking secrets. Also when a `lab/` folder already exists but its guards are missing or broken. (The quarantine lives on disk as `lab/` — the name existing projects already have.)
 ---
 
 # Lab Init — a safe place for project data

@@ -64,7 +64,7 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ walling this off so nothing leaks out
-   └ lab · quarantine → ignore → install guards → prove they block
+   └ quarantine · quarantine → ignore → install guards → prove they block
 ```
 
 ## When it does *not* fire

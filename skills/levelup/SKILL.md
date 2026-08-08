@@ -1,6 +1,6 @@
 ---
 name: levelup
-description: Use after a correction or review finding worth remembering, when standards may have drifted from the live ecosystem, when switching MasterMind to a new domain or stack, or when the user says "remember this", "learn from that", "level up", "update your knowledge".
+description: Use after a correction or review finding worth remembering, when standards may have drifted from the live ecosystem, when switching MasterMind to a new domain or stack, or when the user says "remember this", "learn from that", "so you don't repeat it", "don't make that mistake again", "level up", "update your knowledge".
 ---
 
 # MasterMind — Level Up

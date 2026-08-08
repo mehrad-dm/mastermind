@@ -276,6 +276,39 @@ for (const hook of ['pre-commit', 'pre-push']) {
   }
 }
 
+// The menus users read must name skills that exist. Six dead names (perf, spec, spike, lab,
+// doubt, map) survived a rename in help/SKILL.md and the kernel; every one failed when typed.
+const realNames = new Set([
+  ...readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name),
+  ...readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, '')),
+])
+const RETIRED = ['perf', 'spec', 'spike', 'lab', 'doubt', 'map']
+for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'README.md']) {
+  const file = join(ROOT, menu)
+  if (!existsSync(file)) continue
+  const text = readFileSync(file, 'utf8')
+  for (const dead of RETIRED) {
+    const re = new RegExp('(\\*\\*|`)' + dead + '(\\*\\*|`)')
+    if (re.test(text) && !realNames.has(dead))
+      fail(`${menu} still advertises the retired name "${dead}" — it fails when typed`)
+  }
+}
+
+// One sentence describes this product, and it lives in four places that ship separately (npm,
+// the plugin manifest, the marketplace listing, the GitHub About). They drifted: the About was
+// still advertising Copilot support removed in 0.27. Keep them one string.
+const CANON = 'A markdown brain that gives your AI coding tools judgment and rigor'
+for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json', 'cli/package.json']) {
+  const file = join(ROOT, f)
+  if (!existsSync(file)) continue
+  const text = readFileSync(file, 'utf8')
+  if (!text.includes(CANON)) fail(`${f}: description drifted from the canonical one-liner ("${CANON}…")`)
+  for (const dead of ['Copilot', 'Gemini']) {
+    if (new RegExp(`"[^"]*${dead}[^"]*"`).test(text))
+      fail(`${f}: still advertises ${dead} — supported tools are Claude Code, Cursor and Codex`)
+  }
+}
+
 // --- report ------------------------------------------------------------------
 if (errors.length) {
   console.error(`\n✗ MasterMind integrity: ${errors.length} issue(s)\n`)

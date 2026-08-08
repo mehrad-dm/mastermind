@@ -1,0 +1,69 @@
+name: cross-os
+
+# The install promises, tested on machines we do not own. macOS is covered by local
+# development; these runners cover the rest:
+# - ubuntu  → the full install + agent-lookup surface on a real Linux kernel. This is also
+#   the honest WSL proxy: WSL2 runs a real Linux kernel with bash/git in a POSIX home, so
+#   what passes here is what a WSL user executes. (True in-WSL runs still welcome from any
+#   contributor with a Windows machine.)
+# - windows → native Windows must refuse loudly with the WSL pointer, never die on a
+#   cryptic bash spawn error. That refusal IS the supported behaviour, so it is what we test.
+# - alpine  → the no-bash guard message, and the full install once bash exists.
+
+on:
+  push:
+    branches: [master]
+    paths: ['install.sh', 'cli/**', 'bin/**', 'tests/**', '.github/workflows/cross-os.yml']
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: install into a fresh project and use the lookup surface
+        run: |
+          set -e
+          proj="$(mktemp -d)"
+          git -C "$proj" init -q
+          (cd "$proj" && bash "$GITHUB_WORKSPACE/install.sh")
+          test -f "$proj/.mastermind/VERSION"
+          n="$(cd "$proj" && ./.mastermind/bin/mastermind skills --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).skills.length))')"
+          echo "skills listed: $n"; test "$n" -ge 20
+      - name: installer regression suite
+        run: bash tests/install.test.sh
+      - name: agent-surface suite
+        run: bash tests/agent-surface.test.sh
+
+  windows-native-guard:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: refuses clearly on native Windows
+        shell: pwsh
+        run: |
+          $out = node cli/bin/mastermind.mjs skills 2>&1
+          if ($LASTEXITCODE -eq 0) { throw "expected a non-zero exit on native Windows" }
+          if ("$out" -notmatch "WSL") { throw "expected the WSL pointer in: $out" }
+          Write-Host "guard message OK: $out"
+
+  alpine:
+    runs-on: ubuntu-latest
+    container: node:22-alpine
+    steps:
+      - name: no-bash guard, then full install once bash exists
+        run: |
+          apk add --no-cache git >/dev/null
+          git clone -q "https://github.com/${GITHUB_REPOSITORY}" /brain && cd /brain && git checkout -q "$GITHUB_SHA" || true
+          mkdir -p /work/proj && cd /work/proj && git init -q .
+          if node /brain/cli/bin/mastermind.mjs skills 2>msg; then echo "expected refusal"; exit 1; fi
+          grep -q "apk add" msg && echo "no-bash guard OK: $(cat msg)"
+          apk add --no-cache bash >/dev/null
+          bash /brain/install.sh >/dev/null 2>&1
+          ./.mastermind/bin/mastermind skills | wc -l

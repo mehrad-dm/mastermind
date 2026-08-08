@@ -29,7 +29,7 @@ closes without the user:
 ### Loop against an explicit rubric (the "outcomes" pattern)
 
 Make the check concrete: for non-trivial work, write the **done-rubric** — the pass/fail criteria that
-actually mean *done* (reuse `spec`'s acceptance criteria rather than restating them). Then run
+actually mean *done* (reuse `interview`'s acceptance criteria rather than restating them). Then run
 the loop **against the rubric**, self-correcting each miss until every item is green — **without stopping to
 ask mid-loop**. That's the long-horizon habit: keep closing the gap yourself, and hand back a finished
 result — not a half-finished one with "is this ok?".
@@ -153,7 +153,7 @@ implementation — which converts a technical check into a compliance ritual. Th
    Wrong for a reason you can cite → push back with the reasoning, once.
 3. **Respond technically, or not at all.** Restate the requirement, ask the question, or start the fix.
    Praise for the reviewer carries no information and reads as settling findings socially — the same
-   tell `doubt` polices in reconciliation.
+   tell `double-check` polices in reconciliation.
 
 The two failure directions are the same as under pressure everywhere: **fold** (implement everything,
 verify nothing) and **dig in** (relitigate everything). Hold the substance; skip the argument.

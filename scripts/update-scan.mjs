@@ -4,7 +4,7 @@
 // Counts are read from the repo, never written here: this file publishes a public map, so
 // a stale literal would ship a lie on the first skill added after a release. (`version` is
 // the API's schema version, not the repo's — see the bottom.)
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 
@@ -31,9 +31,9 @@ const NEW_NODES = [
     sub: 'installer + agent lookups',
     sourceRef: 'cli/',
     detail:
-      'Installs the brain, and answers read-only lookups an agent makes mid-task (skills, skill, agents, agent, route) from whichever brain the current directory belongs to. Never writes.',
+      'Installs the brain, and answers an agent mid-task: skills, skill, agents, agent, route, conflicts, wrong-log — from whichever brain the directory belongs to. Read-only.',
   },
-  { id: 'lab', label: 'Quarantine', kind: 'store', sub: 'private data, gitignored', group: 'Safety & honesty', sourceRef: 'lab/' },
+  { id: 'lab', label: 'Quarantine', kind: 'store', sub: 'private data, gitignored', group: 'Safety & honesty', sourceRef: 'skills/quarantine/' },
   {
     id: 'bootstrap',
     label: 'Bootstrap hook',
@@ -84,8 +84,48 @@ const NEW_NODES = [
     id: 'moreskills',
     label: 'more skills',
     kind: 'tool',
-    sub: 'route·spec·learn·explain·spike·…',
+    sub: 'route·interview·learn·explain·prototype·…',
     group: 'Library',
+  },
+  {
+    id: 'secretguards',
+    label: 'Secret guards',
+    kind: 'service',
+    sub: 'pre-commit + pre-push',
+    group: 'Safety & honesty',
+    sourceRef: '.githooks/pre-push',
+    detail:
+      'Always-on credential patterns plus a quarantine rule, identical in the hooks this repo runs and the ones it ships. Blocks tokens and lab/ files at commit and at push, denylist or not.',
+  },
+  {
+    id: 'autoinvoke',
+    label: 'Auto-invoke eval',
+    kind: 'service',
+    sub: 'does the right skill fire?',
+    group: 'Safety & honesty',
+    sourceRef: 'evals/auto-invoke.mjs',
+    detail:
+      'Live sessions on a seeded repo, measuring which skill actually fires from natural language. Separates harness failure from routing failure, and CROWDED=1 adds foreign skill packs.',
+  },
+  {
+    id: 'wronglog',
+    label: 'Wrong-log',
+    kind: 'store',
+    sub: 'misses, with the catcher named',
+    group: 'Safety & honesty',
+    sourceRef: 'journal.md',
+    detail:
+      'Every falsified claim, recorded with what caught it — a test, a reviewer, the user, a measurement. Read back with `mastermind wrong-log`; levelup distils it. Self-graded entries do not count.',
+  },
+  {
+    id: 'crossos',
+    label: 'Cross-OS CI',
+    kind: 'service',
+    sub: 'linux · windows guard · alpine',
+    group: 'Safety & honesty',
+    sourceRef: '.github/workflows/cross-os.yml',
+    detail:
+      'Runs the install and the lookup surface on Linux, asserts native Windows refuses with the WSL pointer, and checks the Alpine no-bash guard then a full install once bash exists.',
   },
 ]
 
@@ -105,6 +145,11 @@ const NEW_EDGES = [
   { from: 'ci', to: 'installtests', kind: 'triggers' },
   { from: 'ci', to: 'library', kind: 'triggers', label: 'checks docs are in sync' },
   { from: 'ci', to: 'integrity', kind: 'triggers' },
+  { from: 'ci', to: 'crossos', kind: 'triggers', label: 'linux · win · alpine' },
+  { from: 'cli', to: 'wronglog', kind: 'reads', label: 'wrong-log' },
+  { from: 'levelup', to: 'wronglog', kind: 'reads', label: 'distils the misses' },
+  { from: 'autoinvoke', to: 'install', kind: 'triggers', label: 'installs, then asks' },
+  { from: 'secretguards', to: 'lab', kind: 'reads', label: 'never let it out' },
 ]
 
 // Nodes retired from the map. The vendored design database and its test suite lived inside the
@@ -165,6 +210,14 @@ for (const n of g.nodes) {
 }
 for (const e of g.edges)
   if (e.label && e.label.length > 24) bad.push(`edge ${key(e)}: label ${e.label.length} > 24 chars`)
+// A node whose sourceRef does not exist is a dead link on a published map — `lab/` shipped
+// like that, pointing at a folder that only exists inside a user's project.
+for (const n of g.nodes)
+  if (n.sourceRef && !existsSync(join(ROOT, n.sourceRef)))
+    bad.push(`node ${n.id}: sourceRef "${n.sourceRef}" does not exist`)
+const ids = new Set(g.nodes.map((n) => n.id))
+for (const e of g.edges)
+  if (!ids.has(e.from) || !ids.has(e.to)) bad.push(`edge ${key(e)}: points at a node that is not on the map`)
 if (bad.length) {
   console.error('✗ foglamp contract violated:\n  ' + bad.join('\n  '))
   process.exit(1)

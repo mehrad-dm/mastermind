@@ -1,5 +1,5 @@
 ---
-title: Spec — agreeing what to build before anyone builds it
+title: Interview — agreeing what to build before anyone builds it
 blurb: How MasterMind turns a vague ask into a precise, decided blueprint, so the build isn't a guess dressed up as progress.
 ---
 
@@ -61,7 +61,7 @@ each. A spec that hands you a menu has failed at its job.
 
 ## When it fires
 
-You don't type a command. Say any of these and MasterMind reaches for `spec`:
+You don't type a command. Say any of these and MasterMind reaches for `interview`:
 
 > *"the onboarding flow needs an overhaul"*
 > *"I want something like Stripe's dashboard but for our data"*
@@ -72,7 +72,7 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ pinning down what we're actually building
-   └ spec · outcome → scope → glossary → acceptance → edges
+   └ interview · outcome → scope → glossary → acceptance → edges
 ```
 
 ## When it does *not* fire
@@ -80,7 +80,7 @@ You'll see it engage in your terminal:
 - **A clear, contained change.** If the ask is already unambiguous and lives in one place, writing a
   document about it is pure overhead. MasterMind just does the work.
 - **When the ask is already clear enough to build** — that's `build`. This is the confusion worth
-  understanding: `spec` decides *what* and produces a document with no code; `build` produces working,
+  understanding: `interview` decides *what* and produces a document with no code; `build` produces working,
   verified code. They're often sequential, not alternatives — a fuzzy ask gets specced, then built from
   the spec. If you already know what you want, skipping straight to build is correct, not sloppy.
 - **Choosing what to read before starting** — that's `route`. Route is about context, not requirements:

@@ -4,32 +4,72 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
-## [Unreleased]
+## [0.29.0] — 2026-08-08
 
-### Added
-- Agent-callable CLI surface: `mastermind skills · skill <name> · agents · agent <name> ·
-  route "<request>"`, plus `--json` on any of them. Read-only by construction — no install, no
-  network, no writes — and they answer from the project's own `.mastermind/` before the shared
-  clone, so an isolated brain never returns another project's knowledge. This is what Cursor
-  and Codex were missing: an agent can ask for the one skill it needs instead of guessing a path.
-- `mastermind wrong-log`: the calibration record — every claim of MasterMind's that was
-  falsified, with the catcher named (test, reviewer, user, or measurement). Kept in the
-  project's journal, read first by `levelup`, and surfaced on the site as the honest answer to
-  "can I trust this?". Self-graded entries are explicitly worthless: an entry must name what
-  caught it.
-- Autonomy calibrated to reversibility (`core/rigor.md`): a fourth tier above "say first, then
-  do" — anything you cannot take back or that leaves this machine (push, publish, delete what
-  you did not create, spend a one-use credential, write outside the project) needs consent, not
-  notification, and approval once is not approval again.
-- `bin/mastermind` shim so the cloned brain is callable without npx or a global install.
-- Gates wired into preflight: `tests/agent-surface.test.sh` (17 assertions) and two evals —
-  interface cost, and routing measured on organically-phrased requests, not paraphrases of the
-  skills' own trigger words.
+### Security — filesystem containment
+Two external audits reproduced three ways the installer could touch files outside the project.
+All three are fixed, and each attack is now a test:
+- **`.manifest` traversal** — a committed manifest containing `../precious.txt` deleted that file.
+  Manifest entries are validated and symlink-checked before any removal.
+- **`routes.map` traversal on uninstall** — install-side validation existed; the uninstall side
+  read the same untrusted file with none, so `../outside/**` deleted a sibling's files.
+- **Nested symlinks** — the guard covered the listed engine directories, not the deeper files the
+  copy loop writes, so `.mastermind/skills/<x>/SKILL.md` could redirect a write outside the brain.
 
-### Notes
-- `route` returns the whole table with keyword matches arrowed rather than a shortlist:
-  measured on natural phrasing, keyword overlap hinted correctly for only 2 of 8 requests, so
-  filtering by it would have hidden the right skill behind a confident guess.
+### Fixed
+- `npx` provenance is verified on **every** path that reaches the installer, not only a fresh
+  clone; a rejected clone is deleted so it cannot install on retry.
+- Cursor uninstall actually removes its hooks. Ownership is matched by path shape, because
+  install could write a resolved path (`/private/tmp/…`) while uninstall computed the logical one.
+- The Codex global `AGENTS.md` gets our appended pointer removed on uninstall, content intact.
+- Backup restore records which backup **this** install created, instead of resurrecting the newest
+  matching `*.bak-*`.
+- `help` no longer advertises six retired names (`perf`, `spec`, `spike`, `lab`, `doubt`, `map`);
+  an integrity check now fails the build if any retired name reappears in a menu.
+- Windows guard runs before all commands (a read-only lookup answered first, so Windows users got
+  "no brain found" instead of the WSL pointer); the Alpine `bash` guard is restored.
+
+### Tests and evals
+- The installer suite sandboxes `HOME` everywhere and trips an alarm if the real `~/.mastermind`
+  ever moves — it had rewired a developer's live install twice.
+- Routing tests pin `MASTERMIND_HOME` to the checkout, so a broken global install cannot read as a
+  product failure.
+- `auto-invoke` distinguishes **harness** failure (logged out, rate-limited, timed out) from a
+  routing result, retries the environment once, and counts a persisted memory write as the
+  "remember this" outcome. Gated smoke set: 8/8.
+- `CROWDED=1` measures routing with foreign skill packs installed (88% either way).
+
+### Evidence
+- The homepage's router figure is generated from the run that measured it
+  (`evals/pilot-multimodel`): **20,870 → 7,220, −65%, range 41–89%**. It had been replaced with an
+  invented `total × 0.25`, presented as "75% fewer tokens".
+- Site eval numbers are generated from `evals/RESULTS.md` and gated in preflight.
+
+### Consistency
+- One sentence now describes the product everywhere — GitHub About, the plugin manifest, the
+  marketplace listing, npm, the site title and meta, the footer — and an integrity check fails the
+  build if they drift. The GitHub About was still advertising Copilot support removed in 0.27.
+- The architecture map is rebuilt from what the repo actually contains (37 nodes, 45 edges): the
+  secret guards, the auto-invoke eval, the wrong-log and cross-OS CI were missing, and `lab/`
+  pointed at a path that only exists inside a user's project. Dead `sourceRef`s and dangling edges
+  now fail the generator.
+- README documents the lookup surface (`skills`, `skill`, `route`, `conflicts`, `wrong-log`) and
+  the precedence rule for machines with several skill packs installed.
+
+### Measured
+- Routing (V5, `evals/RESULTS.md`): gated smoke **8/8** stable; full matrix **26/30 (87%)** with
+  per-rep **12/15 · 14/15** — the harness now reports the range and names unstable cases, because a
+  single-rep number from it is noise.
+- All five high dependency advisories cleared (js-yaml 4.3.1 is patched *and* inside Astro's
+  supported range — an earlier attempt tested 4.1.1 and wrongly concluded the fix was 5.x-only).
+  Site CI now requires **zero** highs.
+
+### Site
+- Shared stylesheet instead of inlining on all 32 pages: dist 2.7 MB → 1.2 MB.
+- Progress bars render without JavaScript; drawer focus is moved, trapped and restored;
+  `aria-current` on nav. Lighthouse: 98–100 performance, 100 accessibility/best-practices/SEO.
+- Four of five high dependency advisories cleared via `pnpm.overrides`; the remaining one is
+  js-yaml via Astro, whose fix is 5.x-only and breaks the build. CI gates the count.
 
 ## [0.28.1] — 2026-08-01
 
@@ -66,7 +106,7 @@ history lives in git.
 - `code-reviewer`: pinned model seat, scope baseline, `escalate` output class, three-round cap;
   `route`: model-economics rule; field-pack template + `init`: "Where things are" pointers.
 - Harvest wave from addyosmani/agent-skills, mattpocock/skills, obra/superpowers (all MIT;
-  structures rebuilt, never copied): debug ×3 moves + revert-proof (also `qa`), `doubt` stdin
+  structures rebuilt, never copied): debug ×3 moves + revert-proof (also `qa`), `double-check` stdin
   rule, agent-loop "Receiving review and corrections", authoring keep-the-scenario.
   Independent reviewer pass on the wave found 3 contradictions; all fixed.
 - Evals: Run V3 (tasks 09–13 + pressure cases) — honest null; ceiling now confirmed on 13/13
@@ -108,7 +148,7 @@ material. Nothing here is a new promise; it is the existing promises made consis
   announce line, because each costs several times a normal turn.
 - **Episodic memory.** A dated one-line entry per verdict in `.mastermind/journal.md`; `levelup` reads it
   first and distils it into `lessons.md`. A lesson states a rule, the journal is why it's a rule.
-- **`spec` states its reading of the ask, with confidence**, and treats "sounds good" / silence as a
+- **`interview` states its reading of the ask, with confidence**, and treats "sounds good" / silence as a
   hollow yes rather than a confirmation. **`help`** leads with the three skills that fit the project.
 - **Honest scope on every surface.** README, site, and `help` no longer imply MasterMind improves *any*
   model. The measured quality gains are **Claude-only**, and our single non-Claude run showed **no lift**.
@@ -133,7 +173,7 @@ Installer regression tests: **120 → 129**.
 - **Three skills, from a sweep of the public ecosystem** (`hallmark`, `taste-skill`, `agent-skills`,
   `mattpocock/skills`, `superpowers`, plus two articles on agent-harness design). Each earns its place by
   doing a job no existing skill did:
-  - **`doubt`** — interrogate a claim *before* you hand it over. Extract the artifact and the contract it
+  - **`double-check`** — interrogate a claim *before* you hand it over. Extract the artifact and the contract it
     must satisfy, send both (never your conclusion) to a fresh reviewer, and write a one-line verdict per
     finding. Counts "doubt theater": if two rounds of substantive findings produce zero actionable ones,
     the judge is broken and the judge is you.
@@ -163,10 +203,10 @@ refute it (16 further claims were refuted and dropped). The ones that changed be
 - **The kernel promised a review independence it couldn't always deliver.** It says the context that did
   the work doesn't get to grade it — then told tools without isolated contexts to run the reviewer
   procedure inline, which is exactly that. Now: a separate session, or say plainly it was self-graded.
-- **The kernel told the model to batch questions; `spec` names batching as the failure it prevents.**
+- **The kernel told the model to batch questions; `interview` names batching as the failure it prevents.**
   Reconciled: ask one at a time, each carrying your recommended answer.
 - **The boy-scout rule contradicted "stay in scope."** Cleanups beyond the ask are listed, not folded in.
-- **`doubt` and `qa` claimed the same trigger** ("does this actually work?"), one producing evidence and
+- **`double-check` and `qa` claimed the same trigger** ("does this actually work?"), one producing evidence and
   the other an opinion. Carved apart.
 - Plus: `lint` pointed at a script that isn't shipped in a per-project install; `persona` used Claude-only
   tool names inside a tool-agnostic skill; `lab` referenced two skills that no longer exist; `help`
@@ -343,7 +383,7 @@ model-behavior eval was run, so the published eval numbers are unchanged, and `e
 
 Clears the entire backlog from the v0.24.0 documentation pass, then audits the files that pass never
 touched. **A minor bump, not a patch:** several skills now behave differently — `debug` refuses to guess
-at an unreproducible bug, `spike` stops at a bound, `signature` drops uncited claims, and motion
+at an unreproducible bug, `prototype` stops at a bound, `signature` drops uncited claims, and motion
 durations changed. Three review passes over the work found real defects each time, including two
 security holes and a bug that destroyed installs; those are called out below rather than buried.
 
@@ -402,7 +442,7 @@ surfaced along the way that were not on the list.
   Now: ship instrumentation, state what was ruled out, hand back with evidence — never guess at a fix.
   The hypothesize↔test loop also gained a budget of three refuted hypotheses, after which the framing
   is wrong, not the ranking.
-- **`spike` had no time-box despite naming endless exploration as its failure mode.** Now 5 attempts
+- **`prototype` had no time-box despite naming endless exploration as its failure mode.** Now 5 attempts
   (≈30 min), with a defined expiry: stop, report what's known and unknown, recommend, discard the code.
 - **`signature`'s anti-fabrication guard was self-referential** — the model checked its own citations,
   so a hallucinated rule came with a hallucinated verification. Now every claimed style trait needs a
@@ -424,7 +464,7 @@ surfaced along the way that were not on the list.
   is "point, never restate". Now points at the index. Its broken file references are corrected.
 - **`qa` wrote test files to disk before asking**, undercutting its own rule. Permission now comes first
   — excluding the trivial case of adding a case to a suite that already exists.
-- **`spec` and the `architect` agent had no stated relationship** despite overlapping. Boundary and
+- **`interview` and the `architect` agent had no stated relationship** despite overlapping. Boundary and
   handoff are now explicit: spec owns the *what*, architect the *how*.
 - **`perf` was the only skill that never ran `levelup`**, so performance lessons were never captured;
   its suspect list was also web-biased. Now field-agnostic bottleneck classes plus a pointer to the
@@ -611,7 +651,7 @@ Adopt three proven agent-engineering patterns as **portable discipline** (works 
 ### Added
 
 - **Rubric-driven self-correcting loop** (`core/agent-loop.md`) — for non-trivial work, write the pass/fail
-  done-rubric up front (reusing `spec`'s acceptance criteria) and loop against it, self-correcting until it's
+  done-rubric up front (reusing `interview`'s acceptance criteria) and loop against it, self-correcting until it's
   green, without stopping to ask mid-loop. **Bounded: ≤2 correction passes**, then surface/escalate; skipped
   for one-liners. (Anthropic "outcomes" / long-horizon self-correction.)
 - **Verified review + opt-in fan-out** (`code-reviewer`) — every finding must be **reproduced before it's
@@ -727,8 +767,8 @@ AGENTS.md agent). You don't learn commands; you just talk, and it applies the ri
 ### Changed
 
 - **Skills renamed to short, memorable names and merged where they overlapped** — now 13: `build`,
-  `debug`, `qa` (verify + tdd), `spec` (+ glossary), `learn` (+ grill), `signature` (character +
-  signature), `explain`, `route`, `prompt`, `spike`, `lab`, `levelup`, `handoff`. All are
+  `debug`, `qa` (verify + tdd), `interview` (+ glossary), `learn` (+ grill), `signature` (character +
+  signature), `explain`, `route`, `prompt`, `prototype`, `lab`, `levelup`, `handoff`. All are
   model-invocable — MasterMind applies them itself.
 - **`code-reviewer`** absorbed the audit role: a convention-vs-correctness gate that proposes fixes and
   never applies them.

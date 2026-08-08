@@ -26,7 +26,7 @@ read them fresh, since memory goes stale (the field's `learning-sources.md`).
 ## 4. Ground it in this codebase
 Grep for how the pattern is already used here and match it. Consistency beats novelty.
 
-## 5. Grill your assumptions before you build
+## 5. Challenge your assumptions before you build
 The costly bugs come from unchecked assumptions. Before committing code:
 
 - **List what you believe** about the APIs you'll use (behavior, signatures, return values, limits,
@@ -36,10 +36,10 @@ The costly bugs come from unchecked assumptions. Before committing code:
 - **For each remaining unknown, propose a resolution — a bare flag is half the job.** State a best guess
   **+ confidence** ("probably streams; ~70%") so a human can confirm or correct, not author it. Serve
   interdependent unknowns one at a time. Anything still unconfirmed becomes an explicit risk or a tiny
-  `spike` — never a silent guess. **No load-bearing assumption ships unverified.**
+  `prototype` — never a silent guess. **No load-bearing assumption ships unverified.**
 
 ## Output & economy
 Return a tight working brief: the stack + versions, the few APIs/patterns the task needs, the gotchas
-(and the grilled assumptions ledger: claim → verified/corrected/unknown → source · confidence),
+(and the assumptions ledger: claim → verified/corrected/unknown → source · confidence),
 and links to the primary sources — not a tutorial. Delegate wide reading to a subagent to protect
 context. If you learned something durable and reusable, capture it via `levelup`.

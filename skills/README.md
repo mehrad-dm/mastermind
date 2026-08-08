@@ -23,15 +23,15 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 | [`performance`](./performance/SKILL.md) | …something's slow ("why is this slow?"). Measure → find the real bottleneck → fix the biggest → verify. Not a correctness bug (that's `debug`). |
 | [`qa`](./qa/SKILL.md) | …finish something / want it tested. Prove it works end-to-end; tests / TDD only if you say so (offered after a build). |
 | [`report`](./report/SKILL.md) | …ask for a report / write-up of a cycle (or automatically at the end of build/qa, if you turned it on). A shareable record — Markdown default, HTML optional. Opt-in, off by default. |
-| [`spike`](./spike/SKILL.md) | …face a risky unknown. A fast throwaway spike to learn, then rebuild properly. |
-| [`doubt`](./doubt/SKILL.md) | …are about to claim something works, or a review came back suspiciously clean. Interrogates the claim *before* handoff — the reviewer never sees your conclusion. |
+| [`prototype`](./prototype/SKILL.md) | …face a risky unknown. A fast throwaway prototype to learn, then rebuild properly. |
+| [`double-check`](./double-check/SKILL.md) | …are about to claim something works, or a review came back suspiciously clean. Interrogates the claim *before* handoff — the reviewer never sees your conclusion. |
 | [`deprecate`](./deprecate/SKILL.md) | …need to remove, migrate, or retire something. Expand → migrate → contract, and proof that nothing still reads it. |
 
 ## Think first
 | Skill | What it does (auto-applies when you…) |
 | --- | --- |
-| [`spec`](./spec/SKILL.md) | …give a fuzzy/multi-file ask. Turn it into a crisp spec (problem, scope, key terms, interfaces, acceptance, edges). |
-| [`learn`](./learn/SKILL.md) | …work in unfamiliar/fast-moving tech. Learn the real stack to current standards + grill your assumptions against the source. |
+| [`interview`](./interview/SKILL.md) | …give a fuzzy/multi-file ask. Turn it into a crisp spec (problem, scope, key terms, interfaces, acceptance, edges). |
+| [`learn`](./learn/SKILL.md) | …work in unfamiliar/fast-moving tech. Learn the real stack to current standards + challenge your assumptions against the source. |
 | [`route`](./route/SKILL.md) | …start a non-trivial task. Load only the pack files / docs / code it needs (via `ROUTER.md`); refuses to over-plan a small one. |
 | [`prompt`](./prompt/SKILL.md) | …want a request sharpened. Turn a vague ask into a tight, AI-ready prompt. |
 

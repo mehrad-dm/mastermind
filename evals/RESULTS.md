@@ -578,6 +578,35 @@ Raw data: `evals/runs/v0.27-set2/`.
 
 ---
 
+## Run V5 — 2026-08-08 · auto-invoke: does the right skill actually fire? (`evals/auto-invoke.mjs`)
+
+Live headless sessions on the seeded orderdesk repo, one natural prompt per skill, phrased the way
+a user would rather than echoing the skill's own description. Ground truth is the native `Skill`
+tool call in the stream, not prose. Harness failures (logged out, rate-limited, timed out) are
+reported separately and never counted as routing results.
+
+| set | n | result |
+| --- | --: | --- |
+| gated smoke (8 core prompts, 1 retry) | 8 | **8/8**, stable across consecutive runs |
+| full matrix, 2 reps | 30 | **26/30 (87%)** — per-rep **12/15 · 14/15** |
+| crowded install (10 overlapping foreign skills) | 8 | **8/8**, 1 ask won by a foreign skill |
+
+**Honest reading.**
+- **Read the range, not the mean.** The same code scored 12/15 and 14/15 on consecutive reps; a
+  single-rep number from this harness is noise. Unstable cases this run: `double-check` (1/2),
+  `help` (1/2).
+- **Two descriptions were genuinely wrong, and fixing them is what moved the number.** `quarantine`
+  described *capturing* confidential material and never *preventing* secrets reaching git — the
+  phrasing everyone actually uses. `build` read as "skip me for anything small".
+- **A miss is not always the product's.** The `levelup` case first referred to a correction from an
+  earlier turn that a single-shot session cannot have (defective check), then the session persisted
+  the correction to the harness's own memory store instead of loading the skill — the outcome the
+  user wants, by the better path. The harness now counts that.
+- **Crowding barely matters.** Ten foreign skills with overlapping triggers left routing unchanged,
+  which is the evidence behind reporting conflicts rather than resolving them.
+- **What would discriminate next:** more reps (n≥5) to separate real regressions from variance, and
+  prompts drawn from real sessions rather than written for the test.
+
 ## Run V4 — 2026-08-01 · the real-task suite (`runs/v0.27-real/`) · first outing
 
 Multi-file seed service with planted hazards · 5 real tasks · agentic runs (write access,

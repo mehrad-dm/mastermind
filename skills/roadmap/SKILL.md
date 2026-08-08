@@ -1,6 +1,6 @@
 ---
 name: roadmap
-description: Use when work spans weeks and the reasoning behind it is piling up — returning to a project after time away, "why did we decide X?", "where did we land on this?", "what's still open?", onboarding someone onto a long-running build, or a choice everyone remembers making and nobody can find. Not one session's state (that's `handoff`), not scoping one feature (that's `spec`).
+description: Use when work spans weeks and the reasoning behind it is piling up — returning to a project after time away, "why did we decide X?", "where did we land on this?", "what's still open?", onboarding someone onto a long-running build, or a choice everyone remembers making and nobody can find. Not one session's state (that's `handoff`), not scoping one feature (that's `interview`).
 ---
 
 # MasterMind — Map
@@ -71,7 +71,7 @@ the decisions still shaping the work. Promote from the journal — never copy it
 
 Three horizons, and the boundary is what each one outlives.
 
-- **`spec`** — one ask, decided before it's built. Retired when that thing ships.
+- **`interview`** — one ask, decided before it's built. Retired when that thing ships.
 - **`handoff`** — one session's live state, so a reset doesn't cost the thread. Thrown away on resume.
 - **`roadmap`** — the project's decision history, kept for the project's life. It **points at** specs and
   handoffs; it never absorbs them.

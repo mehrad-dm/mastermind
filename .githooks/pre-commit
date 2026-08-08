@@ -17,6 +17,22 @@ RED=$'\033[0;31m'; YEL=$'\033[0;33m'; GRN=$'\033[0;32m'; NC=$'\033[0m'
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 DENYLIST="$REPO_ROOT/lab/.denylist"
 FAIL=0
+# Credential shapes that always run, denylist or not. Narrow on purpose: a hook that cries
+# wolf gets bypassed, and a bypassed guard protects nothing.
+mm_secret_patterns() {
+  cat <<'PATTERNS'
+gh[pousr]_[A-Za-z0-9]{36,}
+github_pat_[A-Za-z0-9_]{20,}
+npm_[A-Za-z0-9]{36}
+xox[baprs]-[A-Za-z0-9-]{10,}
+sk-[A-Za-z0-9]{32,}
+sk-ant-[A-Za-z0-9_-]{20,}
+AKIA[0-9A-Z]{16}
+ASIA[0-9A-Z]{16}
+-----BEGIN [A-Z ]*PRIVATE KEY-----
+AIza[0-9A-Za-z_-]{35}
+PATTERNS
+}
 
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
   printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1 — MasterMind guard BYPASSED. You own this.${NC}"
@@ -59,7 +75,7 @@ fi
 
 # ---- Layer 3: real credential patterns (always on) ---------------------------
 SECRETS=$(git diff --cached -U0 | grep -E '^\+' | grep -v '^+++' \
-  | grep -InE '(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' || true)
+  | grep -InE "$(mm_secret_patterns | paste -sd '|' -)" || true)
 if [ -n "$SECRETS" ]; then
   printf '%s\n' "${RED}✖ BLOCKED — looks like a real credential:${NC}"
   printf '%s\n' "$SECRETS" | head -5 | sed 's/^/    /'

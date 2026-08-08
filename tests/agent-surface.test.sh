@@ -80,7 +80,9 @@ done
 # Output goes down a PIPE whenever an agent calls this, and stdout is async there: an
 # exit() straight after a write truncated the table mid-string at ~8KB and produced invalid
 # JSON. Assert on the REAL brain, whose table is big enough to cross that boundary.
-out=$(cd "$ROOT" && "${CLI[@]}" route "anything at all" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d["skills"]) > 10)' 2>/dev/null)
+# MASTERMIND_HOME pinned to this checkout: the assertion is about output size, not about
+# whatever brain the machine happens to have installed.
+out=$(cd "$ROOT" && MASTERMIND_HOME="$ROOT" "${CLI[@]}" route "anything at all" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d["skills"]) > 10)' 2>/dev/null)
 check "large piped json is not truncated" "$out" "True"
 
 # The calibration record: only lines that record a miss, and an empty log must say "nothing was
@@ -99,6 +101,46 @@ check "empty wrong-log does not imply a clean record" "$out" "1"
 GONE="$WORK/gone"; mkdir -p "$GONE"
 out=$( (cd "$GONE" && rm -rf "$GONE" && "${CLI[@]}" skills 2>&1 >/dev/null) | head -1 )
 case "$out" in *"uv_cwd"*|*"internal/bootstrap"*) bad "deleted cwd crashes with a node stack";; *) ok "deleted cwd fails cleanly";; esac
+
+echo "cli arguments"
+# An external audit installed a brain by typing `skilss`: unknown words fell through to init.
+TYPO="$WORK/typo"; mkdir -p "$TYPO"
+(cd "$TYPO" && HOME="$TYPO" MASTERMIND_HOME="$TYPO/absent" "${CLI[@]}" skilss >/dev/null 2>&1)
+check "a typo exits 2 instead of installing" "$?" "2"
+check "a typo creates nothing" "$([ -z "$(ls -A "$TYPO")" ] && echo yes || echo no)" "yes"
+out=$( (cd "$TYPO" && HOME="$TYPO" MASTERMIND_HOME="$TYPO/absent" "${CLI[@]}" skilss 2>&1) | head -1 )
+case "$out" in *"Did you mean"*) ok "a typo suggests the real command";; *) bad "no suggestion: $out";; esac
+
+# Provenance signs the CLI, not the brain it clones — so a MOVED TAG must be refused.
+SRC="$WORK/fake-brain"; mkdir -p "$SRC"
+( cd "$SRC" && git init -q . && printf '#!/usr/bin/env bash\necho installed\n' > install.sh \
+  && git add -A && git -c user.email=t@t -c user.name=t -c core.hooksPath=/dev/null commit -qm seed \
+  && git tag -f v9.9.9 >/dev/null ) 2>/dev/null
+out=$( (cd "$WORK" && MASTERMIND_HOME="$WORK/clone-home" MASTERMIND_REPO="$SRC" MASTERMIND_REF=v9.9.9 \
+        MASTERMIND_COMMIT=0000000000000000000000000000000000000000 "${CLI[@]}" check 2>&1) || true )
+case "$out" in *"this release pins 000000000000"*) ok "a moved tag is refused (commit pin)";; *) bad "commit pin not enforced: $(printf '%s' "$out" | tail -1)";; esac
+
+echo "conflicts"
+# Users end up with several packs installed. This must see foreign skills, must NOT mistake
+# our own (a global install symlinks into the shared clone, not the project brain), and must
+# report rather than resolve.
+CONF="$WORK/conf"; mkdir -p "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/optimize"
+echo "0.0.0-test" > "$CONF/.mastermind/VERSION"
+printf -- '---\nname: performance\ndescription: Use when something is slow — a slow query, slow page load, high memory or a timeout.\n---\n' \
+  > "$CONF/.mastermind/skills/performance/SKILL.md"
+printf -- '---\nname: optimize\ndescription: Speed things up. Use for slow pages, slow queries, high memory, long load times, or any performance problem.\n---\n' \
+  > "$CONF/.claude/skills/optimize/SKILL.md"
+out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(str(len(d["foreign"])) + "|" + ",".join(sorted({c["ours"] for c in d["collisions"]})))')
+check "sees the foreign skill and the overlap it causes" "$out" "1|performance"
+
+ln -s "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/performance" 2>/dev/null
+out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["foreign"]))')
+check "our own linked skill is not counted as foreign" "$out" "1"
+
+CLEAN="$WORK/clean"; mkdir -p "$CLEAN/.mastermind/skills"
+echo "0.0.0-test" > "$CLEAN/.mastermind/VERSION"
+out=$(cd "$CLEAN" && HOME="$CLEAN" "${CLI[@]}" conflicts | head -1)
+case "$out" in *"nothing to collide"*) ok "a clean install says so plainly";; *) bad "clean install: $out";; esac
 
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

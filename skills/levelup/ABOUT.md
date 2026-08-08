@@ -40,7 +40,7 @@ than sitting in a list.
 **Refresh** checks the knowledge base against the live world — whether the recommended tools and sources
 are still the best ones, whether anything has been abandoned, and what has changed in how AI tools
 themselves should be used. It extracts the durable principle, never the vendor-specific mechanism,
-because the same knowledge base has to work in every AI tool, not just one.
+because the same knowledge base has to work across every tool it installs into, not just one.
 
 **Bootstrap** creates a whole new body of knowledge when you move into unfamiliar territory — a new
 language, a new kind of project. It reads your actual project to learn your real stack, rather than

@@ -22,7 +22,7 @@ last few turns were about, whether a field pack exists yet):
 ```text
 Most useful here right now
   · init      — no field pack yet for this Django project; one-time setup, then I'm sharper on it
-  · lab       — there's client data in this repo; this keeps it out of git
+  · quarantine — there's client data in this repo; this keeps it out of git
   · handoff   — this session is long; a handoff survives the reset
 ```
 
@@ -44,22 +44,22 @@ of them by hand.
 | **init** | set MasterMind up for this project — detect the stack (or ask what you're building), load the field pack | your first real task in a project it isn't set up for | *"init"* · *"set up MasterMind"* |
 | **build** | design → implement → verify → review → capture, end to end | you ask to build/add/implement a non-trivial feature | *"build a search box for the header"* |
 | **debug** | structured, evidence-first root-cause debugging | a bug is hard, weird, or keeps coming back | *"debug why the list doesn't refresh"* |
-| **perf** | measure → find the real bottleneck → fix the biggest → verify | something's slow or janky ("why is this slow?") | *"why is this page so slow?"* |
+| **performance** | measure → find the real bottleneck → fix the biggest → verify | something's slow or janky ("why is this slow?") | *"why is this page so slow?"* |
 | **qa** | prove a change works by driving it for real (+ optional tests) | you finish something / ask to test it | *"qa this"* · *"write tests for it"* |
 | **report** | a shareable write-up of a cycle — changed files, decisions, verification, verdict (MD default, HTML on request) | you ask for a report; or end of build/qa if you turned it on (off by default) | *"give me a report of this"* · *"reports on"* |
-| **spec** | turn a fuzzy ask into a crisp, buildable spec | the request is ambiguous or spans many files | *"spec out the checkout flow first"* |
+| **interview** | turn a fuzzy ask into a crisp, buildable spec | the request is ambiguous or spans many files | *"spec out the checkout flow first"* |
 | **route** | load only the files/skills a task actually needs | a task is non-trivial or you're unsure where to start | *"route this"* |
 | **learn** | get up to speed fast on an unfamiliar stack/API, verify assumptions | the tech is new, fast-moving, or you're guessing | *"learn how the Stripe API handles refunds"* |
-| **spike** | build a throwaway spike to learn, then rebuild properly | the right approach is genuinely unknown | *"spike a quick prototype of this"* |
+| **prototype** | build a throwaway spike to learn, then rebuild properly | the right approach is genuinely unknown | *"spike a quick prototype of this"* |
 | **signature** | capture your team's real conventions as durable rules it follows | you ask it to match your codebase / keep correcting the same thing | *"make it match our patterns"* |
 | **persona** | write in the documented public style of a named engineer, cited | you ask for someone's style ("write like X") | *"write this like Kent C. Dodds"* |
 | **explain** | write AI-friendly usage docs beside an internal package | an internal package has little/no docs (asks first) | *"explain this package"* |
 | **prompt** | sharpen a vague prompt into a precise, AI-ready one | you ask to optimize/fix a prompt for an AI | *"improve this prompt"* |
-| **lab** | set up a private, gitignored quarantine for confidential data | before capturing project/client-specific notes | *"set up a lab here"* |
+| **quarantine** | set up a private, gitignored quarantine for confidential data | before capturing project/client-specific notes | *"set up a lab here"* |
 | **levelup** | improve MasterMind's own knowledge (lessons, curriculum, new field) | after a correction/review, or to refresh standards | *"levelup — remember this"* |
-| **doubt** | interrogate a claim before handing it over — adversarial, reviewer never sees your conclusion | you're about to say "it works", or a review came back suspiciously clean | *"doubt this"* |
+| **double-check** | interrogate a claim before handing it over — adversarial, reviewer never sees your conclusion | you're about to say "it works", or a review came back suspiciously clean | *"doubt this"* |
 | **deprecate** | remove/migrate/retire safely — expand → migrate → contract | deleting a feature, column, flag, or endpoint | *"can we delete this?"* |
-| **map** | a durable decision map for multi-week work | work spanning many sessions; "why did we decide X?" | *"map this project"* |
+| **roadmap** | a durable decision map for multi-week work | work spanning many sessions; "why did we decide X?" | *"map this project"* |
 | **lint** | check MasterMind's own files for bloat, repeated rules, contradictions | before a release, or the brain feels bloated | *"lint the brain"* |
 | **handoff** | write a concise handoff so work survives a reset/teammate | before a long-task `/clear`, pausing, or handing off | *"write a handoff"* |
 | **help** | show this menu — what every skill/agent does and when it fires | you ask "what can you do?" / "help" / "how do I use this" | *"what can you do?"* |

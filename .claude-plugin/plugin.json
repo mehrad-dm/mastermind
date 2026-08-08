@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "mastermind",
-  "description": "A genius-builder brain for your AI — skills and agents that add sharp defaults, real judgment, and the discipline to check their own work. Experimental (v0.28.1).",
-  "version": "0.28.1",
+  "description": "A markdown brain that gives your AI coding tools judgment and rigor \u2014 sharp defaults, real decisions, and the discipline to verify before saying done. For Claude Code, Cursor and Codex.",
+  "version": "0.29.0",
   "hooks": "./hooks/hooks.json",
   "author": {
     "name": "mehrad-dm"
@@ -10,5 +10,11 @@
   "homepage": "https://mastermind.mehrad.me",
   "repository": "https://github.com/mehrad-dm/mastermind",
   "license": "MIT",
-  "keywords": ["skills", "agents", "engineering", "workflow", "rigor"]
+  "keywords": [
+    "skills",
+    "agents",
+    "engineering",
+    "workflow",
+    "rigor"
+  ]
 }

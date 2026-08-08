@@ -1,6 +1,6 @@
 ---
 name: build
-description: Use when implementing any non-trivial feature, change, or fix — "build me X", "add this feature", "implement this", "make this work", "can you create". Covers new functionality, meaningful changes to existing code, and anything where quality matters. Not for a one-line diff — just do that.
+description: Use when implementing any non-trivial feature, change, or fix — "build me X", "add this feature", "implement this", "make this work", "can you create". Covers new functionality, meaningful changes to existing code, and anything where quality matters — including small features, which still need verifying before "done". Only a literal one-line edit skips this.
 ---
 
 # MasterMind — Build

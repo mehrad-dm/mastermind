@@ -73,7 +73,7 @@ You'll see it engage in your terminal:
 
 - **A one-line change or an already-scoped task.** If it's clear what to do and where, routing adds a
   step and removes nothing. It skips itself.
-- **When the problem is that nobody agrees what to build** — that's `spec`. Worth separating carefully:
+- **When the problem is that nobody agrees what to build** — that's `interview`. Worth separating carefully:
   route answers *what should I read*, spec answers *what are we building*. Route assumes the goal is
   understood and finds the path to it. If the goal itself is fuzzy — "make it better", arguments about
   scope — routing will produce a confident list of files for the wrong task. Spec first, then route.

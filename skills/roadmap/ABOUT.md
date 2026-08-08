@@ -80,7 +80,7 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ picking the long thread back up — what we decided, what's still open
-   └ map · destination → decisions → open questions → fog
+   └ roadmap · destination → decisions → open questions → fog
 ```
 
 ## When it does *not* fire
@@ -89,7 +89,7 @@ You'll see it engage in your terminal:
   written for one specific reader picking up one specific unfinished thing tomorrow, and it's thrown
   away the moment they do. A map is written for whoever shows up in four months, and it's kept for as
   long as the project exists.
-- **Working out what one feature should be** — that's `spec`. A spec decides a single ask in detail
+- **Working out what one feature should be** — that's `interview`. A spec decides a single ask in detail
   before anyone builds it, and retires when that thing ships. The map records only the one-line outcome
   and points at the spec for the rest.
 - **Anything that finishes in a session or two.** Nothing accumulates, so there's nothing to accumulate

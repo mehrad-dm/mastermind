@@ -117,6 +117,44 @@ else
   BRAIN="$REPO"
 fi
 
+# `.mastermind/` is committed, so a clone can ship a symlinked subdirectory that redirects
+# every write below it. Refuse the whole path, not just its root.
+mm_assert_no_symlink_path() {
+  local base="$1"
+  local rel="$2"
+  local cur="$base"
+  local rest="$rel"
+  local seg target
+  while [ -n "$rest" ]; do
+    seg="${rest%%/*}"
+    if [ "$seg" = "$rest" ]; then rest=""; else rest="${rest#*/}"; fi
+    [ -n "$seg" ] && [ "$seg" != "." ] || continue
+    cur="$cur/$seg"
+    [ -L "$cur" ] || continue
+    if [ -n "$rest" ]; then
+      printf '%s! %s is a symlink (-> %s).%s Refusing to write through it.\n' \
+        "$r" "${cur#"$PROJECT"/}" "$(readlink "$cur")" "$x" >&2
+      exit 1
+    fi
+    target="$(readlink "$cur")"
+    case "$target" in
+      /*|*..*)
+        printf '%s! %s points outside the brain (-> %s).%s Refusing to write through it.\n' \
+          "$r" "${cur#"$PROJECT"/}" "$target" "$x" >&2
+        exit 1 ;;
+    esac
+  done
+  return 0
+}
+
+# Paths from config files are untrusted: resolve, then require containment in $PROJECT.
+mm_resolve_inside_project() {
+  local real proj
+  proj="$(cd -P "$PROJECT" 2>/dev/null && pwd -P)" || return 1
+  real="$(cd -P "$1" 2>/dev/null && pwd -P)" || return 1
+  case "$real" in "$proj"|"$proj"/*) printf '%s' "$real" ;; *) return 1 ;; esac
+}
+
 # Link src→dst. In check mode, only verify. Back up a real file before linking.
 safe_link() {
   local src="$1" dst="$2"
@@ -128,14 +166,25 @@ safe_link() {
   if [ -e "$dst" ] && [ ! -L "$dst" ]; then
     local bak="$dst.bak-$(date +%Y%m%d%H%M%S)"
     mv "$dst" "$bak"; warn "backed up your existing $(basename "$dst") → $bak"
+    # Record which backup THIS install created: restoring "the newest *.bak-*" could resurrect
+    # an unrelated older file the user made themselves.
+    mkdir -p "$(dirname "$dst")" && printf '%s\n' "$bak" > "$dst.mm-backup"
   fi
   ln -sfn "$src" "$dst"
 }
 
+# Ownership compares RESOLVED paths. A link written as /private/tmp/... did not match a BRAIN
+# computed as /tmp/... , so uninstall silently left every link in place on any path that
+# crosses a symlink (macOS /tmp, symlinked homes, network mounts).
 is_ours() {
   [ -L "$1" ] || return 1
-  local t; t="$(readlink "$1")"
-  case "$t" in "$REPO"*|"$BRAIN"*) return 0 ;; *) return 1 ;; esac
+  local t rt rrepo rbrain
+  t="$(readlink "$1")"
+  case "$t" in "$REPO"*|"$BRAIN"*) return 0 ;; esac
+  rt="$(cd -P "$(dirname "$t")" 2>/dev/null && pwd -P)/$(basename "$t")" || return 1
+  rrepo="$(cd -P "$REPO" 2>/dev/null && pwd -P)" || rrepo="$REPO"
+  rbrain="$(cd -P "$BRAIN" 2>/dev/null && pwd -P)" || rbrain="$BRAIN"
+  case "$rt" in "$rrepo"*|"$rbrain"*) return 0 ;; *) return 1 ;; esac
 }
 path_exists() { [ -e "$1" ] || [ -L "$1" ]; }
 
@@ -305,13 +354,16 @@ wire_cursor_hook() {
   fi
   command -v node >/dev/null 2>&1 || return 0
   mkdir -p "$PROJECT/.cursor"
-  MM_DST="$dst" MM_CMD="$BRAIN/hooks/session-start.sh cursor" node -e '
+  MM_DST="$dst" MM_CMD="$BRAIN/hooks/session-start.sh cursor" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
     const fs=require("fs"); const p=process.env.MM_DST, cmd=process.env.MM_CMD;
+    const mmHooks=process.env.MM_HOOKS_DIR;
     let s={version:1,hooks:{}};
     if (fs.existsSync(p)) { try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); } }
     s.version ??= 1; s.hooks ||= {};
     for (const ev of ["sessionStart","preCompact"]) {
-      const keep=(s.hooks[ev]||[]).filter(e=>!JSON.stringify(e).includes("session-start.sh"));
+      const owns=(c)=>typeof c==="string" && ((mmHooks && c.startsWith(mmHooks)) || c.includes("/.mastermind/hooks/session-start.sh") || c.includes("/hooks/session-start.sh") && c.includes("mastermind"));
+      const mine=(e)=>owns(e&&e.command)||(e&&e.command)===cmd;
+      const keep=(s.hooks[ev]||[]).filter(e=>!mine(e));
       keep.push({command: cmd});
       s.hooks[ev]=keep;
     }
@@ -369,9 +421,10 @@ wire_bootstrap() {
     return 0
   fi
 
-  MM_SETTINGS="$settings" MM_HOOK="$hook" node -e '
+  MM_SETTINGS="$settings" MM_HOOK="$hook" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
     const fs = require("fs");
     const p = process.env.MM_SETTINGS, cmd = JSON.stringify(process.env.MM_HOOK);
+    const mmHooks = process.env.MM_HOOKS_DIR;
     let s = {};
     if (fs.existsSync(p)) {
       try { s = JSON.parse(fs.readFileSync(p, "utf8") || "{}"); }
@@ -380,7 +433,13 @@ wire_bootstrap() {
     s.hooks ||= {};
     const list = (s.hooks.SessionStart ||= []);
     // Drop any previous MasterMind entry, then re-add — keeps other tools hooks intact.
-    const clean = list.filter(e => !JSON.stringify(e).includes("session-start.sh"));
+    // Ownership is the command path, not a substring: another tool at
+    // /their/tool/session-start.sh matched the old check and was deleted.
+    const mine = (e) => (e?.hooks || []).some((h) => {
+      const c = typeof h?.command === "string" ? h.command.replace(/^"|"$/g, "") : "";
+      return c === cmd.replace(/^"|"$/g, "") || c.startsWith(mmHooks);
+    });
+    const clean = list.filter((e) => !mine(e));
     clean.push({
       matcher: "startup|clear|compact",
       hooks: [{ type: "command", command: cmd, async: false }],
@@ -412,6 +471,20 @@ remove_link() {
   local f="$1"
   if is_ours "$f"; then rm -f "$f"; ok "removed $(basename "$f")"; return 0; fi
   return 1
+}
+
+# safe_link() renames a real file to <name>.bak-<stamp> before linking, and uninstall used to
+# leave that orphaned — the user's own file silently stayed gone. Called only for the paths
+# safe_link actually touches: restoring on every removed link would resurrect a stale backup
+# over content written after the install.
+restore_backup() {
+  local f="$1" bak=""
+  path_exists "$f" && return 0
+  [ -f "$f.mm-backup" ] || return 0
+  bak="$(head -1 "$f.mm-backup")"
+  rm -f "$f.mm-backup"
+  [ -n "$bak" ] && [ -f "$bak" ] || return 0
+  mv "$bak" "$f" && ok "restored your original $(basename "$f") (from $(basename "$bak"))"
 }
 
 # Tell the user if their clone is behind origin. Network-optional: any failure is silent.
@@ -463,7 +536,12 @@ remove_context_anchors() {
     glob="${line%% *}"
     adir="${glob%/\*\*}"; adir="${adir%/\*}"; adir="${adir%/}"
     case "$adir" in ''|'*'|'.'|'**') continue ;; esac
-    abs="$PROJECT/$adir"
+    # The same containment install applies. Validating only one side is not a fix: a
+    # `../outside/**` rule deleted a sibling directory's files during UNINSTALL.
+    case "$adir" in /*|*\\*) continue ;; esac
+    case "/$adir/" in */../*) continue ;; esac
+    [ -d "$PROJECT/$adir" ] || continue
+    abs="$(mm_resolve_inside_project "$PROJECT/$adir")" || continue
     mm_strip_block "$abs/CLAUDE.md" && n=$((n + 1)) || true
     mm_strip_block "$abs/AGENTS.md" || true
     [ -f "$abs/.cursor/rules/mastermind.mdc" ] && { rm -f "$abs/.cursor/rules/mastermind.mdc"; n=$((n + 1)); }
@@ -480,6 +558,8 @@ if [ "$MODE" = uninstall ]; then
   for l in "$CLAUDE_DIR"/skills/* "$CLAUDE_DIR"/agents/*; do remove_link "$l" && n=$((n + 1)); done
   shopt -u nullglob
   [ -n "$AGENTS_FILE" ] && { remove_link "$AGENTS_FILE" && n=$((n + 1)); }
+  restore_backup "$CLAUDE_DIR/CLAUDE.md"
+  [ "$SCOPE" = global ] && restore_backup "$CLAUDE_DIR/engineering"
   # Codex's global file is ours only when it's our symlink; remove_link leaves a real file alone.
   [ "$SCOPE" = global ] && { remove_link "$CODEX_GLOBAL" && n=$((n + 1)); }
   # Project-scoped artifacts: only ever touch these when uninstalling THIS project.
@@ -496,12 +576,14 @@ if [ "$MODE" = uninstall ]; then
     if [ -f "$PROJECT/.github/hooks/mastermind.json" ]; then rm -f "$PROJECT/.github/hooks/mastermind.json"; ok "removed .github/hooks/mastermind.json"; n=$((n + 1)); fi
     # Cursor's hooks.json is shared: filter our entries out rather than deleting the file.
     if [ -f "$PROJECT/.cursor/hooks.json" ] && command -v node >/dev/null 2>&1; then
-      MM_DST="$PROJECT/.cursor/hooks.json" node -e '
-        const fs=require("fs"); const p=process.env.MM_DST;
+      MM_DST="$PROJECT/.cursor/hooks.json" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
+        const fs=require("fs"); const p=process.env.MM_DST, mmHooks=process.env.MM_HOOKS_DIR||"";
         let s; try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); }
         let hit=false;
         for (const ev of Object.keys(s.hooks||{})) {
-          const keep=(s.hooks[ev]||[]).filter(e=>!JSON.stringify(e).includes("session-start.sh"));
+          const owns=(c)=>typeof c==="string" && ((mmHooks && c.startsWith(mmHooks)) || c.includes("/.mastermind/hooks/session-start.sh") || c.includes("/hooks/session-start.sh") && c.includes("mastermind"));
+          const mine=(e)=>owns(e&&e.command);
+          const keep=(s.hooks[ev]||[]).filter(e=>!mine(e));
           if (keep.length !== (s.hooks[ev]||[]).length) hit=true;
           if (keep.length) s.hooks[ev]=keep; else delete s.hooks[ev];
         }
@@ -514,19 +596,34 @@ if [ "$MODE" = uninstall ]; then
   # out and leave everything else exactly as it was. Without this, uninstalling and then
   # deleting the clone leaves every session firing a hook that points at a missing script.
   if [ -f "$CLAUDE_DIR/settings.json" ] && command -v node >/dev/null 2>&1; then
-    MM_SETTINGS="$CLAUDE_DIR/settings.json" node -e '
+    MM_SETTINGS="$CLAUDE_DIR/settings.json" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
       const fs=require("fs"); const p=process.env.MM_SETTINGS;
       let s; try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); }
       const list=(s.hooks||{}).SessionStart||[];
-      const keep=list.filter(e=>!JSON.stringify(e).includes("session-start.sh"));
+      const mmHooks=process.env.MM_HOOKS_DIR||"";
+      const owns=(c)=>typeof c==="string" && ((mmHooks && c.startsWith(mmHooks)) || c.includes("/.mastermind/hooks/session-start.sh") || c.includes("/hooks/session-start.sh") && c.includes("mastermind"));
+      const isMine=(e)=>((e&&e.hooks)||[]).some((h)=>owns(typeof (h&&h.command)==="string"?h.command.replace(/^"|"$/g,""):""));
+      const keep=list.filter(e=>!isMine(e));
       if (keep.length === list.length) process.exit(1);
       if (keep.length) s.hooks.SessionStart=keep; else delete s.hooks.SessionStart;
       if (s.hooks && !Object.keys(s.hooks).length) delete s.hooks;
       fs.writeFileSync(p, JSON.stringify(s,null,2)+"\n");
     ' 2>/dev/null && { ok "unwired the bootstrap hook from settings.json"; n=$((n + 1)); }
   fi
-  for f in ${AGENTS_FILE:+"$AGENTS_FILE"} "$PROJECT/GEMINI.md" "$PROJECT/.github/copilot-instructions.md"; do
-    [ -f "$f" ] && grep -q 'mastermind/CLAUDE.md' "$f" && warn "left your $(basename "$f") in place — it still has a MasterMind pointer line you can remove by hand"
+  # Remove the exact pointer line we appended (and the blank line before it), leaving every
+  # other line untouched. Warning about it and walking away left our text in their file.
+  for f in ${AGENTS_FILE:+"$AGENTS_FILE"} "$PROJECT/GEMINI.md" "$PROJECT/.github/copilot-instructions.md" \
+           ${CODEX_GLOBAL:+"$CODEX_GLOBAL"}; do
+    [ -f "$f" ] || continue
+    grep -qF "$HINT" "$f" || continue
+    _pt="$(mktemp)"
+    HINT="$HINT" awk 'BEGIN{h=ENVIRON["HINT"]} $0==h{skip=1; next} {if(skip && $0==""){skip=0; next} skip=0; print}' "$f" > "$_pt"
+    if [ -s "$_pt" ] && grep -q "[^[:space:]]" "$_pt"; then
+      cat "$_pt" > "$f"; ok "removed the MasterMind pointer from $(basename "$f")"; n=$((n + 1))
+    else
+      rm -f "$f"; ok "removed $(basename "$f") (it held only our pointer)"; n=$((n + 1))
+    fi
+    rm -f "$_pt"
   done
   printf '\n%s✓ removed %d link(s).%s Your own files were left untouched. (~/.mastermind stays; delete the clone to remove the brain.)\n' "$g" "$n" "$x"
   exit 0
@@ -590,6 +687,8 @@ sync_isolated_brain() {
   fi
   mkdir -p "$dst"
 
+  for d in "${ISO_ENGINE[@]}" "${ISO_OWNED[@]}"; do mm_assert_no_symlink_path "$dst" "$d"; done
+
   # Engine: always refreshed — but file-by-file, NEVER by wiping the directory. `rm -rf` here
   # would delete a skill or agent the project added to its own brain, and it short-circuited the
   # manifest reconciliation that exists precisely to protect those. -p keeps the mode bits, so
@@ -600,6 +699,7 @@ sync_isolated_brain() {
     if [ -d "$REPO/$d" ] && [ ! -L "$REPO/$d" ]; then
       while IFS= read -r ef; do
         erel="${ef#"$REPO/$d/"}"
+        mm_assert_no_symlink_path "$dst" "$d/$erel"
         mkdir -p "$(dirname "$dst/$d/$erel")"
         rm -rf "$dst/$d/${erel:?}"
         cp -Rp "$ef" "$dst/$d/$erel"
@@ -647,13 +747,15 @@ sync_isolated_brain() {
   # Portable and git-safe: `.mastermind/...` resolves from the project root on any machine.
   local file
   # Only files WE shipped are rewritten — the installer never edits a project's own notes.
-  # -I skips binaries (piping those to perl -pi corrupts them); the .md filter keeps this to
+  # -I skips binaries (rewriting those would corrupt them); the .md filter keeps this to
   # prose, never vendored data or scripts.
   while IFS= read -r file; do
     case "$file" in *.md) ;; *) continue ;; esac
     [ -f "$dst/$file" ] || continue
     grep -qI '~/\.mastermind' "$dst/$file" 2>/dev/null || continue
-    perl -pi -e 's|~/\.mastermind|.mastermind|g' "$dst/$file"
+    _lz="$(mktemp)"
+    sed 's|~/\.mastermind|.mastermind|g' "$dst/$file" > "$_lz" && cat "$_lz" > "$dst/$file"
+    rm -f "$_lz"
   done < "$SHIPPED"
 
   # --- reconcile deletions, using the manifest of what WE installed -------------
@@ -675,7 +777,10 @@ sync_isolated_brain() {
       # from engine to project-owned in 0.27.0, so it's excluded above for the same reason.)
       case "$gone" in engineering/fields/*) continue ;; esac
       # in the OLD manifest, still on disk, but no longer shipped → ours, and retired
+      # `../precious.txt` in a committed manifest deleted a file outside the project.
+      case "$gone" in /*|*..*|*\\*) warn "manifest: refusing to act on '$gone'"; continue ;; esac
       if [ -e "$dst/$gone" ] && ! grep -qxF "$gone" "$newman"; then
+        mm_assert_no_symlink_path "$dst" "$gone"
         rm -f "$dst/$gone"
       fi
     done < "$manifest"
@@ -767,8 +872,14 @@ generate_context_anchors() {
     # context for it, so a stale route leaves no orphan contexts/ dir behind.
     local adir="${glob%/\*\*}"; adir="${adir%/\*}"; adir="${adir%/}"
     case "$adir" in ''|'*'|'.'|'**') continue ;; esac
+    # `../outside/**` reproducibly wrote into a sibling directory.
+    case "$adir" in /*|*\\*) warn "routes.map: '$glob' must be a relative path inside the project — skipped"; ISSUES=$((ISSUES + 1)); continue ;; esac
+    case "/$adir/" in */../*) warn "routes.map: '$glob' may not contain '..' — skipped"; ISSUES=$((ISSUES + 1)); continue ;; esac
     local abs="$PROJECT/$adir"
     if [ ! -d "$abs" ]; then warn "routes.map: '$glob' → no directory $adir/ — skipped"; continue; fi
+    if ! abs="$(mm_resolve_inside_project "$abs")"; then
+      warn "routes.map: '$glob' resolves outside the project — skipped"; ISSUES=$((ISSUES + 1)); continue
+    fi
 
     # Seed the context from the template on first use, then read the field it names.
     local cdir="$BRAIN/engineering/contexts/$ctx"

@@ -77,7 +77,7 @@ You'll see it engage in your terminal:
 - **When you want a broad written report** on a subject — that's deeper research. Tech scout is
   deliberately narrow: one bounded question, one answer.
 - **When the real question is whether an approach will work at all** — build a rough throwaway and find
-  out. That's a `spike`.
+  out. That's a `prototype`.
 
 ## What you get
 

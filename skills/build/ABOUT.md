@@ -74,7 +74,7 @@ You'll see it engage in your terminal:
 
 - **A genuine one-liner** — a copy change, a wrong color, a renamed variable. Seven phases for a
   one-word fix is theatre, and MasterMind skips straight to doing it.
-- **When the ask isn't clear yet** — that's `spec`. The difference matters: `spec` decides *what* to
+- **When the ask isn't clear yet** — that's `interview`. The difference matters: `interview` decides *what* to
   build and stops there, producing a written blueprint and no code. `build` produces working, verified
   code. If nobody can agree what "make it better" means, building first just produces a confident wrong
   answer faster. Spec first, then build from it.
