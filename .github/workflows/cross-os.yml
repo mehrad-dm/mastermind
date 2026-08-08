@@ -87,3 +87,44 @@ jobs:
           n=$(./.mastermind/bin/mastermind skills | wc -l)
           [ "$n" -gt 20 ] || { echo "skills table looks empty: $n lines"; exit 1; }
           echo "alpine full install OK — $n lines"
+
+  wsl:
+    # The Windows job above only proves the REFUSAL fires. The refusal tells people to use WSL,
+    # and until now nothing ever checked that WSL actually works — the docs pointed at an
+    # untested path. This runs a genuine Ubuntu under WSL2 on a Windows runner and does the
+    # whole install, so the advice is backed by a run rather than an assumption.
+    runs-on: windows-latest
+    steps:
+      - uses: Vampire/setup-wsl@v3
+        with:
+          distribution: Ubuntu-24.04
+          additional-packages: git curl ca-certificates
+
+      - name: full install inside genuine WSL
+        shell: wsl-bash {0}
+        run: |
+          set -eu
+          # Node from NodeSource — the distro package is too old for the CLI.
+          curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1
+          apt-get install -y nodejs >/dev/null 2>&1
+          echo "node $(node --version) · $(uname -sr)"
+          grep -qi microsoft /proc/version || { echo "not actually WSL"; exit 1; }
+
+          # Clone inside WSL rather than reaching into /mnt/c — no path translation, and it is
+          # the same shape as what a user gets from npx.
+          git clone -q "https://github.com/${GITHUB_REPOSITORY}" /brain
+          cd /brain && git checkout -q "$GITHUB_SHA"
+
+          mkdir -p /work/proj && cd /work/proj && git init -q .
+          bash /brain/install.sh claude cursor >/dev/null 2>&1
+          [ -f .mastermind/VERSION ] || { echo "no project brain"; exit 1; }
+          echo "installed $(cat .mastermind/VERSION)"
+          n=$(ls .claude/skills | wc -l); [ "$n" -gt 20 ] || { echo "only $n skills linked"; exit 1; }
+          [ -f .cursor/rules/mastermind.mdc ] || { echo "no cursor rule"; exit 1; }
+
+          # The commands `init` tells the model to run must work here too.
+          node .mastermind/scripts/build-router.mjs >/dev/null
+          node .mastermind/scripts/check-integrity.mjs >/dev/null
+          ./.mastermind/bin/mastermind skills >/dev/null
+          bash /brain/install.sh --check | tail -1
+          echo "WSL full install OK — $n skills"

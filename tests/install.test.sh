@@ -164,6 +164,23 @@ is "build-router regenerates the PROJECT brain" "$?" "0"
 (cd "$P" && node .mastermind/scripts/check-integrity.mjs >/dev/null 2>&1)
 is "check-integrity passes on a fresh isolated brain" "$?" "0"
 
+echo "── --check from ~ asks the global question, not a project one"
+# Running it from the home directory reported phantom failures ("CLAUDE.md is not linked") for a
+# perfectly healthy global install: project scope walked $HOME/.claude — which IS the global
+# config — and judged it by project rules. Install mode already refuses ~; the read-only path
+# now agrees, and says so rather than switching silently.
+CH="$TMP_REAL/checkhome"; mkdir -p "$CH"
+(cd "$CH" && HOME="$CH" "$INSTALL" --global claude >/dev/null 2>&1)
+out=$(cd "$CH" && HOME="$CH" "$INSTALL" --check 2>&1)
+is "says which scope it switched to" "$(printf '%s' "$out" | grep -c 'checking the global install')" "1"
+is "and reports the global install healthy" "$(printf '%s' "$out" | grep -c 'healthy here')" "1"
+
+# The switch must NOT leak into a real project: that would hide genuine project breakage.
+P=$(proj checkproj); run "$P" claude >/dev/null 2>&1
+out=$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check 2>&1)
+is "a real project is still checked as a project" "$(printf '%s' "$out" | grep -c 'checking the global install')" "0"
+is "and that project reports healthy" "$(printf '%s' "$out" | grep -c 'healthy here')" "1"
+
 echo "── uninstall removes what it wired, and keeps what it didn't"
 P=$(proj unwire); mkdir -p "$P/.claude"
 printf '{"model":"opus","hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo MINE"}]}]}}' > "$P/.claude/settings.json"

@@ -90,6 +90,17 @@ else
   PROJECT="$(find_project_root)"
 fi
 
+# `--check` run from ~ (or the clone) is a GLOBAL question, not a project one. There is no
+# project there, and `$HOME/.claude` IS the global config — so project scope walked the global
+# directory while judging it by project rules and reported phantom failures ("CLAUDE.md is not
+# linked") for an install that was healthy. Install mode already refuses these two directories
+# further down; this makes the read-only path agree with it. `-ef` compares inodes, so a
+# symlinked HOME still matches.
+if [ "$MODE" = check ] && [ "$SCOPE" = project ] && { [ "$PROJECT" -ef "$HOME" ] || [ "$PROJECT" -ef "$REPO" ]; }; then
+  SCOPE=global
+  CHECK_SCOPE_SWITCHED=1
+fi
+
 # Scope → where Claude gets wired (project-local by default, home with --global).
 # AGENTS.md is a PROJECT file by convention, so it stays empty under --global and every use of
 # it is guarded. Codex is the one tool with a real global instruction file of its own
@@ -978,6 +989,9 @@ is_wired() {
 # --- Which tools? -------------------------------------------------------------
 if [ ${#TOOLS[@]} -eq 0 ]; then
   if [ "$MODE" = check ]; then
+    # Say it out loud when we switched scope — a silent switch is its own confusion.
+    [ "${CHECK_SCOPE_SWITCHED:-0}" = 1 ] &&
+      printf '%sno project here — checking the global install instead.%s\n\n' "$y" "$x"
     # verify only what's actually wired here (or globally with --global)
     is_wired "$CLAUDE_DIR/CLAUDE.md" && TOOLS+=("claude")
     [ -n "$AGENTS_FILE" ] && is_wired "$AGENTS_FILE" && TOOLS+=("agents")
