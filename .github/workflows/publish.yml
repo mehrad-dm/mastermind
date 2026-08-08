@@ -50,7 +50,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
+      # Trusted publishing authenticates over OIDC, so no registry-url/token stub is needed —
+      # and that stub made an unauthenticated `npm install -g npm` 404. npm >= 11.5.1 is
+      # required for OIDC, and Node 22 ships 10.x.
+      - run: npm install -g npm@latest --registry=https://registry.npmjs.org
+      - run: npm --version
       # The tarball ships the CLI only; the brain is cloned at install time, so provenance
       # alone does not cover the code users execute. Stamp the exact commit this tag points
       # at — the CLI refuses to install a clone whose HEAD does not match it, which closes
@@ -65,7 +69,5 @@ jobs:
             fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
             console.log("pinned to", pkg.commit);
           '
-      - run: |
-          npm install -g npm@latest
-          npm publish --provenance --access public
+      - run: npm publish --provenance --access public
         working-directory: cli
