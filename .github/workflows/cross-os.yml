@@ -65,8 +65,8 @@ jobs:
         run: |
           set -eu
           apk add --no-cache git >/dev/null
-          git clone -q "https://github.com/${GITHUB_REPOSITORY}" /brain
-          cd /brain && git checkout -q "$GITHUB_SHA"
+          git clone -q "https://github.com/${{ github.repository }}" /brain
+          cd /brain && git checkout -q "${{ github.sha }}"
           mkdir -p /work/proj && cd /work/proj && git init -q .
 
           # The guard under test belongs to the INSTALL path — install.sh needs bash. 0.29.0
@@ -112,8 +112,11 @@ jobs:
 
           # Clone inside WSL rather than reaching into /mnt/c — no path translation, and it is
           # the same shape as what a user gets from npx.
-          git clone -q "https://github.com/${GITHUB_REPOSITORY}" /brain
-          cd /brain && git checkout -q "$GITHUB_SHA"
+          # WSL's shell does NOT inherit the runner's environment, so $GITHUB_REPOSITORY and
+          # $GITHUB_SHA are unset in here. Substitute them before the shell starts rather than
+          # forwarding env through WSLENV — fewer moving parts, and it fails loudly if wrong.
+          git clone -q "https://github.com/${{ github.repository }}" /brain
+          cd /brain && git checkout -q "${{ github.sha }}"
 
           mkdir -p /work/proj && cd /work/proj && git init -q .
           bash /brain/install.sh claude cursor >/dev/null 2>&1
