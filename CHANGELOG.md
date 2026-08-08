@@ -4,6 +4,36 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.29.2] — 2026-08-09
+
+Ships one user-facing fix that landed just after 0.29.1 was tagged, so the published installer
+still had it. Everything else here is verification that now runs on every push.
+
+### Fixed — `install.sh --check` reported phantom failures from your home directory
+Run from `~`, it judged `$HOME/.claude` — which *is* the global config — by project rules, and
+announced "CLAUDE.md is not linked" for a perfectly healthy global install. Install mode already
+refuses `~` and the clone; the read-only path now agrees, switches to the global question, and
+says which scope it used rather than switching silently. A real project is checked exactly as
+before, asserted by a test so the switch can never leak.
+
+### Added — WSL is verified on every push, not assumed
+The Windows job only ever proved the *refusal* fires. That refusal tells people to use WSL, and
+nothing checked that WSL works — the advice pointed at an untested path. A new job runs genuine
+Ubuntu under WSL2 on a Windows runner and does the whole thing: install, 22 skills linked, the
+Cursor rule, both commands `init` instructs, the agent CLI, and `--check`. Green.
+
+### Added — a check that asks the tools themselves
+Every other gate inspects files: that the right things landed in the right place. None started an
+agent, so none proved a tool *reads* what we write — `.cursor/hooks.json` was a schema we invented
+and had never confirmed anything consumes. `scripts/verify-tools.sh` installs into a throwaway
+project and asks a real Cursor/Codex session whether it is running as MasterMind. Both answer yes
+and reach for `performance`. It needs each tool's CLI and a logged-in account, so it stays a local
+command; Claude Code is covered by `evals/auto-invoke.mjs` instead.
+
+Its first version was wrong in two ways, both now fixed and logged: it grepped for "mastermind",
+which passed the sentence *"I'm running as Codex, not MasterMind"*, and it wired the probe without
+`agents`, so `AGENTS.md` — the only thing Codex reads — never existed.
+
 ## [0.29.1] — 2026-08-08
 
 ### Fixed — every fresh install of 0.29.0 failed (release blocker)
