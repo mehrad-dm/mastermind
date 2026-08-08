@@ -1,15 +1,15 @@
-# Principles — how a genius engineer decides and writes code
+# Principles: how a genius engineer decides and writes code
 
 ## The decision framework (use when there is no clear default)
 
-For any technical decision, work through this — briefly, out loud, then commit:
+For any technical decision, work through this: briefly, out loud, then commit:
 
 1. **What is the real problem?** Restate it. Half of bad architecture solves the wrong problem.
 2. **What is the scope & lifespan?** A throwaway script, a feature, or a foundation others build on?
    Effort must match stakes: keep a prototype rough, build a foundation to last.
-3. **What are the 2–3 real options?** Not every option — the credible ones. Name the trade-off of each.
-4. **Which is best on total cost — not speed-to-type?** Judge each option by cost to *use*, to
-   *maintain*, and to *evolve*, plus performance and clarity — then pick the one that **fully works
+3. **What are the 2–3 real options?** Not every option, the credible ones. Name the trade-off of each.
+4. **Which is best on total cost: not speed-to-type?** Judge each option by cost to *use*, to
+   *maintain*, and to *evolve*, plus performance and clarity, then pick the one that **fully works
    with the least complexity**. Prefer the option a competent engineer could delete or change in 6
    months without fear. Complexity is only justified by a concrete, present need; reducing it is the job.
 5. **What could go wrong?** Edge cases, failure modes, who else touches this. (See `rigor.md`.)
@@ -24,55 +24,55 @@ For any technical decision, work through this — briefly, out loud, then commit
 
 The single measure of good design is how much complexity it hides behind a simple interface.
 
-- **Deep modules** — simple interface, powerful implementation. Prefer a few deep modules over many
+- **Deep modules**: simple interface, powerful implementation. Prefer a few deep modules over many
   shallow ones. A function/component whose signature is as complex as its body earns nothing.
-- **Information hiding** — each module owns a decision and hides it. Leaking implementation details
+- **Information hiding**: each module owns a decision and hides it. Leaking implementation details
   through the interface is the root of most coupling.
-- **Design it twice** — for anything important, sketch two designs before choosing. The second is
+- **Design it twice**: for anything important, sketch two designs before choosing. The second is
   almost always better and costs minutes.
-- **Pull complexity downward** — it's better for the *implementer* of a module to suffer complexity
+- **Pull complexity downward**: it's better for the *implementer* of a module to suffer complexity
   than every *caller*. Make the module do the hard part.
 
 ## Clean-code laws (apply with judgment, not dogma)
 
-- **Single Source of Truth (SSOT)** — every piece of knowledge has exactly one authoritative home.
+- **Single Source of Truth (SSOT)**: every piece of knowledge has exactly one authoritative home.
   Derive, don't duplicate. This is the most important one.
-- **DRY — done right.** DRY is about *knowledge*, not *characters*. Two snippets that look alike but
-  change for different reasons are **not** duplication — keep them separate. Abstract on the **rule
+- **DRY: done right.** DRY is about *knowledge*, not *characters*. Two snippets that look alike but
+  change for different reasons are **not** duplication, keep them separate. Abstract on the **rule
   of three**, not the second occurrence. Premature abstraction is worse than duplication.
-- **KISS / YAGNI** — build what's needed now. Speculative generality is debt you pay interest on.
-- **Separation of concerns / colocation** — split by *reason to change*. Keep things that change
+- **KISS / YAGNI**: build what's needed now. Speculative generality is debt you pay interest on.
+- **Separation of concerns / colocation**: split by *reason to change*. Keep things that change
   together close together; keep unrelated things apart. Colocate a component's styles, tests, and
   logic unless there's a reason not to.
-- **Composition over inheritance** — small pieces combined beat deep hierarchies. In React this is
+- **Composition over inheritance**: small pieces combined beat deep hierarchies. In React this is
   near-absolute.
-- **Explicit over implicit** — obvious code beats clever code. Optimize for the reader, who is
+- **Explicit over implicit**: obvious code beats clever code. Optimize for the reader, who is
   usually a tired version of you.
-- **Self-documenting** — code that needs a comment to explain *what* it does isn't clean; rewrite it
-  until names and structure carry the meaning. Comments earn their place only for *why* — intent,
-  trade-offs, non-obvious constraints — never to restate the code.
-- **Principle of least astonishment** — an API should behave the way its name promises. No surprises.
-- **Make illegal states unrepresentable** — model with types so wrong states can't compile. Prefer
+- **Self-documenting**: code that needs a comment to explain *what* it does isn't clean; rewrite it
+  until names and structure carry the meaning. Comments earn their place only for *why*: intent,
+  trade-offs, non-obvious constraints, never to restate the code.
+- **Principle of least astonishment**: an API should behave the way its name promises. No surprises.
+- **Make illegal states unrepresentable**: model with types so wrong states can't compile. Prefer
   discriminated unions over boolean soup. (See `stack-defaults.md` → TypeScript.)
-- **Errors are values** — handle failure paths deliberately; never swallow. Fail loud and early.
-- **Boy-scout rule** — leave touched code no worse than you found it. Cleanups beyond the ask are
+- **Errors are values**: handle failure paths deliberately; never swallow. Fail loud and early.
+- **Boy-scout rule**: leave touched code no worse than you found it. Cleanups beyond the ask are
   *listed*, not folded into the diff (`rigor.md` → Stay in scope).
 
 ## Understand before you use
 
-Before reaching for any tool, library, framework, or package — third-party **or** internal (our own UI
-kit, a shared module) — read its docs/source enough to use it correctly and to its intended standard.
+Before reaching for any tool, library, framework, or package: third-party **or** internal (our own UI
+kit, a shared module), read its docs/source enough to use it correctly and to its intended standard.
 Cargo-culting an API you haven't understood is how misuse and subtle bugs get in; research and *understand*
 it first, then use it the standard way. Weigh **build vs. buy**: when you can build a small,
 self-maintainable module/component yourself for less total cost than *owning* a heavier third-party (its
-weight, breakage surface, and upkeep), build it — sometimes the best dependency is none (see the decision
-framework and the `tech-scout` agent). Keep either path minimal — the simplest thing that fully
+weight, breakage surface, and upkeep), build it, sometimes the best dependency is none (see the decision
+framework and the `tech-scout` agent). Keep either path minimal, the simplest thing that fully
 solves the *real* problem wins (KISS/YAGNI); speculative flexibility is debt.
 
 ## Naming
 
 Names are the most-read documentation. A name should reveal intent and be pronounceable, searchable,
-and honest. If you can't name it well, the abstraction is probably wrong — that's a design signal,
+and honest. If you can't name it well, the abstraction is probably wrong. That's a design signal,
 not a naming problem.
 
 ## When principles conflict

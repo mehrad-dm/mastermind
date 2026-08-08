@@ -7,7 +7,7 @@ blurb: What MasterMind does when a task depends on technology it doesn't actuall
 
 An AI model was trained at a point in time. Libraries move on. A function that took two arguments now
 takes an options object; a pattern that was recommended two years ago is now the thing the docs warn
-against. But the model doesn't feel the gap — it writes the old version with exactly the same confidence
+against. But the model doesn't feel the gap, it writes the old version with exactly the same confidence
 it writes the current one.
 
 This produces a particular kind of frustration: code that looks completely reasonable, uses real-sounding
@@ -29,7 +29,7 @@ function names, and fails on contact with your actual installed version.
 ## How it actually works
 
 **1. Find out what's actually installed.** Read the project's dependency files, configuration, and a
-representative sample of source. Not "React" — the specific version, alongside the styling approach,
+representative sample of source. Not "React": the specific version, alongside the styling approach,
 state handling, and test setup this project genuinely uses.
 
 **2. Map the territory, then narrow it.** Identify what a competent practitioner would need to know here,
@@ -44,7 +44,7 @@ Consistency with the surrounding code beats a cleverer approach in isolation.
 **5. Challenge the assumptions before writing anything.** This is the step that earns the rest. Every belief
 about how the API behaves gets listed explicitly, then verified against the source. Each one comes back
 confirmed, corrected, or still unknown. Anything unresolved is either flagged as a stated risk or settled
-with a tiny experiment — never quietly guessed at. Where something genuinely can't be verified, you get a
+with a tiny experiment, never quietly guessed at. Where something genuinely can't be verified, you get a
 best guess *with a confidence level attached*, so you can correct it rather than having to author it.
 
 ## When it fires
@@ -52,7 +52,7 @@ best guess *with a confidence level attached*, so you can correct it rather than
 You don't type a command. It engages when a task leans on unfamiliar ground:
 
 > *"add Stripe subscriptions to this app"*
-> *"we just upgraded to the new version — does our code still work"*
+> *"we just upgraded to the new version: does our code still work"*
 > *"I've never used this library, can you wire it up"*
 > *"help me understand how this codebase handles authentication"*
 
@@ -65,12 +65,12 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **Improving MasterMind's permanent knowledge** — that's `levelup`, and the difference is what happens
+- **Improving MasterMind's permanent knowledge**: that's `levelup`, and the difference is what happens
   afterwards. `learn` is temporary and task-shaped: it gathers exactly what today's job needs and then
   lets it go. `levelup` writes durable lessons into MasterMind's long-term knowledge so they apply to
-  every future project. Learn is reading for one job; levelup is remembering forever. They chain naturally
-  — if something learned turns out to be broadly reusable, learn hands it to levelup.
-- **Testing a risky unknown by building something** — that's `prototype`. Learn answers questions the docs can
+  every future project. Learn is reading for one job; levelup is remembering forever. They chain naturally:
+if something learned turns out to be broadly reusable, learn hands it to levelup.
+- **Testing a risky unknown by building something**: that's `prototype`. Learn answers questions the docs can
   answer. Spike answers questions only running code can.
 - **Familiar territory.** If the stack is well-known and current, this step is skipped. It's a response to
   genuine uncertainty, not a ritual.

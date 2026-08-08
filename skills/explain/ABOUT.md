@@ -5,13 +5,13 @@ blurb: Writes usage documentation for your own shared code, so the next person (
 
 ## The problem this solves
 
-Every team accumulates shared code — a components library, a utilities package, a services layer that
+Every team accumulates shared code: a components library, a utilities package, a services layer that
 talks to the API. The people who wrote it understand it. Nobody else does, because it usually ships with
 no instructions.
 
 So everyone downstream does the same thing: opens the source, skims until something looks familiar,
 guesses the intended usage, and gets the non-obvious parts wrong. That includes your AI. A model reading
-your package cold has exactly the same problem a new teammate has, and it makes the same wrong guesses —
+your package cold has exactly the same problem a new teammate has, and it makes the same wrong guesses,
 just faster and more confidently.
 
 **Explain is the discipline that writes the missing instructions.**
@@ -20,17 +20,17 @@ just faster and more confidently.
 
 - **The same questions, forever.** Whoever wrote the package becomes a permanent help desk, answering
   "how do I use this" one Slack message at a time.
-- **Quiet misuse.** People use the thing in a way that works today and breaks later — passing the wrong
+- **Quiet misuse.** People use the thing in a way that works today and breaks later: passing the wrong
   option, calling things in the wrong order, relying on a default that was never meant to be relied on.
   Nothing errors, so nobody notices.
-- **Knowledge that lives in one head — or one model.** If your understanding of the package exists only
+- **Knowledge that lives in one head: or one model.** If your understanding of the package exists only
   in a chat history, it evaporates when the session ends or when you switch to a different AI tool.
   Documentation in the repository survives all of that.
 
 ## How it actually works
 
 MasterMind asks first, because this writes real files into your project. It offers to document the
-package, then shows you **one sample** before doing the rest — so you can say "not like that" while it
+package, then shows you **one sample** before doing the rest: so you can say "not like that" while it
 still costs nothing.
 
 Then, for each public piece of the package:
@@ -47,8 +47,8 @@ their types and defaults, the minimal correct example, how it combines with its 
 scenarios people genuinely need.
 
 **4. Spend the most care on the gotchas.** This is the part that matters. An options table can be
-inferred from the code by anyone. The rules the code *doesn't* enforce — the ordering constraint, the
-option that silently hides another, the default nobody expects — cannot. That section is the whole point.
+inferred from the code by anyone. The rules the code *doesn't* enforce: the ordering constraint, the
+option that silently hides another, the default nobody expects, cannot. That section is the whole point.
 
 Docs live beside the code they describe, so they travel with it and are found by anyone already looking
 in the right place.
@@ -71,17 +71,17 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **Writing up work that was just finished** — that's `report`. The distinction is direction in time.
+- **Writing up work that was just finished**: that's `report`. The distinction is direction in time.
   `report` narrates what happened in a session: what changed, why, what was verified. `explain` writes
   reference material for people who weren't there and will arrive months later. One is a record, the
   other is a manual.
-- **Explaining code you're about to change** — reading and understanding a codebase is ordinary work,
+- **Explaining code you're about to change**: reading and understanding a codebase is ordinary work,
   not this skill. `explain` produces durable files for future readers.
-- **Documenting a public, external library** — that already has docs. This is for your internal code,
+- **Documenting a public, external library**: that already has docs. This is for your internal code,
   the code nobody outside your team will ever write documentation for.
 
 ## What you get
 
 A short, accurate document beside each public piece of your package, written from the code rather than
-from memory. The measurable outcome: the next person to use it — human or model — gets it right on the
+from memory. The measurable outcome: the next person to use it, human or model, gets it right on the
 first attempt instead of the third.

@@ -159,5 +159,37 @@ case "$out" in *"$OVER/home/.mastermind"*) ok "without the override the walk-up 
 msg=$(grep -A3 "process.platform === 'win32'" "$ROOT/cli/bin/mastermind.mjs" | grep -c "Git Bash will not work")
 case "$msg" in 1) ok "the Windows refusal no longer advertises Git Bash as working";; *) bad "Git Bash still advertised";; esac
 
+# A published release must verify what it executes. Both holes below were reproduced by an
+# external audit against the signed 0.29.2 package, so they are tested against a build that
+# carries a pin (a local checkout has none, and skips verification by design).
+PINDIR="$WORK/pinned"; mkdir -p "$PINDIR/bin"
+cp -R "$ROOT/cli/." "$PINDIR/"
+HEADSHA=$(git -C "$ROOT" rev-parse HEAD)
+python3 - "$PINDIR/bin/mastermind.mjs" "$HEADSHA" <<'PYEOF'
+import re, sys, pathlib
+p = pathlib.Path(sys.argv[1]); s = p.read_text()
+p.write_text(re.sub(r"const PINNED_COMMIT = [^\n]+", f"const PINNED_COMMIT = '{sys.argv[2]}'", s, count=1))
+PYEOF
+
+# (a) A directory holding install.sh and no .git skipped every check and was EXECUTED.
+NOGIT="$WORK/nogit"; mkdir -p "$NOGIT/.mastermind" "$NOGIT/proj"
+printf '#!/usr/bin/env bash\ntouch %s/PWNED\n' "$NOGIT" > "$NOGIT/.mastermind/install.sh"
+chmod +x "$NOGIT/.mastermind/install.sh"
+(cd "$NOGIT/proj" && git init -q . && env -u MASTERMIND_HOME HOME="$NOGIT" node "$PINDIR/bin/mastermind.mjs" >/dev/null 2>&1) || true
+case "$([ -f "$NOGIT/PWNED" ] && echo ran || echo refused)" in
+  refused) ok "a brain with no git history is refused, not executed";;
+  *) bad "arbitrary install.sh executed under a pinned build";;
+esac
+
+# (b) The pin proves the commit, not the tree: an edited install.sh ran with HEAD unchanged.
+DIRTY="$WORK/dirty"; mkdir -p "$DIRTY/proj"
+git clone -q "$ROOT" "$DIRTY/.mastermind" 2>/dev/null
+echo "# tampered" >> "$DIRTY/.mastermind/install.sh"
+out=$(cd "$DIRTY/proj" && git init -q . && env -u MASTERMIND_HOME HOME="$DIRTY" node "$PINDIR/bin/mastermind.mjs" 2>&1 | head -1)
+case "$out" in *"uncommitted changes"*) ok "a dirty engine tree is refused";; *) bad "dirty tree accepted: $out";; esac
+git -C "$DIRTY/.mastermind" checkout -- install.sh
+out=$(cd "$DIRTY/proj" && env -u MASTERMIND_HOME HOME="$DIRTY" node "$PINDIR/bin/mastermind.mjs" 2>&1 | grep -c "isolated brain")
+case "$out" in 1) ok "the same clone installs once it is clean";; *) bad "clean clone refused too";; esac
+
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

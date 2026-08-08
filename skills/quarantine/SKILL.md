@@ -3,15 +3,15 @@ name: quarantine
 description: Use whenever secrets or confidential material must be kept out of git — API keys, tokens, credentials, a client's internal patterns, private project data, real names, proprietary code. Triggers: "these keys must never end up in a commit", "make sure this never gets pushed", "this is sensitive", "don't commit this", "set up the lab", or any request to guard against leaking secrets. Also when a `lab/` folder already exists but its guards are missing or broken. (The quarantine lives on disk as `lab/` — the name existing projects already have.)
 ---
 
-# Lab Init — a safe place for project data
+# Lab Init: a safe place for project data
 
-The Lab is where MasterMind keeps **raw, project-specific material** — codebase notes, captured
+The Lab is where MasterMind keeps **raw, project-specific material**: codebase notes, captured
 patterns, `signature` profiles, anything with real names. It is **local and gitignored**; only the
 **genericized, name-free output** ever graduates to a shareable field pack. This exists because raw
 material sitting in a publishable tree is how confidential data leaks. Make it structural, not a habit.
 
 > **Golden rule: patterns leave the quarantine, identities never do.** Company/product/person/package names
-> stay in `lab/`. Only the general rule — stripped of every name — goes into a field pack.
+> stay in `lab/`. Only the general rule, stripped of every name, goes into a field pack.
 
 ## What it sets up
 
@@ -26,7 +26,7 @@ lab/
 └── pre-push         ← scans every commit being pushed (catches --no-verify + old history)
 ```
 
-## Steps (idempotent — safe to re-run)
+## Steps (idempotent: safe to re-run)
 
 Run from the target repo root. The skill's files live in `assets/` next to this SKILL.md.
 
@@ -37,21 +37,21 @@ Run from the target repo root. The skill's files live in `assets/` next to this 
      private domains/hosts. **Never commit this file.**
    - If `lab/MANIFEST.md` is missing, copy `assets/MANIFEST.template.md` → `lab/MANIFEST.md`.
 
-2. **Gitignore the quarantine** — if `lab/` isn't already ignored, append `assets/gitignore-snippet.txt` to the
+2. **Gitignore the quarantine**: if `lab/` isn't already ignored, append `assets/gitignore-snippet.txt` to the
    repo's `.gitignore`. Verify with `git check-ignore lab/`.
 
 3. **Install the guards:**
    - `mkdir -p .githooks && cp assets/pre-commit assets/pre-push .githooks/ && chmod +x .githooks/pre-commit .githooks/pre-push`
    - `git config core.hooksPath .githooks`
    - If the repo already has a `core.hooksPath` or a hook manager (Husky, etc.), **leave theirs in
-     place** — tell the user and offer to chain the guard into their existing pre-commit instead.
+     place**, tell the user and offer to chain the guard into their existing pre-commit instead.
 
-4. **Prove it works** (do this — a guard you haven't tested is a guard you don't have):
+4. **Prove it works** (do this: a guard you haven't tested is a guard you don't have):
    - Stage a throwaway file containing a denylisted term and attempt a commit; confirm it's **blocked**,
      then unstage. Try staging a `lab/` file; confirm the quarantine **blocks** it.
-   - **Now prove `pre-push` too** — it's the layer that catches `--no-verify` and history committed
+   - **Now prove `pre-push` too**: it's the layer that catches `--no-verify` and history committed
      before the guard existed, so the pre-commit test does not cover it. Use a local throwaway remote
-     (no network, nothing is published — `--dry-run` still runs the hook):
+     (no network, nothing is published: `--dry-run` still runs the hook):
 
      ```bash
      printf 'ACME_TERM internal notes\n' > leak-test.md   # swap in a real term from lab/.denylist
@@ -61,10 +61,10 @@ Run from the target repo root. The skill's files live in `assets/` next to this 
      ```
 
      Expect `✖ BLOCKED — commit <sha> temp: pre-push test contains confidential terms:`, then
-     `Push aborted …` and a non-zero exit. If the push succeeds, the guard is not live — check
+     `Push aborted …` and a non-zero exit. If the push succeeds, the guard is not live: check
      `git config core.hooksPath`, that `.githooks/pre-push` is executable, and that the term is in
-     `lab/.denylist` (the hook scans every file type, but skips `lab/` itself — that's the quarantine).
-   - Clean up — **`--soft`, never `--hard`**: a hard reset here would discard any uncommitted work in
+     `lab/.denylist` (the hook scans every file type, but skips `lab/` itself. That's the quarantine).
+   - Clean up: **`--soft`, never `--hard`**: a hard reset here would discard any uncommitted work in
      the user's repo. `git reset --soft HEAD~1 && git restore --staged leak-test.md && rm -f
      leak-test.md && rm -rf /tmp/mm-throwaway.git`
 
@@ -72,10 +72,10 @@ Run from the target repo root. The skill's files live in `assets/` next to this 
 
 ## Guardrails
 
-- **The guards are generic and safe to publish; the denylist is not** — terms live only in the gitignored
+- **The guards are generic and safe to publish; the denylist is not**: terms live only in the gitignored
   `lab/.denylist`. Never bake a real name into a hook, `.gitignore`, or the manifest (use `*-glob` patterns).
 - **Escape hatch:** `ALLOW_SENSITIVE=1 git commit …` bypasses the guard for a deliberate, reviewed case.
-- **Not a substitute for review** — the guard catches known terms and obvious secrets, not everything.
+- **Not a substitute for review**: the guard catches known terms and obvious secrets, not everything.
   Read a diff before pushing to any public remote (`core/agent-loop.md`).
-- Distilling `lab/` into a pack is a separate step (the `levelup` capture flow) — this skill
+- Distilling `lab/` into a pack is a separate step (the `levelup` capture flow), this skill
   only stands up the safe container.

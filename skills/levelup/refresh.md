@@ -1,16 +1,16 @@
-# `refresh` — track the moving ecosystem
+# `refresh`: track the moving ecosystem
 
-Reference for `levelup` — read this only when running the `refresh` mode.
+Reference for `levelup`: read this only when running the `refresh` mode.
 
 ## Scope: one field, upstream only
 
-**`refresh` is upstream maintenance — do it in the MasterMind repo, not on a user's install.** Refreshing
+**`refresh` is upstream maintenance: do it in the MasterMind repo, not on a user's install.** Refreshing
 the curriculum, mentors, and agent-engineering best practices improves the *shared* brain; commit it
-upstream so every user gets it on `git pull`. End users should not each re-run this research — that
+upstream so every user gets it on `git pull`. End users should not each re-run this research, that
 fragments the knowledge base. (Per-install `capture` of a project-specific lesson is the exception, and it
 stays local unless genericized.)
 
-It refreshes **one field** — the one named in the argument, else the active field.
+It refreshes **one field**: the one named in the argument, else the active field.
 
 ## Steps
 
@@ -20,7 +20,7 @@ It refreshes **one field** — the one named in the argument, else the active fi
 2. Diff against the current `curriculum.md`: add what's newly best-in-class, drop what's archived/dead,
    flag anything that changed. Update `learning-sources.md` and `mentors.md` if authorities shifted.
 3. Note the refresh date in `curriculum.md`'s verification note.
-4. **Listen to the sources of truth for agent engineering — all three tools we support**, not just one.
+4. **Listen to the sources of truth for agent engineering: all three tools we support**, not just one.
    MasterMind installs into Claude Code, Cursor and Codex, so a practice verified against one vendor's
    docs is verified for one third of the users. Check each on its own cadence; primary sources only:
 
@@ -30,14 +30,14 @@ It refreshes **one field** — the one named in the argument, else the active fi
    | Codex | [developers.openai.com/codex](https://developers.openai.com/codex), [platform.openai.com/docs](https://platform.openai.com/docs), [github.com/openai/codex](https://github.com/openai/codex) releases, [agents.md](https://agents.md) | AGENTS.md conventions, CLI surface, config + sandbox behavior |
    | Cursor | [cursor.com/docs](https://cursor.com/docs), [cursor.com/changelog](https://cursor.com/changelog), [cursor.com/blog](https://cursor.com/blog) | rules format (`.mdc`, `alwaysApply`), context handling, agent mode |
 
-   A change in any of the three can quietly break an install path — `AGENTS.md` semantics, the Cursor
+   A change in any of the three can quietly break an install path: `AGENTS.md` semantics, the Cursor
    rules front-matter, a renamed skills directory. Verify against the doc, not against memory; note the
    check date. Read them on two axes:
-   - **Evolving best practices** — prompting, model/effort, skills, context management.
-   - **Newly shipped capabilities** — new tool types, skill/agent/hook mechanisms, slash-commands, MCP,
+   - **Evolving best practices**: prompting, model/effort, skills, context management.
+   - **Newly shipped capabilities**: new tool types, skill/agent/hook mechanisms, slash-commands, MCP,
      subagents, and workflow primitives worth *adopting into MasterMind's architecture* to get better.
 
-   **Stay tool-agnostic — this is a hard constraint, not a preference.** MasterMind supports Claude Code,
+   **Stay tool-agnostic. This is a hard constraint, not a preference.** MasterMind supports Claude Code,
    Cursor and Codex; the shared brain is portable Markdown that must load and work
    *everywhere*. So extract the **durable, portable principle**, never the vendor mechanism. A
    Claude-Code-only feature (hooks, native skills, slash-commands) may *sharpen the Claude path* as an
@@ -46,7 +46,7 @@ It refreshes **one field** — the one named in the argument, else the active fi
    Fold the durable ones into `engineering/core/`, `skills/levelup/authoring.md`, or the kernel; verify
    against the primary source, adopt the judgment (not the hype), and note the check date.
 
-## The write allowlist — what makes "upstream only" checkable
+## The write allowlist: what makes "upstream only" checkable
 
 "Upstream only" is worthless as a slogan; it is a rule about **which paths change**. A refresh may write
 to these paths in the MasterMind repo, and **nothing else**:
@@ -63,31 +63,30 @@ to these paths in the MasterMind repo, and **nothing else**:
 
 **Never touch:**
 
-- `engineering/ROUTER.md` and the site's generated `library/` pages — **generated artifacts**. Never
+- `engineering/ROUTER.md` and the site's generated `library/` pages, **generated artifacts**. Never
   hand-edit; regenerate them with `scripts/build-router.mjs` / `scripts/build-library.mjs` at the end.
-- `engineering/fields/<field>/lessons.md` — that file belongs to `capture`, not to a refresh.
-- `engineering/fields/<field>/stack-defaults.md` — promoting a default is `capture`'s job; a refresh
+- `engineering/fields/<field>/lessons.md`: that file belongs to `capture`, not to a refresh.
+- `engineering/fields/<field>/stack-defaults.md`: promoting a default is `capture`'s job; a refresh
   reports that an authority moved, it does not silently rewrite your defaults.
-- Any **vendored** pack data — any directory carrying a `SOURCE.md` (e.g.
+- Any **vendored** pack data: any directory carrying a `SOURCE.md` (e.g.
   a pack's `SOURCE.md`). It is owned by its upstream; edits are lost on re-vendor.
-- `engineering/fields/_template/**` — scaffolding; changing it is a deliberate decision, not a side effect.
-- Any **other** field's pack — a refresh is scoped to one field.
-- Any other skill's or agent's body (`skills/*/SKILL.md`, `agents/*.md`) — rewriting a workflow is an
+- `engineering/fields/_template/**`: scaffolding; changing it is a deliberate decision, not a side effect.
+- Any **other** field's pack: a refresh is scoped to one field.
+- Any other skill's or agent's body (`skills/*/SKILL.md`, `agents/*.md`): rewriting a workflow is an
   authoring change, done deliberately (see `authoring.md`), not smuggled in under a refresh.
-- A user's install (`~/.mastermind/**`) — refresh edits the repo; installs get it on `git pull`.
+- A user's install (`~/.mastermind/**`): refresh edits the repo; installs get it on `git pull`.
 
-**The check, before reporting done:** list what actually changed —
+**The check, before reporting done:** list what actually changed,
 
 ```
 git status --porcelain && git diff --name-only
 ```
-
-— and compare every path against the table above. A path that isn't on the "may write" list is a
+and compare every path against the table above. A path that isn't on the "may write" list is a
 violation: revert it, or stop and say so. Then regenerate and verify:
 
 ```
 node scripts/build-router.mjs && node scripts/build-library.mjs && node scripts/check-integrity.mjs
 ```
 
-Report the changed-file list in your summary. That list *is* the evidence the rule held — a refresh that
+Report the changed-file list in your summary. That list *is* the evidence the rule held: a refresh that
 can't show it hasn't been verified.

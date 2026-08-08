@@ -1,0 +1,23 @@
+name: codeql
+
+# Static analysis on the code that runs on other people's machines: the CLI. Two security
+# defects reached a signed release here (an arbitrary write through a symlinked directory, and
+# an unverified engine being executed), so a second pair of eyes runs on every push.
+on:
+  push: { branches: [master] }
+  pull_request:
+  schedule: [{ cron: '0 6 * * 1' }]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3

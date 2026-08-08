@@ -11,7 +11,7 @@ two-hour job or a two-week one?
 
 You can plan around that uncertainty for a long time. Reality answers in twenty minutes.
 
-The catch is what usually happens next. Someone builds a rough thing to find out, it works, and it ships —
+The catch is what usually happens next. Someone builds a rough thing to find out, it works, and it ships,
 no tests, no error handling, hard-coded values still sitting in it. The experiment becomes the product by
 accident, and nobody ever decides to let that happen.
 
@@ -31,13 +31,13 @@ accident, and nobody ever decides to let that happen.
 
 **1. Name the one question.** A prototype answers a single risky unknown, stated plainly enough that the
 answer is yes or no. "Can this handle a twenty-megabyte upload without timing out?" If there's no
-question, there's no need for a prototype — and that check alone kills a lot of pointless work.
+question, there's no need for a prototype: and that check alone kills a lot of pointless work.
 
 **2. Build the smallest thing that answers it.** Hard-coded values, no error handling, no tests, no
 polish. This feels wrong if you're used to careful work, and it's the correct instinct here: quality
 invested in code that will be deleted is quality wasted. Speed is the entire point.
 
-**3. Extract what reality taught.** Write down the answer and — often more valuable — the surprises. The
+**3. Extract what reality taught.** Write down the answer and, often more valuable, the surprises. The
 thing you didn't think to ask about is usually where the real risk was hiding.
 
 **4. Delete it and build properly.** The real version gets the full treatment: design, tests, review,
@@ -64,18 +64,18 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **Building something real** — that's `build`, and confusing the two is the expensive mistake. `build`
+- **Building something real**: that's `build`, and confusing the two is the expensive mistake. `build`
   produces code intended to live: designed, tested, reviewed, maintained. `prototype` produces code intended
   to die, and its shortcuts are only safe *because* it dies. The moment a prototype ships, every one of those
   shortcuts becomes debt you never chose to take on. If the path is already clear, skip the spike and
   build it properly the first time.
-- **The answer is in the documentation** — that's `learn`. Spikes are for questions only running code can
+- **The answer is in the documentation**: that's `learn`. Spikes are for questions only running code can
   settle. Writing a prototype to discover something the docs state plainly is slower, not faster.
-- **Something is broken and you need to know why** — that's `debug`. A prototype explores an unknown future;
+- **Something is broken and you need to know why**: that's `debug`. A prototype explores an unknown future;
   debug investigates a known failure.
 
 ## What you get
 
-A direct answer to the question you asked, the surprises that came with it, and a clear recommendation —
+A direct answer to the question you asked, the surprises that came with it, and a clear recommendation,
 either "now build it properly, here's what we know" or "don't build this, here's why." A no is a good
 outcome. It cost you an afternoon instead of a quarter.

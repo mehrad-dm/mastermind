@@ -20,13 +20,19 @@ PATH="$HOME/.local/bin:$PATH"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 fails=0
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(cd "$(mktemp -d)" && pwd -P)"; trap 'rm -rf "$WORK"' EXIT
+# The installer always writes $HOME/.mastermind. Run with the real HOME and it repoints the
+# developer's own brain at this throwaway directory, which is then deleted on exit. It did
+# exactly that during an audit. The same lesson is already in the wrong-log from the test
+# suite; this script repeated it, so the sandbox is not optional here either.
+SANDBOX_HOME="$WORK/home"; mkdir -p "$SANDBOX_HOME"
+REAL_BRAIN_BEFORE="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
 proj="$WORK/probe"; mkdir -p "$proj"; cd "$proj"
 git init -q .
 printf '{ "name": "probe", "dependencies": { "react": "^19.0.0" } }\n' > package.json
 # `agents` wires AGENTS.md, which is the ONLY thing Codex reads — naming tools explicitly
 # without it made the first version of this script probe a project Codex could not see.
-bash "$REPO/install.sh" claude cursor agents >/dev/null 2>&1 || { printf '%s✖ install failed in the probe project%s\n' "$r" "$x"; exit 1; }
+HOME="$SANDBOX_HOME" bash "$REPO/install.sh" claude cursor agents >/dev/null 2>&1 || { printf '%s✖ install failed in the probe project%s\n' "$r" "$x"; exit 1; }
 for f in .cursor/rules/mastermind.mdc AGENTS.md; do
   [ -e "$f" ] || { printf '%s✖ probe project is missing %s — the check would be meaningless%s\n' "$r" "$f" "$x"; exit 1; }
 done
@@ -61,6 +67,12 @@ if command -v codex >/dev/null 2>&1; then
   fi
 else
   printf '%s• codex skipped%s — codex CLI not installed\n' "$y" "$x"
+fi
+
+after="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
+if [ "$after" != "$REAL_BRAIN_BEFORE" ]; then
+  printf '%s\u2716 this script moved your real ~/.mastermind (%s -> %s)%s\n' "$r" "$REAL_BRAIN_BEFORE" "$after" "$x"
+  fails=$((fails+1))
 fi
 
 [ "$fails" -eq 0 ] && printf '\n%s✓ every installed tool loaded the brain.%s\n' "$g" "$x" \

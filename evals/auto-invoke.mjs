@@ -247,7 +247,11 @@ if (REPS > 1) {
 if (process.env.CROWDED) console.log(`a foreign skill won: ${foreign}/${total}`)
 if (FULL) {
   const fired = new Set(results.map((r) => r.got).filter(Boolean))
-  const never = KNOWN.filter((k) => !fired.has(k) && CASES.some((c) => c.expected?.includes(k)))
+  // A case may accept alternates ('prototype' or 'learn'). When one of them fires the case is
+  // satisfied, but the other was still counted as "prompted but NEVER fired" — an accusation
+  // drawn from a passing test. Only cases that actually went unmet can implicate a skill.
+  const unmet = CASES.filter((c) => !results.filter((r) => r.prompt === c.prompt).some((r) => isHit(c, r.got)))
+  const never = KNOWN.filter((k) => !fired.has(k) && unmet.some((c) => c.expected?.includes(k)))
   if (never.length) console.log('prompted but NEVER fired (fix or cut):', never.join(', '))
 }
 // A session can skip the formal skill-load and still do the discipline — measured live, the

@@ -181,6 +181,46 @@ out=$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check 2>&1)
 is "a real project is still checked as a project" "$(printf '%s' "$out" | grep -c 'checking the global install')" "0"
 is "and that project reports healthy" "$(printf '%s' "$out" | grep -c 'healthy here')" "1"
 
+echo "── a repo cannot redirect the installer outside itself via a symlinked integration dir"
+# Arbitrary write, found by an external audit. A repository containing `.claude -> /elsewhere`
+# made the installer write 28 files into that location and exit 0; `.cursor` did the same. The
+# brain-path walker never covered the integration directories, only paths under .mastermind.
+for d in .claude .cursor; do
+  V="$TMP_REAL/victim-${d#.}"; mkdir -p "$V"
+  P=$(proj "escape-${d#.}"); (cd "$P" && ln -s "$V" "$d")
+  (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" claude cursor >/dev/null 2>&1); rc=$?
+  is "$d escape refused (non-zero exit)" "$([ "$rc" -ne 0 ] && echo refused)" "refused"
+  is "$d escape wrote nothing outside" "$(find "$V" -type f -o -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
+done
+# The guard must not fire on an ordinary project.
+P=$(proj noescape); run "$P" claude cursor >/dev/null 2>&1
+is "an ordinary project still installs" "$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+
+echo "── a project's own instructions keep applying (project wins)"
+# The installer renamed an existing .claude/CLAUDE.md to .bak and linked ours over it. The
+# backup prevented data loss but not deactivation: rules like "never deploy on Friday" stopped
+# reaching Claude, which breaks MasterMind's own "the project wins". Keep theirs, append ours.
+P=$(proj projwins); mkdir -p "$P/.claude"
+printf '# Our rules\nNever deploy to prod on Friday.\n' > "$P/.claude/CLAUDE.md"
+printf '# Team file\nUse pnpm.\n' > "$P/AGENTS.md"
+run "$P" claude agents >/dev/null 2>&1
+is "their rule still applies" "$(grep -c Friday "$P/.claude/CLAUDE.md")" "1"
+is "and ours is wired in too" "$(grep -c 'mastermind/CLAUDE.md' "$P/.claude/CLAUDE.md")" "1"
+is "their AGENTS.md content survives" "$(grep -c pnpm "$P/AGENTS.md")" "1"
+# An isolated project must be pointed at ITS OWN brain, not the shared clone: pointing at
+# ~/.mastermind sent Codex to a brain without this project's field, lessons and stack.
+is "AGENTS.md points at the project brain" "$(grep -c './.mastermind/CLAUDE.md' "$P/AGENTS.md")" "1"
+
+echo "── the doctor knows what SHOULD be wired, not just what survived"
+# --check inferred the expected tool set from artifacts that still existed, so deleting the
+# Cursor rule removed cursor from the check and a broken install reported "healthy", exit 0.
+P=$(proj doctor); run "$P" claude cursor >/dev/null 2>&1
+is "the install is recorded" "$(sed -n 's/^tools=//p' "$P/.mastermind/.installed" 2>/dev/null)" "claude cursor"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >/dev/null 2>&1); is "a healthy install passes" "$?" "0"
+rm -f "$P/.cursor/rules/mastermind.mdc"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >/dev/null 2>&1); rc=$?
+is "deleted wiring is reported, not ignored" "$([ "$rc" -ne 0 ] && echo caught)" "caught"
+
 echo "── uninstall removes what it wired, and keeps what it didn't"
 P=$(proj unwire); mkdir -p "$P/.claude"
 printf '{"model":"opus","hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo MINE"}]}]}}' > "$P/.claude/settings.json"
@@ -266,7 +306,9 @@ ln -s "$PRECIOUS" "$P/.mastermind"
 run "$P" --isolated claude >/dev/null 2>&1 || true
 is "user's files survive"        "$(cat "$PRECIOUS/my-thing.md" 2>/dev/null)" "IRREPLACEABLE"
 is "nothing was written through" "$(ls "$PRECIOUS" | wc -l | tr -d ' ')" "1"
-yes_ "and it refuses out loud"   "$(run "$P" --isolated claude 2>&1 | grep -o 'is a symlink')"
+# Either guard may catch this first: the containment gate (checked before any write) or the
+# brain-path walker. Assert the refusal, not one guard's wording.
+yes_ "and it refuses out loud"   "$(run "$P" --isolated claude 2>&1 | grep -oE 'is a symlink|resolves outside the project' | head -1)"
 # A symlinked .mastermind must never flip a project into isolated mode either.
 yes_ "no silent isolation via symlink" "$(run "$P" claude 2>&1 | grep -o 'is a symlink' || echo skipped)"
 

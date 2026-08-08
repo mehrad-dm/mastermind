@@ -3,9 +3,9 @@ field: <field>
 route_when: [learn, curriculum, resource, course, roadmap, deep-dive]
 ---
 
-# Curriculum — an on-demand reference index
+# Curriculum: an on-demand reference index
 
-**A reference to draw from, not required reading — and not a completeness goal.** A frontier model
+**A reference to draw from, not required reading: and not a completeness goal.** A frontier model
 already knows most of this; reach here only to **recommend resources to the user** or when going
 genuinely deep. Load a **single section** on demand. Verify links periodically (repos exist/active).
 

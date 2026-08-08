@@ -42,8 +42,12 @@ jobs:
             console.log("tarball OK:", files.join(", "));
           '
 
+  # Every platform we claim to support must pass on THIS commit before it can be published.
+  cross-os:
+    uses: ./.github/workflows/cross-os.yml
+
   publish:
-    needs: gate
+    needs: [gate, cross-os]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

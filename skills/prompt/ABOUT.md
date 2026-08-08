@@ -8,7 +8,7 @@ blurb: Rewrites a vague request into a precise, well-structured prompt, so you s
 Most disappointing AI output isn't a model failure. It's an under-specified request.
 
 You type *"make this page nicer"* and get something generic. You type *"write a script to clean up my
-data"* and get code that guesses at your file format. The model wasn't wrong — it answered the question
+data"* and get code that guesses at your file format. The model wasn't wrong, it answered the question
 you asked. The question just didn't contain enough to answer well.
 
 **Prompt is the skill that fixes the question before you spend a run on the answer.**
@@ -18,7 +18,7 @@ do with making your software faster or your code shorter.
 
 ## What goes wrong without it
 
-- **Vague adjectives do the heavy lifting.** "Clean", "modern", "professional", "better" — these feel
+- **Vague adjectives do the heavy lifting.** "Clean", "modern", "professional", "better", these feel
   like requirements but carry almost no information. Two people reading them picture different things,
   and so does the model.
 - **The output arrives in the wrong shape.** You wanted three bullet points and got four paragraphs,
@@ -55,7 +55,7 @@ You don't need a command. Any of these reaches for `prompt`:
 
 > *"can you improve this prompt before I run it?"*
 > *"how should I ask for this?"*
-> *"I keep getting bad answers from this — what am I doing wrong?"*
+> *"I keep getting bad answers from this: what am I doing wrong?"*
 > *"here's what I want to ask another AI, make it sharper"*
 
 You'll see it engage in your terminal:
@@ -68,14 +68,14 @@ You'll see it engage in your terminal:
 ## When it does *not* fire
 
 - **You pasted a prompt for MasterMind to answer or run.** This is the important one. A prompt in your
-  message is usually a *task*, not a rewrite request — so `prompt` stays out of the way unless you
+  message is usually a *task*, not a rewrite request, so `prompt` stays out of the way unless you
   actually ask for it to be improved. Rewriting text you meant to be executed would replace your work
   with a paraphrase and answer a question you never asked.
-- **You want your code optimized.** That's `performance` — measuring and fixing slow software. `prompt` never
+- **You want your code optimized.** That's `performance`, measuring and fixing slow software. `prompt` never
   touches your code; it only touches text you send to a model. The names sound adjacent; the jobs share
   nothing.
 - **The ask is fuzzy but it's a build task, not a prompt.** If you want *MasterMind itself* to build
-  something and the requirements are unclear, that's `interview` — it turns a vague ask into a buildable
+  something and the requirements are unclear, that's `interview`, it turns a vague ask into a buildable
   specification. `prompt` is for when the finished text is the deliverable and you'll send it somewhere
   else.
 - **You want to teach MasterMind a lasting preference.** That's `levelup`. A rewritten prompt is a
@@ -89,8 +89,8 @@ what changed and why, and an honest list of anything still ambiguous that only y
 Scope is never silently expanded. If sharpening the request surfaces a real product decision, MasterMind
 puts it in front of you rather than quietly picking for you.
 
-**Your prompt stays yours.** The rewrite is handed back, never run — MasterMind doesn't execute it, doesn't
+**Your prompt stays yours.** The rewrite is handed back, never run. MasterMind doesn't execute it, doesn't
 overwrite your original, and doesn't act on it in the same turn. Every requirement you wrote survives or
 is named as cut, and anything added is named as added, so you can always see exactly what changed. That
-rule isn't local to this skill: it binds every skill that touches your own words — your spec, your style
+rule isn't local to this skill: it binds every skill that touches your own words: your spec, your style
 profile, your docs.

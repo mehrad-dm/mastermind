@@ -1,0 +1,13 @@
+# Dependency and action updates, opened as PRs rather than discovered by an audit months later.
+# `github-actions` also proposes SHA pins for the mutable tags the workflows currently use
+# (actions/checkout@v4 can be re-pointed by its owner; a SHA cannot).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /cli
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5

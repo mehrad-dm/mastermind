@@ -4,6 +4,82 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.30.0] — 2026-08-09
+
+An external audit found 17 defects that every green gate had missed, including two security
+holes. The gates proved the happy path; they never tested a hostile repository, a moved project,
+preserved user instructions, an upgrade, or repair of deleted wiring. Each fix below ships with a
+test that fails against the old code.
+
+### Security — the installer could write outside your repository
+A repository could contain `.claude -> /somewhere/else` (or `.cursor`). The installer followed it
+and wrote **28 files into that location, then exited 0**: an arbitrary write driven by repo
+contents. Earlier containment work guarded paths under `.mastermind` and never covered the
+integration directories. Every project write target is now resolved and required to be inside the
+project before anything is written, uninstall included, since a redirected path deletes elsewhere.
+
+### Security — "you always know exactly what ran" was false for an existing clone
+Verification lived inside `if (.git exists)`. A `~/.mastermind` holding an `install.sh` and no
+git history skipped every check and was executed: an audit dropped an arbitrary script there and
+the signed, provenance-attested CLI ran it. A published release now refuses to run a brain it
+cannot verify. Related: a commit pin proves the commit, not the tree, so an edited `install.sh`
+ran with `HEAD` unchanged; a dirty tracked engine file is now refused, with the stash/discard
+commands printed.
+
+### Fixed — a cloned or moved project lost almost everything
+A fresh install wrote **28 absolute symlinks** plus absolute hook commands, contradicting the
+"project-relative, never absolute" contract in the installer's own comments. Clone the repo
+elsewhere and every link broke; teammates got a directory of dangling pointers. Links inside a
+project are relative now (29/29), Claude's hook uses `$CLAUDE_PROJECT_DIR`, and Cursor's is
+project-relative and quoted, which also fixes a project path containing spaces (it returned 127).
+Verified by cloning elsewhere and deleting the original: 0 broken links.
+
+### Fixed — installing deactivated your own instructions
+An existing `.claude/CLAUDE.md` was renamed to `.bak-*` and replaced by our symlink. The backup
+prevented data loss but not deactivation: rules like "never deploy on Friday" stopped reaching
+Claude, which breaks MasterMind's own "the project wins". Your file is kept and a pointer is
+appended. An existing `AGENTS.md` was also pointed at `~/.mastermind`, sending Codex to the shared
+brain and skipping the project's own field, lessons and stack; it now points at `./.mastermind`.
+
+### Fixed — the doctor called a broken install healthy
+`--check` inferred the expected tools from artifacts that still existed, so deleting the Cursor
+rule removed Cursor from the check and the answer was "healthy", exit 0. The installer now records
+what it wired (`.mastermind/.installed`) and the doctor verifies that record, so missing wiring is
+reported instead of forgotten.
+
+### Fixed — the documented update command did not update
+The README and the site both say the same command updates an existing install. On an older clone
+it hit the pin check and died with "the tag may have moved", leaving users on the old version
+unless they knew to type `update`. It now syncs to the pinned tag first, then verifies. A dirty
+tree still refuses, so local edits are never discarded silently.
+
+### Fixed — init prescribed a command that failed
+`init` and `levelup bootstrap` said `node scripts/build-router.mjs`; in a per-project install
+those live under `.mastermind/scripts/`, so a real init did all the work and dead-ended on
+MODULE_NOT_FOUND. 0.29.1 shipped the scripts but never corrected the path that names them.
+
+### Fixed — smaller, all reproduced
+Project-root discovery preferred any ancestor holding `.mastermind` over the repository you are
+standing in, so a nested repo inside such a parent left the actual repository unwired. The site
+advertised `mastermind skills`, which is not on `PATH` after the recommended install; it now shows
+the shim that exists. The README said the brain is "committed" when a fresh install leaves it
+untracked, so it says "ready to commit" and names the paths. The site told Claude Code users to
+type `/init`, which collides with a built-in command.
+
+### CI — gates that could not fail
+The website's advisory gate ran `pnpm audit … || true` with stderr discarded, so a registry
+outage or a changed output format scored zero and passed; it now parses the JSON summary and
+fails when the audit itself did not run. Publishing depended only on the Linux gate and never
+waited for Windows, WSL or Alpine, so a broken release could reach npm before those results
+existed; `publish` now requires them. Dependabot and CodeQL are enabled.
+
+### Fixed — my own tooling
+`scripts/verify-tools.sh`, added in 0.29.1 to prove the tools load the brain, ran the installer
+with the real `$HOME` and repointed the auditor's `~/.mastermind` at a temporary directory. That
+is the lesson already in the wrong-log from the test suite, repeated the same week. It sandboxes
+`HOME` now and fails if the real symlink moves. The FULL eval also reported a skill as "never
+fired" from a case that had passed on its alternate.
+
 ## [0.29.2] — 2026-08-09
 
 Ships one user-facing fix that landed just after 0.29.1 was tagged, so the published installer

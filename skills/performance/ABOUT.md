@@ -6,7 +6,7 @@ blurb: What MasterMind does when something is slow, and why "feels faster" is no
 ## The problem this solves
 
 Something is slow. The page hangs, the query crawls, the app stutters when you scroll. You ask your AI to
-speed it up, and it obliges — it adds caching here, memoises something there, rewrites a loop. The code
+speed it up, and it obliges: it adds caching here, memoises something there, rewrites a loop. The code
 gets more complicated. Whether it got faster, nobody actually knows.
 
 The trap is that slowness *looks* diagnosable by reading. It isn't. Programs spend their time in places
@@ -30,23 +30,23 @@ the part that was never the problem.
 
 MasterMind works through five steps in order:
 
-**1. Reproduce and measure.** Trigger the slowness under realistic conditions and capture a real number —
+**1. Reproduce and measure.** Trigger the slowness under realistic conditions and capture a real number,
 elapsed time, frame rate, query milliseconds, request latency, bundle size, memory. That number is written
 down as the "before." No number, no optimizing.
 
-**2. Profile instead of guessing.** Use the right instrument for the domain — a browser performance panel,
-a flame graph, a database query plan — and find where the time genuinely goes. Usually a small fraction of
+**2. Profile instead of guessing.** Use the right instrument for the domain: a browser performance panel,
+a flame graph, a database query plan: and find where the time genuinely goes. Usually a small fraction of
 the code accounts for most of the delay. The profiler decides what that is, not a hunch.
 
 **3. Fix the biggest thing.** One change, aimed at the largest contributor. The preferred fix is almost
-always *doing less work* — caching a result, batching requests, adding an index, loading later, paging
-through data — rather than doing the same work marginally faster.
+always *doing less work*: caching a result, batching requests, adding an index, loading later, paging
+through data, rather than doing the same work marginally faster.
 
 **4. Verify the win.** Measure again, the same way, and confirm the number actually moved. Then confirm
 behavior is unchanged, because a faster version that quietly returns something different is a regression
 wearing a disguise.
 
-**5. Guard it.** Record the metric — a budget, a note, a performance test — so a future change that
+**5. Guard it.** Record the metric: a budget, a note, a performance test, so a future change that
 reverses the win is visible rather than silent.
 
 ## When it fires
@@ -67,18 +67,18 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **Something is wrong, not slow** — that's `debug`. The distinction matters more than it sounds. A bug
+- **Something is wrong, not slow**: that's `debug`. The distinction matters more than it sounds. A bug
   needs a reproduction that fails; slowness needs a measurement that's too high. `debug` asks *why is this
   answer wrong*, `performance` assumes the answer is right and asks *why does it take so long*. Using the wrong
-  one wastes the whole session — profiling a correctness bug tells you nothing, and hunting a root cause
+  one wastes the whole session: profiling a correctness bug tells you nothing, and hunting a root cause
   for slowness just produces theories.
-- **Proving a finished feature works end to end** — that's `qa`. Perf verifies a number moved; qa verifies
+- **Proving a finished feature works end to end**: that's `qa`. Perf verifies a number moved; qa verifies
   the behavior is correct.
-- **Tidying code that isn't slow** — restructuring for clarity is refactoring. Perf only justifies a change
+- **Tidying code that isn't slow**: restructuring for clarity is refactoring. Perf only justifies a change
   when a measurement backs it.
 
 ## What you get
 
-A specific bottleneck named, one targeted change, and two numbers — before and after — so you can see the
+A specific bottleneck named, one targeted change, and two numbers, before and after, so you can see the
 size of the win rather than take it on faith. If the profile shows the slowness isn't where you assumed,
 MasterMind tells you that, even when it means the fix you asked for was the wrong one.

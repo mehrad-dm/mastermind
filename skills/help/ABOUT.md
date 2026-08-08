@@ -5,7 +5,7 @@ blurb: Shows what MasterMind can do and how to drive it, built around the fact t
 
 ## The problem this solves
 
-MasterMind has a lot of parts — workflows for building, debugging, testing, documenting, and more, plus
+MasterMind has a lot of parts: workflows for building, debugging, testing, documenting, and more, plus
 a few specialist roles that run on their own. That's genuinely useful, and it's also the kind of thing
 people quietly stop using because they can't remember what's in there.
 
@@ -27,7 +27,7 @@ place you're already working, when you ask a question as ordinary as "what can y
 
 ## How it actually works
 
-Help prints a menu, sized to what you asked — a quick orientation for a casual question, the full listing
+Help prints a menu, sized to what you asked: a quick orientation for a casual question, the full listing
 for a real one.
 
 **It leads with the one thing that matters most:** you don't run commands, you just talk. MasterMind
@@ -37,14 +37,14 @@ only as an optional shortcut for people who want to force a specific choice. Nob
 
 **Then it lays out the workflows in a table**, and each row answers the three questions you actually
 have: what does this do, when does it kick in by itself, and what would I type if I wanted it on purpose.
-That third column is written as real phrases — the way you'd actually ask — not as syntax.
+That third column is written as real phrases, the way you'd actually ask, not as syntax.
 
-**It separates workflows from specialist roles.** Some jobs run inline in your conversation. Others —
-designing a system, reviewing a diff, restructuring working code, deciding whether to adopt a library —
+**It separates workflows from specialist roles.** Some jobs run inline in your conversation. Others,
+designing a system, reviewing a diff, restructuring working code, deciding whether to adopt a library,
 run as a focused expert with its own clean slate. You rarely have to choose; MasterMind picks and tells
 you which it used.
 
-**It closes with setup and preferences** — how to get MasterMind configured for a project it hasn't seen,
+**It closes with setup and preferences**: how to get MasterMind configured for a project it hasn't seen,
 and the two optional per-project settings that are off unless you switch them on.
 
 ## When it fires
@@ -63,7 +63,7 @@ It also fires when you seem stuck on where to begin. In your terminal:
 
 ## When it does *not* fire
 
-- **You want MasterMind configured for your project.** That's `init` — it reads your stack and loads the
+- **You want MasterMind configured for your project.** That's `init`, it reads your stack and loads the
   matching knowledge. The two are easy to confuse because both feel like getting started. The split is
   clean: `help` teaches you the system and changes nothing; `init` learns your project and sets things
   up. New to MasterMind entirely? Read help, then run init.
@@ -76,5 +76,5 @@ It also fires when you seem stuck on where to begin. In your terminal:
 ## What you get
 
 A scannable picture of everything available, written around when each thing fires rather than what to
-type — because in normal use, you don't type anything special. You describe the problem; the right
+type: because in normal use, you don't type anything special. You describe the problem; the right
 workflow shows up and says so.

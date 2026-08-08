@@ -5,8 +5,8 @@ blurb: How MasterMind decides whether to bring in an outside tool or write the f
 
 ## The problem this solves
 
-Every project runs into the same fork constantly. There's a piece of functionality you need — dates,
-charts, forms, payments, authentication — and you can either pull in something someone else built, or
+Every project runs into the same fork constantly. There's a piece of functionality you need: dates,
+charts, forms, payments, authentication: and you can either pull in something someone else built, or
 write it yourself. Both choices are defensible. Both have a bad version.
 
 Pull in too much and your project becomes a pile of other people's decisions: dependencies that break on
@@ -35,18 +35,18 @@ about a project that was abandoned last spring.
 Tech scout is an **agent**, not a skill. A skill is guidance the main conversation follows; an agent runs
 in its own **isolated context window**, seeing only the question it was handed. It doesn't inherit any
 enthusiasm already expressed in the chat, or a tool someone mentioned three messages ago. That isolation
-keeps the recommendation from being a reflection of the conversation's momentum — it starts from the
+keeps the recommendation from being a reflection of the conversation's momentum: it starts from the
 constraints and the evidence, not from what everyone had already half-decided.
 
-It starts by checking whether a sensible default is already documented for this kind of work — often the
+It starts by checking whether a sensible default is already documented for this kind of work, often the
 decision was made once and doesn't need remaking. Then each candidate goes through the same test.
 
-**Fit** — does it actually solve *this* problem under *these* constraints? A great tool for the wrong
-problem is the wrong tool. **Health** — is it maintained? Release cadence, the ratio of open issues to
+**Fit**: does it actually solve *this* problem under *these* constraints? A great tool for the wrong
+problem is the wrong tool. **Health**: is it maintained? Release cadence, the ratio of open issues to
 resolved ones, the last commit, how many people could keep it alive. This gets verified against the real
-repository and package registry, never a landing page. **Longevity** — real adoption, credible
-alternatives, and an honest guess at whether it will exist in three years. **Cost** — not just size, but
-the ongoing cost of owning it. **Security and license** — known advisories, supply-chain exposure,
+repository and package registry, never a landing page. **Longevity**: real adoption, credible
+alternatives, and an honest guess at whether it will exist in three years. **Cost**: not just size, but
+the ongoing cost of owning it. **Security and license**: known advisories, supply-chain exposure,
 compatibility with how you're distributing your work.
 
 And running through all of it, the baseline candidate that gets forgotten: **build it yourself.** Is a few
@@ -58,7 +58,7 @@ none.
 > *"should I use a library for this or just write it?"*
 > *"what's the best way to handle payments in this app?"*
 > *"is this package still maintained? should I switch?"*
-> *"everyone says to use X — is that right for us?"*
+> *"everyone says to use X, is that right for us?"*
 
 You'll see it engage in your terminal:
 
@@ -69,19 +69,19 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **When the tool is already chosen and you need to understand it** — that's the `learn` skill. This is
+- **When the tool is already chosen and you need to understand it**: that's the `learn` skill. This is
   the distinction people mix up. Tech scout answers *should we use this?* and hands back a decision.
   Learn answers *how does this work?* and teaches you the thing, reading the current documentation so the
   next step is grounded in fact rather than half-memory. Deciding then learning is a normal sequence;
   they're just different jobs.
-- **When you want a broad written report** on a subject — that's deeper research. Tech scout is
+- **When you want a broad written report** on a subject. That's deeper research. Tech scout is
   deliberately narrow: one bounded question, one answer.
-- **When the real question is whether an approach will work at all** — build a rough throwaway and find
+- **When the real question is whether an approach will work at all**: build a rough throwaway and find
   out. That's a `prototype`.
 
 ## What you get
 
-A verdict. The recommended choice — or "build it" — with a one-line reason, the runner-up and the
+A verdict. The recommended choice: or "build it": with a one-line reason, the runner-up and the
 circumstance that would flip you to it, and the risks that actually carry weight. Every claim about
 activity, downloads or advisories is checked with tools rather than asserted, and the assumptions behind
 the recommendation are stated so you can tell when it stops applying.

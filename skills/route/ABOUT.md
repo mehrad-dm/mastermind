@@ -6,7 +6,7 @@ blurb: How MasterMind picks the handful of files a task actually needs, and why 
 ## The problem this solves
 
 An AI working in your codebase has a limited amount of attention. Everything it reads competes for the
-same space — your code, its own knowledge, the conversation so far. Fill that space with things the task
+same space: your code, its own knowledge, the conversation so far. Fill that space with things the task
 didn't need, and the parts that mattered get crowded out.
 
 So the first decision on any substantial task isn't *how do I do this*. It's *what do I need to know
@@ -19,7 +19,7 @@ spent on files that turned out to be irrelevant.
 ## What goes wrong without it
 
 - **Starting in the wrong place.** Work begins in the first file that looked relevant, and the real
-  change turns out to live somewhere else entirely — after an hour of reading.
+  change turns out to live somewhere else entirely: after an hour of reading.
 - **Reading everything, just in case.** The opposite failure, and the more common one. Context fills
   with material that never gets used, and quality drops on the part that counts.
 - **Missing the project's own rules.** The one convention file that would have shaped the whole change
@@ -29,7 +29,7 @@ spent on files that turned out to be irrelevant.
 
 ## How it actually works
 
-Route is short by design — it runs before the work, and its output is a list, not a plan.
+Route is short by design: it runs before the work, and its output is a list, not a plan.
 
 **Name the destination.** One line stating what this task actually produces. Scope comes before routing;
 you can't choose what to load until you know what you're aiming at.
@@ -49,7 +49,7 @@ anything that can't justify it gets cut.
 **Load progressively.** For a large or foggy task, only the entrance set gets loaded up front. The next
 files are named after the first decisions resolve, rather than guessed at the start.
 
-Two rules keep it honest. The manifest **points at files, it never summarizes them** — the moment it
+Two rules keep it honest. The manifest **points at files, it never summarizes them**: the moment it
 starts paraphrasing what a document says, it can drift out of date and quietly lie. And **nothing is
 loaded "just in case."** Every entry earns its place.
 
@@ -57,7 +57,7 @@ loaded "just in case."** Every entry earns its place.
 
 You don't type a command. Say any of these and MasterMind reaches for `route`:
 
-> *"I need to change how permissions work — not sure where that lives"*
+> *"I need to change how permissions work, not sure where that lives"*
 > *"can you look at this repo and add rate limiting"*
 > *"something in the payment flow needs updating, it touches a few places"*
 > *"where would I even start with this?"*
@@ -73,17 +73,17 @@ You'll see it engage in your terminal:
 
 - **A one-line change or an already-scoped task.** If it's clear what to do and where, routing adds a
   step and removes nothing. It skips itself.
-- **When the problem is that nobody agrees what to build** — that's `interview`. Worth separating carefully:
+- **When the problem is that nobody agrees what to build**: that's `interview`. Worth separating carefully:
   route answers *what should I read*, spec answers *what are we building*. Route assumes the goal is
-  understood and finds the path to it. If the goal itself is fuzzy — "make it better", arguments about
-  scope — routing will produce a confident list of files for the wrong task. Spec first, then route.
-- **Actually doing the work** — that's `build`, which can call route as its opening move. Route chooses
+  understood and finds the path to it. If the goal itself is fuzzy: "make it better", arguments about
+  scope, routing will produce a confident list of files for the wrong task. Spec first, then route.
+- **Actually doing the work**: that's `build`, which can call route as its opening move. Route chooses
   what knowledge to bring; it never writes code or plans the implementation.
 - **It isn't a task tracker.** Route serves one session's context. Tickets, backlogs, and multi-day
   project state are somewhere else entirely.
 
 ## What you get
 
-A short list of exactly what's being opened and why, before any work starts — so the model spends its
+A short list of exactly what's being opened and why, before any work starts: so the model spends its
 attention on your problem rather than on a tour of the codebase, and so you can see it heading somewhere
 sensible before it gets there.

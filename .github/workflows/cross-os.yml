@@ -15,6 +15,9 @@ on:
     branches: [master]
     paths: ['install.sh', 'cli/**', 'bin/**', 'tests/**', '.github/workflows/cross-os.yml']
   workflow_dispatch:
+  # Callable so a release can BLOCK on it. These jobs only ran on master pushes, never on a
+  # tag, so publish could put a package on npm before any of them had executed for that commit.
+  workflow_call:
 
 jobs:
   linux:

@@ -65,6 +65,14 @@ warn() { printf '  %s⚠%s %s\n' "$y" "$x" "$*"; }
 bad()  { printf '  %s✖%s %s\n' "$r" "$x" "$*"; }
 ISSUES=0; LINKED_SKILLS=0; LINKED_AGENTS=0; PRUNED=0; RENAMED=0; SKIPPED=0
 HINT='Follow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).'
+# Set once $BRAIN/$PROJECT are known (below): an isolated project must point at its OWN brain.
+mm_hint() {
+  if [ "$ISOLATED" = 1 ]; then
+    printf 'Follow ./.mastermind/CLAUDE.md — the MasterMind brain for this project (skills, agents, engineering rigor).'
+  else
+    printf '%s' "$HINT"
+  fi
+}
 # Anchor-block markers — matched as WHOLE lines so a project's own text that merely mentions
 # them is never edited. Kept minimal and stable so old blocks stay recognizable across versions.
 MM_START='<!-- MASTERMIND:START -->'
@@ -76,12 +84,19 @@ MM_END='<!-- MASTERMIND:END -->'
 # make a project resolve its root to $HOME, no-op'ing install and deleting global wiring on
 # uninstall), and require a REAL dir (the shared clone is a symlink; a project brain isn't).
 find_project_root() {
-  local d="$PWD"
+  local d="$PWD" gitroot=""
+  # The repository you are standing in is the project. Walking up for any `.mastermind` first
+  # meant a nested repo inside a non-git parent that happened to hold one got skipped: the
+  # installer wired the PARENT and left the actual repository unwired. Never climb past the
+  # git root; inside a repo, that root is the answer unless a nearer .mastermind exists.
+  gitroot="$(git rev-parse --show-toplevel 2>/dev/null)" || gitroot=""
   while [ "$d" != / ] && [ "$d" != "$HOME" ]; do
     [ -d "$d/.mastermind" ] && [ ! -L "$d/.mastermind" ] && { printf '%s' "$d"; return; }
+    [ -n "$gitroot" ] && [ "$d" = "$gitroot" ] && break
     d="$(dirname "$d")"
   done
-  git rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PWD"
+  [ -n "$gitroot" ] && { printf '%s' "$gitroot"; return; }
+  printf '%s' "$PWD"
 }
 
 if [ "$SCOPE" = global ]; then
@@ -158,6 +173,28 @@ mm_assert_no_symlink_path() {
   return 0
 }
 
+# Every project write target must RESOLVE inside the project. A repo can ship
+# `.claude -> /somewhere/else` (or `.cursor`, or `AGENTS.md`), and the installer happily wrote
+# 28 files into that location and exited 0: an arbitrary write driven by repo contents. The
+# existing walker guards paths under the brain; this guards the integration directories too.
+mm_assert_contained() {
+  local path="$1" proj real
+  [ -e "$path" ] || [ -L "$path" ] || return 0          # not there yet: we create it ourselves
+  proj="$(cd -P "$PROJECT" 2>/dev/null && pwd -P)" || return 0
+  if [ -d "$path" ]; then
+    real="$(cd -P "$path" 2>/dev/null && pwd -P)" || real=""
+  else
+    real="$(cd -P "$(dirname "$path")" 2>/dev/null && pwd -P)/$(basename "$path")" || real=""
+  fi
+  case "$real" in
+    "$proj"|"$proj"/*) return 0 ;;
+  esac
+  printf '%s! %s resolves outside the project (-> %s).%s Refusing to write there.\n' \
+    "$r" "${path#"$PROJECT"/}" "${real:-unreadable}" "$x" >&2
+  printf '  A repository cannot be allowed to redirect the installer onto paths you did not choose.\n' >&2
+  exit 1
+}
+
 # Paths from config files are untrusted: resolve, then require containment in $PROJECT.
 mm_resolve_inside_project() {
   local real proj
@@ -166,11 +203,32 @@ mm_resolve_inside_project() {
   case "$real" in "$proj"|"$proj"/*) printf '%s' "$real" ;; *) return 1 ;; esac
 }
 
+# A committed project has to work on a teammate's machine and survive being moved. Absolute
+# links did neither: a fresh install wrote 28 of them, and cloning the repo elsewhere broke
+# every one, contradicting the "project-relative, never absolute" contract below. When BOTH
+# ends live inside the project, emit a relative link; when the target is the shared clone
+# (outside the project), absolute is the only thing that can work.
+mm_relpath() {                      # $1 target (absolute), $2 directory the link sits in
+  local t="$1" s="$2" up=""
+  while [ "$s" != "/" ] && [ "${t#"$s"/}" = "$t" ]; do s="$(dirname "$s")"; up="../$up"; done
+  printf '%s%s' "$up" "${t#"$s"/}"
+}
+
+mm_link_src() {                     # $1 target, $2 link path -> what to store in the symlink
+  local src="$1" dst="$2" proj tgt dir
+  proj="$(cd -P "$PROJECT" 2>/dev/null && pwd -P)" || { printf '%s' "$src"; return; }
+  case "$src" in "$proj"/*) ;; *) printf '%s' "$src"; return ;; esac
+  case "$dst" in "$proj"/*) ;; *) printf '%s' "$src"; return ;; esac
+  dir="$(cd -P "$(dirname "$dst")" 2>/dev/null && pwd -P)" || { printf '%s' "$src"; return; }
+  tgt="$src"
+  mm_relpath "$tgt" "$dir"
+}
+
 # Link src→dst. In check mode, only verify. Back up a real file before linking.
 safe_link() {
   local src="$1" dst="$2"
   if [ "$MODE" = check ]; then
-    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ] && [ -e "$dst" ]; then ok "$(basename "$dst")"
+    if is_ours "$dst" && [ -e "$dst" ]; then ok "$(basename "$dst")"
     else bad "$(basename "$dst") is not linked to MasterMind"; ISSUES=$((ISSUES + 1)); fi
     return
   fi
@@ -181,7 +239,7 @@ safe_link() {
     # an unrelated older file the user made themselves.
     mkdir -p "$(dirname "$dst")" && printf '%s\n' "$bak" > "$dst.mm-backup"
   fi
-  ln -sfn "$src" "$dst"
+  ln -sfn "$(mm_link_src "$src" "$dst")" "$dst"
 }
 
 # Ownership compares RESOLVED paths. A link written as /private/tmp/... did not match a BRAIN
@@ -192,7 +250,14 @@ is_ours() {
   local t rt rrepo rbrain
   t="$(readlink "$1")"
   case "$t" in "$REPO"*|"$BRAIN"*) return 0 ;; esac
-  rt="$(cd -P "$(dirname "$t")" 2>/dev/null && pwd -P)/$(basename "$t")" || return 1
+  # Links inside a project are relative now, so resolve them from the LINK's directory. Using
+  # the cwd here would report a healthy link as foreign, and uninstall would leave it behind.
+  local tdir
+  case "$t" in
+    /*) tdir="$(dirname "$t")" ;;
+    *)  tdir="$(dirname "$1")/$(dirname "$t")" ;;
+  esac
+  rt="$(cd -P "$tdir" 2>/dev/null && pwd -P)/$(basename "$t")" || return 1
   rrepo="$(cd -P "$REPO" 2>/dev/null && pwd -P)" || rrepo="$REPO"
   rbrain="$(cd -P "$BRAIN" 2>/dev/null && pwd -P)" || rbrain="$BRAIN"
   case "$rt" in "$rrepo"*|"$rbrain"*) return 0 ;; *) return 1 ;; esac
@@ -226,7 +291,7 @@ link_skill() {
     SKIPPED=$((SKIPPED + 1)); return 1
   fi
 
-  ln -sfn "$src" "$target"
+  ln -sfn "$(mm_link_src "$src" "$target")" "$target"
   if [ "$renamed" = 1 ]; then
     warn "you already have a $kind '$name' — installed MasterMind's as 'mastermind-$name' (both work)"
     RENAMED=$((RENAMED + 1))
@@ -243,7 +308,7 @@ link_skill() {
 wire_brain_file() {
   local dst="$1" src="$2"
   if [ "$MODE" = check ]; then
-    if { [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; } || { [ -f "$dst" ] && grep -q 'mastermind/CLAUDE.md' "$dst"; }; then ok "$(basename "$dst")"
+    if is_ours "$dst" || { [ -f "$dst" ] && grep -q 'mastermind/CLAUDE.md' "$dst"; }; then ok "$(basename "$dst")"
     else bad "$(basename "$dst") not wired to MasterMind"; ISSUES=$((ISSUES + 1)); fi
     return
   fi
@@ -252,9 +317,9 @@ wire_brain_file() {
   # an empty file. Codex creates an empty ~/.codex/AGENTS.md on its own, and the old behaviour
   # left it as a one-line pointer that Codex may not follow.
   if [ ! -e "$dst" ] || [ -L "$dst" ] || { [ -f "$dst" ] && [ ! -s "$dst" ]; }; then
-    ln -sfn "$src" "$dst"; ok "$(basename "$dst") linked"
+    ln -sfn "$(mm_link_src "$src" "$dst")" "$dst"; ok "$(basename "$dst") linked"
   elif grep -q 'mastermind/CLAUDE.md' "$dst"; then ok "$(basename "$dst") already wired"
-  else printf '\n%s\n' "$HINT" >> "$dst"; ok "appended MasterMind pointer to your $(basename "$dst")"
+  else printf '\n%s\n' "$(mm_hint)" >> "$dst"; ok "appended MasterMind pointer to your $(basename "$dst")"
   fi
 }
 
@@ -365,7 +430,12 @@ wire_cursor_hook() {
   fi
   command -v node >/dev/null 2>&1 || return 0
   mkdir -p "$PROJECT/.cursor"
-  MM_DST="$dst" MM_CMD="$BRAIN/hooks/session-start.sh cursor" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
+  # Relative when the brain is the project's own: a committed hooks.json must not carry this
+  # machine's path, and quoting keeps a project directory with spaces working (it returned 127).
+  local _hookcmd
+  if [ "$ISOLATED" = 1 ]; then _hookcmd='"./.mastermind/hooks/session-start.sh" cursor'
+  else _hookcmd="\"$BRAIN/hooks/session-start.sh\" cursor"; fi
+  MM_DST="$dst" MM_CMD="$_hookcmd" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
     const fs=require("fs"); const p=process.env.MM_DST, cmd=process.env.MM_CMD;
     const mmHooks=process.env.MM_HOOKS_DIR;
     let s={version:1,hooks:{}};
@@ -390,7 +460,7 @@ wire_claude() {
   local base="$1"
   [ "$MODE" = check ] || mkdir -p "$base/agents" "$base/skills"
   printf '\nClaude Code:\n'
-  safe_link "$BRAIN/CLAUDE.md" "$base/CLAUDE.md"
+  wire_brain_file "$base/CLAUDE.md" "$BRAIN/CLAUDE.md"
   # Global links engineering into ~/.claude; per-project reads it via ~/.mastermind.
   [ "$SCOPE" = global ] && safe_link "$REPO/engineering" "$base/engineering"
   prune_dead_links "$base/skills"; prune_dead_links "$base/agents"
@@ -420,6 +490,9 @@ wire_claude() {
 # existing settings.json (never overwrites it) and is idempotent.
 wire_bootstrap() {
   local base="$1" settings="$base/settings.json" hook="$BRAIN/hooks/session-start.sh"
+  # Same portability problem as the Cursor hook: an absolute path in a committed settings.json
+  # is this machine's path. Claude Code expands $CLAUDE_PROJECT_DIR to the project root.
+  [ "$ISOLATED" = 1 ] && hook='$CLAUDE_PROJECT_DIR/.mastermind/hooks/session-start.sh'
 
   if [ "$MODE" = check ]; then
     if [ -f "$settings" ] && grep -q 'session-start.sh' "$settings"; then ok "bootstrap hook"
@@ -668,6 +741,18 @@ if [ "$MODE" != check ]; then
   else
     ln -sfn "$REPO" "$mm_link"
   fi
+fi
+
+# --- Containment: nothing this run writes may resolve outside the project ------
+# Checked once, before any write, for every directory and file the installer touches in
+# project scope. Uninstall is included: it deletes, and a redirected path deletes elsewhere.
+if [ "$SCOPE" = project ] && [ -n "${PROJECT:-}" ]; then
+  for _t in "$PROJECT/.claude" "$PROJECT/.claude/skills" "$PROJECT/.claude/agents" \
+            "$PROJECT/.cursor" "$PROJECT/.cursor/rules" "$PROJECT/.mastermind" \
+            "$PROJECT/.github/hooks" "$PROJECT/AGENTS.md" "$PROJECT/CLAUDE.md"; do
+    mm_assert_contained "$_t"
+  done
+  unset _t
 fi
 
 # --- Per-project sanity: need a real project dir, not the clone or ~ ----------
@@ -992,10 +1077,17 @@ if [ ${#TOOLS[@]} -eq 0 ]; then
     # Say it out loud when we switched scope — a silent switch is its own confusion.
     [ "${CHECK_SCOPE_SWITCHED:-0}" = 1 ] &&
       printf '%sno project here — checking the global install instead.%s\n\n' "$y" "$x"
+    # Prefer the install record: it says what SHOULD be wired. Inference below is the fallback
+    # for installs made before the record existed, and is what let a deleted rule read as healthy.
+    if [ "$SCOPE" = project ] && [ -f "$PROJECT/.mastermind/.installed" ]; then
+      _rec="$(sed -n 's/^tools=//p' "$PROJECT/.mastermind/.installed")"
+      for _t in $_rec; do TOOLS+=("$_t"); done
+      unset _rec _t
+    fi
     # verify only what's actually wired here (or globally with --global)
-    is_wired "$CLAUDE_DIR/CLAUDE.md" && TOOLS+=("claude")
-    [ -n "$AGENTS_FILE" ] && is_wired "$AGENTS_FILE" && TOOLS+=("agents")
-    [ -f "$PROJECT/.cursor/rules/mastermind.mdc" ] && TOOLS+=("cursor")
+    [ ${#TOOLS[@]} -eq 0 ] && is_wired "$CLAUDE_DIR/CLAUDE.md" && TOOLS+=("claude")
+    [ ${#TOOLS[@]} -eq 0 ] && [ -n "$AGENTS_FILE" ] && is_wired "$AGENTS_FILE" && TOOLS+=("agents")
+    [ ${#TOOLS[@]} -eq 0 ] && [ -f "$PROJECT/.cursor/rules/mastermind.mdc" ] && TOOLS+=("cursor")
     [ "$SCOPE" = global ] && is_wired "$CODEX_GLOBAL" && TOOLS+=("codex")
     if [ ${#TOOLS[@]} -eq 0 ]; then
       bad "MasterMind isn't set up $([ "$SCOPE" = global ] && echo globally || echo 'in this project') yet."
@@ -1045,6 +1137,16 @@ for tool in ${TOOLS[@]+"${TOOLS[@]}"}; do
     *) warn "skipping unknown tool: $tool";;
   esac
 done
+
+# The doctor used to infer the expected tool set from artifacts that still existed, so deleting
+# one removed it from the check and a broken install reported "healthy". Record what this run
+# wired; --check reads it and can then tell "not installed" apart from "installed and missing".
+if [ "$MODE" = install ] && [ "$SCOPE" = project ] && [ "$ISOLATED" = 1 ] && [ -d "$PROJECT/.mastermind" ]; then
+  { printf 'version=%s\n' "$(cat "$REPO/VERSION" 2>/dev/null || echo unknown)"
+    printf 'scope=%s\n' "$SCOPE"
+    printf 'tools=%s\n' "${TOOLS[*]}"
+  } > "$PROJECT/.mastermind/.installed"
+fi
 
 # In an isolated project, verify routes.map resolves: every context exists, names a field
 # that ships, and its anchor is present. A bad map means an app silently loads the wrong

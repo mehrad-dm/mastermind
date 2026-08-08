@@ -389,6 +389,21 @@ const verifyCommit = (where, { cleanupOnMismatch = false } = {}) => {
   if (head !== PINNED_COMMIT)
     bail(`brain at ${where} is commit ${head.slice(0, 12)}, but this release pins ${PINNED_COMMIT.slice(0, 12)}.\n`
       + '  The tag may have moved. Refusing to install code this release did not publish.')
+  // A commit pin proves which commit is checked out, not what is on disk. Edit install.sh and
+  // HEAD does not move, so "you always know exactly what ran" was false for a dirty clone.
+  // Only tracked engine files matter here: untracked notes and a project's own additions are
+  // not code this CLI is about to execute.
+  let dirty = ''
+  try {
+    dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'],
+      { cwd: where, encoding: 'utf8' }).trim()
+  } catch { /* status can fail on an odd checkout; the HEAD check above already ran */ }
+  if (dirty) {
+    const files = dirty.split('\n').map((l) => l.replace(/^..\s+/, '')).slice(0, 5).join(', ')
+    bail(`brain at ${where} has uncommitted changes to tracked files (${files}).\n`
+      + '  This release can only vouch for the commit it pins, not for edits on top of it.\n'
+      + `  Keep them: git -C ${where} stash    Discard them: git -C ${where} checkout -- .`)
+  }
 }
 
 if (!existsSync(MM_HOME)) {
@@ -403,6 +418,14 @@ if (!existsSync(MM_HOME)) {
   verifyCommit(MM_HOME, { cleanupOnMismatch: true })
 } else if (!existsSync(join(MM_HOME, 'install.sh'))) {
   fail(`${MM_HOME} exists but doesn't look like the MasterMind repo — move it aside and re-run.`)
+} else if (PINNED_COMMIT && !existsSync(join(MM_HOME, '.git'))) {
+  // Everything below lives behind `existsSync('.git')`, so a directory holding an install.sh and
+  // no .git skipped every check and was executed. An audit dropped an arbitrary script there and
+  // the signed, provenance-attested CLI ran it. A published release verifies what it runs or
+  // refuses; there is no third option.
+  fail(`${MM_HOME} has no git history, so this release cannot verify what it would run.\n`
+    + `  A published MasterMind only executes the commit it was built from.\n`
+    + `  Move it aside and re-run, or set MASTERMIND_HOME to a real clone.`)
 } else if (existsSync(join(MM_HOME, '.git'))) {
   if (cmd === 'update') {
     console.log('↓ updating the brain')
@@ -420,14 +443,26 @@ if (!existsSync(MM_HOME)) {
       verifyCommit(MM_HOME)
     }
   }
+  // The README and the site both say the same command updates an existing install. It did not:
+  // an older clone hit the pin check and died with "the tag may have moved", so users on 0.29.1
+  // running the 0.29.2 command stayed on 0.29.1 unless they knew to type `update`. Bring the
+  // clone to the pinned commit first, then verify. A dirty tree still refuses (verifyCommit),
+  // so local edits are never silently discarded.
+  if (PINNED_COMMIT && cmd !== 'update') {
+    let head = ''
+    try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: MM_HOME, encoding: 'utf8' }).trim() } catch { /* verifyCommit reports it */ }
+    if (head && head !== PINNED_COMMIT) {
+      console.log(`↻ brain at ${MM_HOME} is behind this release — syncing to ${PIN}`)
+      run('git', ['fetch', '--tags', '--depth', '1', 'origin', `refs/tags/${PIN}:refs/tags/${PIN}`], { cwd: MM_HOME })
+      const c = run('git', ['checkout', '-q', PIN], { cwd: MM_HOME })
+      if (c !== 0)
+        fail(`could not update ${MM_HOME} to ${PIN} — the brain is unchanged.\n`
+          + `  Fix it by hand: git -C ${MM_HOME} fetch --tags && git -C ${MM_HOME} checkout ${PIN}`)
+    }
+  }
   // Verified on EVERY path that ends in running install.sh, not only after a fresh clone: an
   // existing checkout at another commit reached the engine unverified.
   verifyCommit(MM_HOME)
-  try {
-    const have = git(['describe', '--tags', '--always'])
-    if (!have.startsWith(PIN) && cmd !== 'update')
-      console.log(`ℹ brain at ${MM_HOME} is ${have}; this CLI ships ${PIN} — run \`npx mastermind-brain update\` to sync.`)
-  } catch { /* describe can fail on tagless shallow clones — not load-bearing */ }
 }
 
 // ── 2. hand over to the engine ──────────────────────────────────────────────────

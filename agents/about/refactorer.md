@@ -13,14 +13,14 @@ The instinct is to leave it alone, because rewriting working code is how you bre
 mess compounds until someone proposes throwing it all away.
 
 **Refactorer is the way out: restructure the code toward a better design while guaranteeing it still does
-exactly what it did before.** The old carpenter's version of this — make the change easy, then make the
+exactly what it did before.** The old carpenter's version of this: make the change easy, then make the
 easy change.
 
 ## What goes wrong without it
 
 - **Every feature costs more than the last.** The structure fights you, so work that should take an hour
   takes a day, and nobody can point to why.
-- **The rewrite temptation.** Untangling feels impossible, so someone proposes starting over — which
+- **The rewrite temptation.** Untangling feels impossible, so someone proposes starting over, which
   throws away years of accumulated bug fixes nobody remembers making.
 - **Silent behavior changes.** The dangerous version. Someone tidies up and quietly "fixes" something
   along the way. Now a change advertised as cosmetic has altered what the product does, and when a bug
@@ -33,13 +33,13 @@ easy change.
 Refactorer is an **agent**, not a skill. A skill is a procedure the main conversation follows; an agent
 runs in its own **isolated context window**, seeing only the job it was handed. It doesn't carry the
 conversation that led here, or any attachment to how the code came to look this way. It reads what is
-actually there and judges the design on its own terms — which is what lets it propose unpicking a
+actually there and judges the design on its own terms, which is what lets it propose unpicking a
 structure that the main thread may have just spent an hour building.
 
 **The promise: behavior is preserved, and the tests prove it.** Not "should be preserved." The existing
 tests must pass, unchanged, exactly as they did before. If the target area isn't covered by tests, the
-first move is to write characterisation tests — tests that pin down what the code currently does, correct
-or not — before touching anything. If there's no way to prove behavior is unchanged, it doesn't refactor.
+first move is to write characterisation tests: tests that pin down what the code currently does, correct
+or not, before touching anything. If there's no way to prove behavior is unchanged, it doesn't refactor.
 That's a refusal, not a caveat.
 
 The second rule follows from the first: **structure or behavior, never both at once.** If a real bug turns
@@ -72,17 +72,17 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **When the code should do something new** — that's `build`. This is the sharpest line in MasterMind.
+- **When the code should do something new**: that's `build`. This is the sharpest line in MasterMind.
   Build changes what the software does. Refactorer changes *only* how it's arranged and never what it
   does. If your request includes "and also make it handle X," that part is a build, and it happens
-  separately — mixing the two is precisely the failure mode this discipline exists to prevent.
-- **When something is wrong** — that's `debug`. Refactorer works on code that already behaves correctly.
-- **When you want to know what's wrong with it** — that's the `code-reviewer` agent, which finds problems
+  separately, mixing the two is precisely the failure mode this discipline exists to prevent.
+- **When something is wrong**: that's `debug`. Refactorer works on code that already behaves correctly.
+- **When you want to know what's wrong with it**: that's the `code-reviewer` agent, which finds problems
   and proposes fixes without editing anything. Refactorer edits.
-- **Light tidying** — dead code, an awkward name. That's a quick cleanup, not a structural redesign.
+- **Light tidying**: dead code, an awkward name. That's a quick cleanup, not a structural redesign.
 
 ## What you get
 
 Restructured code, plus a short account of what was wrong with the design, what changed and why, and the
-proof that behavior is unchanged — the test run, green. Anything it deliberately chose to leave out of
+proof that behavior is unchanged: the test run, green. Anything it deliberately chose to leave out of
 scope, including any bug it spotted and left alone, is named rather than quietly handled.

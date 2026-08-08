@@ -3,15 +3,15 @@ name: learn
 description: Use when a task depends on tech you don't actually know — an unfamiliar library, a fast-moving framework, a tricky API, an unfamiliar codebase — or whenever "I think it works like…" is load-bearing. Just-in-time and task-scoped; distinct from levelup, which updates the durable knowledge base.
 ---
 
-# MasterMind — Learn
+# MasterMind: Learn
 
 The invokable form of `~/.mastermind/engineering/core/agent-loop.md` → "Learn the stack before you build." Topic/task:
-**$ARGUMENTS**. Goal: reach genuine, *current* understanding — enough to build to standard — fast, and
+**$ARGUMENTS**. Goal: reach genuine, *current* understanding: enough to build to standard: fast, and
 cheap on context.
 
 ## 1. Detect what's actually used
 Read `package.json`/lockfile, configs, and representative source to see the exact stack (framework +
-**versions**, styling, state, data, test runner) and the team's conventions. Installed versions matter —
+**versions**, styling, state, data, test runner) and the team's conventions. Installed versions matter,
 APIs drift, so learn the version that's actually here.
 
 ## 2. Map the skill-tree
@@ -30,16 +30,16 @@ Grep for how the pattern is already used here and match it. Consistency beats no
 The costly bugs come from unchecked assumptions. Before committing code:
 
 - **List what you believe** about the APIs you'll use (behavior, signatures, return values, limits,
-  versions, edge cases) — specifically ("`getFile` streams any size" — true?).
-- **Answer from the source yourself first** — verify each against the docs/types/actual source (for the
+  versions, edge cases), specifically ("`getFile` streams any size", true?).
+- **Answer from the source yourself first**: verify each against the docs/types/actual source (for the
   *installed* version). Confirm ✓, correct ✗, or mark unknown ❓. Anything the code/docs answer, you answer.
-- **For each remaining unknown, propose a resolution — a bare flag is half the job.** State a best guess
+- **For each remaining unknown, propose a resolution: a bare flag is half the job.** State a best guess
   **+ confidence** ("probably streams; ~70%") so a human can confirm or correct, not author it. Serve
   interdependent unknowns one at a time. Anything still unconfirmed becomes an explicit risk or a tiny
-  `prototype` — never a silent guess. **No load-bearing assumption ships unverified.**
+  `prototype`, never a silent guess. **No load-bearing assumption ships unverified.**
 
 ## Output & economy
 Return a tight working brief: the stack + versions, the few APIs/patterns the task needs, the gotchas
 (and the assumptions ledger: claim → verified/corrected/unknown → source · confidence),
-and links to the primary sources — not a tutorial. Delegate wide reading to a subagent to protect
+and links to the primary sources, not a tutorial. Delegate wide reading to a subagent to protect
 context. If you learned something durable and reusable, capture it via `levelup`.
