@@ -21,7 +21,8 @@ effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md<
 > Cursor and Codex** sharp defaults, real engineering judgment, and the discipline to **check its own work**,
 > so you can rely on what it produces instead of watching every edit.
 
-No app, no dependencies, just text that loads into your AI. **You don't learn any commands: you talk
+No service to run and no package dependencies, just text that loads into your AI (installing it and
+running its CLI need Bash, Git and Node 18+). **You don't learn any commands: you talk
 normally** ("build me X", "why is this slow?", "review this") and MasterMind applies the right discipline
 automatically. It **improves itself** over time, and it supports [**Claude Code, Cursor and Codex**](#where-its-tested),
 nothing else.
@@ -39,8 +40,8 @@ only what's *missing*: the judgment and rigor that turn "looks right" into "veri
 - **Your team's real style**: it can learn a codebase's actual conventions and follow them.
 - **Lessons from real use**: it writes down what it learns and gets sharper.
 
-This is the **"trust layer"** in [Anthropic's own model of AI adoption](https://mastermind.mehrad.me): the
-self-verification that lets you stop supervising every change and start relying on the output.
+Together they are the **trust layer**: the self-verification that lets you stop supervising every
+change and start relying on the output.
 
 ## What makes it fast & lean
 
@@ -53,7 +54,10 @@ self-verification that lets you stop supervising every change and start relying 
 - **Tiny always-on core.** An AI gets duller as its context fills, so the always-loaded kernel is small;
   depth lives in on-demand skills and field packs that load only when relevant. (This is the pattern
   Anthropic recommends for scaling. CLAUDE.md + lazily-loaded skills.)
-- **Nothing to run.** Plain Markdown in git: greppable, diffable, reviewable.
+- **No service to run, and no package dependencies.** The knowledge is plain Markdown in git:
+  greppable, diffable, reviewable. The moving parts are the ones you already have: Bash and Git to
+  install, Node 18+ for the installer, the generated scripts and the `mastermind` CLI, whose npm
+  package itself declares no dependencies.
 
 ## Architecture: a lean kernel + on-demand modules
 
@@ -98,7 +102,10 @@ Want it everywhere at once? `--global`. You install **from** `~/.mastermind`; th
 
 It's **safe and self-healing**: re-run anytime: it **backs up** a real `CLAUDE.md`, **appends** (never
 overwrites) an existing `AGENTS.md`, refreshes the engine while **keeping your project's own lessons**,
-and repairs any wiring. Nothing personal (sessions/memory/settings) is touched or published.
+and repairs any wiring. It makes exactly one edit to your settings: it merges the MasterMind
+`SessionStart` hook entry into `.claude/settings.json`, leaving every other key exactly as it was (and
+leaving the file alone entirely if it cannot be parsed). `uninstall` removes just that entry. Your
+sessions and memory are never touched or published.
 
 ```bash
 npx mastermind-brain update      # refresh the brain + repair links
@@ -233,14 +240,21 @@ nothing went wrong.
 
 An LLM's weights are fixed; MasterMind improves by **editing its own knowledge base**. It turns your
 corrections and review findings into durable lessons, refreshes best-practices against the live ecosystem,
-and can **bootstrap a whole new field pack** for your stack. Every improvement is a git commit: visible
-and reversible.
+and can **bootstrap a whole new field pack** for your stack. Every improvement lands as an edit to a
+Markdown file in your working tree, so you read the diff and decide whether to commit it: nothing is
+committed for you, and `git checkout` throws away anything you don't want.
 
 ## Private by default
 
-Sensitive project data (a client's stack, a team's internal patterns) stays in a **gitignored `lab/`** and
-is protected by commit/push guards, so it can never be published by accident. Only the **generic,
-name-free lesson** ever graduates into the shareable knowledge base: patterns, not identities.
+Sensitive project data (a client's stack, a team's internal patterns) stays in a **gitignored `lab/`**,
+behind pre-commit and pre-push hooks that scan for `lab/` paths, denylisted names and credential
+patterns and refuse the operation when they find one. Only the **generic, name-free lesson** ever
+graduates into the shareable knowledge base: patterns, not identities.
+
+These are git hooks, so they are a strong default rather than a guarantee: they only run once
+installed (`core.hooksPath` set), `--no-verify` and `ALLOW_SENSITIVE=1` skip them on purpose, and
+nothing stops a file being copied out of `lab/` by hand. They are there to make an accidental leak
+fail loudly, not to make one impossible.
 
 ## Where it's tested
 

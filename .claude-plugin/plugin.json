@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "$schema": "https://www.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mastermind",
   "description": "A markdown brain that gives your AI coding tools judgment and rigor \u2014 sharp defaults, real decisions, and the discipline to verify before saying done. For Claude Code, Cursor and Codex.",
   "version": "0.30.1",

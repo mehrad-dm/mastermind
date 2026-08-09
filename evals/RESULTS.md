@@ -20,8 +20,9 @@ must clear before any number goes on the website.
 
 ## Headline — frontend tasks, with vs without MasterMind
 
-**Generator:** Claude Opus 4.8 (both conditions) · **Judges:** Sonnet 5 × 3 seats (median) · **N=3** ·
-treatment loads the real frontend pack. (Scores = rubric criteria met, 0–100%.)
+**Date:** 2026-07-11 · **Generator:** Claude Opus 4.8 (both conditions) · **Judges:** Sonnet 5 × 3
+seats (median) · **N=3** · treatment loads the real frontend pack. (Scores = rubric criteria met,
+0–100%.)
 
 | Task | Without MM | With MM | Δ |
 | --- | --- | --- | --- |
@@ -608,6 +609,12 @@ reported separately and never counted as routing results.
   prompts drawn from real sessions rather than written for the test.
 
 ## Run V4 — 2026-08-01 · the real-task suite (`runs/v0.27-real/`) · first outing
+
+> **Featured on the site.** real-task suite: multi-file service, planted hazards, agentic runs
+>
+> On real small-repo tasks the frontier model already holds: both arms fixed the planted N+1,
+> built idempotent cancellation, and refused to delete a failing test under deadline pressure.
+> The one gain was review recall (+0.11, n=3: direction, not proof).
 
 Multi-file seed service with planted hazards · 5 real tasks · agentic runs (write access,
 40-turn cap) · Opus 4.8 both arms, same isolation protocol as V3 · N=3 · **objective scripted
