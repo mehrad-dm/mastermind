@@ -36,7 +36,10 @@ jobs:
         run: |
           npm pack --dry-run --json > /tmp/pack.json
           node -e '
-            const p = require("/tmp/pack.json")[0];
+            // npm 10 prints an ARRAY; npm 12 prints an OBJECT keyed by package name. The two
+            // jobs here run different npm versions, so read whichever shape arrives.
+            const raw = require("/tmp/pack.json");
+            const p = Array.isArray(raw) ? raw[0] : Object.values(raw)[0];
             const files = p.files.map(f => f.path).sort();
             const want = ["README.md", "bin/mastermind.mjs", "package.json"].sort();
             if (JSON.stringify(files) !== JSON.stringify(want))
@@ -90,7 +93,11 @@ jobs:
           npm pack --dry-run --json > /tmp/pack-stamped.json
           node -e '
             const fs = require("fs");
-            const p = require("/tmp/pack-stamped.json")[0];
+            // Same two shapes as the gate job. This step runs the PINNED npm, which is the
+            // one that changed, and reading only the array form is what stopped 0.31.0.
+            const raw = require("/tmp/pack-stamped.json");
+            const p = Array.isArray(raw) ? raw[0] : Object.values(raw)[0];
+            if (!p) { console.error("npm pack --json produced nothing usable"); process.exit(1) }
             const files = p.files.map(f => f.path).sort();
             const want = ["README.md", "bin/mastermind.mjs", "package.json"].sort();
             if (JSON.stringify(files) !== JSON.stringify(want))
