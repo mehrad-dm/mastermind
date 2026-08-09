@@ -4,9 +4,11 @@
 #   scripts/release.sh 0.31.0            # do it
 #   scripts/release.sh 0.31.0 --dry-run  # show what would change, touch nothing
 #
-# The version lives in SIX places across TWO repositories. Every release that drifted did so
-# because one of them was updated by hand and another was not, and "repo, npm and site are in
-# sync" was a thing someone remembered rather than a thing something checked. This is that check.
+# The version lives in SEVEN files across TWO repositories, and in more than one place inside
+# some of them. Every release that drifted did so because one was updated by hand and another
+# was not, and "repo, npm and site are in sync" was something someone remembered rather than
+# something anything checked. This is that check. The stale sweep at the end reports any
+# location this list does not yet know about, which is how the eighth one gets found.
 #
 # What it does NOT do: push, publish, or create the tag on the remote. Tagging is local; pushing
 # the tag is what triggers the publish workflow, and that stays a separate, deliberate act.
@@ -49,7 +51,7 @@ printf '%s── releasing %s → %s%s%s\n' "$b" "$OLD" "$b" "$NEW" "$x"
 git rev-parse -q --verify "refs/tags/v$NEW" >/dev/null 2>&1 && die "tag v$NEW already exists"
 grep -q "^## \[$NEW\]" CHANGELOG.md || die "CHANGELOG.md has no '## [$NEW]' section; write it first"
 
-# --- The six places -----------------------------------------------------------
+# --- The places --------------------------------------------------------------
 # Each entry is: label | file | sed expression. Kept as data so the list is readable and so a
 # seventh location is one line, not a new branch of logic.
 edit() {
@@ -69,13 +71,17 @@ edit() {
   ok "$label"
 }
 
+# The package manifests get a targeted replacement, because they carry other version fields
+# (engines, dependencies) that must not move. Everywhere else the OLD version string appears it
+# IS this release's version: prose in the README and the marketplace description both quote it,
+# and both were missed by a first pass that only knew about the badge and the JSON field.
 edit "VERSION"            "VERSION"                          "s/^$OLD\$/$NEW/"
 edit "cli/package.json"   "cli/package.json"                 "s/\"version\": \"$OLD\"/\"version\": \"$NEW\"/"
-edit "plugin manifest"    ".claude-plugin/plugin.json"       "s/\"version\": \"$OLD\"/\"version\": \"$NEW\"/"
-edit "marketplace"        ".claude-plugin/marketplace.json"  "s/\"$OLD\"/\"$NEW\"/"
-edit "README badge"       "README.md"                        "s/version-$OLD/version-$NEW/"
-edit "site footer"        "$SITE/src/components/Footer.astro" "s/v$OLD/v$NEW/"
-edit "site homepage"      "$SITE/src/pages/index.astro"       "s/v$OLD/v$NEW/"
+edit "plugin manifest"    ".claude-plugin/plugin.json"       "s/$OLD/$NEW/g"
+edit "marketplace"        ".claude-plugin/marketplace.json"  "s/$OLD/$NEW/g"
+edit "README"             "README.md"                        "s/$OLD/$NEW/g"
+edit "site footer"        "$SITE/src/components/Footer.astro" "s/v$OLD/v$NEW/g"
+edit "site homepage"      "$SITE/src/pages/index.astro"       "s/v$OLD/v$NEW/g"
 
 # --- Nothing left behind ------------------------------------------------------
 if [ "$DRY" = 0 ]; then
