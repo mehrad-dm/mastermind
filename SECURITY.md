@@ -1,8 +1,20 @@
 # Security
 
 MasterMind is a markdown knowledge base plus a few small, dependency-free scripts. It ships no server
-and executes no untrusted input, so the security surface that matters here is a specific one:
-**keeping private or client material out of this public repository and its history.**
+and runs no service, which leaves two surfaces worth naming.
+
+**Keeping private or client material out of this public repository and its history.** That is the one
+this file is mostly about, and the quarantine below is how it is enforced.
+
+**The installer reads files the project controls.** `install.sh` runs inside whatever repository you
+point it at, and that repository supplies input: `.mastermind/routes.map` names directories to write
+into, existing paths may be symlinks, and a `<file>.mm-backup` pointer names a file to restore. A
+malicious or merely careless repository can therefore aim a write somewhere you did not intend. The
+installer treats all of it as untrusted: every destination is resolved through its full symlink chain
+and must land inside the project or the brain, files it writes content into may not be symlinks, and
+it will only restore a backup pointer of the exact shape it writes itself. It refuses and exits rather
+than guessing when a path cannot be resolved. If you find a path that escapes those checks, that is a
+vulnerability, and the reporting instructions below apply.
 
 ## The Lab quarantine
 

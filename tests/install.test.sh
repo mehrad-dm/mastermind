@@ -20,7 +20,9 @@
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INSTALL="$REPO/install.sh"
+# Overridable so a new assertion can be pointed at an older installer to prove it actually
+# catches the defect it was written for. A test that passes against the buggy build is decoration.
+INSTALL="${MM_INSTALL_UNDER_TEST:-$REPO/install.sh}"
 TMP="$(mktemp -d)"
 # -P: on macOS both /tmp and mktemp's /var/folders are symlinks to /private/..., and comparing
 # a logical path against a resolved one is how two path bugs shipped. Fixtures use the real path.
@@ -363,6 +365,333 @@ is "no pointer left in .claude/CLAUDE.md" "$(count_in "$P/.claude/CLAUDE.md" 'ma
 is "no pointer left in AGENTS.md"        "$(count_in "$P/AGENTS.md" 'mastermind/CLAUDE.md')" "0"
 is "their CLAUDE.md content survived"    "$(count_in "$P/.claude/CLAUDE.md" 'MY CLAUDE RULE')" "1"
 is "their AGENTS.md content survived"    "$(count_in "$P/AGENTS.md" 'MY AGENTS RULE')" "1"
+
+# ══ Half-edited markers must never cost the user a line ═══════════════════════
+# A repeated START inside a block reset the buffer that exists to protect their content, so an
+# unbalanced anchor lost everything written before the second marker.
+echo "── an unbalanced nested marker still hands back every line"
+P=$(proj nestedmarkers)
+mkdir -p "$P/apps/web"
+run "$P" claude cursor >/dev/null 2>&1
+cp -R "$P/.mastermind/engineering/fields/_template" "$P/.mastermind/engineering/fields/frontend"
+printf 'apps/web frontend\n' > "$P/.mastermind/routes.map"
+run "$P" claude cursor >/dev/null 2>&1
+is "the route anchor was generated" "$([ -f "$P/apps/web/CLAUDE.md" ] && echo yes || echo no)" "yes"
+python3 - "$P/apps/web/CLAUDE.md" <<'EOF'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(p.read_text().replace("<!-- MASTERMIND:END -->",
+                                   "<!-- MASTERMIND:START -->\nTHEIR PRECIOUS NOTE\n"))
+EOF
+run "$P" --uninstall >/dev/null 2>&1
+is "their line survived the teardown" "$(count_in "$P/apps/web/CLAUDE.md" 'THEIR PRECIOUS NOTE')" "1"
+
+# ══ The brain ships what it runs, and nothing else ════════════════════════════
+# ABOUT.md is the article behind each public library page. The website build reads it and the
+# repo's own checks read it; no tool reads it at run time, so 101KB of it in every project was
+# a second description of every capability sitting on the user's disk.
+echo "── the installed brain carries no ABOUT pages"
+P=$(proj noabout)
+run "$P" claude >/dev/null 2>&1
+is "no ABOUT.md was installed" "$(find "$P/.mastermind" -name ABOUT.md 2>/dev/null | wc -l | tr -d ' ')" "0"
+# Directories only: the skills folder also carries an index and a readme.
+is "the skills themselves are there" "$(find "$P/.mastermind/skills" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')" "$N_SKILLS"
+is "and the shipped checks still pass there" \
+   "$( (cd "$P/.mastermind" && node scripts/check-integrity.mjs >/dev/null 2>&1) && echo ok || echo fail)" "ok"
+
+# ══ An edit to an engine file is replaced, but never silently ═════════════════
+# Engine files refresh on every run: that is how updates land. Until the ledger recorded what we
+# wrote, a project's own change to one disappeared without a word.
+echo "── replacing a project's edit to an engine file is announced"
+P=$(proj hashledger)
+run "$P" claude >/dev/null 2>&1
+is "a hash ledger was written" "$([ -s "$P/.mastermind/.manifest.hashes" ] && echo yes || echo no)" "yes"
+is "a clean re-run says nothing" "$(run "$P" claude 2>&1 | grep -c 'replacing your edit')" "0"
+printf 'PROJECT EDIT\n' >> "$P/.mastermind/engineering/core/mindset.md"
+out=$(run "$P" claude 2>&1)
+is "the edited file is named"     "$(printf '%s' "$out" | grep -c 'replacing your edit to engineering/core/mindset.md')" "1"
+is "and only that one"            "$(printf '%s' "$out" | grep -c 'replacing your edit')" "1"
+is "the refresh still happened"   "$(count_in "$P/.mastermind/engineering/core/mindset.md" 'PROJECT EDIT')" "0"
+
+# ══ The install record is data, so the doctor must survive it being wrong ═════
+echo "── a corrupted or hostile install record does not break the doctor"
+P=$(proj badrecord)
+run "$P" claude >/dev/null 2>&1
+printf 'tools=claude\x00\ntools=cursor codex\ngarbage\n' > "$P/.mastermind/.installed"
+out=$(run "$P" --check 2>&1) || true
+is "it still produces a report"  "$(printf '%s' "$out" | grep -cE 'healthy|issue')" "1"
+printf '' > "$P/.mastermind/.installed"
+out=$(run "$P" --check 2>&1) || true
+is "an empty record still reports" "$(printf '%s' "$out" | grep -cE 'healthy|issue')" "1"
+rm -f "$P/.mastermind/.installed"
+out=$(run "$P" --check 2>&1) || true
+is "a deleted record is announced"  "$(printf '%s' "$out" | grep -c 'no install record here')" "1"
+
+# ══ A foreign hook that merely mentions us is not ours to remove ══════════════
+echo "── hook cleanup matches on path, not on the word mastermind"
+P=$(proj foreignhook)
+run "$P" claude >/dev/null 2>&1
+python3 - "$P/.claude/settings.json" <<'EOF'
+import json, sys, pathlib
+p = pathlib.Path(sys.argv[1])
+d = json.loads(p.read_text() or "{}")
+d.setdefault("hooks", {}).setdefault("SessionStart", []).append(
+    {"hooks": [{"type": "command", "command": "/opt/theirs/hooks/session-start.sh --mastermind"}]})
+p.write_text(json.dumps(d, indent=2) + "\n")
+EOF
+run "$P" --uninstall >/dev/null 2>&1
+is "their lookalike hook survives" "$(count_in "$P/.claude/settings.json" '/opt/theirs/hooks/session-start.sh')" "1"
+is "ours is gone"                  "$(count_in "$P/.claude/settings.json" '.mastermind/hooks/session-start.sh')" "0"
+
+# ══ Converting an isolated project to shared says so instead of half-doing it ═
+echo "── --shared over a project brain refuses with the way out"
+P=$(proj convrefuse)
+run "$P" claude >/dev/null 2>&1
+out=$(run "$P" --shared claude 2>&1) || true
+is "it refuses"              "$(printf '%s' "$out" | grep -c 'cannot take effect')" "1"
+is "and names the remedy"    "$(printf '%s' "$out" | grep -c 'rm -rf')" "1"
+run "$P" --uninstall >/dev/null 2>&1; rm -rf "$P/.mastermind"
+run "$P" --shared claude >/dev/null 2>&1
+is "the documented route converts" "$(readlink "$P/.claude/skills/build" | grep -c "^$REPO/skills/build$")" "1"
+
+# ══ Project paths people actually have ════════════════════════════════════════
+echo "── a project path with a space and a # installs and uninstalls cleanly"
+P="$TMP/od#d name"; mkdir -p "$P"; (cd "$P" && git init -q .)
+run "$P" claude >/dev/null 2>&1
+is "it installed there"    "$([ -f "$P/.mastermind/VERSION" ] && echo yes || echo no)" "yes"
+is "skills are linked"     "$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+run "$P" --uninstall >/dev/null 2>&1
+is "and uninstalled clean" "$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+# ══ A route is healthy only when every anchor it generates is ════════════════
+# The check looked at one marker in the nested CLAUDE.md, so a route passed while AGENTS.md
+# and the Cursor rule were gone and the app silently loaded nothing.
+echo "── the route check covers every anchor, not just the first"
+P=$(proj routecheck)
+mkdir -p "$P/apps/web"
+run "$P" claude cursor >/dev/null 2>&1
+cp -R "$P/.mastermind/engineering/fields/_template" "$P/.mastermind/engineering/fields/frontend"
+printf 'apps/web frontend\n' > "$P/.mastermind/routes.map"
+run "$P" claude cursor >/dev/null 2>&1
+is "a complete route reports ok" "$(run "$P" --check 2>&1 | grep -c 'route apps/web/ → frontend (frontend)')" "1"
+rm -f "$P/apps/web/AGENTS.md"
+is "a missing AGENTS.md anchor is caught" "$(run "$P" --check 2>&1 | grep -c 'AGENTS.md anchor missing')" "1"
+run "$P" claude cursor >/dev/null 2>&1
+rm -f "$P/apps/web/.cursor/rules/mastermind.mdc"
+is "a missing Cursor rule is caught"      "$(run "$P" --check 2>&1 | grep -c 'Cursor rule is missing')" "1"
+
+# ══ Symlink chains that cycle or dangle must refuse, not hang or write ════════
+echo "── a cyclic or broken chain is refused"
+P=$(proj cyclicchain); mkdir -p "$P/.cursor/rules"
+ln -s "$P/.cursor/rules/b" "$P/.cursor/rules/mastermind.mdc"
+ln -s "$P/.cursor/rules/mastermind.mdc" "$P/.cursor/rules/b"
+run "$P" cursor >/dev/null 2>&1 || true
+is "a cycle does not become a written file" "$([ -L "$P/.cursor/rules/mastermind.mdc" ] && echo link || echo other)" "link"
+
+P=$(proj brokenchain); mkdir -p "$P/.cursor/rules"
+ln -s "$TMP_REAL/victims/definitely-not-here" "$P/.cursor/rules/mastermind.mdc"
+run "$P" cursor >/dev/null 2>&1 || true
+is "a dangling target is not created outside" "$([ -e "$TMP_REAL/victims/definitely-not-here" ] && echo created || echo absent)" "absent"
+
+# ══ Cleanup reads what we generated, not what the map happens to say now ══════
+# routes.map describes the present. Delete a rule and the anchor it created has nothing left
+# pointing at it, so uninstall walked straight past a file it had written.
+echo "── an anchor is still cleaned up after its route is removed from the map"
+P=$(proj strandedanchor)
+mkdir -p "$P/apps/web"
+run "$P" claude cursor >/dev/null 2>&1
+cp -R "$P/.mastermind/engineering/fields/_template" "$P/.mastermind/engineering/fields/frontend"
+printf 'apps/web frontend\n' > "$P/.mastermind/routes.map"
+run "$P" claude cursor >/dev/null 2>&1
+is "the anchor exists"        "$(count_in "$P/apps/web/CLAUDE.md" 'MASTERMIND:START')" "1"
+printf '\n' > "$P/.mastermind/routes.map"
+run "$P" --uninstall >/dev/null 2>&1
+is "and is not left stranded" "$(count_in "$P/apps/web/CLAUDE.md" 'MASTERMIND:START')" "0"
+
+# ══ The declared field wins over whatever the filesystem lists first ══════════
+# A context templated against `find | head -1`, so a project with two packs got an arbitrary
+# one, and the anchor disagreed with what the brain reports as active.
+echo "── a route anchor uses the field the project declares"
+P=$(proj declaredfield)
+mkdir -p "$P/apps/web"
+run "$P" claude cursor >/dev/null 2>&1
+cp -R "$P/.mastermind/engineering/fields/_template" "$P/.mastermind/engineering/fields/aaa-first"
+cp -R "$P/.mastermind/engineering/fields/_template" "$P/.mastermind/engineering/fields/zzz-declared"
+python3 - "$P/.mastermind/engineering/active-field.md" <<'EOF'
+import pathlib, re, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(re.sub(r"^## Current field: .*$", "## Current field: **zzz-declared**",
+                    p.read_text(), count=1, flags=re.M))
+EOF
+printf 'apps/web webctx\n' > "$P/.mastermind/routes.map"
+run "$P" claude cursor >/dev/null 2>&1
+is "the anchor names the declared field" "$(count_in "$P/apps/web/CLAUDE.md" 'fields/zzz-declared/')" "1"
+is "not the alphabetically first one"    "$(count_in "$P/apps/web/CLAUDE.md" 'fields/aaa-first/')" "0"
+
+# ══ "We left your file as we found it" means byte for byte ════════════════════
+# The pointer is appended as a blank line plus the hint. Removing only the hint left the blank
+# behind, so every install/uninstall cycle grew the file by one newline.
+echo "── a pointer round trip changes nothing in the file"
+P=$(proj exactbytes)
+printf 'line one\nline two\n' > "$P/AGENTS.md"
+cp "$P/AGENTS.md" "$P/.orig"
+run "$P" claude agents >/dev/null 2>&1
+run "$P" --uninstall >/dev/null 2>&1
+is "AGENTS.md is byte-identical" "$(cmp -s "$P/AGENTS.md" "$P/.orig" && echo same || echo differs)" "same"
+
+# ══ An instruction file that is already a symlink is theirs ═══════════════════
+# Projects do point AGENTS.md at another file. Replacing that link outright loses the
+# arrangement, and with no backup recorded there is nothing to give back on uninstall.
+echo "── a project's own symlinked AGENTS.md survives install and uninstall"
+P=$(proj symlinkedagents)
+printf 'SHARED RULES\n' > "$P/RULES.md"
+ln -s RULES.md "$P/AGENTS.md"
+run "$P" claude agents >/dev/null 2>&1
+run "$P" --uninstall >/dev/null 2>&1
+is "AGENTS.md is a symlink again"  "$([ -L "$P/AGENTS.md" ] && echo yes || echo no)" "yes"
+is "and it points where it did"    "$(readlink "$P/AGENTS.md")" "RULES.md"
+
+# ══ The doctor checks the destination, not merely "somewhere in the brain" ════
+# A link that resolves into MasterMind but points at the wrong file passed every check, so a
+# skill silently loading another skill's instructions read as healthy.
+echo "── a link aimed at the wrong target is reported"
+P=$(proj wrongtarget)
+run "$P" claude >/dev/null 2>&1
+ln -sfn ../../.mastermind/skills/debug "$P/.claude/skills/build"
+is "the doctor rejects it" "$(run "$P" --check 2>&1 | grep -c 'build points at')" "1"
+run "$P" claude >/dev/null 2>&1
+is "and re-running repairs it" "$(run "$P" --check 2>&1 | grep -c 'healthy')" "1"
+
+# ══ A file that mentions the pointer is not a file that carries it ════════════
+echo "── an incidental mention does not count as wiring"
+P=$(proj mentiononly)
+printf 'See ~/.mastermind/CLAUDE.md for details.\n' > "$P/AGENTS.md"
+is "a mention alone is not wired" "$(run "$P" --check 2>&1 | grep -c "isn't set up")" "1"
+
+# ══ Every install shape records what it wired ═════════════════════════════════
+# A shared install kept no record, so its doctor could only infer from what it found.
+echo "── a shared install leaves an expected-integration record"
+P=$(proj sharedrecord)
+run "$P" --shared claude cursor >/dev/null 2>&1
+_key="$(printf '%s' "$P" | tr -c 'A-Za-z0-9._-' '_')"
+is "the record lists both tools" "$(count_in "$SANDBOX_HOME/.mastermind-state/projects/$_key" 'tools=claude cursor')" "1"
+# The record has to track removals too, or the doctor keeps demanding wiring the user dropped.
+run "$P" --uninstall cursor >/dev/null 2>&1
+is "a targeted uninstall drops that tool" "$(count_in "$SANDBOX_HOME/.mastermind-state/projects/$_key" 'cursor')" "0"
+run "$P" --uninstall >/dev/null 2>&1
+# Scoped to THIS project's record: the state directory is shared across the whole run, so
+# counting every file in it makes the result depend on which other tests ran first.
+_key="$(printf '%s' "$P" | tr -c 'A-Za-z0-9._-' '_')"
+is "a bare uninstall drops the record"    "$([ -f "$SANDBOX_HOME/.mastermind-state/projects/$_key" ] && echo present || echo gone)" "gone"
+
+# ══ Ownership decides deletion, never the filename ════════════════════════════
+# Reserved paths are not proof of ownership. A user file sitting where we want to write is
+# theirs: preserve it on install, hand it back on uninstall, and never delete a same-named
+# file we did not generate.
+echo "── files we did not generate are preserved, not destroyed"
+P=$(proj ownedpaths)
+mkdir -p "$P/.cursor/rules" "$P/.github/hooks"
+printf 'MY OWN CURSOR RULE\n'  > "$P/.cursor/rules/mastermind.mdc"
+printf '{"mine":true}\n'       > "$P/.github/hooks/mastermind.json"
+run "$P" claude cursor >/dev/null 2>&1
+is "our rule replaced theirs on install" "$(count_in "$P/.cursor/rules/mastermind.mdc" 'Prime directives')" "1"
+run "$P" --uninstall >/dev/null 2>&1
+is "their cursor rule is handed back"    "$(count_in "$P/.cursor/rules/mastermind.mdc" 'MY OWN CURSOR RULE')" "1"
+is "their hook file is left alone"       "$(count_in "$P/.github/hooks/mastermind.json" 'mine')" "1"
+
+# ══ Uninstall does not claim work it could not do ═════════════════════════════
+# The hook lives inside a settings.json we do not own. If that file cannot be parsed the entry
+# stays registered and every session keeps firing a script that is about to disappear, yet the
+# command reported a clean removal and exited 0.
+echo "── unreadable settings.json is reported, not glossed over"
+P=$(proj honestuninstall)
+run "$P" claude >/dev/null 2>&1
+mkdir -p "$P/.claude"
+printf '{ this is not json\n' > "$P/.claude/settings.json"
+out=$(run "$P" --uninstall 2>&1) || true
+is "it says what it could not undo" "$(printf '%s' "$out" | grep -c 'could not edit settings.json')" "1"
+is "and does not claim success"     "$(printf '%s' "$out" | grep -c 'left untouched')" "0"
+
+# ══ A project uninstall stays inside the project ══════════════════════════════
+# The global Codex instruction file lives in the user's home. Pointer cleanup used to include
+# it unconditionally, so uninstalling one project edited a file shared by every other.
+echo "── a project uninstall does not edit the global Codex file"
+P=$(proj codexscope)
+mkdir -p "$SANDBOX_HOME/.codex"
+# It must carry the pointer, or the cleanup loop skips it and the test proves nothing: this is
+# exactly the line a global install writes, and a project uninstall must leave it in place.
+{ printf 'MY CODEX GLOBAL\n\n'
+  printf 'Follow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).\n'
+} > "$SANDBOX_HOME/.codex/AGENTS.md"
+run "$P" claude codex >/dev/null 2>&1
+run "$P" --uninstall >/dev/null 2>&1
+is "the global Codex pointer survives"  "$(count_in "$SANDBOX_HOME/.codex/AGENTS.md" 'the MasterMind brain (skills')" "1"
+is "and their own content survives too" "$(count_in "$SANDBOX_HOME/.codex/AGENTS.md" 'MY CODEX GLOBAL')" "1"
+
+# ══ Uninstall restores only what the installer itself backed up ═══════════════
+# safe_link leaves a "<file>.mm-backup" pointer naming the renamed original, and uninstall
+# moves that original back. The pointer lives in the project, so a repository can author one
+# naming any path on the machine; uninstall then relocates that file into the project.
+echo "── uninstall will not act on a backup pointer it did not write"
+SECRET="$TMP_REAL/victims/private"; rm -rf "$SECRET"; mkdir -p "$SECRET"
+printf 'PRIVATE-KEY\n' > "$SECRET/id_rsa"
+P=$(proj bakptr)
+run "$P" claude >/dev/null 2>&1
+mkdir -p "$P/.claude"
+printf '%s\n' "$SECRET/id_rsa" > "$P/.claude/CLAUDE.md.mm-backup"
+rm -f "$P/.claude/CLAUDE.md"
+run "$P" --uninstall >/dev/null 2>&1 || true
+is "a foreign file is not moved into the project" "$(count_in "$SECRET/id_rsa" 'PRIVATE-KEY')" "1"
+is "and nothing was restored from it" "$(count_in "$P/.claude/CLAUDE.md" 'PRIVATE-KEY')" "0"
+
+# ══ Pruning removes our stale links, not the user's ═══════════════════════════
+# Every reinstall sweeps broken symlinks out of the skills and agents directories. A broken
+# link the user made themselves is not ours to delete, and a dead link still names its target.
+echo "── pruning leaves symlinks that were never ours"
+P=$(proj prunemine)
+run "$P" claude >/dev/null 2>&1
+ln -s "$TMP_REAL/victims/nowhere-at-all" "$P/.claude/skills/my-own-skill"
+run "$P" claude >/dev/null 2>&1
+is "the user's own broken link survives a reinstall" "$([ -L "$P/.claude/skills/my-own-skill" ] && echo yes || echo no)" "yes"
+
+# ══ Containment: the full destination, not the first hop ══════════════════════
+# Three bypasses shared one root cause: the guard stopped resolving too early, or compared
+# paths as string prefixes. Each of these passed with exit 0 and a modified file outside the
+# intended target, through a suite that was green at the time.
+echo "── containment resolves the whole chain and respects path boundaries"
+
+# (a) a chain: the owned file -> a link inside the project -> a file outside it
+CV="$TMP_REAL/victims/chain"; rm -rf "$CV"; mkdir -p "$CV"; printf 'SENTINEL\n' > "$CV/f"
+P=$(proj chainlink); mkdir -p "$P/.cursor/rules" "$P/mid"
+ln -s "$CV/f" "$P/mid/hop"; ln -s "$P/mid/hop" "$P/.cursor/rules/mastermind.mdc"
+run "$P" cursor >/dev/null 2>&1 || true
+is "a multi-hop chain cannot reach outside" "$(cat "$CV/f")" "SENTINEL"
+
+# (b) a sibling whose name merely starts with the brain's path
+SV="$TMP_REAL/victims/brainlike"; rm -rf "$SV"; mkdir -p "$SV"; printf 'SENTINEL\n' > "$SV/f"
+P=$(proj prefixsib); mkdir -p "$P/.cursor/rules"
+ln -s "$SV/f" "$P/.cursor/rules/mastermind.mdc"
+run "$P" cursor >/dev/null 2>&1 || true
+is "a prefix sibling is not 'inside'" "$(cat "$SV/f")" "SENTINEL"
+
+# (c) an owned file aimed at the ENGINE's own source. Containment cannot catch this one: in an
+# isolated install the brain lives inside the project, so the target is legitimately "inside".
+# Files we write content into are never symlinks, wherever they point.
+P=$(proj braintarget); run "$P" cursor >/dev/null 2>&1
+core="$P/.mastermind/engineering/core/mindset.md"; before="$(head -c 40 "$core")"
+rm -f "$P/.cursor/rules/mastermind.mdc"; ln -s "$core" "$P/.cursor/rules/mastermind.mdc"
+run "$P" cursor >/dev/null 2>&1 || true
+is "an owned file cannot be aimed at the engine" "$(head -c 40 "$core")" "$before"
+
+echo "── uninstalling one tool leaves the others wired"
+# `--uninstall cursor` removed all 22 Claude skills, the kernel link and the bootstrap hook,
+# while the install record still claimed Claude was present.
+P=$(proj targeted); run "$P" claude cursor >/dev/null 2>&1
+run "$P" --uninstall cursor >/dev/null 2>&1
+is "claude survives an --uninstall cursor" "$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+is "and cursor is actually gone" "$([ -f "$P/.cursor/rules/mastermind.mdc" ] && echo left || echo gone)" "gone"
+run "$P" --uninstall >/dev/null 2>&1
+is "a bare --uninstall still removes everything" "$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "0"
 
 echo "── uninstall removes what it wired, and keeps what it didn't"
 P=$(proj unwire); mkdir -p "$P/.claude"

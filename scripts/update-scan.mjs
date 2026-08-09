@@ -217,6 +217,19 @@ for (const e of g.edges)
 for (const n of g.nodes)
   if (n.sourceRef && !existsSync(join(ROOT, n.sourceRef)))
     bad.push(`node ${n.id}: sourceRef "${n.sourceRef}" does not exist`)
+// `topTools` is the hand-curated shortlist the map leads with, so a rename leaves it advertising a
+// skill nobody can invoke: it kept listing `spec` for releases after that skill became `interview`.
+// Every entry must be a skill dir on disk.
+const skillNames = new Set(readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name))
+for (const t of d.topTools ?? [])
+  if (!skillNames.has(t.id)) bad.push(`topTools lists "${t.id}", which is not a skill on disk`)
+
+// Same rot on the integrations list: it kept advertising Copilot and Gemini for releases
+// after 0.27 stopped wiring them. What the installer actually wires is the authority.
+const WIRED = new Set(['claudecode', 'codex', 'cursor', 'github'])
+for (const t of d.topIntegrations ?? [])
+  if (!WIRED.has(t.id)) bad.push(`topIntegrations lists "${t.id}", which this version does not wire`)
+
 const ids = new Set(g.nodes.map((n) => n.id))
 for (const e of g.edges)
   if (!ids.has(e.from) || !ids.has(e.to)) bad.push(`edge ${key(e)}: points at a node that is not on the map`)

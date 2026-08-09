@@ -20,4 +20,51 @@ jobs:
       - uses: github/codeql-action/init@c4dd10e44af883a891fe31ced449bcb4a6728b9b  # v3
         with:
           languages: javascript-typescript
+          # Eval seeds are deliberately imperfect starting repositories: finding flaws in them
+          # is the point of the eval, not a defect in what we ship. Leaving them in the scan
+          # meant a permanently open alert, and an alert nobody acts on trains you to ignore
+          # the list. Scan the code users actually run.
+          config: |
+            paths-ignore:
+              - evals/runs/**
+              - evals/tasks/**
+              - lab/**
       - uses: github/codeql-action/analyze@c4dd10e44af883a891fe31ced449bcb4a6728b9b  # v3
+
+  # CodeQL has no Bash analyzer, and Bash is where the risk actually lives here: the installer
+  # resolves paths, follows symlinks and deletes files in someone else's repository. A green
+  # CodeQL run said nothing about any of that. ShellCheck is the tool that does.
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - name: every shell script we ship
+        run: |
+          set -e
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck >/dev/null
+          shellcheck --version | head -2
+          # -x follows sourced files; the floor is `warning` so style notes do not block a
+          # release while genuine quoting and expansion bugs do. The exclusions are deliberate:
+          #   SC2088  a literal ~ inside quotes is correct in the messages we PRINT to the user
+          #   SC2155  declare-and-assign is used widely and none of these calls can fail usefully
+          #   SC2034  a variable kept for readability in the test harness
+          #   SC2010  ls | grep over a controlled sandbox path in the tests
+          #   SC1007  `CDPATH= cd` is the standard idiom, not a mistyped assignment
+          #   SC2154  a variable assigned inside a trap body, which shellcheck cannot see
+          # SC2318 is NOT excluded: it caught a real one, where a second assignment in the same
+          # `local` read the caller's variable instead of the one being set.
+          shellcheck -x -S warning -s bash -e SC2088,SC2155,SC2034,SC2010,SC1007,SC2154 \
+            install.sh \
+            hooks/session-start.sh \
+            scripts/preflight.sh \
+            scripts/release.sh \
+            scripts/verify-release.sh \
+            scripts/verify-tools.sh \
+            scripts/prove-regression.sh \
+            tests/install.test.sh \
+            tests/agent-surface.test.sh \
+            bin/mastermind \
+            .githooks/pre-commit \
+            .githooks/pre-push \
+            skills/quarantine/assets/pre-commit \
+            skills/quarantine/assets/pre-push

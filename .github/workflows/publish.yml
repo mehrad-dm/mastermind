@@ -51,7 +51,7 @@ jobs:
   publish:
     needs: [gate, cross-os]
     permissions:
-      contents: read
+      contents: write            # to create the GitHub Release; nothing else here writes
       id-token: write            # only this job exchanges it for an npm trusted-publish token
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +62,10 @@ jobs:
       # Trusted publishing authenticates over OIDC, so no registry-url/token stub is needed —
       # and that stub made an unauthenticated `npm install -g npm` 404. npm >= 11.5.1 is
       # required for OIDC, and Node 22 ships 10.x.
-      - run: npm install -g npm@latest --registry=https://registry.npmjs.org
+      # Pinned, not floating: `npm@latest` would hand a release-day npm regression, or a
+      # compromised publish, direct control of the job that holds our OIDC identity. Bump this
+      # deliberately when a newer npm is wanted; the version only has to satisfy OIDC's >= 11.5.1.
+      - run: npm install -g npm@12.0.2 --registry=https://registry.npmjs.org
       - run: npm --version
       # The tarball ships the CLI only; the brain is cloned at install time, so provenance
       # alone does not cover the code users execute. Stamp the exact commit this tag points
@@ -78,5 +81,57 @@ jobs:
             fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
             console.log("pinned to", pkg.commit);
           '
+      # The gate job checked the tarball, but that was before the stamp rewrote package.json.
+      # What actually ships is this file, so the contract is re-checked against it: the same
+      # three paths, the version still matching the tag, and a real commit SHA in the stamp.
+      - name: re-verify the stamped package is what we intend to publish
+        working-directory: cli
+        run: |
+          npm pack --dry-run --json > /tmp/pack-stamped.json
+          node -e '
+            const fs = require("fs");
+            const p = require("/tmp/pack-stamped.json")[0];
+            const files = p.files.map(f => f.path).sort();
+            const want = ["README.md", "bin/mastermind.mjs", "package.json"].sort();
+            if (JSON.stringify(files) !== JSON.stringify(want))
+              { console.error("unexpected tarball contents:", files); process.exit(1) }
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const tag = process.env.GITHUB_REF_NAME;
+            if (`v${pkg.version}` !== tag)
+              { console.error(`version ${pkg.version} does not match tag ${tag}`); process.exit(1) }
+            if (!/^[0-9a-f]{40}$/.test(pkg.commit || ""))
+              { console.error("commit stamp is not a full SHA:", pkg.commit); process.exit(1) }
+            if (pkg.commit !== process.env.GITHUB_SHA)
+              { console.error("commit stamp does not match this run"); process.exit(1) }
+            console.log(`stamped package OK: v${pkg.version} @ ${pkg.commit}`);
+          '
       - run: npm publish --provenance --access public
         working-directory: cli
+
+      # Six tags shipped without one, because creating it was a step someone had to remember
+      # after the excitement of publishing. The changelog already contains the notes, so this
+      # reads them out of the file rather than asking anyone to write them twice.
+      - name: publish the GitHub Release from the changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -e
+          V="${TAG#v}"
+          # The section for this version, without its own heading line.
+          notes="$(awk -v v="## [$V]" '
+            index($0, v) == 1 { inb = 1; next }
+            inb && /^## \[/    { exit }
+            inb                { print }
+          ' CHANGELOG.md)"
+          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            echo "CHANGELOG.md has no '## [$V]' section, so there are no notes to publish" >&2
+            exit 1
+          fi
+          printf '%s\n' "$notes" > /tmp/notes.md
+          title="$(git tag -l --format='%(contents:subject)' "$TAG" | head -1)"
+          [ -n "$title" ] || title="$TAG"
+          # --latest explicitly: GitHub marks the most recently CREATED release as latest, not
+          # the highest version, so backfilling an older tag silently demotes the current one.
+          gh release create "$TAG" --title "$title" --notes-file /tmp/notes.md --verify-tag --latest
+          echo "released $TAG"

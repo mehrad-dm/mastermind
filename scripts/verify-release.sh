@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# Are the repository, the npm package and the website all telling the same story?
+#
+#   scripts/verify-release.sh            # check whatever VERSION says
+#   scripts/verify-release.sh 0.31.0     # check a specific version
+#
+# "Keep the repo, npm and the site in sync" was a rule someone had to remember, so it was
+# checked by reading three pages in a browser. Every part of it is a question a command can
+# answer, so this asks them: the tag exists and points where the changelog says, npm serves that
+# version, the published package is stamped with the commit the tag points at, the site shows
+# it, and there is a Release object to read.
+#
+# Read-only. It changes nothing and needs no credentials beyond a network connection; the
+# GitHub Release check is skipped rather than failed when `gh` is not authenticated.
+set -uo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+SITE_URL="https://mastermind.mehrad.me"
+PKG="mastermind-brain"
+cd "$REPO" || exit 1
+
+g=$'\033[0;32m'; y=$'\033[0;33m'; r=$'\033[0;31m'; b=$'\033[1m'; x=$'\033[0m'
+FAIL=0; SKIP=0
+ok()   { printf '  %s✓%s %s\n' "$g" "$x" "$*"; }
+bad()  { printf '  %s✖%s %s\n' "$r" "$x" "$*"; FAIL=$((FAIL + 1)); }
+skip() { printf '  %s⚠%s %s\n' "$y" "$x" "$*"; SKIP=$((SKIP + 1)); }
+
+V="${1:-$(cat VERSION)}"
+V="${V#v}"
+printf '%s── v%s: repository · npm · website%s\n\n' "$b" "$V" "$x"
+
+# --- The repository -----------------------------------------------------------
+if git rev-parse -q --verify "refs/tags/v$V" >/dev/null 2>&1; then
+  TAG_SHA="$(git rev-list -n1 "v$V")"
+  ok "tag v$V → ${TAG_SHA:0:12}"
+else
+  bad "no tag v$V in this clone"; TAG_SHA=""
+fi
+
+if grep -q "^## \[$V\]" CHANGELOG.md; then ok "CHANGELOG has an entry for $V"
+else bad "CHANGELOG has no '## [$V]' section"; fi
+
+for f in cli/package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
+  if grep -q "\"$V\"" "$f"; then ok "$f says $V"; else bad "$f does not say $V"; fi
+done
+if grep -q "version-$V" README.md; then ok "README badge says $V"; else bad "README badge is not $V"; fi
+
+# --- npm ----------------------------------------------------------------------
+printf '\n'
+NPM_JSON="$(curl -fsS "https://registry.npmjs.org/$PKG/latest" 2>/dev/null)"
+if [ -z "$NPM_JSON" ]; then
+  skip "the npm registry did not answer"
+else
+  NPM_V="$(printf '%s' "$NPM_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).version||"")}catch{console.log("")}})')"
+  NPM_C="$(printf '%s' "$NPM_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const p=JSON.parse(s);console.log(p.commit||p.gitHead||"")}catch{console.log("")}})')"
+  if [ "$NPM_V" = "$V" ]; then ok "npm latest is $NPM_V"
+  else bad "npm latest is $NPM_V, not $V"; fi
+
+  # The tarball ships the CLI only; the brain is cloned at install time. The stamp is what ties
+  # the published package to a specific commit of this repository, so it is the pairing that
+  # actually determines which code a user executes.
+  if [ -z "$NPM_C" ]; then
+    bad "the published package carries no commit stamp"
+  elif [ -z "$TAG_SHA" ]; then
+    skip "cannot compare the commit stamp without the tag"
+  elif [ "$NPM_C" = "$TAG_SHA" ]; then
+    ok "the published package is stamped with ${NPM_C:0:12}, which is what v$V points at"
+  else
+    bad "the package is stamped ${NPM_C:0:12} but v$V points at ${TAG_SHA:0:12}"
+  fi
+fi
+
+# --- The website --------------------------------------------------------------
+printf '\n'
+HTML="$(curl -fsS "$SITE_URL/" 2>/dev/null)"
+if [ -z "$HTML" ]; then
+  skip "$SITE_URL did not answer"
+else
+  # Count only OUR version strings. A bare "first vN.N.N in the page" reads whatever the
+  # generator stamped into its own markup first: it reported Astro's v7.1.6 as the site version.
+  SEEN="$(printf '%s' "$HTML" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | sort -u | tr '\n' ' ')"
+  # Matched with a case, not `printf | grep -q`. grep -q exits the moment it finds the match, so
+  # printf takes SIGPIPE, and under `pipefail` the pipeline reports failure BECAUSE the match
+  # succeeded. That inversion is the exact failure mode this script exists to catch, so it is
+  # not one to ship inside it.
+  case "$HTML" in
+    *"v$V"*) ok "the site shows v$V" ;;
+    *)       bad "the site does not show v$V (it contains: ${SEEN:-no version at all})" ;;
+  esac
+  # The architecture page embeds a cross-origin map. A CSP without frame-src blocks it silently,
+  # so the page looks fine to a crawler and broken to a person.
+  CSP="$(curl -fsSI "$SITE_URL/architecture" 2>/dev/null | tr -d '\r' | grep -i '^content-security-policy:' || true)"
+  if [ -z "$CSP" ]; then skip "no CSP header served for /architecture"
+  elif case "$CSP" in *frame-src*) true ;; *) false ;; esac; then ok "the CSP allows the embedded map"
+  else bad "the CSP has no frame-src, so the embedded map is blocked"; fi
+fi
+
+# --- The Release object -------------------------------------------------------
+printf '\n'
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  if gh release view "v$V" >/dev/null 2>&1; then ok "a GitHub Release exists for v$V"
+  else bad "there is no GitHub Release for v$V (the tag alone is not a release)"; fi
+else
+  skip "gh is not authenticated, so the Release object was not checked"
+fi
+
+# --- Verdict ------------------------------------------------------------------
+printf '\n'
+if [ "$FAIL" -gt 0 ]; then
+  printf '%s✖ v%s is NOT consistent: %d problem(s)%s\n' "$r" "$V" "$FAIL" "$x"
+  exit 1
+fi
+if [ "$SKIP" -gt 0 ]; then
+  printf '%s✓ everything checked agrees on v%s, but %d check(s) could not run.%s\n' "$y" "$V" "$SKIP" "$x"
+  exit 0
+fi
+printf '%s✓ repository, npm and website all agree on v%s.%s\n' "$g" "$V" "$x"

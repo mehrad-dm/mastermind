@@ -4,6 +4,123 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.0] · 2026-08-10
+
+The largest correctness release so far. A detailed external review of 0.30.1 returned 107
+findings; 102 are fixed here, 5 were wrong and are explained below. The suite was green through
+all of it, which is the real subject of this release: a check that can pass by failing is not a
+check, and most of what follows is either such a check being removed or the gate that replaces it.
+
+### Fixed: containment
+
+Four ways a repository could make the installer write outside the project. Each exited 0.
+
+- A target could be a chain of symlinks, and only the first hop was read.
+- A sibling directory whose name merely began with the brain's path counted as inside it.
+- A file the installer owns could be aimed at the engine's own files.
+- Targets generated from `routes.map` had no containment check at all, because the paths are
+  built at run time and the upfront list could not name them.
+
+Every destination is now canonicalised through its whole symlink chain and compared at path
+boundaries. Files we write content into may not be symlinks. When a path cannot be resolved the
+installer refuses rather than guessing.
+
+### Fixed: the installer deleting or losing things it did not own
+
+- A `.mm-backup` pointer is written into the project, so a repository could author one naming any
+  path on the machine, and uninstall moved that file into the project. Reproduced with a planted
+  private key. Only a sibling of the exact shape `safe_link` writes is accepted.
+- Reserved Cursor filenames and the legacy `.github/hooks/mastermind.json` were removed on
+  filename alone, destroying same-named files the project owned. Generated files carry a marker;
+  anything without it is left alone, and a file moved aside on install is handed back.
+- An `AGENTS.md` that was already a symlink was replaced outright with no record, so the
+  project's arrangement could not be restored. It is preserved and restored.
+- Hook cleanup matched any command containing both "mastermind" and "session-start.sh". It
+  matches on path now.
+- A project uninstall edited the global Codex instruction file.
+- Reinstall deleted broken symlinks the user had created themselves.
+- `--uninstall cursor` removed all 22 Claude skills.
+
+### Fixed: preservation
+
+Removing the pointer left behind the blank line appended with it, so every install and uninstall
+cycle grew the file by a newline. A repeated `MASTERMIND:START` reset the buffer that exists to
+protect the project's content, so a half-edited anchor lost every line before the second marker.
+
+### Fixed: the doctor
+
+It accepted any link that resolved somewhere into the brain, so a skill pointing at another
+skill read as healthy. It now checks the exact destination and reports where a wrong link
+actually points. A file that merely mentioned the pointer counted as wired. Shared installs kept
+no record of what they wired, and a missing record degraded silently to inference instead of
+saying so. Route checks cover all three anchors and the field and context they name. Cursor
+validation had an early return that skipped the check entirely.
+
+Uninstall no longer claims success for work it could not do: unreadable JSON or a missing Node
+leaves the hook registered, and it now says which and exits non-zero.
+
+### Added
+
+- `--help` and `--version`, which answer without cloning anything. `--help` previously fell
+  through to the unknown-flag branch, so asking a fresh machine what the script does set up a
+  brain and then exited 2.
+- `scripts/prove-regression.sh`, which runs the suite against an older release's installer. It
+  reports 25 failing assertions on 0.30.1.
+- `scripts/release.sh`, which moves the version in all six places it lives across both
+  repositories, and `scripts/verify-release.sh`, which checks that the repository, npm and the
+  website agree.
+- `RELEASING.md`, and a `CONTRIBUTING.md` section on how changes reach master.
+
+### Changed
+
+- Conflicting mode flags are refused instead of last-one-wins. An unknown tool name is an error
+  rather than a warning that reported success having wired nothing.
+- `routes.map` can express paths containing spaces and `#`, and the declared field in
+  `active-field.md` outranks whatever the filesystem lists first.
+- The engine refresh writes and renames rather than deleting first, so an interruption cannot
+  leave a hole. A content-hash ledger records what was installed, so a project's own edit to an
+  engine file is named before the refresh replaces it.
+- `ABOUT.md` stays in the repository. It generates the public library pages and nothing reads it
+  at run time, so an installed brain is 448K rather than 636K.
+- `--check` cannot hang on a slow network, and no longer counts a check it could not run as one
+  that passed.
+
+### Security
+
+`SECURITY.md` claimed MasterMind executes no untrusted input. It does: the installer reads
+`routes.map`, existing symlinks and backup pointers, all supplied by whatever repository it runs
+in. That surface is now described rather than denied.
+
+Publishing installed a floating `npm@latest` into the job holding the OIDC identity, and the
+gate verified the tarball before the commit stamp rewrote `package.json`, so what shipped was
+never what was checked. npm is pinned and the stamped package is re-verified before publish.
+WSL CI piped a live NodeSource script into a root shell; Node now comes from a pinned tarball
+checked against the published checksums.
+
+CodeQL has no Bash analyzer, and Bash is where the risk is here. ShellCheck gates every shipped
+script and immediately found one: a second assignment inside the same `local` read the caller's
+variable under bash 3.2. A `printf | grep -q` under `pipefail` in the tool verifier inverted its
+own answer past the pipe buffer, because grep exits on match and printf takes SIGPIPE.
+
+On the repository itself: secret scanning, push protection, Dependabot alerts and security
+updates, and private vulnerability reporting are enabled; `master` is protected against deletion
+and force-push; and every tag now has a Release object.
+
+### Website
+
+The architecture page embeds the codebase map, and the CSP had no `frame-src`, so the browser
+dropped it silently: correct to a crawler, empty to a person. The build now fails if a page
+embeds an origin the policy does not allow. The homepage said two of eight tasks showed no gain
+while the table beneath it showed three; it is counted from the data now. Added a skip link,
+dialog semantics for the mobile drawer, names for every navigation landmark, and clipboard
+feedback that screen readers hear. Agent pages no longer claim a slash-command invocation.
+
+### Not fixed, because the finding was wrong
+
+`CODEX_GLOBAL` is already gated on global scope. The CLI genuinely has zero dependencies.
+Nothing in the codebase runs `git commit`. `settings.json` is merged, never overwritten.
+`roadmap.sh` resolves; the wording was clarified to make clear it is a website.
+
 ## [0.30.1] — 2026-08-09
 
 A follow-up review found that 0.30.0's containment fix stopped one level too high, and that one

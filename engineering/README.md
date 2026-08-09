@@ -24,7 +24,7 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
 ├── CLAUDE.md                     # the kernel — always loaded, tiny
 ├── AGENTS.md                     # → CLAUDE.md (the open entry file for agentic tools)
 ├── agents/                       # specialist roles (architect, code-reviewer, refactorer, tech-scout)
-├── skills/                       # growable library (build, debug, spec, learn, qa, … + levelup)
+├── skills/                       # growable library (build, debug, interview, learn, qa, … + levelup)
 └── engineering/
     ├── README.md                 # this file
     ├── active-field.md           # which field is active + how leveling works

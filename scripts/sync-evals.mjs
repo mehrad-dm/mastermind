@@ -33,7 +33,60 @@ for (const line of section.split('\n')) {
   else headline.push(row)
 }
 
-const runLine = (re, fallback) => (md.match(re) || [, fallback])[1]
+// Everything the site prints about a run is read out of the run's own entry. Hard-coding the date,
+// the models, the sample size and the win/tie/loss counts here meant the site could keep quoting a
+// run that RESULTS.md had since re-scored, with nothing to catch it. `die` rather than a fallback:
+// a silent default is how the wrong number ships.
+const die = (m) => {
+  console.error(`✖ ${m}: evals/RESULTS.md and this script have drifted`)
+  process.exit(1)
+}
+const grab = (text, re, what) => (text.match(re) || die(`cannot read ${what}`))[1].trim()
+
+const headlineMeta = section.split('\n').find((l) => l.startsWith('**Date:**')) ?? die('cannot find the Headline meta line')
+const headlineDate = grab(headlineMeta, /\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})/, 'the headline date')
+const headlineGenerator = grab(headlineMeta, /\*\*Generator:\*\*\s*([^·]+)·/, 'the headline generator')
+// The meta line wraps, so the judges run on into the next line before the next `·`.
+const headlineJudges = grab(section, /\*\*Judges:\*\*\s*([\s\S]+?)·/, 'the headline judges').replace(/\s+/g, ' ')
+const headlineN = Number(grab(section, /\*\*N=(\d+)\*\*/, 'the headline sample size'))
+
+// The site features one run, and it is not always the newest: a run can land that says nothing a
+// reader needs. The featured one is marked in RESULTS.md itself, next to its data, with the exact
+// words the card shows, so the card cannot describe a run differently from the log.
+const runSections = md.split(/^## /m).filter((s) => /^Run \S+ — \d{4}-\d{2}-\d{2}/.test(s))
+const featured = runSections.filter((s) => /^>\s*\*\*Featured on the site\.\*\*/m.test(s))
+if (featured.length !== 1) {
+  die(`expected exactly one run marked "> **Featured on the site.**", found ${featured.length}`)
+}
+const latestSection = featured[0]
+const latestId = grab(latestSection, /^Run (\S+) — /, 'the featured run id')
+const latestDate = grab(latestSection, /^Run \S+ — (\d{4}-\d{2}-\d{2})/, 'the featured run date')
+const latestWhat = grab(latestSection, /^>\s*\*\*Featured on the site\.\*\*\s*(.+)$/m, 'the featured run description')
+const latestSummary = latestSection
+  .split(/^>\s*\*\*Featured on the site\.\*\*.*$/m)[1]
+  .split(/\n(?!>)/)[0]
+  .split('\n')
+  .map((l) => l.replace(/^>\s?/, '').trim())
+  .filter(Boolean)
+  .join(' ')
+if (!latestSummary) die('the featured run has no summary paragraph under its callout')
+
+// Win / tie / loss come from the run's own results table, so a re-score moves them automatically.
+// The delta column is the last one; a leading U+2212 is a real minus.
+let wins = 0
+let ties = 0
+let losses = 0
+for (const line of latestSection.split('\n')) {
+  const cells = line.split('|').map((c) => c.trim())
+  if (cells.length < 7 || !/^\|/.test(line)) continue // 5 columns → 7 cells with the edges
+  const delta = cells[5].replace(/\*/g, '').replace(/−/g, '-')
+  if (!/^[+-]?\d+(?:\.\d+)?$/.test(delta)) continue // header and separator rows
+  if (+delta > 0) wins++
+  else if (+delta < 0) losses++
+  else ties++
+}
+if (wins + ties + losses === 0) die('the featured run has no results table to count')
+
 // The router figures come from the ONE place they were actually measured: the multi-model
 // pilot, which recorded per-task loaded tokens with and without the router. An earlier pass
 // here replaced those measured numbers with `total * 0.25` — an invented ratio presented as
@@ -66,25 +119,23 @@ const data = {
     source: 'evals/pilot-multimodel/RESULTS.md — measured per task, Opus average of 4 tasks',
   },
   headline: {
-    date: runLine(/\*\*Generator:\*\*\s*([^·]+)·/, '').trim() ? '2026-07-11' : '2026-07-11',
-    generator: 'Claude Opus 4.8 (both conditions)',
-    judges: 'Sonnet 5 × 3 seats (median)',
-    n: 3,
+    date: headlineDate,
+    generator: headlineGenerator,
+    judges: headlineJudges,
+    n: headlineN,
     rows: headline,
     mean,
   },
-  // The newest run matters more than the flattering older one, so the site shows it too.
+  // The headline set is the flattering one, so the site shows a recent run beside it: the one
+  // RESULTS.md marks as featured, described in that file's own words.
   latest: {
-    id: 'V4',
-    date: '2026-08-01',
-    what: 'real-task suite: multi-file service, planted hazards, agentic runs',
-    wins: 1,
-    ties: 3,
-    losses: 1,
-    summary:
-      'On real small-repo tasks the frontier model already holds: both arms fixed the planted N+1, '
-      + 'built idempotent cancellation, and refused to delete a failing test under deadline pressure. '
-      + 'The one gain was review recall (+0.11, n=3 — direction, not proof).',
+    id: latestId,
+    date: latestDate,
+    what: latestWhat,
+    wins,
+    ties,
+    losses,
+    summary: latestSummary,
   },
 }
 

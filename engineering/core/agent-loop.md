@@ -75,8 +75,9 @@ standards, not generic memory:**
   APIs differ across majors, so target the version actually installed, not "latest in general." Match
   the team's conventions first.
 - **Learn what the task touches.** For unfamiliar or fast-moving tech, read the **primary docs** and the
-  relevant **roadmap.sh** role/topic map. It's the field's skill-tree, so use it to know *what* to learn
-  and to spot gaps: then go deep on the specific APIs the task needs.
+  relevant role/topic map on the website [roadmap.sh](https://roadmap.sh). It's the field's
+  skill-tree, so use it to know *what* to learn and to spot gaps: then go deep on the specific APIs
+  the task needs.
 - **Track the primary source, matched to the version in use.** Verify the current correct usage **for
   that exact version** against the **official docs, changelog, and release notes**: the primary source,
   never memory or a stale blog, because APIs drift between majors. When **adding or upgrading** a

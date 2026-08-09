@@ -82,4 +82,44 @@ if [ "$FAIL" -ne 0 ]; then
 fi
 
 printf '%s\n' "${GRN}✓ push guard: clean${NC}"
+
+# >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
+# The shipped guard protects ANY project from leaking secrets. This part is about MasterMind's
+# own test suite, which only exists in this repository, so it must not travel with the asset.
+# The guard above answers "would this leak something". It never answered "does this work".
+# Users run master directly: ~/.mastermind is a clone of it, and `git pull` there gets whatever
+# was last pushed. A red master is a broken product, not an untidy badge, so the suite runs
+# before the push rather than only after it has already landed.
+#
+#   MM_SKIP_TESTS=1 git push    escapes it deliberately, and says so on the record.
+if [ -n "${MM_SKIP_TESTS:-}" ]; then
+  printf '%s\n' "${YEL}⚠ MM_SKIP_TESTS set — pushing WITHOUT running the suite${NC}"
+  exit 0
+fi
+
+# Only when code the suite covers is actually going out. A docs-only push does not need four
+# minutes of installer tests, and a gate that is slow for no reason is one people learn to skip.
+CHANGED="$(git diff --name-only "$(git merge-base HEAD origin/master 2>/dev/null || echo HEAD~1)" HEAD 2>/dev/null || true)"
+case "$CHANGED" in
+  *install.sh*|*cli/*|*bin/*|*tests/*|*hooks/*|*scripts/*)
+    printf '%s\n' "running the suites before this leaves the machine (MM_SKIP_TESTS=1 to skip)…"
+    LOG=/tmp/mm-prepush.log
+    if ! bash "$REPO_ROOT/tests/install.test.sh" >"$LOG" 2>&1; then
+      printf '%s\n' "${RED}✖ BLOCKED — the installer suite fails${NC}"
+      grep '✖' "$LOG" | head -10 | sed 's/^/    /'
+      printf '%s\n' "  full output: $LOG"
+      exit 1
+    fi
+    if ! bash "$REPO_ROOT/tests/agent-surface.test.sh" >>"$LOG" 2>&1; then
+      printf '%s\n' "${RED}✖ BLOCKED — the agent-surface suite fails${NC}"
+      tail -12 "$LOG" | sed 's/^/    /'
+      exit 1
+    fi
+    printf '%s\n' "${GRN}✓ suites pass${NC}"
+    ;;
+  *)
+    printf '%s\n' "${GRN}✓ no installer, CLI or script changes here — suite not needed${NC}"
+    ;;
+esac
+# <<< repo-only ------------------------------------------------------------------
 exit 0

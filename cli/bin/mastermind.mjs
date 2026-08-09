@@ -437,7 +437,11 @@ if (!existsSync(MM_HOME)) {
     console.log('↓ updating the brain')
     let onBranch = true
     try { git(['symbolic-ref', '-q', 'HEAD']) } catch { onBranch = false }
-    if (onBranch) {
+    // A published release runs one commit: the one it was built from. Pulling a branch to its
+    // tip moves the clone somewhere else and the pin check below then refuses it, leaving the
+    // user updated to a commit this CLI will not execute. Go to the pin directly instead.
+    // Without a pin this is a local checkout, where following the branch is the point.
+    if (onBranch && !PINNED_COMMIT) {
       const st = run('git', ['pull', '--ff-only'], { cwd: MM_HOME })
       if (st !== 0) fail(`update refused — ${MM_HOME} has local changes. Keep them: git -C ${MM_HOME} stash && npx mastermind-brain update. Discard them: git -C ${MM_HOME} checkout -- . && npx mastermind-brain update`)
     }

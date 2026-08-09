@@ -27,7 +27,7 @@ WORK="$(cd "$(mktemp -d)" && pwd -P)"; trap 'rm -rf "$WORK"' EXIT
 # suite; this script repeated it, so the sandbox is not optional here either.
 SANDBOX_HOME="$WORK/home"; mkdir -p "$SANDBOX_HOME"
 REAL_BRAIN_BEFORE="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
-proj="$WORK/probe"; mkdir -p "$proj"; cd "$proj"
+proj="$WORK/probe"; mkdir -p "$proj"; cd "$proj" || exit 1
 git init -q .
 printf '{ "name": "probe", "dependencies": { "react": "^19.0.0" } }\n' > package.json
 # `agents` wires AGENTS.md, which is the ONLY thing Codex reads — naming tools explicitly
@@ -41,10 +41,14 @@ ask='In one short line: are you running as MasterMind? If yes, name one skill yo
 
 # Grepping for "mastermind" is NOT enough: "I am running as Codex, not MasterMind" contains it,
 # and this script reported that as a pass. Demand an affirmative and reject any denial.
+# grep reads from a HERE-STRING, never from `printf | grep -q`. With pipefail set, grep -q
+# exits on its first match, printf takes SIGPIPE, and the pipeline reports failure BECAUSE the
+# pattern matched. On a short reply printf finishes first and it works; past the pipe buffer it
+# silently inverts. A verifier that flips its own answer on long input is worse than none.
 loaded() {
   local t; t="$(printf '%s' "$1" | tr 'A-Z' 'a-z')"
-  printf '%s' "$t" | grep -qE "not mastermind|not running as mastermind|isn'?t mastermind|^[^a-z]*no\b" && return 1
-  printf '%s' "$t" | grep -q "mastermind" && printf '%s' "$t" | grep -qE "\byes\b|i am mastermind|running as mastermind"
+  grep -qE "not mastermind|not running as mastermind|isn'?t mastermind|^[^a-z]*no\b" <<<"$t" && return 1
+  grep -q "mastermind" <<<"$t" && grep -qE "\byes\b|i am mastermind|running as mastermind" <<<"$t"
 }
 
 if command -v cursor-agent >/dev/null 2>&1; then

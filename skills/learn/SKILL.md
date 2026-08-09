@@ -15,7 +15,8 @@ Read `package.json`/lockfile, configs, and representative source to see the exac
 APIs drift, so learn the version that's actually here.
 
 ## 2. Map the skill-tree
-Use the relevant **roadmap.sh** role/topic map as the checklist of what matters and to spot your gaps.
+Use the relevant role/topic map on the website [roadmap.sh](https://roadmap.sh) as the checklist of
+what matters and to spot your gaps.
 Learn just the branch the task touches; the rest of the tree waits.
 
 ## 3. Learn to current standards
