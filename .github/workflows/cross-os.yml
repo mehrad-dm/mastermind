@@ -109,9 +109,11 @@ jobs:
           tgz="$(ls "$RUNNER_TEMP"/mastermind-brain-*.tgz)"
           echo "installing $tgz"
           npm install -g "$tgz"
-          # npm's global bin is not on PATH in this shell, so invoke it where it landed.
-          BIN="$(npm prefix -g)/bin/mastermind-brain"
-          test -x "$BIN" || { echo "the packaged binary is not executable at $BIN"; exit 1; }
+          # npm's global bin is not on PATH in this shell, so invoke it where it landed. The
+          # command is `mastermind`: the PACKAGE is mastermind-brain, but its bin entry is not
+          # named after it, which is why `npx mastermind-brain` works and no such binary exists.
+          BIN="$(npm prefix -g)/bin/mastermind"
+          test -x "$BIN" || { echo "no binary at $BIN"; ls -l "$(npm prefix -g)/bin" || true; exit 1; }
           # The stamped CLI refuses a brain whose HEAD is not the pinned commit, so point it at
           # this checkout: that is the pairing a published release actually ships.
           proj="$(mktemp -d)"; git -C "$proj" init -q
