@@ -1,30 +1,4 @@
 #!/usr/bin/env bash
-#
-# MasterMind bootstrap — re-hands the model its own brain.
-#
-# WHY THIS EXISTS
-#   A kernel read once at startup fades as the context window fills, and is dropped
-#   outright when the session compacts. From that moment the skills are inert: present
-#   on disk, never invoked. The user still sees confident answers — just without the
-#   discipline. Silent, total, and exactly when stakes are highest (long sessions).
-#
-#   So we re-inject on startup AND on compaction. That second one is the whole point.
-#
-# WHAT IT INJECTS
-#   The kernel (CLAUDE.md) — nothing else. Skills stay on-demand; this only guarantees
-#   the routing layer that reaches for them is present.
-#
-# PORTABILITY
-#   Emits whichever field the host reads: Cursor wants additional_context, Claude Code
-#   wants hookSpecificOutput.additionalContext, others take the SDK-standard top-level
-#   additionalContext. We emit exactly one, because a host reading both would double it.
-#
-#   Shape is chosen by an explicit first argument (cursor|claude|sdk) when given, and
-#   only falls back to env sniffing otherwise. Env detection alone is not enough: a
-#   PROJECT-level Cursor hook gets no CURSOR_PLUGIN_ROOT, so it would silently emit the
-#   wrong field and inject nothing. Callers that know the host must say so.
-#
-# Failure is always silent: a broken hook must never block a session.
 
 set -uo pipefail
 SHAPE="${1:-auto}"

@@ -1,9 +1,3 @@
-// Refresh .foglamp/scan.json — the architecture map published on every push. Idempotent:
-// re-running replaces the same nodes/edges by id rather than duplicating them.
-//
-// Counts are read from the repo, never written here: this file publishes a public map, so
-// a stale literal would ship a lie on the first skill added after a release. (`version` is
-// the API's schema version, not the repo's — see the bottom.)
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
@@ -12,18 +6,11 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const P = join(ROOT, '.foglamp', 'scan.json')
 const count = (dir, pred) => readdirSync(join(ROOT, dir), { withFileTypes: true }).filter(pred).length
 
-// NO COUNTS IN NODE LABELS. This map is published publicly and a stale number is a public
-// lie: it shipped "30 assertions" while the suite had 37. Deriving them statically proved
-// fragile too (assertions fire inside loops; checks are numbered "2 & 3"), and this script
-// must not run the test suites to find out. A structure map's job is what connects to what
-// — the exact totals live in the suites themselves, which cannot go stale.
 
 const d = JSON.parse(readFileSync(P, 'utf8'))
 const g = d.graph
 
 const NEW_NODES = [
-  // No group key: entry points (claude, cursor, codex) float ungrouped, and the API rejects
-  // an empty-string group outright.
   {
     id: 'cli',
     label: 'npx mastermind-brain',
@@ -55,9 +42,6 @@ const NEW_NODES = [
       "Guards the promises install.sh makes: never destroy your files, never lose a MasterMind capability, stay idempotent, merge settings instead of clobbering, and leave an unparseable config alone.",
   },
   {
-    // No field ships pre-baked (0.27.0): only the scaffold. `init` builds the field for the
-    // project's real stack. So this node is the *concept* of a field pack, anchored at the
-    // template — not a shipped frontend pack, which no longer exists in the repo.
     id: 'field',
     label: 'Field pack',
     kind: 'store',
@@ -77,9 +61,6 @@ const NEW_NODES = [
     detail:
       'Generates one article per skill and agent from ABOUT.md files, so public docs cannot claim what a skill does not do. Refuses to build without an article; --check fails when the site is stale.',
   },
-  // The catch-all for skills without their own node. Its label MUST stay count-free —
-  // this map is published publicly, and a hardcoded "+11 more skills" is exactly the
-  // stale-number lie the header forbids (it shipped "+11" while the library held 12).
   {
     id: 'moreskills',
     label: 'more skills',
@@ -138,9 +119,6 @@ const NEW_EDGES = [
   { from: 'install', to: 'bootstrap', kind: 'writes', label: 'registers the hook' },
   { from: 'bootstrap', to: 'kernel', kind: 'writes', label: 're-injects the brain' },
   { from: 'installtests', to: 'install', kind: 'reads', label: 'verifies' },
-  // build-library.mjs reads EVERY skill's ABOUT.md and every agents/about/*.md — not the
-  // `moreskills` catch-all, which is only a display grouping for the skills without their
-  // own node. Pointing the edge at it implied the other skills' docs come from somewhere else.
   { from: 'library', to: 'kernel', kind: 'reads', label: 'a page per skill + agent' },
   { from: 'ci', to: 'installtests', kind: 'triggers' },
   { from: 'ci', to: 'library', kind: 'triggers', label: 'checks docs are in sync' },
@@ -152,9 +130,6 @@ const NEW_EDGES = [
   { from: 'secretguards', to: 'lab', kind: 'reads', label: 'never let it out' },
 ]
 
-// Nodes retired from the map. The vendored design database and its test suite lived inside the
-// frontend pack, which 0.27.0 removed from the repo (a project builds its own field from the
-// template). They persist in the committed scan.json from earlier runs, so prune them by id.
 const DEAD_NODES = ['designdb', 'designtests', 'copilot', 'gemini'] // tool scope is Claude Code · Cursor · Codex since 0.27
 
 const byId = (arr, id) => arr.findIndex((n) => n.id === id)
@@ -163,9 +138,6 @@ for (const n of NEW_NODES) {
   if (i >= 0) g.nodes[i] = n
   else g.nodes.push(n)
 }
-// Edges that were wrong and must be pruned. Nodes get replaced by id, but edges are only
-// ever appended — so a corrected edge would leave both the right and wrong one in the map.
-// Prune first, then add.
 const DEAD_EDGES = [
   'library->moreskills', // implied only the catch-all group fed the docs; it reads every skill + agent
   'field->designdb', // the design DB was removed with the frontend pack (0.27.0)
@@ -178,8 +150,6 @@ const dead = new Set(DEAD_NODES)
 
 const key = (e) => `${e.from}->${e.to}`
 g.edges = g.edges.filter((e) => !DEAD_EDGES.includes(key(e)) && !dead.has(e.from) && !dead.has(e.to))
-// Replace by key, like nodes — append-only meant a corrected label never reached the
-// committed scan.json.
 for (const e of NEW_EDGES) {
   const i = g.edges.findIndex((x) => key(x) === key(e))
   if (i >= 0) g.edges[i] = e
@@ -191,8 +161,6 @@ for (const t of ['cursor']) {
   if (i >= 0) g.nodes[i].sub = 'kernel + bootstrap hook'
 }
 
-// `version` is foglamp's SCHEMA version — the API requires the literal 1. Writing the repo
-// version here broke every republish for weeks while CI reported green.
 d.version = 1
 d.stats = {
   ...d.stats,
@@ -200,8 +168,6 @@ d.stats = {
   tools: count('skills', (e) => e.isDirectory()),
 }
 
-// The API's contract, enforced here so preflight fails loudly instead of CI publishing
-// nothing: version === 1, node detail ≤ 200 chars, no empty group, edge label ≤ 24 chars.
 const bad = []
 if (d.version !== 1) bad.push('version must be the literal 1')
 for (const n of g.nodes) {
@@ -212,20 +178,13 @@ for (const n of g.nodes) {
 }
 for (const e of g.edges)
   if (e.label && e.label.length > 24) bad.push(`edge ${key(e)}: label ${e.label.length} > 24 chars`)
-// A node whose sourceRef does not exist is a dead link on a published map — `lab/` shipped
-// like that, pointing at a folder that only exists inside a user's project.
 for (const n of g.nodes)
   if (n.sourceRef && !existsSync(join(ROOT, n.sourceRef)))
     bad.push(`node ${n.id}: sourceRef "${n.sourceRef}" does not exist`)
-// `topTools` is the hand-curated shortlist the map leads with, so a rename leaves it advertising a
-// skill nobody can invoke: it kept listing `spec` for releases after that skill became `interview`.
-// Every entry must be a skill dir on disk.
 const skillNames = new Set(readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name))
 for (const t of d.topTools ?? [])
   if (!skillNames.has(t.id)) bad.push(`topTools lists "${t.id}", which is not a skill on disk`)
 
-// Same rot on the integrations list: it kept advertising Copilot and Gemini for releases
-// after 0.27 stopped wiring them. What the installer actually wires is the authority.
 const WIRED = new Set(['claudecode', 'codex', 'cursor', 'github'])
 for (const t of d.topIntegrations ?? [])
   if (!WIRED.has(t.id)) bad.push(`topIntegrations lists "${t.id}", which this version does not wire`)

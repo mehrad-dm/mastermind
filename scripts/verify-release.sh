@@ -1,17 +1,4 @@
 #!/usr/bin/env bash
-# Are the repository, the npm package and the website all telling the same story?
-#
-#   scripts/verify-release.sh            # check whatever VERSION says
-#   scripts/verify-release.sh 0.31.0     # check a specific version
-#
-# "Keep the repo, npm and the site in sync" was a rule someone had to remember, so it was
-# checked by reading three pages in a browser. Every part of it is a question a command can
-# answer, so this asks them: the tag exists and points where the changelog says, npm serves that
-# version, the published package is stamped with the commit the tag points at, the site shows
-# it, and there is a Release object to read.
-#
-# Read-only. It changes nothing and needs no credentials beyond a network connection; the
-# GitHub Release check is skipped rather than failed when `gh` is not authenticated.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -56,9 +43,6 @@ else
   if [ "$NPM_V" = "$V" ]; then ok "npm latest is $NPM_V"
   else bad "npm latest is $NPM_V, not $V"; fi
 
-  # The tarball ships the CLI only; the brain is cloned at install time. The stamp is what ties
-  # the published package to a specific commit of this repository, so it is the pairing that
-  # actually determines which code a user executes.
   if [ -z "$NPM_C" ]; then
     bad "the published package carries no commit stamp"
   elif [ -z "$TAG_SHA" ]; then
@@ -76,19 +60,11 @@ HTML="$(curl -fsS "$SITE_URL/" 2>/dev/null)"
 if [ -z "$HTML" ]; then
   skip "$SITE_URL did not answer"
 else
-  # Count only OUR version strings. A bare "first vN.N.N in the page" reads whatever the
-  # generator stamped into its own markup first: it reported Astro's v7.1.6 as the site version.
   SEEN="$(printf '%s' "$HTML" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | sort -u | tr '\n' ' ')"
-  # Matched with a case, not `printf | grep -q`. grep -q exits the moment it finds the match, so
-  # printf takes SIGPIPE, and under `pipefail` the pipeline reports failure BECAUSE the match
-  # succeeded. That inversion is the exact failure mode this script exists to catch, so it is
-  # not one to ship inside it.
   case "$HTML" in
     *"v$V"*) ok "the site shows v$V" ;;
     *)       bad "the site does not show v$V (it contains: ${SEEN:-no version at all})" ;;
   esac
-  # The architecture page embeds a cross-origin map. A CSP without frame-src blocks it silently,
-  # so the page looks fine to a crawler and broken to a person.
   CSP="$(curl -fsSI "$SITE_URL/architecture" 2>/dev/null | tr -d '\r' | grep -i '^content-security-policy:' || true)"
   if [ -z "$CSP" ]; then skip "no CSP header served for /architecture"
   elif case "$CSP" in *frame-src*) true ;; *) false ;; esac; then ok "the CSP allows the embedded map"

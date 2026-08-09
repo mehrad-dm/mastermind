@@ -1,17 +1,4 @@
 #!/usr/bin/env bash
-# Cut a release: move the version everywhere it lives, prove the gates, tag.
-#
-#   scripts/release.sh 0.31.0            # do it
-#   scripts/release.sh 0.31.0 --dry-run  # show what would change, touch nothing
-#
-# The version lives in SEVEN files across TWO repositories, and in more than one place inside
-# some of them. Every release that drifted did so because one was updated by hand and another
-# was not, and "repo, npm and site are in sync" was something someone remembered rather than
-# something anything checked. This is that check. The stale sweep at the end reports any
-# location this list does not yet know about, which is how the eighth one gets found.
-#
-# What it does NOT do: push, publish, or create the tag on the remote. Tagging is local; pushing
-# the tag is what triggers the publish workflow, and that stays a separate, deliberate act.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -41,9 +28,6 @@ OLD="$(cat VERSION)"
 printf '%s── releasing %s → %s%s%s\n' "$b" "$OLD" "$b" "$NEW" "$x"
 [ "$DRY" = 1 ] && warn "dry run: nothing will be written"
 
-# --- Preconditions ------------------------------------------------------------
-# A release is a claim about a specific commit. An uncommitted tree means the tag will point at
-# something other than what was tested, which is the moved-tag problem in a different costume.
 [ -z "$(git status --porcelain)" ] || die "the working tree is dirty; commit or stash first"
 [ -d "$SITE" ] || die "../mastermind-site is not checked out, so the site cannot be moved with the repo"
 [ -z "$(git -C "$SITE" status --porcelain --untracked-files=no)" ] ||
@@ -51,9 +35,6 @@ printf '%s── releasing %s → %s%s%s\n' "$b" "$OLD" "$b" "$NEW" "$x"
 git rev-parse -q --verify "refs/tags/v$NEW" >/dev/null 2>&1 && die "tag v$NEW already exists"
 grep -q "^## \[$NEW\]" CHANGELOG.md || die "CHANGELOG.md has no '## [$NEW]' section; write it first"
 
-# --- The places --------------------------------------------------------------
-# Each entry is: label | file | sed expression. Kept as data so the list is readable and so a
-# seventh location is one line, not a new branch of logic.
 edit() {
   local label="$1" file="$2" expr="$3"
   [ -f "$file" ] || die "$label: $file is missing"
@@ -71,10 +52,6 @@ edit() {
   ok "$label"
 }
 
-# The package manifests get a targeted replacement, because they carry other version fields
-# (engines, dependencies) that must not move. Everywhere else the OLD version string appears it
-# IS this release's version: prose in the README and the marketplace description both quote it,
-# and both were missed by a first pass that only knew about the badge and the JSON field.
 edit "VERSION"            "VERSION"                          "s/^$OLD\$/$NEW/"
 edit "cli/package.json"   "cli/package.json"                 "s/\"version\": \"$OLD\"/\"version\": \"$NEW\"/"
 edit "plugin manifest"    ".claude-plugin/plugin.json"       "s/$OLD/$NEW/g"
@@ -85,9 +62,6 @@ edit "site homepage"      "$SITE/src/pages/index.astro"       "s/v$OLD/v$NEW/g"
 
 # --- Nothing left behind ------------------------------------------------------
 if [ "$DRY" = 0 ]; then
-  # A grep for the OLD version across the files that carry it. The changelog and the journal
-  # keep history on purpose, so they are excluded; anything else still saying the old number is
-  # a location this script does not know about, and it must be added above.
   STALE="$(grep -rl "\b$OLD\b" \
     --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=evals --exclude-dir=dist \
     --exclude=CHANGELOG.md --exclude=journal.md \
