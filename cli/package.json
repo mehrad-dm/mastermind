@@ -1,6 +1,6 @@
 {
   "name": "mastermind-brain",
-  "version": "0.30.1",
+  "version": "0.31.0",
   "description": "A markdown brain that gives your AI coding tools judgment and rigor \u2014 sharp defaults, real decisions, and the discipline to verify before saying done. For Claude Code, Cursor and Codex. Versioned, provenance-signed installer.",
   "bin": {
     "mastermind": "bin/mastermind.mjs"
