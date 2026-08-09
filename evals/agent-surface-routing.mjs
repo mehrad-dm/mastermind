@@ -1,9 +1,4 @@
 #!/usr/bin/env node
-// Does `mastermind route` put the right skill in front of the agent?
-// The cheap interface is only worth having if its shortlist is trustworthy, so this scores
-// two things separately: top-1 (the first candidate is right) and top-3 (it is in the list
-// the agent reads). Top-3 is the honest bar — route hands back candidates and says the
-// choice is the model's; top-1 is a bonus, not a promise.
 import { execFileSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,11 +6,6 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const CLI = join(ROOT, 'cli', 'bin', 'mastermind.mjs')
 
-// Two sets, scored separately and on purpose. PARAPHRASE reuses the vocabulary the skill
-// descriptions already contain, so it mostly proves the ranker can re-find words it was
-// handed — a near-circular test, and the weaker evidence. ORGANIC is written the way someone
-// describes a problem when they are NOT thinking about skills, avoiding each description's
-// trigger words; that is the number worth trusting.
 const PARAPHRASE = [
   ['why is this page so slow when there are lots of orders?', 'performance'],
   ['this test keeps failing randomly and I cannot work out why', 'debug'],
@@ -34,8 +24,6 @@ const PARAPHRASE = [
   ['remember this correction for next time', 'levelup'],
 ]
 
-// Described as a problem, not as a request for a skill; each avoids its target's trigger
-// words ("slow", "flaky", "document this"...) so overlap has to work harder than echoing.
 const ORGANIC = [
   ['the invoice screen takes nine seconds to open', 'performance'],
   ['the checkout button does nothing in Safari but works in Chrome', 'debug'],
@@ -47,11 +35,6 @@ const ORGANIC = [
   ['my laptop died and I lost the thread of what I was doing', 'handoff'],
 ]
 
-// `route` returns the WHOLE table with keyword overlap merely marked, so the right skill is
-// always present. Two different things are measured: recall (is it in the output at all —
-// must be 100%, that is the design) and the hint arrows (advisory only, and measurably weak
-// on natural phrasing — which is exactly why they never filter the list).
-// Pinned to the checkout — with a dangling global brain this measured the machine, not the code.
 const route = (q) => {
   const r = JSON.parse(execFileSync('node', [CLI, 'route', q, '--json'],
     { cwd: ROOT, encoding: 'utf8', env: { ...process.env, MASTERMIND_HOME: ROOT } }))

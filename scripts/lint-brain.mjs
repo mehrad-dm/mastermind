@@ -1,14 +1,4 @@
 #!/usr/bin/env node
-/**
- * lint-brain — the deterministic half of the `lint` skill.
- *
- * Why a script and not prose: measured 2026-07-26, an instruction telling a model to go read the
- * field pack simply didn't fire, and the pack sat unread while the run scored baseline. Counting is
- * not judgment, so it should never depend on a model choosing to do it. This does the counting;
- * `skills/lint/SKILL.md` does the judging, on these findings only.
- *
- * Reports, never edits. Zero deps. Run: node scripts/lint-brain.mjs [--strict]
- */
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, relative } from 'node:path'
@@ -18,8 +8,6 @@ const STRICT = process.argv.includes('--strict')
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 const rel = (p) => relative(ROOT, p)
 
-// The instruction corpus, split by what it costs. ALWAYS is paid on every single turn; ONDEMAND is
-// paid only when routed to — so a line in the kernel is worth far more than a line in a skill.
 const ALWAYS = ['CLAUDE.md']
 const onDemand = []
 for (const d of ['engineering/core']) {
@@ -33,8 +21,6 @@ for (const d of readdirSync(join(ROOT, 'skills'), { withFileTypes: true })) {
 for (const f of readdirSync(join(ROOT, 'agents'))) if (f.endsWith('.md')) onDemand.push(`agents/${f}`)
 const FILES = [...ALWAYS, ...onDemand]
 
-// Prose only: fenced code and inline literals are examples the model reproduces, not instructions
-// aimed at it, so counting them would flag the wrong lines.
 const prose = (s) => s.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '')
 const NEG = /\b(never|don't|do not|must not|avoid|refuse to)\b/gi
 const est = (s) => Math.round(s.length / 4) // ~4 chars/token, close enough to budget with
@@ -42,9 +28,6 @@ const est = (s) => Math.round(s.length / 4) // ~4 chars/token, close enough to b
 const findings = []
 const add = (sev, cat, file, line, msg) => findings.push({ sev, cat, file, line, msg })
 
-// ---- 1. negative-framing density ------------------------------------------------------------
-// A negative measurably loads the concept it forbids, so each one should be earning its place.
-// Flagged relative to the corpus itself: an outlier is a signal, an absolute threshold is a guess.
 const density = []
 for (const f of FILES) {
   const body = prose(read(f))
@@ -61,8 +44,6 @@ for (const d of density) {
   }
 }
 
-// ---- 2. the same rule restated across layers -------------------------------------------------
-// Two layers stating a rule is a smell; three is where tomorrow's contradiction comes from.
 const layerOf = (f) => (f === 'CLAUDE.md' ? 'kernel' : f.startsWith('engineering/core') ? 'core' : f.startsWith('skills/') ? 'skill' : 'agent')
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
 const seen = new Map()
@@ -86,8 +67,6 @@ for (const [k, hits] of seen) {
   else if (hits.length >= 2) add('info', 'repeat-in-file', hits[0].f, hits[0].line, `said ${hits.length}× in one file — "${k.slice(0, 70)}…"`)
 }
 
-// ---- 3. stale references ----------------------------------------------------------------------
-// A path or skill name that no longer resolves is an instruction pointing at nothing.
 const skillNames = new Set(readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name))
 const agentNames = new Set(readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, '')))
 for (const f of FILES) {

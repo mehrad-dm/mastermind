@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-#
-# preflight — the one gate that must pass before a release. Runs every check across the repo,
-# the docs, the version strings, and the site, reports each, and exits non-zero if any fail.
-# Run from anywhere in the repo:  ./scripts/preflight.sh
-#
-# Add a check here the moment you find something a release should never ship without — this
-# file is meant to be the single answer to "did I test everything?".
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
@@ -26,8 +19,6 @@ step() {
 
 shell_parses() { local f; for f in "$@"; do bash -n "$f" || return 1; done; }
 
-# Some checks depend on a live model session. Exit 2 from those means the ENVIRONMENT failed
-# (logged out, rate-limited), which is not a release blocker — a real regression exits 1.
 step_live() {
   local name="$1"; shift
   "$@" >"$LOG" 2>&1
@@ -43,8 +34,6 @@ versions_agree() {
   local want; want="$(cat "$REPO/VERSION")"
   local found
   found="$(grep -o 'version-[0-9.]*' "$REPO/README.md" | head -1 | cut -d- -f2)";      [ "$found" = "$want" ] || { echo "README badge $found ≠ $want"; return 1; }
-  # scan.json is NOT in this list: its `version` field is foglamp's schema version (the
-  # literal 1, required by the API), not the repo version.
   for f in "$REPO/.claude-plugin/plugin.json" "$REPO/.claude-plugin/marketplace.json" "$REPO/cli/package.json"; do
     grep -q "\"$want\"" "$f" || { echo "$f missing $want"; return 1; }
   done
@@ -57,9 +46,6 @@ versions_agree() {
 }
 
 scan_is_fresh() {
-  # Freshness = the working scan.json already matches what regeneration produces,
-  # independent of commit state — this is a pre-release gate, run before you commit,
-  # so it must not conflate "stale" with "not yet committed".
   local before; before="$(mktemp)"
   cp "$REPO/.foglamp/scan.json" "$before"
   node "$REPO/scripts/update-scan.mjs" >/dev/null 2>&1 || { rm -f "$before"; return 1; }
@@ -67,9 +53,6 @@ scan_is_fresh() {
   rm -f "$before"
 }
 
-# Is the site there to be checked? A release gate that passes because it could not run is the
-# same as no gate, and the repo, the package and the site are supposed to ship on one version.
-# Returns 1 (fail the step) when the site is missing, or 0 with a loud note under MM_SKIP_SITE.
 site_available() {
   [ -d "$SITE" ] && return 0
   if [ -n "${MM_SKIP_SITE:-}" ]; then
@@ -82,9 +65,6 @@ site_available() {
 }
 
 site_builds() {
-  # Not a skip. This is the gate that keeps the repo, the package and the site on one version,
-  # and a check that passes by being unable to run is the same as no check. Clone the site
-  # beside the repo, or set MM_SKIP_SITE=1 to state on the record that you are shipping without it.
   site_available || return $?
   ( cd "$SITE" && npm run build )
 }
@@ -103,9 +83,6 @@ step "router in sync"                  node "$REPO/scripts/build-router.mjs" --c
 step "library pages in sync"           node "$REPO/scripts/build-library.mjs" --check
 step "indexes/counts/references"       node "$REPO/scripts/check-integrity.mjs"
 step "cited resources resolve"         node "$REPO/scripts/check-links.mjs"
-# Structural drift in the brain's own text. --strict fails only on `high` findings (a stale path, a
-# rule restated across three layers) — density warnings are candidates for judgment, so they must
-# never block a release on their own.
 step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --strict
 
 echo "Release consistency"
@@ -119,8 +96,6 @@ step "site builds"                           site_builds
 echo
 rm -f "$LOG"
 if [ "$FAIL" -eq 0 ]; then
-  # A skipped check is not a passed one. Naming the count keeps "releasable" honest about
-  # what was actually exercised on this machine.
   if [ "${SKIPPED:-0}" -gt 0 ]; then
     printf '%s✓ preflight: %d checks passed, %d could not run here — releasable.%s\n' "$g" "$PASS" "$SKIPPED" "$x"
   else

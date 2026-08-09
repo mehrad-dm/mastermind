@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-// What the agent-callable surface actually costs, in characters an agent must read.
-// No model calls: this measures the interface itself, which is the thing that changed.
-// Three ways an agent can get to "the right instructions for this request":
-//   A) inline everything      — every SKILL.md body (what a naive rules file would paste)
-//   B) index, then one body   — read skills/README.md, then the chosen SKILL.md
-//   C) the CLI                — `route` (the whole table, hints marked), then `skill <name>`
-// C is NOT a shortlist: routing by keyword proved unreliable on natural phrasing, so route
-// returns every option. Its win over B is therefore modest and honest — the table without the
-// index file's surrounding prose — plus it resolves the right brain and prints exact bodies.
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join, dirname, resolve } from 'node:path'

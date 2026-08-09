@@ -1,9 +1,2 @@
 #!/usr/bin/env sh
-# Always-present entry point for the brain's own CLI.
-#
-# `npx mastermind-brain` is the install front door, but an agent asking "which skill fits
-# this?" mid-task should not need the network or a global npm install. This shim ships with
-# every brain — the shared clone in your home directory AND each project's own copy — so it
-# works offline, and sandboxed agents can run the in-project one. It resolves whichever brain
-# the current directory belongs to, never the one it happens to live in.
 exec node "$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)/cli/bin/mastermind.mjs" "$@"

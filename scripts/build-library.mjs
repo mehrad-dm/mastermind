@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-// Generate the site's library pages from the REAL skill/agent sources.
-//
-// Hand-written docs rot. These pages are emitted from skills/*/SKILL.md and agents/*.md, so
-// the site literally cannot claim a skill does something the skill doesn't say. Re-run after
-// any skill edit; `--check` fails if the site is out of date (same contract as ROUTER.md).
-//
-//   node scripts/build-library.mjs          # write
-//   node scripts/build-library.mjs --check  # verify in sync, write nothing
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -30,16 +22,12 @@ const fm = (src) => {
 // YAML-safe double-quoted scalar.
 const q = (s) => `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 
-// The bodies are written FOR the model and reference the install path. Present that honestly
-// rather than rewriting it — seeing the real instruction text is the point of these pages.
 const clean = (body) =>
   body
     .replace(/^#\s+.*\n+/, '') // drop the H1; the page renders its own title
     .replace(/~\/\.mastermind\//g, '')
     .trim()
 
-// Source of truth is ABOUT.md — the human-facing article, written beside the skill so it can't
-// drift. SKILL.md is written AT the model and is not publishable prose; we never render it.
 const items = []
 for (const d of readdirSync(join(REPO, 'skills'), { withFileTypes: true })) {
   if (!d.isDirectory()) continue
@@ -62,18 +50,11 @@ items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name
 // Neighbours for prev/next, wrapping around so the library is browsable end to end.
 const short = (t) => t.split(/\s+—\s+/)[1] ?? t
 
-// <title> is a search result, not a headline. Google truncates it around 60 characters, and
-// these headings are full editorial sentences — "Code reviewer — the second pair of eyes that
-// never saw your reasoning · MasterMind" is 82. Keep the whole thing when it fits; otherwise
-// fall back to the part before the em-dash. The long form still renders on the page, from
-// `heading`, so nothing is lost to the reader.
 const seoTitle = (t) => {
   const full = `${t} · MasterMind`
   return full.length <= 60 ? full : `${t.split(/\s+—\s+/)[0]} · MasterMind`
 }
 
-// Meta descriptions get cut near 160 characters; 300 guaranteed a mid-word ellipsis in the
-// SERP. Trim on a word boundary instead.
 const metaDesc = (s) => (s.length <= 155 ? s : `${s.slice(0, 155).replace(/\s+\S*$/, '')}…`)
 
 const page = (it, i, all) => {
@@ -101,9 +82,6 @@ let stale = 0
 const wanted = new Map(items.map((it, i) => [`${it.name}.md`, page(it, i, items)]))
 
 if (CHECK) {
-  // The pages live in the SITE repo, which a CI runner checking out only this one does not
-  // have. Without this, every page reads as "stale" and the release gate fails for a reason
-  // that has nothing to do with the release.
   if (!existsSync(join(REPO, '..', 'mastermind-site'))) {
     console.log('· site repo not checked out beside this one — skipping the library check')
     process.exit(0)
@@ -121,9 +99,6 @@ if (CHECK) {
   process.exit(0)
 }
 
-// `mkdirSync(..., {recursive:true})` would happily invent the whole `../mastermind-site/`
-// tree, leaving a phantom repo beside the clone and printing success. A contributor without
-// the site checked out should get a clear error, not junk plus a green tick.
 const SITE = join(REPO, '..', 'mastermind-site')
 if (!existsSync(SITE)) {
   console.error(`✖ ${SITE} is not checked out — nothing to write. Clone the site repo beside this one.`)

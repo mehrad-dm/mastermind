@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-#
-# MasterMind guard — blocks confidential data from ever entering a commit.
-#
-# Two layers:
-#   1. Quarantine   — nothing from lab/ (or a *-coding-patterns pack) may be staged.
-#   2. Content scan — staged text is scanned against a LOCAL denylist + secret patterns.
-#
-# The denylist lives at lab/.denylist and is gitignored: the sensitive terms
-# themselves must never be committed. This hook is generic and safe to publish.
-#
-# Escape hatch (use only when you are certain):  ALLOW_SENSITIVE=1 git commit ...
 
 set -uo pipefail
 
@@ -17,8 +6,6 @@ RED=$'\033[0;31m'; YEL=$'\033[0;33m'; GRN=$'\033[0;32m'; NC=$'\033[0m'
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 DENYLIST="$REPO_ROOT/lab/.denylist"
 FAIL=0
-# Credential shapes that always run, denylist or not. Narrow on purpose: a hook that cries
-# wolf gets bypassed, and a bypassed guard protects nothing.
 mm_secret_patterns() {
   cat <<'PATTERNS'
 gh[pousr]_[A-Za-z0-9]{36,}
@@ -88,9 +75,7 @@ if [ "$FAIL" -ne 0 ]; then
   exit 1
 fi
 
-# ---- Router freshness (MasterMind repo only; harmless elsewhere) -------------
-# Keep engineering/ROUTER.md in sync like a lockfile: if a routable file changed,
-# regenerate and stage the manifest so it can't silently drift.
+# >>> repo-only: not shipped in skills/quarantine/assets/pre-commit
 if [ -f "$REPO_ROOT/scripts/build-router.mjs" ] && command -v node >/dev/null 2>&1; then
   if ! node "$REPO_ROOT/scripts/build-router.mjs" --check >/dev/null 2>&1; then
     node "$REPO_ROOT/scripts/build-router.mjs" >/dev/null 2>&1 \
@@ -98,6 +83,7 @@ if [ -f "$REPO_ROOT/scripts/build-router.mjs" ] && command -v node >/dev/null 2>
       && printf '%s\n' "${YEL}↻ ROUTER.md was stale — regenerated and staged.${NC}"
   fi
 fi
+# <<< repo-only
 
 printf '%s\n' "${GRN}✓ MasterMind guard: clean${NC}"
 exit 0

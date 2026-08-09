@@ -1,15 +1,4 @@
 #!/usr/bin/env node
-// Build engineering/ROUTER.md — a deterministic routing manifest so the model loads
-// only the field/skill files a task needs, instead of reading everything to decide.
-//
-// No LLM, no network, no deps. Reads YAML-ish frontmatter (route_when) from field-pack
-// files and name/description from skills, estimates tokens (chars/4), hashes content.
-//
-//   node scripts/build-router.mjs           # write ROUTER.md
-//   node scripts/build-router.mjs --check    # exit 1 if ROUTER.md is stale (for hooks/CI)
-//
-// The router is a pure optimization: if ROUTER.md is missing or stale, MasterMind falls
-// back to the prose pointers in active-field.md / field.md. It never becomes a dependency.
 
 import fs from 'node:fs'
 import path from 'node:path'
@@ -46,10 +35,6 @@ const walk = (dir) =>
 
 const nodes = []
 
-// Field packs — routed by route_when frontmatter.
-// `_`-prefixed dirs (e.g. `_template/`) are scaffolding, not packs: their files carry real
-// `route_when` tags so a copied pack routes on day one, but the template itself must never
-// become a routable node — the model would load a file of `<angle-bracket>` placeholders.
 const isScaffold = (p) => path.relative(ROOT, p).split(path.sep).some((seg) => seg.startsWith('_'))
 
 for (const f of walk(path.join(ROOT, 'engineering', 'fields')).filter((p) => p.endsWith('.md') && !isScaffold(p))) {

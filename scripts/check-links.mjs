@@ -1,22 +1,4 @@
 #!/usr/bin/env node
-/**
- * Freshness check for MasterMind's curated knowledge — keeps the curriculum honest.
- * Zero deps (Node 18+ global fetch). Run: `node scripts/check-links.mjs`.
- *
- * Scans the hand-authored public docs: the README, the kernel, the core and field docs, every
- * skill and agent file, and the plugin manifests (NOT the vendored ui-ux-pro-max data, the
- * lab, the CHANGELOG, or the generated ROUTER.md), and checks that every external site they point at
- * still resolves — full URLs and bare domains (v8.dev/blog). It deliberately does NOT
- * check `owner/repo` GitHub shorthand: that's indistinguishable from import paths
- * (`next/font`), lint rules (`react-hooks/exhaustive-deps`), and CSS values in prose,
- * and repos are already API-verified during `levelup`. Precision over recall — a noisy
- * checker gets ignored.
- *
- * Also warns when a curriculum's "verified as of YYYY-MM" note is older than 6 months
- * (a nudge to run `levelup refresh`). Meant for a SCHEDULED job, not a push gate:
- *   - exit 1  → at least one DEAD link (404/410/5xx/DNS) — needs a fix.
- *   - exit 0  → all good, or only BLOCKED (bot-gated) / STALE warnings.
- */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -31,12 +13,6 @@ const UA = 'Mozilla/5.0 (compatible; MasterMind-linkcheck/1.0; +https://mastermi
 const TLDS = 'com|dev|org|io|net|guru|gg|es|xyz'
 const SKIP = ['/ui-ux-pro-max/', '/lab/', '/_', 'ROUTER.md']   // /_ skips all _-prefixed scaffolding
 
-// The walk used to start at engineering/, so the README, every SKILL.md and every agent file were
-// outside the check entirely, and those are the pages the site publishes and the first thing a
-// reader opens. It starts at the repo root now.
-// Not walked: version control and dependency trees, the gitignored eval workspaces, and
-// CHANGELOG.md, which is a frozen record of what was true at each release rather than a live
-// document to keep fresh.
 const EXCLUDE_DIRS = new Set(['.git', '.github', 'node_modules', '.eval-run', 'lab'])
 const EXCLUDE_FILES = new Set(['CHANGELOG.md'])
 
@@ -49,16 +25,11 @@ const walk = (d) =>
     return e.name.endsWith('.md') && !EXCLUDE_FILES.has(e.name) ? [p] : []
   })
 
-// The plugin manifests are not markdown and not under engineering/, so they were outside this
-// check entirely — which is how a `$schema` URL sat at 404 without anything noticing. They point
-// at published schemas, so the same "does it still resolve" question applies.
 const MANIFESTS = ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json']
 const files = [...walk(ROOT), ...MANIFESTS.map((m) => join(ROOT, m))]
 
 // --- extract candidate links + staleness dates -------------------------------
 const targets = new Map() // url -> Set(sourceFile)
-// example.com/net/org and localhost are reserved for documentation (RFC 2606 / RFC 6761): a task
-// fixture that posts to `api.example.com` is correct precisely because nothing answers there.
 const RESERVED = /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:example\.(?:com|net|org)|localhost|invalid|test)(?:[:/]|$)/i
 const add = (url, file) => {
   if (RESERVED.test(url)) return
@@ -74,8 +45,6 @@ const DATE = /verif\w*[^\n]*?(20\d\d)-(\d\d)/i
 
 const clean = (u) => u.replace(/[.,;:]+$/, '') // trailing punctuation from prose
 
-// Markdown links to files in the repo. The README's own table of contents is made of these, and
-// a renamed file breaks them silently. No fetch involved, so they are resolved on disk.
 const RELATIVE = /\[[^\]]*\]\((?!https?:|mailto:|#)([^)\s]+)\)/g
 const brokenLocal = []
 

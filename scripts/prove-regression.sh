@@ -1,20 +1,4 @@
 #!/usr/bin/env bash
-# Run today's test suite against an OLDER release's installer.
-#
-# Why this exists: four consecutive audits found real defects while the suite was green. A test
-# written after the fix passes against the fix by construction, so it proves nothing about
-# whether it would have caught the bug. The only way to know is to point it at the build that
-# had the bug and watch it fail.
-#
-#   scripts/prove-regression.sh v0.30.1              # every test, against that release
-#   scripts/prove-regression.sh v0.30.1 'symlink'    # only assertions matching a pattern
-#
-# Expect failures. Failures are the point: each one names a defect this suite now catches that
-# the old build shipped with. A NEW test that passes here is decoration and should be rewritten
-# until it fails, or deleted.
-#
-# Only install.sh is swapped. The brain, the skills and the harness stay current, because the
-# question is "does this assertion detect that installer", not "did the whole old tree work".
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"

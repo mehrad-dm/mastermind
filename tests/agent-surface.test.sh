@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Guards the agent-callable surface of the CLI: the lookups must resolve the PROJECT's brain,
-# must never install or write anything, and must fail loudly instead of guessing.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLI=("node" "$ROOT/cli/bin/mastermind.mjs")
@@ -28,8 +26,6 @@ check "resolves the project brain from a subdirectory" "$out" "$PROJ/.mastermind
 out=$(cd "$PROJ" && "${CLI[@]}" skill performance | tail -1)
 check "prints the skill body" "$out" "measure first"
 
-# The contract is the whole table every time; the → arrow is advisory. Assert both: the skill
-# is present, and a matching request marks it.
 out=$(cd "$PROJ" && "${CLI[@]}" route "why is this page slow?" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(",".join([s["name"] for s in d["skills"]]) + "|" + ",".join(d["hints"]))')
 check "route returns the table and hints the match" "$out" "performance|performance"
 
@@ -39,8 +35,6 @@ check "prints an agent brief" "$out" "reviewer body"
 (cd "$PROJ" && "${CLI[@]}" skill nope >/dev/null 2>&1); check "unknown skill exits non-zero" "$?" "1"
 (cd "$PROJ" && "${CLI[@]}" skills --json >/dev/null 2>&1); check "listing exits zero" "$?" "0"
 
-# The load-bearing promise: with no brain in sight, a lookup refuses — it must not clone,
-# install, or create anything, because an agent calling it is not asking to change the machine.
 EMPTY="$WORK/empty"; mkdir -p "$EMPTY"
 before=$(ls -A "$EMPTY" | wc -l | tr -d ' ')
 (cd "$EMPTY" && HOME="$EMPTY" MASTERMIND_HOME="$EMPTY/absent" "${CLI[@]}" skill performance >/dev/null 2>&1)
@@ -50,17 +44,12 @@ check "refuses when no brain exists" "$code" "1"
 check "wrote nothing while refusing" "$after" "$before"
 [ -e "$EMPTY/absent" ] && bad "created MASTERMIND_HOME" || ok "did not create MASTERMIND_HOME"
 
-# A request nothing matches must still show every option with no arrows — the failure mode to
-# avoid is a confident wrong shortlist, not an empty one.
 out=$(cd "$PROJ" && "${CLI[@]}" route "xyzzy plugh" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(str(len(d["skills"])) + "|" + str(len(d["hints"])))')
 check "unmatched request still sees every skill, hints nothing" "$out" "1|0"
 
 out=$(cd "$PROJ" && "${CLI[@]}" skill performance --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(",".join(sorted(d)))')
 check "json shape is stable" "$out" "body,description,name,path"
 
-# A flag before the subcommand used to match no command and fall through to the DEFAULT,
-# which is install — so `mastermind --json skills` cloned the brain instead of listing it.
-# The lookup must stay read-only however the flags are ordered.
 out=$(cd "$PROJ" && "${CLI[@]}" --json skills | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["skills"]))' 2>/dev/null)
 check "flag before the command still lists (never installs)" "$out" "1"
 
@@ -68,27 +57,14 @@ ORDER="$WORK/order"; mkdir -p "$ORDER"
 (cd "$ORDER" && HOME="$ORDER" MASTERMIND_HOME="$ORDER/absent" "${CLI[@]}" --json skills >/dev/null 2>&1)
 [ -e "$ORDER/absent" ] && bad "flag-first lookup installed a brain" || ok "flag-first lookup installed nothing"
 
-# --json means every answer parses as JSON, including the ones that say no. An agent cannot
-# tell a bad argument from a broken tool if the error arrives as prose.
 for bad_call in "skill" "route"; do
   out=$(cd "$PROJ" && "${CLI[@]}" "$bad_call" --json 2>/dev/null | python3 -c 'import json,sys; print("error" in json.load(sys.stdin))' 2>/dev/null)
   check "--json $bad_call with no argument answers in json" "$out" "True"
 done
 
-# cwd can vanish under a watcher or a stale CI worktree; that must not surface as a raw
-# Node ENOENT stack trace from inside the tool.
-# Output goes down a PIPE whenever an agent calls this, and stdout is async there: an
-# exit() straight after a write truncated the table mid-string at ~8KB and produced invalid
-# JSON. Assert on the REAL brain, whose table is big enough to cross that boundary.
-# MASTERMIND_HOME pinned to this checkout: the assertion is about output size, not about
-# whatever brain the machine happens to have installed.
 out=$(cd "$ROOT" && MASTERMIND_HOME="$ROOT" "${CLI[@]}" route "anything at all" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d["skills"]) > 10)' 2>/dev/null)
 check "large piped json is not truncated" "$out" "True"
 
-# The calibration record: only lines that record a miss, and an empty log must say "nothing was
-# logged" rather than implying nothing went wrong.
-# The header deliberately contains prose about `· wrong ·` entries: an unanchored filter
-# counted that sentence as a miss.
 printf '# Journal\n\nLines marked · wrong · are the calibration record.\n\n2026-08-04 · shipped a thing · ship\n2026-08-04 · wrong · claimed X · caught by test Y · do Z\n' \
   > "$PROJ/.mastermind/journal.md"
 out=$(cd "$PROJ" && "${CLI[@]}" wrong-log --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["count"])')
@@ -121,9 +97,6 @@ out=$( (cd "$WORK" && MASTERMIND_HOME="$WORK/clone-home" MASTERMIND_REPO="$SRC" 
 case "$out" in *"this release pins 000000000000"*) ok "a moved tag is refused (commit pin)";; *) bad "commit pin not enforced: $(printf '%s' "$out" | tail -1)";; esac
 
 echo "conflicts"
-# Users end up with several packs installed. This must see foreign skills, must NOT mistake
-# our own (a global install symlinks into the shared clone, not the project brain), and must
-# report rather than resolve.
 CONF="$WORK/conf"; mkdir -p "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/optimize"
 echo "0.0.0-test" > "$CONF/.mastermind/VERSION"
 printf -- '---\nname: performance\ndescription: Use when something is slow — a slow query, slow page load, high memory or a timeout.\n---\n' \
@@ -142,10 +115,6 @@ echo "0.0.0-test" > "$CLEAN/.mastermind/VERSION"
 out=$(cd "$CLEAN" && HOME="$CLEAN" "${CLI[@]}" conflicts | head -1)
 case "$out" in *"nothing to collide"*) ok "a clean install says so plainly";; *) bad "clean install: $out";; esac
 
-# An explicit MASTERMIND_HOME must beat the walk-up. findBrain climbs from cwd looking for
-# `.mastermind`, and every directory under the home dir has $HOME/.mastermind as an ancestor —
-# so with the override set it still answered from the user's installed brain. Routing QA
-# certified an older install instead of the checkout it was pointed at.
 OVER="$WORK/override"; mkdir -p "$OVER/home/.mastermind" "$OVER/home/proj" "$OVER/checkout"
 echo "0.0.0-user-install" > "$OVER/home/.mastermind/VERSION"
 echo "9.9.9-under-test"   > "$OVER/checkout/VERSION"
@@ -154,14 +123,9 @@ case "$out" in *"$OVER/checkout"*) ok "MASTERMIND_HOME wins over the walk-up";; 
 out=$(cd "$OVER/home/proj" && HOME="$OVER/home" "${CLI[@]}" skills --json | head -3)
 case "$out" in *"$OVER/home/.mastermind"*) ok "without the override the walk-up still finds ~/.mastermind";; *) bad "walk-up broke: $out";; esac
 
-# The win32 refusal used to tell people to use Git Bash — but Git Bash runs the Windows build of
-# Node, so it hits this same branch. Advertising a path the guard rejects is worse than silence.
 msg=$(grep -A3 "process.platform === 'win32'" "$ROOT/cli/bin/mastermind.mjs" | grep -c "Git Bash will not work")
 case "$msg" in 1) ok "the Windows refusal no longer advertises Git Bash as working";; *) bad "Git Bash still advertised";; esac
 
-# A published release must verify what it executes. Both holes below were reproduced by an
-# review against the signed 0.29.2 package, so they are tested against a build that
-# carries a pin (a local checkout has none, and skips verification by design).
 PINDIR="$WORK/pinned"; mkdir -p "$PINDIR/bin"
 cp -R "$ROOT/cli/." "$PINDIR/"
 HEADSHA=$(git -C "$ROOT" rev-parse HEAD)
@@ -191,11 +155,6 @@ git -C "$DIRTY/.mastermind" checkout -- install.sh
 out=$(cd "$DIRTY/proj" && env -u MASTERMIND_HOME HOME="$DIRTY" node "$PINDIR/bin/mastermind.mjs" 2>&1 | grep -c "isolated brain")
 case "$out" in 1) ok "the same clone installs once it is clean";; *) bad "clean clone refused too";; esac
 
-# ══ Lifecycle ═════════════════════════════════════════════════════════════════
-# Nothing ever tested the upgrade the README and the site both promise ("the same command
-# updates it later"). An older clone hit the pin check and died with "the tag may have moved",
-# so users stayed on the old version unless they knew to type `update`. This installs the
-# PREVIOUS released tag and runs the current CLI over it, which is what a real user does.
 PREV_TAG=$(git -C "$ROOT" tag --list 'v*' --sort=-v:refname | sed -n 2p)
 if [ -n "$PREV_TAG" ]; then
   LIFE="$WORK/lifecycle"; mkdir -p "$LIFE/proj"
@@ -222,9 +181,6 @@ else
   ok "lifecycle test skipped (no previous tag yet)"
 fi
 
-# "Cannot tell" is not "clean". verifyCommit caught a git-status failure and carried on, so a
-# corrupted or unreadable index made the dirty-tree check silently pass while rev-parse HEAD
-# still worked: an edited engine would run under a clean verdict.
 BROKE="$WORK/brokenidx"; mkdir -p "$BROKE/proj"
 git clone -q "$ROOT" "$BROKE/.mastermind" 2>/dev/null
 printf 'garbage' > "$BROKE/.mastermind/.git/index"

@@ -52,11 +52,6 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 > MasterMind ships no field by default — `init` builds one for the project's stack — so a fresh install
 > has none of these until a pack is built.
 
-> **Coming soon — `sniper`.** One invocation that runs scope → implement → adversarial self-review →
-> verify, looping on red until green, so the *checking happens before handoff* rather than landing on
-> you. It is deliberately not a directory yet: an empty skill dir is installed and auto-invocable the
-> moment it exists. Design note and the three things that must land first:
-> [`README-sniper-planned.md`](./README-sniper-planned.md).
 
 The library grows freely — add a skill for any distinct, useful workflow (one job + lean routing-rule
 description + on-demand body). Register every new skill here.
