@@ -6,17 +6,19 @@ name: publish
 on:
   push:
     tags: ['v*']
+# Least privilege at the workflow level; the publish job below re-grants id-token to itself.
+# A workflow-wide `id-token: write` handed a token-minting capability to the gate and to every
+# cross-OS job, none of which publish anything.
 permissions:
   contents: read
-  id-token: write
 jobs:
   # Publishing used to check only the version string. Everything a release promises is
   # verified here first, and publish depends on it — a red gate means nothing reaches npm.
   gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 22
       - run: |
@@ -48,10 +50,13 @@ jobs:
 
   publish:
     needs: [gate, cross-os]
+    permissions:
+      contents: read
+      id-token: write            # only this job exchanges it for an npm trusted-publish token
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 22
       # Trusted publishing authenticates over OIDC, so no registry-url/token stub is needed —

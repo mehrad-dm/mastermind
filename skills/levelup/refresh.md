@@ -4,6 +4,12 @@ Reference for `levelup`: read this only when running the `refresh` mode.
 
 ## Scope: one field, upstream only
 
+> **Paths in this file are relative to the MasterMind repo**, because a refresh runs there and
+> nowhere else. This file ships inside every project brain, so it gets read in places where a
+> bare `scripts/…` does not exist. In a project, the equivalents live under `.mastermind/scripts/`
+> (router and integrity only: `build-library.mjs` is deliberately not shipped, since it writes
+> into the website repo).
+
 **`refresh` is upstream maintenance: do it in the MasterMind repo, not on a user's install.** Refreshing
 the curriculum, mentors, and agent-engineering best practices improves the *shared* brain; commit it
 upstream so every user gets it on `git pull`. End users should not each re-run this research, that

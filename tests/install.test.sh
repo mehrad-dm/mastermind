@@ -67,6 +67,7 @@ canary_check() {
   printf '%s\n' "$found" >> "$CANARY_LOG"
   rm -rf "${CANARY:?}"/* 2>/dev/null || true
 }
+count_in() { [ -f "$1" ] || { printf '0'; return; }; grep -c "$2" "$1" 2>/dev/null | head -1; }
 run()  { local rc; (cd "$1" && shift && HOME="$SANDBOX_HOME" "$INSTALL" "$@" 2>&1); rc=$?; canary_check; return $rc; }
 
 # Derived from the repo, never hand-written: the promise is "every skill/agent we ship gets
@@ -259,6 +260,22 @@ for victimpath in .claude .claude/skills .claude/agents .cursor .cursor/rules .g
   run "$P" claude cursor >/dev/null 2>&1 || true
   is "$victimpath cannot be redirected" "$(find "$V" -mindepth 1 2>/dev/null | wc -l | tr -d ' ')" "0"
 done
+# Directories were covered; individual FILES were not. An owned file sitting in a legitimate
+# directory (.cursor/rules/mastermind.mdc, .mastermind/VERSION, .manifest, .installed) could be
+# a symlink to anywhere, and the parent-directory check passed while the write landed outside.
+echo "── a hostile repository cannot redirect a single FILE write either"
+FV="$TMP_REAL/victims/files"; rm -rf "$FV"; mkdir -p "$FV"
+P=$(proj hostile-files); mkdir -p "$P/.claude" "$P/.cursor/rules" "$P/.mastermind"
+for pair in ".claude/settings.json:settings" ".cursor/hooks.json:hooks" \
+            ".cursor/rules/mastermind.mdc:mdc" ".mastermind/VERSION:version" \
+            ".mastermind/.manifest:manifest" ".mastermind/.installed:installed"; do
+  rel="${pair%%:*}"; nm="${pair##*:}"
+  printf 'ORIGINAL\n' > "$FV/$nm"; ln -s "$FV/$nm" "$P/$rel"
+done
+run "$P" claude cursor >/dev/null 2>&1 || true
+is "no owned file was written through a symlink" \
+   "$(grep -L ORIGINAL "$FV"/* 2>/dev/null | wc -l | tr -d ' ')" "0"
+
 # Uninstall reads the same paths and DELETES through them, so it needs the same guarantee.
 V="$TMP_REAL/victims/uninstall"; mkdir -p "$V"; echo keepme > "$V/precious.txt"
 P=$(proj hostile-uninstall); run "$P" claude >/dev/null 2>&1
@@ -317,6 +334,35 @@ for target in .claude/CLAUDE.md .claude/skills/build .claude/settings.json .curs
   (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >/dev/null 2>&1); rc=$?
   is "deleting $target is reported" "$([ "$rc" -ne 0 ] && echo caught)" "caught"
 done
+
+echo "── the install record survives a partial repair, and shrinks on uninstall"
+# Re-running with one tool named ("install.sh claude" to repair Claude) REPLACED the record, so
+# the doctor forgot Cursor had ever been wired and called a broken install healthy — the exact
+# blind spot the record was added to remove.
+P=$(proj record); run "$P" claude cursor agents >/dev/null 2>&1
+run "$P" claude >/dev/null 2>&1
+rec="$(sed -n 's/^tools=//p' "$P/.mastermind/.installed")"
+is "a partial repair keeps the other tools" "$(printf '%s' "$rec" | tr ' ' '\n' | grep -cx cursor)" "1"
+rm -f "$P/.cursor/rules/mastermind.mdc"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >/dev/null 2>&1); rc=$?
+is "so deleted wiring is still caught after a repair" "$([ "$rc" -ne 0 ] && echo caught)" "caught"
+run "$P" --uninstall cursor >/dev/null 2>&1
+is "uninstall drops that tool from the record" \
+   "$(sed -n 's/^tools=//p' "$P/.mastermind/.installed" 2>/dev/null | tr ' ' '\n' | grep -cx cursor)" "0"
+
+echo "── uninstall takes our pointer back out of the files it appended to"
+# Install preserved the user's AGENTS.md and .claude/CLAUDE.md, then uninstall left the appended
+# MasterMind line behind: .claude/CLAUDE.md was missing from the cleanup list, and the cleanup
+# matched only the shared-clone hint while an isolated install writes a project-relative one.
+P=$(proj pointer); mkdir -p "$P/.claude"
+printf '# mine\nMY CLAUDE RULE\n' > "$P/.claude/CLAUDE.md"
+printf '# mine\nMY AGENTS RULE\n' > "$P/AGENTS.md"
+run "$P" claude agents >/dev/null 2>&1
+run "$P" --uninstall claude agents >/dev/null 2>&1
+is "no pointer left in .claude/CLAUDE.md" "$(count_in "$P/.claude/CLAUDE.md" 'mastermind/CLAUDE.md')" "0"
+is "no pointer left in AGENTS.md"        "$(count_in "$P/AGENTS.md" 'mastermind/CLAUDE.md')" "0"
+is "their CLAUDE.md content survived"    "$(count_in "$P/.claude/CLAUDE.md" 'MY CLAUDE RULE')" "1"
+is "their AGENTS.md content survived"    "$(count_in "$P/AGENTS.md" 'MY AGENTS RULE')" "1"
 
 echo "── uninstall removes what it wired, and keeps what it didn't"
 P=$(proj unwire); mkdir -p "$P/.claude"
@@ -380,8 +426,8 @@ echo "- OUR STACK RULE" > "$P/.mastermind/engineering/fields/myfield/stack-defau
 echo "OUR FIELD CHOICE" >> "$P/.mastermind/engineering/active-field.md"
 echo "TAMPERED" >> "$P/.mastermind/engineering/core/mindset.md"
 run "$P" claude >/dev/null 2>&1
-is "project lessons preserved"     "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/myfield/lessons.md" 2>/dev/null || echo 0)" "1"
-is "project stack rules preserved" "$(grep -c 'OUR STACK RULE' "$P/.mastermind/engineering/fields/myfield/stack-defaults.md" 2>/dev/null || echo 0)" "1"
+is "project lessons preserved"     "$(count_in "$P/.mastermind/engineering/fields/myfield/lessons.md" 'OUR LESSON')" "1"
+is "project stack rules preserved" "$(count_in "$P/.mastermind/engineering/fields/myfield/stack-defaults.md" 'OUR STACK RULE')" "1"
 is "project field choice preserved" "$(grep -c 'OUR FIELD CHOICE' "$P/.mastermind/engineering/active-field.md")" "1"
 is "engine refreshed, not preserved" "$(grep -c 'TAMPERED' "$P/.mastermind/engineering/core/mindset.md")" "0"
 
@@ -441,11 +487,11 @@ printf 'OUR AGENT\n'                      > "$P/.mastermind/agents/our-agent.md"
 printf 'OUR CORE NOTE\n'                  > "$P/.mastermind/engineering/core/our-note.md"
 printf 'see ~/.mastermind for details\n'  > "$P/.mastermind/skills/our-skill/NOTES.md"
 run "$P" claude >/dev/null 2>&1
-is "project skill survives update" "$(grep -c 'OUR SKILL BODY' "$P/.mastermind/skills/our-skill/SKILL.md" 2>/dev/null || echo 0)" "1"
-is "project agent survives update" "$(grep -c 'OUR AGENT' "$P/.mastermind/agents/our-agent.md" 2>/dev/null || echo 0)" "1"
-is "project file in core survives" "$(grep -c 'OUR CORE NOTE' "$P/.mastermind/engineering/core/our-note.md" 2>/dev/null || echo 0)" "1"
+is "project skill survives update" "$(count_in "$P/.mastermind/skills/our-skill/SKILL.md" 'OUR SKILL BODY')" "1"
+is "project agent survives update" "$(count_in "$P/.mastermind/agents/our-agent.md" 'OUR AGENT')" "1"
+is "project file in core survives" "$(count_in "$P/.mastermind/engineering/core/our-note.md" 'OUR CORE NOTE')" "1"
 # the installer rewrites ~/.mastermind paths only in files IT shipped, never a project's prose
-is "project notes not rewritten"   "$(grep -c '~/\.mastermind' "$P/.mastermind/skills/our-skill/NOTES.md" 2>/dev/null || echo 0)" "1"
+is "project notes not rewritten"   "$(count_in "$P/.mastermind/skills/our-skill/NOTES.md" '~/\.mastermind')" "1"
 # …while the engine itself is still genuinely refreshed and intact
 is "shipped skill still installed" "$([ -f "$P/.mastermind/skills/build/SKILL.md" ] && echo y)" "y"
 yes_ "hook stays executable"       "$([ -x "$P/.mastermind/hooks/session-start.sh" ] && echo yes)"
@@ -501,10 +547,10 @@ rm -rf "$CLONE/skills/prototype"
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
 is "retired skill removed"     "$([ -d "$P/.mastermind/skills/prototype" ] && echo kept || echo gone)" "gone"
 is "project's own doc kept"    "$(cat "$P/.mastermind/engineering/fields/myfield/our-team-notes.md" 2>/dev/null)" "OURS"
-is "project's lesson kept"     "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/myfield/lessons.md" 2>/dev/null || echo 0)" "1"
+is "project's lesson kept"     "$(count_in "$P/.mastermind/engineering/fields/myfield/lessons.md" 'OUR LESSON')" "1"
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
-is "still kept after repeat updates" "$(grep -c 'OUR LESSON' "$P/.mastermind/engineering/fields/myfield/lessons.md" 2>/dev/null || echo 0)" "1"
+is "still kept after repeat updates" "$(count_in "$P/.mastermind/engineering/fields/myfield/lessons.md" 'OUR LESSON')" "1"
 # Upgrading from a release that DID ship a pack must not gut it: those files are in the old
 # manifest, so without the fields/ guard reconciliation would delete the project's whole pack.
 mkdir -p "$P/.mastermind/engineering/fields/frontend"
@@ -592,7 +638,7 @@ sed -i.bak 's/^field:.*/field: frontend/' "$P/.mastermind/engineering/contexts/w
 run "$P" claude >/dev/null 2>&1
 run "$P" --uninstall claude >/dev/null 2>&1
 is "generated block removed" "$(grep -c 'MASTERMIND:START' "$P/apps/web/CLAUDE.md" 2>/dev/null)" "0"
-is "their content survives"  "$(grep -c 'internal auth' "$P/apps/web/CLAUDE.md" 2>/dev/null || echo 0)" "1"
+is "their content survives"  "$(count_in "$P/apps/web/CLAUDE.md" 'internal auth')" "1"
 is "cursor rule removed"     "$([ -f "$P/apps/web/.cursor/rules/mastermind.mdc" ] && echo present || echo gone)" "gone"
 
 echo "── single-project (no routes.map) is untouched — the common case stays simple"

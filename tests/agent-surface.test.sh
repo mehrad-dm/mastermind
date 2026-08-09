@@ -222,5 +222,15 @@ else
   ok "lifecycle test skipped (no previous tag yet)"
 fi
 
+# "Cannot tell" is not "clean". verifyCommit caught a git-status failure and carried on, so a
+# corrupted or unreadable index made the dirty-tree check silently pass while rev-parse HEAD
+# still worked: an edited engine would run under a clean verdict.
+BROKE="$WORK/brokenidx"; mkdir -p "$BROKE/proj"
+git clone -q "$ROOT" "$BROKE/.mastermind" 2>/dev/null
+printf 'garbage' > "$BROKE/.mastermind/.git/index"
+out=$(cd "$BROKE/proj" && git init -q . && env -u MASTERMIND_HOME HOME="$BROKE" node "$PINDIR/bin/mastermind.mjs" 2>&1 | tail -3)
+case "$out" in *"cannot read the working tree"*) ok "an unreadable index refuses, it does not pass as clean";;
+  *) bad "broken index accepted: $out";; esac
+
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

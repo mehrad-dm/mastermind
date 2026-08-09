@@ -65,6 +65,8 @@ warn() { printf '  %s⚠%s %s\n' "$y" "$x" "$*"; }
 bad()  { printf '  %s✖%s %s\n' "$r" "$x" "$*"; }
 ISSUES=0; LINKED_SKILLS=0; LINKED_AGENTS=0; PRUNED=0; RENAMED=0; SKIPPED=0
 HINT='Follow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).'
+HINT_GLOBAL="$HINT"
+HINT_ISOLATED='Follow ./.mastermind/CLAUDE.md — the MasterMind brain for this project (skills, agents, engineering rigor).'
 # Set once $BRAIN/$PROJECT are known (below): an isolated project must point at its OWN brain.
 mm_hint() {
   if [ "$ISOLATED" = 1 ]; then
@@ -178,10 +180,17 @@ mm_assert_no_symlink_path() {
 # 28 files into that location and exited 0: an arbitrary write driven by repo contents. The
 # existing walker guards paths under the brain; this guards the integration directories too.
 mm_assert_contained() {
-  local path="$1" proj real
+  local path="$1" proj real lnk
   [ -e "$path" ] || [ -L "$path" ] || return 0          # not there yet: we create it ourselves
   proj="$(cd -P "$PROJECT" 2>/dev/null && pwd -P)" || return 0
-  if [ -d "$path" ]; then
+  if [ -L "$path" ] && [ ! -d "$path" ]; then
+    # A symlinked FILE: resolving its parent is not enough. `.cursor/rules/mastermind.mdc ->
+    # /outside` sits in a perfectly legitimate directory, so the parent check said yes while
+    # the write landed outside the repo. Follow the link itself, relative targets included.
+    lnk="$(readlink "$path")"
+    case "$lnk" in /*) ;; *) lnk="$(dirname "$path")/$lnk" ;; esac
+    real="$(cd -P "$(dirname "$lnk")" 2>/dev/null && pwd -P)/$(basename "$lnk")" || real=""
+  elif [ -d "$path" ]; then
     real="$(cd -P "$path" 2>/dev/null && pwd -P)" || real=""
   else
     real="$(cd -P "$(dirname "$path")" 2>/dev/null && pwd -P)/$(basename "$path")" || real=""
@@ -189,6 +198,10 @@ mm_assert_contained() {
   case "$real" in
     "$proj"|"$proj"/*) return 0 ;;
   esac
+  # A --shared install deliberately points AGENTS.md and CLAUDE.md at the clone, which is
+  # outside the project by design. Refuse foreign targets, not our own: is_ours resolves both
+  # sides, so this stays a containment check rather than a ban on leaving the directory.
+  is_ours "$path" && return 0
   printf '%s! %s resolves outside the project (-> %s).%s Refusing to write there.\n' \
     "$r" "${path#"$PROJECT"/}" "${real:-unreadable}" "$x" >&2
   printf '  A repository cannot be allowed to redirect the installer onto paths you did not choose.\n' >&2
@@ -701,9 +714,14 @@ if [ "$MODE" = uninstall ]; then
   fi
   # Remove the exact pointer line we appended (and the blank line before it), leaving every
   # other line untouched. Warning about it and walking away left our text in their file.
-  for f in ${AGENTS_FILE:+"$AGENTS_FILE"} "$PROJECT/GEMINI.md" "$PROJECT/.github/copilot-instructions.md" \
+  # Two gaps left our text in files we promised to leave as we found them: .claude/CLAUDE.md was
+  # missing from this list, and the match only looked for the GLOBAL hint while an isolated
+  # install appends a project-relative one.
+  for f in ${AGENTS_FILE:+"$AGENTS_FILE"} ${CLAUDE_DIR:+"$CLAUDE_DIR/CLAUDE.md"} \
+           "$PROJECT/GEMINI.md" "$PROJECT/.github/copilot-instructions.md" \
            ${CODEX_GLOBAL:+"$CODEX_GLOBAL"}; do
-    [ -f "$f" ] || continue
+    [ -f "$f" ] || continue                        # symlinks are removed above, not edited
+   for HINT in "$HINT_GLOBAL" "$HINT_ISOLATED"; do
     grep -qF "$HINT" "$f" || continue
     _pt="$(mktemp)"
     HINT="$HINT" awk 'BEGIN{h=ENVIRON["HINT"]} $0==h{skip=1; next} {if(skip && $0==""){skip=0; next} skip=0; print}' "$f" > "$_pt"
@@ -713,7 +731,23 @@ if [ "$MODE" = uninstall ]; then
       rm -f "$f"; ok "removed $(basename "$f") (it held only our pointer)"; n=$((n + 1))
     fi
     rm -f "$_pt"
+   done
   done
+  # Drop removed tools from the install record, or --check keeps demanding wiring the user
+  # deliberately took away.
+  if [ -f "$PROJECT/.mastermind/.installed" ]; then
+    _keep="$(sed -n 's/^tools=//p' "$PROJECT/.mastermind/.installed")"
+    for _g in ${TOOLS[@]+"${TOOLS[@]}"}; do
+      _keep="$(printf '%s' "$_keep" | tr ' ' '\n' | grep -vx "$_g" | tr '\n' ' ')"
+    done
+    _keep="$(printf '%s' "$_keep" | sed 's/  */ /g; s/^ //; s/ $//')"
+    if [ -n "$_keep" ]; then
+      _tf="$(mktemp)"; sed "s|^tools=.*|tools=$_keep|" "$PROJECT/.mastermind/.installed" > "$_tf"
+      cat "$_tf" > "$PROJECT/.mastermind/.installed"; rm -f "$_tf"
+    else
+      rm -f "$PROJECT/.mastermind/.installed"
+    fi
+  fi
   printf '\n%s✓ removed %d link(s).%s Your own files were left untouched. (~/.mastermind stays; delete the clone to remove the brain.)\n' "$g" "$n" "$x"
   exit 0
 fi
@@ -752,9 +786,17 @@ fi
 # Checked once, before any write, for every directory and file the installer touches in
 # project scope. Uninstall is included: it deletes, and a redirected path deletes elsewhere.
 if [ "$SCOPE" = project ] && [ -n "${PROJECT:-}" ]; then
+  # Directories AND the exact files the installer overwrites. A directory-only list left every
+  # owned file redirectable: .cursor/rules/mastermind.mdc, .mastermind/VERSION, .manifest and
+  # .installed were all written through a symlink to outside the repo, exit 0.
   for _t in "$PROJECT/.claude" "$PROJECT/.claude/skills" "$PROJECT/.claude/agents" \
             "$PROJECT/.cursor" "$PROJECT/.cursor/rules" "$PROJECT/.mastermind" \
-            "$PROJECT/.github/hooks" "$PROJECT/AGENTS.md" "$PROJECT/CLAUDE.md"; do
+            "$PROJECT/.github/hooks" "$PROJECT/AGENTS.md" "$PROJECT/CLAUDE.md" \
+            "$PROJECT/.claude/settings.json" "$PROJECT/.claude/CLAUDE.md" \
+            "$PROJECT/.cursor/hooks.json" "$PROJECT/.cursor/rules/mastermind.mdc" \
+            "$PROJECT/.cursor/rules/mastermind-field.mdc" "$PROJECT/.github/hooks/mastermind.json" \
+            "$PROJECT/.mastermind/VERSION" "$PROJECT/.mastermind/.manifest" \
+            "$PROJECT/.mastermind/.installed"; do
     mm_assert_contained "$_t"
   done
   unset _t
@@ -1147,9 +1189,18 @@ done
 # one removed it from the check and a broken install reported "healthy". Record what this run
 # wired; --check reads it and can then tell "not installed" apart from "installed and missing".
 if [ "$MODE" = install ] && [ "$SCOPE" = project ] && [ "$ISOLATED" = 1 ] && [ -d "$PROJECT/.mastermind" ]; then
+  # MERGE, never replace. Re-running with one tool named ("install.sh claude" to repair Claude)
+  # rewrote the record as claude-only, so the doctor forgot Cursor had ever been wired and
+  # called a broken install healthy again — the same blind spot the record exists to remove.
+  # Uninstall is what removes a tool from the record; a partial install only ever adds.
+  _rec_prev=""
+  [ -f "$PROJECT/.mastermind/.installed" ] &&
+    _rec_prev="$(sed -n 's/^tools=//p' "$PROJECT/.mastermind/.installed")"
+  _rec_all="$(printf '%s %s\n' "$_rec_prev" "${TOOLS[*]}" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')"
+  _rec_all="${_rec_all% }"
   { printf 'version=%s\n' "$(cat "$REPO/VERSION" 2>/dev/null || echo unknown)"
     printf 'scope=%s\n' "$SCOPE"
-    printf 'tools=%s\n' "${TOOLS[*]}"
+    printf 'tools=%s\n' "$_rec_all"
   } > "$PROJECT/.mastermind/.installed"
 fi
 

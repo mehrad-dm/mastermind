@@ -397,7 +397,13 @@ const verifyCommit = (where, { cleanupOnMismatch = false } = {}) => {
   try {
     dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'],
       { cwd: where, encoding: 'utf8' }).trim()
-  } catch { /* status can fail on an odd checkout; the HEAD check above already ran */ }
+  } catch {
+    // Failing open here undoes the check above: a corrupted or unreadable index makes `status`
+    // fail while `rev-parse HEAD` still succeeds, so an edited engine would run under a clean
+    // verdict. "Cannot tell" is not "clean" — refuse, exactly as a failed rev-parse does.
+    bail(`cannot read the working tree at ${where} — refusing to run code this release cannot verify.\n`
+      + `  Check it by hand: git -C ${where} status`)
+  }
   if (dirty) {
     const files = dirty.split('\n').map((l) => l.replace(/^..\s+/, '')).slice(0, 5).join(', ')
     bail(`brain at ${where} has uncommitted changes to tracked files (${files}).\n`

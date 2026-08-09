@@ -1,5 +1,9 @@
 # Authoring a new skill
 
+> **Paths here are relative to the MasterMind repo** — authoring happens upstream. This file
+> ships inside project brains too; there, the generators live under `.mastermind/scripts/`
+> (router and integrity only).
+
 Reference for `levelup`: read this only when adding or rewriting a skill or agent.
 
 The library grows freely: add a skill for any distinct, useful workflow. But hold the quality bar that

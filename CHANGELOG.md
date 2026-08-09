@@ -4,6 +4,51 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.30.1] — 2026-08-09
+
+A follow-up review found that 0.30.0's containment fix stopped one level too high, and that one
+verification step could pass by failing. Two of its other findings were already fixed before it
+ran; the rest are below, each with a test.
+
+### Security — owned files could still be redirected outside the repository
+0.30.0 refused a redirected `.claude` or `.cursor` **directory**, and left the files inside them
+open. `.cursor/rules/mastermind.mdc`, `.mastermind/VERSION`, `.manifest` and `.installed` were
+each written through a symlink to outside the project, exit 0. The check resolved a file's parent
+directory but never followed the link itself, so an owned file sitting in a perfectly legitimate
+directory passed. It now follows the link, and the list names every file the installer overwrites
+rather than the directories that happen to hold them. A `--shared` install still points
+`AGENTS.md` and `CLAUDE.md` at the clone on purpose, so the check refuses foreign targets rather
+than banning every link that leaves the project.
+
+### Security — verification could pass by failing
+`verifyCommit` ran `git status` to detect an edited engine and caught its error. A corrupted or
+unreadable index makes `status` fail while `rev-parse HEAD` still succeeds, so a modified
+`install.sh` would run under a clean verdict. Cannot-tell is not clean: it refuses now, exactly as
+an unreadable HEAD already did.
+
+### Fixed — the doctor forgot tools after a partial repair
+The install record was rewritten on every run, so `install.sh claude` to repair one tool erased
+the knowledge that Cursor had ever been wired, and deleting the Cursor rule went back to reporting
+healthy. The record merges on install and shrinks only on uninstall, which it never did before, so
+`--check` no longer demands wiring a user deliberately removed.
+
+### Fixed — uninstall left our text in files it had promised to restore
+Install preserves an existing `.claude/CLAUDE.md` and `AGENTS.md` and appends a pointer. Uninstall
+removed that pointer from neither: `.claude/CLAUDE.md` was missing from the cleanup list, and the
+match looked only for the shared-clone wording while an isolated install writes a project-relative
+one. Both files are cleaned now, both wordings, with the user's own content untouched.
+
+### Changed — instructions that ship where their commands do not exist
+`levelup`'s `refresh` and `authoring` are upstream maintenance and their paths are relative to
+this repo, but both files ship inside every project brain. They now say so and give the in-project
+form, the way `init` and `bootstrap` already did.
+
+### Supply chain
+`id-token: write` applied to every job in the publish workflow, including the gate and the
+cross-OS matrix, none of which publish. It is scoped to the publish job alone. All 17 action
+references across the six workflows are pinned to commit SHAs, so a re-pointed tag cannot change
+what runs.
+
 ## [0.30.0] — 2026-08-09
 
 A deep review found 17 defects that every green gate had missed, including two security holes. The gates proved the happy path; they never tested a hostile repository, a moved project,
