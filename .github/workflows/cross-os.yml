@@ -100,19 +100,25 @@ jobs:
             fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
           '
           npm pack --pack-destination "$RUNNER_TEMP"
+          # Put the file back. The stamp belongs in the tarball, not in the checkout: the CLI
+          # refuses a brain whose tree is dirty, and this workspace IS the brain used below.
+          git checkout -- package.json
       - name: install from that tarball and run it against this commit
         run: |
           set -e
           tgz="$(ls "$RUNNER_TEMP"/mastermind-brain-*.tgz)"
           echo "installing $tgz"
           npm install -g "$tgz"
+          # npm's global bin is not on PATH in this shell, so invoke it where it landed.
+          BIN="$(npm prefix -g)/bin/mastermind-brain"
+          test -x "$BIN" || { echo "the packaged binary is not executable at $BIN"; exit 1; }
           # The stamped CLI refuses a brain whose HEAD is not the pinned commit, so point it at
           # this checkout: that is the pairing a published release actually ships.
           proj="$(mktemp -d)"; git -C "$proj" init -q
           cd "$proj"
-          MASTERMIND_HOME="$GITHUB_WORKSPACE" mastermind-brain
+          MASTERMIND_HOME="$GITHUB_WORKSPACE" "$BIN"
           test -f "$proj/.mastermind/VERSION" || test -L "$proj/.claude/skills/build"
-          MASTERMIND_HOME="$GITHUB_WORKSPACE" mastermind-brain skills --json | head -c 200
+          MASTERMIND_HOME="$GITHUB_WORKSPACE" "$BIN" skills --json | head -c 200
 
   windows-native-guard:
     runs-on: windows-latest
@@ -142,7 +148,12 @@ jobs:
           set -eu
           apk add --no-cache git >/dev/null
           git clone -q "https://github.com/${{ github.repository }}" /brain
-          cd /brain && git checkout -q "${{ github.sha }}"
+          cd /brain
+          # On a pull_request, github.sha is the MERGE commit: it lives only under
+          # refs/pull/N/merge, and a plain clone never fetches it, so this checkout failed with
+          # "unable to read tree". Fetch the ref this event is actually about.
+          git fetch -q origin "${{ github.ref }}:refs/mm/target" 2>/dev/null || true
+          git checkout -q "${{ github.sha }}" 2>/dev/null || git checkout -q refs/mm/target
           mkdir -p /work/proj && cd /work/proj && git init -q .
 
           # The guard under test belongs to the INSTALL path — install.sh needs bash. 0.29.0
@@ -201,7 +212,12 @@ jobs:
           # $GITHUB_SHA are unset in here. Substitute them before the shell starts rather than
           # forwarding env through WSLENV — fewer moving parts, and it fails loudly if wrong.
           git clone -q "https://github.com/${{ github.repository }}" /brain
-          cd /brain && git checkout -q "${{ github.sha }}"
+          cd /brain
+          # On a pull_request, github.sha is the MERGE commit: it lives only under
+          # refs/pull/N/merge, and a plain clone never fetches it, so this checkout failed with
+          # "unable to read tree". Fetch the ref this event is actually about.
+          git fetch -q origin "${{ github.ref }}:refs/mm/target" 2>/dev/null || true
+          git checkout -q "${{ github.sha }}" 2>/dev/null || git checkout -q refs/mm/target
 
           mkdir -p /work/proj && cd /work/proj && git init -q .
           bash /brain/install.sh claude cursor >/dev/null 2>&1
