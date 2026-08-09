@@ -137,7 +137,13 @@ const infraReason = ({ out, err, stderr }) => {
 }
 
 try { execFileSync('claude', ['--version'], { stdio: 'ignore' }) }
-catch { console.log('SKIP: claude CLI not available — auto-invoke needs a live session'); process.exit(0) }
+catch {
+  // Exit 2, not 0. Preflight reads 2 as "the environment could not run this" and leaves it out
+  // of the passed count; exiting 0 made a check that never ran indistinguishable from a green
+  // one, which is the whole failure mode this eval exists to catch elsewhere.
+  console.log('SKIP: claude CLI not available, and auto-invoke needs a live session')
+  process.exit(2)
+}
 
 // Outside the repo: a nested workspace lets the session discover this repo's own files.
 const work = mkdtempSync(join(tmpdir(), 'mm-autoinvoke-'))

@@ -14,6 +14,12 @@ on:
   push:
     branches: [master]
     paths: ['install.sh', 'cli/**', 'bin/**', 'tests/**', '.github/workflows/cross-os.yml']
+  # Same paths on a pull request, so a change to the installer gets its cross-platform answer
+  # BEFORE it lands rather than after. Deliberately not a required check: the paths filter means
+  # it does not run on a docs-only PR, and a required check that never runs blocks the merge
+  # forever. The hard gate is on the release, where publish.yml blocks on this whole workflow.
+  pull_request:
+    paths: ['install.sh', 'cli/**', 'bin/**', 'tests/**', '.github/workflows/cross-os.yml']
   workflow_dispatch:
   # Callable so a release can BLOCK on it. These jobs only ran on master pushes, never on a
   # tag, so publish could put a package on npm before any of them had executed for that commit.
@@ -21,12 +27,18 @@ on:
 
 jobs:
   linux:
+    # Both ends of the supported range. package.json says Node >= 18, and a floor that is never
+    # run is a floor nobody knows is broken.
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 22]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
-          node-version: 22
+          node-version: ${{ matrix.node }}
       - name: install into a fresh project and use the lookup surface
         run: |
           set -e
@@ -40,6 +52,67 @@ jobs:
         run: bash tests/install.test.sh
       - name: agent-surface suite
         run: bash tests/agent-surface.test.sh
+
+  # macOS was described as "covered locally", which is not evidence anyone else can check, and
+  # it is the platform with bash 3.2 and the /tmp and /var symlinks that caused several of the
+  # path bugs this suite exists to catch.
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+      - name: the shell that actually ships on macOS
+        run: /bin/bash --version | head -1
+      - name: install into a fresh project and use the lookup surface
+        run: |
+          set -e
+          proj="$(mktemp -d)"
+          git -C "$proj" init -q
+          (cd "$proj" && /bin/bash "$GITHUB_WORKSPACE/install.sh")
+          test -f "$proj/.mastermind/VERSION"
+          n="$(cd "$proj" && ./.mastermind/bin/mastermind skills --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).skills.length))')"
+          echo "skills listed: $n"; test "$n" -ge 20
+      - name: installer regression suite
+        run: /bin/bash tests/install.test.sh
+      - name: agent-surface suite
+        run: /bin/bash tests/agent-surface.test.sh
+
+  # Every other job runs install.sh out of the repository. That is not what users get: they get
+  # the packed CLI, stamped with a commit, resolving its own brain. This installs the tarball
+  # the release would actually publish.
+  packed-tarball:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+      - name: pack the CLI exactly as the release stamps it
+        working-directory: cli
+        run: |
+          set -e
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.commit = process.env.GITHUB_SHA;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+          '
+          npm pack --pack-destination "$RUNNER_TEMP"
+      - name: install from that tarball and run it against this commit
+        run: |
+          set -e
+          tgz="$(ls "$RUNNER_TEMP"/mastermind-brain-*.tgz)"
+          echo "installing $tgz"
+          npm install -g "$tgz"
+          # The stamped CLI refuses a brain whose HEAD is not the pinned commit, so point it at
+          # this checkout: that is the pairing a published release actually ships.
+          proj="$(mktemp -d)"; git -C "$proj" init -q
+          cd "$proj"
+          MASTERMIND_HOME="$GITHUB_WORKSPACE" mastermind-brain
+          test -f "$proj/.mastermind/VERSION" || test -L "$proj/.claude/skills/build"
+          MASTERMIND_HOME="$GITHUB_WORKSPACE" mastermind-brain skills --json | head -c 200
 
   windows-native-guard:
     runs-on: windows-latest
@@ -107,9 +180,18 @@ jobs:
         shell: wsl-bash {0}
         run: |
           set -eu
-          # Node from NodeSource — the distro package is too old for the CLI.
-          curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1
-          apt-get install -y nodejs >/dev/null 2>&1
+          # The distro package is too old for the CLI, so Node comes from nodejs.org. It is
+          # fetched as a pinned tarball and checked against the published SHASUMS256 before
+          # anything runs: piping an installer script into a root shell executes whatever that
+          # URL happens to serve, which is not something a release gate should do.
+          NODE_VER=v22.23.2
+          NODE_TGZ="node-${NODE_VER}-linux-x64.tar.xz"
+          curl -fsSLO "https://nodejs.org/dist/${NODE_VER}/${NODE_TGZ}"
+          curl -fsSLO "https://nodejs.org/dist/${NODE_VER}/SHASUMS256.txt"
+          grep " ${NODE_TGZ}\$" SHASUMS256.txt | sha256sum -c -
+          tar -xJf "${NODE_TGZ}" -C /usr/local --strip-components=1 \
+            --exclude CHANGELOG.md --exclude LICENSE --exclude README.md
+          rm -f "${NODE_TGZ}" SHASUMS256.txt
           echo "node $(node --version) · $(uname -sr)"
           grep -qi microsoft /proc/version || { echo "not actually WSL"; exit 1; }
 

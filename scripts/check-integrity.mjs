@@ -19,6 +19,10 @@
  *      listed path exists, and the list and the procedure agree in both directions
  *  10. .githooks/ (this repo's live guards) matches skills/quarantine/assets/ (what we ship),
  *      so a security fix cannot land in one copy and leave the other vulnerable
+ *  11. every published ABOUT.md reconciles with the instructions it describes: it pairs with a
+ *      real SKILL.md / agent file, carries the frontmatter the library pages render, states when
+ *      the thing fires, names only capabilities that exist, and does not contradict that file
+ *      about how it is invoked
  */
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -266,7 +270,13 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
 //
 // `pre-commit` legitimately diverges by one repo-only block (ROUTER freshness), so the
 // comparison drops it. Anything else differing is drift, not a decision.
-const REPO_ONLY = /^# ---- Router freshness[\s\S]*?^fi\n\n/m
+// Sections that belong to THIS repository and must not travel with the shipped asset. The
+// shipped guard is about leaking secrets in any project; these are about MasterMind's own
+// checks, which only exist here. Marked explicitly so a new one is a marker, not a new regex.
+const REPO_ONLY = [
+  /^# ---- Router freshness[\s\S]*?^fi\n\n/m,
+  /^# >>> repo-only:[\s\S]*?^# <<< repo-only[^\n]*\n/m,
+]
 // Parity is a REPO invariant: `.githooks/` only exists in this checkout. A project's isolated
 // brain ships the assets and no `.githooks/`, so demanding both copies there reported two
 // failures for a correctly-installed brain. Skip the pair when the live side is absent.
@@ -278,7 +288,12 @@ for (const hook of hasLiveHooks ? ['pre-commit', 'pre-push'] : []) {
     fail(`${hook}: missing from .githooks/ or skills/quarantine/assets/ — both copies must exist`)
     continue
   }
-  const norm = (p) => readFileSync(p, 'utf8').replace(REPO_ONLY, '')
+  // Both sides get identical treatment: strip the repo-only sections, then collapse runs of
+  // blank lines, since removing a block leaves behind the blank line that separated it.
+  const norm = (p) =>
+    REPO_ONLY.reduce((acc, re) => acc.replace(re, ''), readFileSync(p, 'utf8'))
+      .replace(/\n{2,}/g, '\n')
+      .trimEnd()
   if (norm(live) !== norm(shipped)) {
     fail(
       `.githooks/${hook} differs from skills/quarantine/assets/${hook} — the guard protecting ` +
@@ -302,6 +317,79 @@ for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'RE
     const re = new RegExp('(\\*\\*|`)' + dead + '(\\*\\*|`)')
     if (re.test(text) && !realNames.has(dead))
       fail(`${menu} still advertises the retired name "${dead}" — it fails when typed`)
+  }
+}
+
+// --- 11. the published article reconciles with the real instructions ----------
+// scripts/build-library.mjs generates every public library page from ABOUT.md and never reads
+// SKILL.md, so nothing connected the article the site publishes to the instructions the model
+// actually follows. Two documents can only be reconciled where both make a checkable statement,
+// so this asserts the ones that exist: they must come in pairs, the article must carry the
+// frontmatter the page renders, it must say when the thing fires, it must not name a capability
+// that was renamed away, and it must not contradict the source about how it is invoked.
+const aboutPairs = [
+  ...skillDirs.map((n) => ({ kind: 'skill', name: n, about: `skills/${n}/ABOUT.md`, source: `skills/${n}/SKILL.md` })),
+  ...readdirSync(join(ROOT, 'agents'))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => f.replace(/\.md$/, ''))
+    .map((n) => ({ kind: 'agent', name: n, about: `agents/about/${n}.md`, source: `agents/${n}.md` })),
+]
+
+// ABOUT.md is repository-only: it generates the public library pages and is not copied into an
+// installed brain, because nothing reads it at runtime. So when NONE of them are present, this
+// is an installed brain and there is nothing here to reconcile. When SOME are missing, that is
+// a genuine gap in the repository and every one of them is reported below.
+const anyAbout = aboutPairs.some((a) => existsSync(join(ROOT, a.about)))
+if (!anyAbout) {
+  console.log('  · ABOUT pages are repository-only; skipping that check in an installed brain')
+}
+
+for (const { kind, name, about, source } of (anyAbout ? aboutPairs : [])) {
+  if (!existsSync(join(ROOT, about))) {
+    fail(`${about}: missing. build-library.mjs publishes a page per ${kind} from this file`)
+    continue
+  }
+  if (!existsSync(join(ROOT, source))) {
+    fail(`${about}: describes "${name}", but ${source} does not exist, so the article has no instructions behind it`)
+    continue
+  }
+  const text = read(about)
+  const meta = frontmatter(text) ?? {}
+  for (const key of ['title', 'blurb']) {
+    if (!meta[key]) fail(`${about}: no \`${key}\` in frontmatter, so the library page would publish a blank ${key}`)
+  }
+  if (!/^#+\s.*when it fires/im.test(text)) {
+    fail(`${about}: no "When it fires" section, so the page makes no invocation claim, so nothing reconciles it with ${source}`)
+  }
+  // A rename that misses the article ships a dead name to the site, where nobody typing it gets
+  // anything back. Checked against the same retired list the menus are checked against.
+  // Matched only in the markup that means "this is a capability name": `` `lab` ``, `**lab**` or
+  // `/lab`, so the real `lab/` directory, which kept its name when the skill became `quarantine`,
+  // does not read as a dead skill.
+  for (const dead of RETIRED) {
+    if (realNames.has(dead)) continue
+    if (new RegExp('\\*\\*' + dead + '\\*\\*|`' + dead + '`|(?:^|\\s)/' + dead + '(?![\\w/-])', 'm').test(text))
+      fail(`${about}: names the retired "${dead}", which is not a skill or agent on disk`)
+  }
+  // Invocation shape. A skill can be typed as a slash command; an agent cannot, because it is an
+  // isolated-context role the model hands work to, so "/agent-name" teaches an invocation that
+  // does not exist.
+  for (const m of text.matchAll(/(?:^|[\s(])\/([a-z][a-z-]{2,})\b/g)) {
+    if (!realNames.has(m[1])) continue
+    if (kind === 'agent')
+      fail(`${about}: presents "/${m[1]}", but agents are not slash commands, they run in an isolated context`)
+    else if (m[1] !== name)
+      fail(`${about}: presents "/${m[1]}" on the page for "${name}": the slash name must be the skill's own`)
+  }
+  // Opt-in is the one behaviour claim both files state plainly, and the one that would embarrass
+  // us: an article promising a skill fires by itself when the instructions say it must be asked for.
+  if (kind === 'skill') {
+    const desc = frontmatter(read(source))?.description ?? ''
+    const optIn = /\bONLY when\b|off by default|never produce one unprompted|explicitly asks/i.test(desc)
+    const claimsAuto =
+      /\byou (?:don't|do not|never) (?:need to |have to )?type\b|applies automatically|fires on its own|without you asking/i.test(text)
+    if (optIn && claimsAuto)
+      fail(`${about}: claims it fires without being asked, but ${source} marks it opt-in: the page and the instructions disagree`)
   }
 }
 
