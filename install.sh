@@ -215,13 +215,18 @@ mm_relpath() {                      # $1 target (absolute), $2 directory the lin
 }
 
 mm_link_src() {                     # $1 target, $2 link path -> what to store in the symlink
-  local src="$1" dst="$2" proj tgt dir
+  local src="$1" dst="$2" proj rsrc dir
+  # RESOLVE both ends before comparing. Comparing a logical path ($TMP/proj) against a resolved
+  # one (/private/var/.../proj) fails the containment test and falls back to absolute links, so
+  # on any path that crosses a symlink (macOS /tmp, a symlinked home, a network mount) this fix
+  # would quietly do nothing. Two path bugs have already shipped in exactly that shape.
   proj="$(cd -P "$PROJECT" 2>/dev/null && pwd -P)" || { printf '%s' "$src"; return; }
-  case "$src" in "$proj"/*) ;; *) printf '%s' "$src"; return ;; esac
-  case "$dst" in "$proj"/*) ;; *) printf '%s' "$src"; return ;; esac
   dir="$(cd -P "$(dirname "$dst")" 2>/dev/null && pwd -P)" || { printf '%s' "$src"; return; }
-  tgt="$src"
-  mm_relpath "$tgt" "$dir"
+  if [ -d "$src" ]; then rsrc="$(cd -P "$src" 2>/dev/null && pwd -P)" || rsrc="$src"
+  else rsrc="$(cd -P "$(dirname "$src")" 2>/dev/null && pwd -P)/$(basename "$src")" || rsrc="$src"; fi
+  case "$rsrc" in "$proj"/*) ;; *) printf '%s' "$src"; return ;; esac
+  case "$dir"  in "$proj"|"$proj"/*) ;; *) printf '%s' "$src"; return ;; esac
+  mm_relpath "$rsrc" "$dir"
 }
 
 # Link src→dst. In check mode, only verify. Back up a real file before linking.

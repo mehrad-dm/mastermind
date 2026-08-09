@@ -6,8 +6,7 @@ history lives in git.
 
 ## [0.30.0] — 2026-08-09
 
-An external audit found 17 defects that every green gate had missed, including two security
-holes. The gates proved the happy path; they never tested a hostile repository, a moved project,
+A deep review found 17 defects that every green gate had missed, including two security holes. The gates proved the happy path; they never tested a hostile repository, a moved project,
 preserved user instructions, an upgrade, or repair of deleted wiring. Each fix below ships with a
 test that fails against the old code.
 
@@ -20,7 +19,7 @@ project before anything is written, uninstall included, since a redirected path 
 
 ### Security — "you always know exactly what ran" was false for an existing clone
 Verification lived inside `if (.git exists)`. A `~/.mastermind` holding an `install.sh` and no
-git history skipped every check and was executed: an audit dropped an arbitrary script there and
+git history skipped every check and was executed: an arbitrary script placed there was executed, and
 the signed, provenance-attested CLI ran it. A published release now refuses to run a brain it
 cannot verify. Related: a commit pin proves the commit, not the tree, so an edited `install.sh`
 ran with `HEAD` unchanged; a dirty tracked engine file is now refused, with the stash/discard
@@ -73,9 +72,32 @@ fails when the audit itself did not run. Publishing depended only on the Linux g
 waited for Windows, WSL or Alpine, so a broken release could reach npm before those results
 existed; `publish` now requires them. Dependabot and CodeQL are enabled.
 
+### Tests — the gap that let all of this through
+Every one of the 179 tests built a clean fixture and asserted the happy path. None handed the
+installer a hostile repository, moved a project after installing, put a user's file where we
+write, upgraded from the previous release, or broke something and asked whether we noticed. That
+is not a few missing cases; it is five missing categories, and the defects above fell straight
+through them. Two habits made it worse: tests asserted our own success messages instead of the
+filesystem, and fixtures lived on `/tmp`, which is a symlink on macOS and hid two path bugs.
+
+Five categories now run on every push:
+
+- **A canary.** A directory outside every fixture, checked after *every* installer run. A stray
+  write fails the suite whether or not anyone predicted that escape route. It is recorded to a
+  log rather than printed, because nearly every test redirects the installer's output.
+- **Hostile repository.** Each integration path (`.claude`, `.cursor`, their subdirectories,
+  `.github/hooks`) is replaced by a symlink pointing out of the project, in one loop, so a path
+  added later is covered the day it appears. Uninstall gets the same treatment, since it deletes.
+- **Portability.** Install, commit, clone elsewhere, delete the original, then require every
+  link to resolve. This one immediately caught a real regression: the relative-link fix silently
+  did nothing on any path crossing a symlink, because it compared a logical path to a resolved one.
+- **Preservation.** A user file in every location we touch, asserted by content afterwards.
+- **Lifecycle and repair.** The previous released tag is installed and upgraded with the current
+  CLI, and each recorded artifact is deleted in turn with the doctor required to report it.
+
 ### Fixed — my own tooling
 `scripts/verify-tools.sh`, added in 0.29.1 to prove the tools load the brain, ran the installer
-with the real `$HOME` and repointed the auditor's `~/.mastermind` at a temporary directory. That
+with the real `$HOME` and repointed the developer's own `~/.mastermind` at a temporary directory. That
 is the lesson already in the wrong-log from the test suite, repeated the same week. It sandboxes
 `HOME` now and fails if the real symlink moves. The FULL eval also reported a skill as "never
 fired" from a case that had passed on its alternate.
@@ -209,7 +231,7 @@ whitespace- and case-insensitively so a line-wrapped sentence isn't a false posi
 ## [0.29.0] — 2026-08-08
 
 ### Security — filesystem containment
-Two external audits reproduced three ways the installer could touch files outside the project.
+Review reproduced three ways the installer could touch files outside the project.
 All three are fixed, and each attack is now a test:
 - **`.manifest` traversal** — a committed manifest containing `../precious.txt` deleted that file.
   Manifest entries are validated and symlink-checked before any removal.

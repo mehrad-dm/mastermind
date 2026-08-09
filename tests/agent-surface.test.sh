@@ -103,7 +103,7 @@ out=$( (cd "$GONE" && rm -rf "$GONE" && "${CLI[@]}" skills 2>&1 >/dev/null) | he
 case "$out" in *"uv_cwd"*|*"internal/bootstrap"*) bad "deleted cwd crashes with a node stack";; *) ok "deleted cwd fails cleanly";; esac
 
 echo "cli arguments"
-# An external audit installed a brain by typing `skilss`: unknown words fell through to init.
+# A review installed a brain by typing `skilss`: unknown words fell through to init.
 TYPO="$WORK/typo"; mkdir -p "$TYPO"
 (cd "$TYPO" && HOME="$TYPO" MASTERMIND_HOME="$TYPO/absent" "${CLI[@]}" skilss >/dev/null 2>&1)
 check "a typo exits 2 instead of installing" "$?" "2"
@@ -160,7 +160,7 @@ msg=$(grep -A3 "process.platform === 'win32'" "$ROOT/cli/bin/mastermind.mjs" | g
 case "$msg" in 1) ok "the Windows refusal no longer advertises Git Bash as working";; *) bad "Git Bash still advertised";; esac
 
 # A published release must verify what it executes. Both holes below were reproduced by an
-# external audit against the signed 0.29.2 package, so they are tested against a build that
+# review against the signed 0.29.2 package, so they are tested against a build that
 # carries a pin (a local checkout has none, and skips verification by design).
 PINDIR="$WORK/pinned"; mkdir -p "$PINDIR/bin"
 cp -R "$ROOT/cli/." "$PINDIR/"
@@ -190,6 +190,37 @@ case "$out" in *"uncommitted changes"*) ok "a dirty engine tree is refused";; *)
 git -C "$DIRTY/.mastermind" checkout -- install.sh
 out=$(cd "$DIRTY/proj" && env -u MASTERMIND_HOME HOME="$DIRTY" node "$PINDIR/bin/mastermind.mjs" 2>&1 | grep -c "isolated brain")
 case "$out" in 1) ok "the same clone installs once it is clean";; *) bad "clean clone refused too";; esac
+
+# ══ Lifecycle ═════════════════════════════════════════════════════════════════
+# Nothing ever tested the upgrade the README and the site both promise ("the same command
+# updates it later"). An older clone hit the pin check and died with "the tag may have moved",
+# so users stayed on the old version unless they knew to type `update`. This installs the
+# PREVIOUS released tag and runs the current CLI over it, which is what a real user does.
+PREV_TAG=$(git -C "$ROOT" tag --list 'v*' --sort=-v:refname | sed -n 2p)
+if [ -n "$PREV_TAG" ]; then
+  LIFE="$WORK/lifecycle"; mkdir -p "$LIFE/proj"
+  git clone -q "$ROOT" "$LIFE/.mastermind" 2>/dev/null
+  git -C "$LIFE/.mastermind" checkout -q "$PREV_TAG" 2>/dev/null
+  # Pin the CLI to the tag it would ship as, so this is a real release-to-release upgrade.
+  CURTAG=$(git -C "$ROOT" tag --list 'v*' --sort=-v:refname | sed -n 1p)
+  CURSHA=$(git -C "$ROOT" rev-parse "$CURTAG^{commit}")
+  LIFECLI="$WORK/lifecli"; mkdir -p "$LIFECLI"; cp -R "$ROOT/cli/." "$LIFECLI/"
+  python3 - "$LIFECLI/bin/mastermind.mjs" "$CURSHA" "$CURTAG" <<'PYEOF'
+import re, sys, pathlib
+p = pathlib.Path(sys.argv[1]); s = p.read_text()
+s = re.sub(r"const PINNED_COMMIT = [^\n]+", f"const PINNED_COMMIT = '{sys.argv[2]}'", s, count=1)
+s = re.sub(r"const PIN = [^\n]+", f"const PIN = '{sys.argv[3]}'", s, count=1)
+p.write_text(s)
+PYEOF
+  out=$(cd "$LIFE/proj" && git init -q . && env -u MASTERMIND_HOME HOME="$LIFE" node "$LIFECLI/bin/mastermind.mjs" 2>&1)
+  now=$(git -C "$LIFE/.mastermind" describe --tags 2>/dev/null)
+  case "$now" in "$CURTAG"*) ok "the documented command upgrades $PREV_TAG -> $CURTAG";;
+    *) bad "upgrade left the brain at $now: $(printf '%s' "$out" | head -1)";; esac
+  case "$out" in *"isolated brain"*) ok "and the project is wired after the upgrade";;
+    *) bad "upgrade did not finish the install: $(printf '%s' "$out" | tail -1)";; esac
+else
+  ok "lifecycle test skipped (no previous tag yet)"
+fi
 
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

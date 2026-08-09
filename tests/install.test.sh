@@ -22,6 +22,9 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL="$REPO/install.sh"
 TMP="$(mktemp -d)"
+# -P: on macOS both /tmp and mktemp's /var/folders are symlinks to /private/..., and comparing
+# a logical path against a resolved one is how two path bugs shipped. Fixtures use the real path.
+TMP_REAL="$(cd "$TMP" && pwd -P)"
 
 PASS=0; FAIL=0
 g=$'\033[0;32m'; r=$'\033[0;31m'; x=$'\033[0m'
@@ -47,7 +50,24 @@ trap 'now="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
         [ "$REAL_HOME_LINK" = none ] || ln -sfn "$REAL_HOME_LINK" "$HOME/.mastermind"
       fi
       rm -rf "$TMP"' EXIT
-run()  { (cd "$1" && shift && HOME="$SANDBOX_HOME" "$INSTALL" "$@" 2>&1); }
+# ── The canary ────────────────────────────────────────────────────────────────
+# Every other test asserts what SHOULD exist inside its own fixture. None of them can see a
+# write that lands somewhere nobody thought to look, which is exactly how an installer that
+# followed a repo-supplied `.claude -> /elsewhere` put 28 files outside the project and exited
+# 0 while 179 tests stayed green. This directory sits outside every fixture and is checked
+# after EVERY installer run: a stray write fails the suite whether or not anyone predicted
+# that particular escape route.
+CANARY="$TMP_REAL/canary"; mkdir -p "$CANARY"; CANARY_LOG="$TMP_REAL/canary.log"
+canary_check() {
+  local found; found="$(find "$CANARY" -mindepth 1 2>/dev/null | head -3 | tr '\n' ' ')"
+  [ -z "$found" ] && return 0
+  # Append rather than print: nearly every caller runs the installer as `>/dev/null 2>&1`, so
+  # a message here is swallowed by the very tests that need to hear it. The summary reads the
+  # log, where no redirection can hide it.
+  printf '%s\n' "$found" >> "$CANARY_LOG"
+  rm -rf "${CANARY:?}"/* 2>/dev/null || true
+}
+run()  { local rc; (cd "$1" && shift && HOME="$SANDBOX_HOME" "$INSTALL" "$@" 2>&1); rc=$?; canary_check; return $rc; }
 
 # Derived from the repo, never hand-written: the promise is "every skill/agent we ship gets
 # linked", not "exactly 17". A literal here silently becomes a lie the next time one is added.
@@ -132,7 +152,6 @@ echo "── the npx path: the brain IS ~/.mastermind and install.sh runs from i
 # The HOME must be a CANONICAL path. On macOS both /tmp and mktemp's /var/folders are
 # symlinks (-> /private/...), so `pwd -P` yields a different string than "$HOME/.mastermind"
 # and the broken comparison slips through — which is exactly how this shipped.
-TMP_REAL="$(cd "$TMP" && pwd -P)"
 H="$TMP_REAL/npxhome"; mkdir -p "$H/.mastermind"
 tar -C "$REPO" --exclude=.git --exclude=node_modules -cf - . | tar -C "$H/.mastermind" -xf -
 P=$(proj npxwired)
@@ -182,7 +201,7 @@ is "a real project is still checked as a project" "$(printf '%s' "$out" | grep -
 is "and that project reports healthy" "$(printf '%s' "$out" | grep -c 'healthy here')" "1"
 
 echo "── a repo cannot redirect the installer outside itself via a symlinked integration dir"
-# Arbitrary write, found by an external audit. A repository containing `.claude -> /elsewhere`
+# Arbitrary write. A repository containing `.claude -> /elsewhere`
 # made the installer write 28 files into that location and exit 0; `.cursor` did the same. The
 # brain-path walker never covered the integration directories, only paths under .mastermind.
 for d in .claude .cursor; do
@@ -220,6 +239,84 @@ is "the install is recorded" "$(sed -n 's/^tools=//p' "$P/.mastermind/.installed
 rm -f "$P/.cursor/rules/mastermind.mdc"
 (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >/dev/null 2>&1); rc=$?
 is "deleted wiring is reported, not ignored" "$([ "$rc" -ne 0 ] && echo caught)" "caught"
+
+echo "── canary self-test: an escape must trip it even with no rule that names the path"
+P=$(proj canaryprobe); (cd "$P" && ln -s "$CANARY" .claude)
+run "$P" claude >/dev/null 2>&1 || true
+
+# ══ Hostile repository ════════════════════════════════════════════════════════
+# The installer reads a directory it did not create. Every path it writes through can be
+# replaced by a symlink pointing anywhere, and the previous suite only ever tested paths
+# someone had already thought of. This loop covers every integration path at once, so a new
+# one is covered the day it is added rather than the day it is exploited.
+echo "── a hostile repository cannot redirect a single write"
+for victimpath in .claude .claude/skills .claude/agents .cursor .cursor/rules .github/hooks; do
+  # NOTE: TMP_REAL resolves to TMP, so a victim named after the project IS the project.
+  V="$TMP_REAL/victims/$(printf '%s' "$victimpath" | tr '/.' '__')"; mkdir -p "$V"
+  P=$(proj "hostile-$(printf '%s' "$victimpath" | tr '/.' '__')")
+  mkdir -p "$P/$(dirname "$victimpath")"
+  ln -s "$V" "$P/$victimpath"
+  run "$P" claude cursor >/dev/null 2>&1 || true
+  is "$victimpath cannot be redirected" "$(find "$V" -mindepth 1 2>/dev/null | wc -l | tr -d ' ')" "0"
+done
+# Uninstall reads the same paths and DELETES through them, so it needs the same guarantee.
+V="$TMP_REAL/victims/uninstall"; mkdir -p "$V"; echo keepme > "$V/precious.txt"
+P=$(proj hostile-uninstall); run "$P" claude >/dev/null 2>&1
+rm -rf "$P/.claude"; ln -s "$V" "$P/.claude"
+run "$P" --uninstall claude >/dev/null 2>&1 || true
+is "uninstall cannot delete through a redirected path" "$(cat "$V/precious.txt" 2>/dev/null)" "keepme"
+
+# ══ Portability ═══════════════════════════════════════════════════════════════
+# A project brain is committed and shared. Everything the installer writes must therefore
+# survive the two things that happen to committed work: it gets cloned somewhere else, and the
+# original directory goes away. 28 absolute symlinks and two absolute hook paths shipped under
+# a comment promising the opposite, because nothing ever moved a project after installing it.
+echo "── a committed project survives being cloned elsewhere and the original vanishing"
+P=$(proj portable); run "$P" claude cursor agents >/dev/null 2>&1
+is "no link points outside the project" \
+   "$(find "$P" -type l -exec readlink {} \; | grep -c '^/' | tr -d ' ')" "0"
+is "no committed file carries this machine's path" \
+   "$(grep -rl "$TMP_REAL" "$P/.claude" "$P/.cursor" 2>/dev/null | wc -l | tr -d ' ')" "0"
+(cd "$P" && git init -q . 2>/dev/null; git add -A >/dev/null 2>&1
+ git -c user.email=t@t -c user.name=t commit -qm wired >/dev/null 2>&1) || true
+CLONE="$TMP_REAL/portable-clone"; rm -rf "$CLONE"
+git clone -q "$P" "$CLONE" >/dev/null 2>&1
+mv "$P" "$P-gone"                                   # the original is now unreachable
+is "every link still resolves in the clone" \
+   "$(cd "$CLONE" && find . -type l ! -exec test -e {} \; -print 2>/dev/null | wc -l | tr -d ' ')" "0"
+is "a skill resolves for the teammate" "$([ -e "$CLONE/.claude/skills/build/SKILL.md" ] && echo yes)" "yes"
+mv "$P-gone" "$P"
+
+# ══ Preservation ══════════════════════════════════════════════════════════════
+# "The project wins" is MasterMind's own rule, and the installer broke it by renaming an
+# existing .claude/CLAUDE.md aside and linking over it: the file survived, the instructions
+# stopped applying. Put a user file in every place we write and assert the CONTENT still works.
+echo "── a user's own file keeps working wherever we write"
+P=$(proj preserve); mkdir -p "$P/.claude" "$P/.cursor/rules"
+printf '# mine\nCANARY-CLAUDE never deploy on Friday\n' > "$P/.claude/CLAUDE.md"
+printf '# mine\nCANARY-AGENTS use pnpm\n' > "$P/AGENTS.md"
+# `--` is load-bearing: a format string starting with `-` is parsed as options, so without it
+# this writes nothing and the assertion below fails against a product that behaved correctly.
+printf -- '---\nalwaysApply: true\n---\nCANARY-CURSOR house style\n' > "$P/.cursor/rules/team.mdc"
+run "$P" claude cursor agents >/dev/null 2>&1
+is "their CLAUDE.md still applies"  "$(grep -c CANARY-CLAUDE "$P/.claude/CLAUDE.md" 2>/dev/null)" "1"
+is "their AGENTS.md still applies"  "$(grep -c CANARY-AGENTS "$P/AGENTS.md" 2>/dev/null)" "1"
+is "their cursor rule is untouched" "$(grep -c CANARY-CURSOR "$P/.cursor/rules/team.mdc" 2>/dev/null)" "1"
+is "and MasterMind is wired alongside" "$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+
+# ══ Repair ════════════════════════════════════════════════════════════════════
+# The doctor inferred what to check from artifacts that still existed, so deleting one removed
+# it from the check. Delete each thing the installer recorded, one at a time, and require the
+# doctor to notice every time. Generated from the install record, so a tool added later is
+# covered without editing this test.
+echo "── the doctor notices every piece of wiring that goes missing"
+for target in .claude/CLAUDE.md .claude/skills/build .claude/settings.json .cursor/rules/mastermind.mdc AGENTS.md; do
+  P=$(proj "repair-$(printf '%s' "$target" | tr '/.' '__')")
+  run "$P" claude cursor agents >/dev/null 2>&1
+  rm -rf "${P:?}/$target"
+  (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >/dev/null 2>&1); rc=$?
+  is "deleting $target is reported" "$([ "$rc" -ne 0 ] && echo caught)" "caught"
+done
 
 echo "── uninstall removes what it wired, and keeps what it didn't"
 P=$(proj unwire); mkdir -p "$P/.claude"
@@ -614,7 +711,7 @@ P=$(proj noagent); mkdir -p "$TMP/emptyhome"
 is "AGENTS.md wired anyway" "$([ -e "$P/AGENTS.md" ] && echo y || echo n)" "y"
 
 # ── filesystem trust boundary ───────────────────────────────────────────────────
-# Both attacks below were reproduced by an external audit: the installer wrote OUTSIDE the
+# Both attacks below were reproduced: the installer wrote OUTSIDE the
 # project. Keep them adversarial.
 echo "── routes.map may not escape the project"
 P=$(proj traversal); mkdir -p "$TMP/outside-victim"
@@ -667,6 +764,10 @@ is "installed through the symlinked path" "$([ -e "$TMP/via-link/AGENTS.md" ] &&
 out="$(cd "$TMP/via-link" && HOME="$SANDBOX_HOME" "$INSTALL" --uninstall 2>&1)" || true
 is "uninstall removed the links"  "$([ -e "$TMP/via-link/AGENTS.md" ] && echo left || echo gone)" "gone"
 case "$out" in *"removed 0 link"*) bad "uninstall claimed success while removing nothing";; *) ok "uninstall reported real removals";; esac
+
+if [ -s "$CANARY_LOG" ]; then
+  while IFS= read -r line; do no "a run wrote OUTSIDE every fixture: $line"; done < "$CANARY_LOG"
+fi
 
 echo
 if [ "$FAIL" -eq 0 ]; then printf '%s✓ %d passed%s\n' "$g" "$PASS" "$x"; exit 0
