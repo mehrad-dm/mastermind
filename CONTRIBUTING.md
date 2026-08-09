@@ -87,6 +87,37 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    (The pre-commit hook still runs `check-integrity` + `build-router` on every commit for fast
    feedback; preflight is the full pre-release gate.)
 
+2. **If you fixed a bug, prove the test would have caught it.**
+
+   ```bash
+   scripts/prove-regression.sh v0.30.1        # or whichever release had the defect
+   ```
+
+   A test written after a fix passes against that fix by construction, so on its own it tells you
+   nothing. Point it at the release that shipped the bug: if the new assertion does not fail
+   there, it is not testing the bug. Four audits in a row found real defects while this suite was
+   green, which is what the rule is for.
+
+3. **How changes reach `master`.**
+
+   Branch, pull request, let the checks run, merge:
+
+   ```bash
+   git checkout -b fix/whatever
+   git push -u origin fix/whatever
+   gh pr create --fill
+   gh pr merge --auto --squash
+   ```
+
+   `master` requires a pull request and three green checks, with no approval required, so you are
+   never waiting on yourself. The reason for the PR is not ceremony: users run `master` directly
+   (`~/.mastermind` is a clone of it), so CI has to run before code lands there, not after.
+
+   `pre-push` runs the suites locally whenever the push touches `install.sh`, `cli/`, `bin/`,
+   `tests/`, `hooks/` or `scripts/`. `MM_SKIP_TESTS=1 git push` skips it and says so.
+
+   Releasing is a separate process: see [RELEASING.md](RELEASING.md).
+
    **What preflight cannot tell you:** every check above inspects *files* — that the right
    things landed in the right place. None of them starts an agent, so none proves a tool
    actually loads the brain. `scripts/verify-tools.sh` does: it installs into a throwaway
