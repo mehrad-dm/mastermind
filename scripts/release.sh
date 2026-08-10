@@ -48,7 +48,7 @@ edit() {
   fi
   local tmp; tmp="$(mktemp)"
   sed "$expr" "$file" > "$tmp"
-  cmp -s "$tmp" "$file" && { rm -f "$tmp"; die "$label: nothing changed in $file — the pattern no longer matches"; }
+  cmp -s "$tmp" "$file" && { rm -f "$tmp"; die "$label: nothing changed in $file, so the pattern no longer matches"; }
   cat "$tmp" > "$file"; rm -f "$tmp"
   ok "$label"
 }
@@ -91,7 +91,7 @@ ${b}Not done automatically, because each one leaves this machine:${x}
   1. review the diff          git diff --stat HEAD
   2. commit both repos        git commit -am "release: v$NEW"
                               git -C "$SITE" commit -am "v$NEW"
-  3. tag                      git tag -a "v$NEW" -m "v$NEW${SUBJECT:+ — $SUBJECT}"
+  3. tag                      git tag -a "v$NEW" -m "v$NEW${SUBJECT:+: $SUBJECT}"
   4. push the code            git push
   5. push the tag             git push origin "v$NEW"     ${y}# this publishes to npm${x}
   6. deploy the site          git -C "$SITE" push
