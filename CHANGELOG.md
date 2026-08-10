@@ -12,6 +12,9 @@ history lives in git.
   earlier sweep skipped to protect strings that are compared rather than read. These were not
   that: they are the example output MasterMind is told to print, including the line it announces
   work with, so they were the most visible ones we shipped.
+- The package description on npm, the plugin manifest and the marketplace listing lose theirs
+  too. They were written as a JSON escape, so a search for the character itself walked
+  past all three, and those are the lines people read before they install anything.
 
 ## [0.31.4] · 2026-08-11
 

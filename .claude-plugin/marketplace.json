@@ -5,14 +5,14 @@
     "name": "mehrad-dm"
   },
   "metadata": {
-    "description": "A markdown brain that gives your AI coding tools judgment and rigor \u2014 sharp defaults, real decisions, and the discipline to verify before saying done. For Claude Code, Cursor and Codex."
+    "description": "A markdown brain that gives your AI coding tools judgment and rigor: sharp defaults, real decisions, and the discipline to verify before saying done. For Claude Code, Cursor and Codex."
   },
   "plugins": [
     {
       "name": "mastermind",
       "source": "./",
-      "description": "A markdown brain that gives your AI coding tools judgment and rigor. Skills: init, build, debug, performance, qa, interview, learn, signature, persona, route, lint, double-check, deprecate, roadmap, prototype, explain, prompt, quarantine, report, handoff, levelup, help + agents: architect, code-reviewer, refactorer, tech-scout. Experimental (v0.31.4).",
-      "version": "0.31.4",
+      "description": "A markdown brain that gives your AI coding tools judgment and rigor. Skills: init, build, debug, performance, qa, interview, learn, signature, persona, route, lint, double-check, deprecate, roadmap, prototype, explain, prompt, quarantine, report, handoff, levelup, help + agents: architect, code-reviewer, refactorer, tech-scout. Experimental (v0.31.5).",
+      "version": "0.31.5",
       "author": {
         "name": "mehrad-dm"
       },
