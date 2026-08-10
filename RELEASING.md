@@ -79,7 +79,7 @@ It runs `preflight.sh` and stops if anything fails. It does not commit, tag, pus
 ```
 git commit -am "release: v0.31.0"
 git -C ../mastermind-site commit -am "v0.31.0"
-git tag -a v0.31.0 -m "v0.31.0 — <the changelog's opening line>"
+git tag -a v0.31.0 -m "v0.31.0: <the changelog's opening line>"
 git push
 git push origin v0.31.0        # this is what publishes
 git -C ../mastermind-site push # this is what deploys the site
@@ -92,7 +92,8 @@ Pushing the tag is the only irreversible step. Nothing reaches npm before it.
 `publish.yml` will not publish unless, on that exact commit:
 
 - the tag matches `VERSION`
-- both suites, integrity, router, library, links, brain lint and the routing eval all pass
+- both suites, integrity, router, links, brain lint and the routing eval all pass
+- the library pages match the skill and agent sources, when CI can read the site (see below)
 - the packed tarball contains exactly `README.md`, `bin/mastermind.mjs`, `package.json`
 - **every** platform passes: Linux on Node 18 and 22, macOS, Alpine, WSL, the native-Windows
   refusal guard, and an install from the actual stamped tarball
@@ -105,15 +106,36 @@ The stamp matters: the tarball ships the CLI only, and the brain is cloned at in
 stamp is what ties a published version to one commit of this repository, and the CLI refuses a
 clone whose `HEAD` does not match it. That is what closes the moved-tag hole.
 
+**The library check needs the site repository, which is private.** It reads it with
+`MASTERMIND_SITE_KEY`, a read-only deploy key on `mastermind-site`. If that key is missing or
+revoked the checkout fails, the check is skipped, and the job summary says so; the release still
+goes out. That is deliberate: a release must not be held hostage by evidence CI cannot gather,
+and it must not pretend it gathered it either. If you see that warning, the published pages were
+not compared against the instructions behind them.
+
+### The website is checked separately
+
+`site-live.yml` runs daily and on demand against the deployed site, over HTTP, needing no
+repository access. It checks the version it shows, the pages people land on, the security
+headers, the content policy, and that every skill and agent we ship has a live page.
+
+It deliberately does not run on the release tag. The site is deployed from its own repository
+*after* the package tag is pushed, so running it then would test the previous deployment. The
+release checks the site with `verify-release.sh`, after the site push.
+
 ### 5. Verify all three surfaces agree
 
 ```
 scripts/verify-release.sh 0.31.0
 ```
 
-Checks the tag and the six version locations, that npm serves that version, that the published
+Checks the tag and every version location, that npm serves that version, that the published
 package is stamped with the commit the tag points at, that the site shows it, that the site's CSP
-still allows the embedded map, and that a Release object exists. Read-only.
+allows the origin the embedded map actually resolves to, and that a Release object exists.
+Read-only.
+
+Run it **after** pushing the site, not before: it reads the deployed site, so running it earlier
+reports the previous deployment.
 
 "Keep the repo, npm and the site in sync" used to mean remembering to open three tabs. Every part
 of it is a question a command can answer, so this asks them.
@@ -132,6 +154,11 @@ deploys on push to its own repository; the repo does not deploy it.
 **`preflight` reports checks it could not run.** That is not the same as passing, and it says so.
 A missing site checkout or an absent Claude CLI both land here. Decide whether shipping without
 that evidence is acceptable, and if it is, set the documented override so the gap is on the record.
+
+**The job summary says the library was not checked.** `MASTERMIND_SITE_KEY` is missing, revoked,
+or no longer valid on `mastermind-site`. Regenerate a read-only deploy key there and set the
+secret again. Until then the published pages are not being compared against the skill and agent
+sources, and only a person reading the pages would notice a mismatch.
 
 **A test fails only on macOS.** That is bash 3.2 and the `/tmp` and `/var` symlinks, which caused
 four separate path defects. Always resolve both sides of a path comparison before comparing them.

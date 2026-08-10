@@ -23,10 +23,36 @@ Anything derived from a real, possibly-private codebase stays in `lab/`, which i
 
 - **pre-commit / pre-push** block any staged change that contains a quarantined `lab/` path, a
   denylisted identifier, or a common secret pattern (keys, tokens).
-- Distilled knowledge only leaves the Lab after every project, product, and person name is stripped —
+- Distilled knowledge only leaves the Lab after every project, product, and person name is stripped:
   **patterns, not identities.**
 
 To enable the guards after cloning: `git config core.hooksPath .githooks`.
+
+## What the release pipeline can reach
+
+Publishing runs on GitHub Actions and holds two credentials. Both are listed here because a
+credential nobody has written down is one nobody audits.
+
+**npm publishing** uses trusted publishing over OIDC. There is no npm token in this repository or
+in its secrets: the workflow exchanges a short-lived identity for permission to publish, and only
+the publish job requests it. Packages are published with provenance, and the exact commit is
+stamped into the published `package.json` so a version can be traced to one commit of this
+repository.
+
+**`MASTERMIND_SITE_KEY`** is a read-only deploy key for `mastermind-site`, the private repository
+holding the website. The release gate uses it to check that the published library pages still
+match the skill and agent instructions behind them.
+
+- It reads one repository and nothing else. A personal access token would have read every
+  repository the account owns, which is why this is a deploy key.
+- It cannot write. A push with it is refused by GitHub.
+- It does not expire, so nothing breaks silently on a renewal date.
+- To revoke: delete it from `mastermind-site` → Settings → Deploy keys, and delete the
+  `MASTERMIND_SITE_KEY` secret from this repository. The release still works afterwards; the
+  library check is skipped and the job summary says so.
+
+Actions are pinned to full commit SHAs rather than tags, so a moved tag upstream cannot change
+what runs. `npm` itself is pinned in the publish job for the same reason.
 
 ## Reporting a vulnerability
 
@@ -34,4 +60,4 @@ If you find leaked private data in the repo or history, a way to bypass the guar
 security issue, please **report it privately** via GitHub's
 [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
 on this repository rather than opening a public issue. This is an experimental, single-maintainer
-project — expect a best-effort response.
+project, so expect a best-effort response.
