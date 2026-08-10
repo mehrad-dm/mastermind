@@ -4,6 +4,27 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.4] · 2026-08-11
+
+### Changed
+
+- Em dashes are gone from everything MasterMind writes and everything it ships: installer and
+  CLI output, the kernel, the skills and agents, the docs and the website. 1,020 of them. The
+  one exception is deliberate: the pointer line written by releases up to 0.31.2 keeps its
+  original wording, because uninstall matches that line to take it back out, and changing it
+  would strand our text in the file of everyone who installed before.
+- Library page titles use a colon between the name and the subtitle. A comma was ambiguous
+  there, because the subtitles contain commas of their own.
+
+### Fixed
+
+- Prev and next blurbs on the library pages repeated the whole title instead of the subtitle,
+  and 22 of 26 page titles stopped being truncated for search results. Two of the substituted
+  characters were inside regular expressions rather than prose, so the patterns stopped matching
+  the separator they were built to find. The generated-page check could not see it: it compares
+  generated pages against committed pages, and both were regenerated with the same broken
+  splitter, so they agreed with each other.
+
 ## [0.31.3] · 2026-08-10
 
 A further external review found 16 issues. All 16 are addressed here. Two were release blockers.
