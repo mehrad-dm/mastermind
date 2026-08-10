@@ -11,8 +11,8 @@
     {
       "name": "mastermind",
       "source": "./",
-      "description": "A markdown brain that gives your AI coding tools judgment and rigor. Skills: init, build, debug, performance, qa, interview, learn, signature, persona, route, lint, double-check, deprecate, roadmap, prototype, explain, prompt, quarantine, report, handoff, levelup, help + agents: architect, code-reviewer, refactorer, tech-scout. Experimental (v0.31.2).",
-      "version": "0.31.2",
+      "description": "A markdown brain that gives your AI coding tools judgment and rigor. Skills: init, build, debug, performance, qa, interview, learn, signature, persona, route, lint, double-check, deprecate, roadmap, prototype, explain, prompt, quarantine, report, handoff, levelup, help + agents: architect, code-reviewer, refactorer, tech-scout. Experimental (v0.31.3).",
+      "version": "0.31.3",
       "author": {
         "name": "mehrad-dm"
       },
