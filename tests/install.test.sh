@@ -336,6 +336,21 @@ EOF
 is "an edited record is reported" "$(run "$P" --check 2>&1 | grep -c 'edited by hand')" "1"
 
 # ══ A new upstream file never lands on top of the project's own ═══════════════
+# A manifest path with no hash entry is normal, not an error: it is every file a release adds.
+# Reading it through `set -euo pipefail` without a guard aborted the installer with no message.
+echo "── a gap in the hash ledger does not abort the install"
+P=$(proj ledgergap)
+run "$P" claude >/dev/null 2>&1
+python3 - "$P/.mastermind/.manifest.hashes" <<'EOF'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text("\n".join(l for l in p.read_text().split("\n") if "core/mindset.md" not in l))
+EOF
+run "$P" claude >/dev/null 2>&1; rc=$?
+is "the install still succeeds"      "$rc" "0"
+is "and it finished the refresh"     "$(count_in "$P/.mastermind/engineering/core/mindset.md" 'soul of MasterMind')" "1"
+is "the ledger is rebuilt complete"  "$(count_in "$P/.mastermind/.manifest.hashes" 'core/mindset.md')" "1"
+
 echo "── a colliding project file is kept, not overwritten"
 P=$(proj collide)
 run "$P" claude >/dev/null 2>&1

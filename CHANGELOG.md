@@ -4,6 +4,40 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.2] · 2026-08-10
+
+### Fixed
+
+- The installer could exit partway through the engine refresh with nothing printed. Reading the
+  content ledger under `set -euo pipefail`, a lookup that matched nothing failed the assignment
+  and ended the run. A path with no recorded hash is normal rather than an error: it is every
+  file a release adds, and any project whose ledger is incomplete, which an interrupted install
+  leaves behind. Re-running the installer to repair such a project silently refused to repair it.
+  Reproduced against 0.31.1 and covered by a test that fails there.
+- Backup and preserved-file names carry the process id as well as the second. Two written in the
+  same second collided, which cost one of them and made the suite intermittently red.
+
+### Changed
+
+- Library pages carry the rule they route on, read from the skill's or agent's own file, so the
+  page and the instructions behind it cannot disagree about when it fires.
+- The install record carries a digest. The doctor stays quiet when the record is intact and says
+  so when it was edited by hand, rather than trusting whatever it finds.
+- A file this release adds where a project already had one of its own is preserved beside it and
+  named in the output, instead of being replaced without a word.
+- `site-live.yml` checks the deployed website daily and on demand: the version it shows, the
+  pages people land on, its security headers, its content policy, and that every skill and agent
+  we ship has a page. Nothing in CI had looked at the site before.
+- `build-library.mjs --check` stops reporting success when the site is not there to check.
+
+### Security
+
+- The architecture page's embedded map was blocked in production. `foglamp.dev` answers with a
+  redirect to `www.foglamp.dev`, and `frame-src` is enforced against every URL in a redirect
+  chain, so allowing the first origin left the frame blocked while the header read correctly.
+  The embed names the origin the browser actually reaches, and the build now follows redirects
+  and fails on where they land.
+
 ## [0.31.1] · 2026-08-10
 
 Housekeeping. No behaviour changes.
