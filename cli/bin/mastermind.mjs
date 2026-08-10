@@ -30,8 +30,9 @@ if (argv.includes('--help') || argv.includes('-h')) {
   mastermind update           update the brain and repair this project
   mastermind uninstall        remove MasterMind wiring from this project
   mastermind skills           list the skill routing table
+  mastermind agents           list the agents
 
-Tools:   claude · cursor · codex · agents
+Tools:   claude · cursor · codex        AGENTS.md is always wired, so it is not a tool you name
 Flags:   --global · --shared · --isolated · --json
 
 Requires: Bash, Git, and Node 18 or newer. On Windows, run it inside WSL.`)
@@ -40,6 +41,15 @@ Requires: Bash, Git, and Node 18 or newer. On Windows, run it inside WSL.`)
 if (argv.includes('--version') || argv.includes('-V')) {
   console.log(VERSION)
   process.exit(0)
+}
+
+// Rejected BEFORE anything is cloned, fetched or written. An unknown flag used to exit 2 only
+// after the brain had been cloned, so a typo left state behind on a command that never ran.
+const FLAGS = ['--global', '--shared', '--isolated', '--json', '--check', '--uninstall']
+const badFlag = argv.find((a) => a.startsWith('-') && !FLAGS.includes(a))
+if (badFlag) {
+  console.error(`unknown flag: ${badFlag}\nflags: ${FLAGS.join(' · ')}`)
+  process.exit(2)
 }
 
 const cmdAt = argv.findIndex((a) => !a.startsWith('-'))
@@ -82,7 +92,7 @@ const fail = (msg) => {
 // verifyCommit throws through fail() -> process.exit, so cleanup must happen before it runs.
 
 if (process.platform === 'win32') {
-  fail('Native Windows is not supported yet — run this inside WSL, where it works as-is.\n'
+  fail('Native Windows is not supported yet: run this inside WSL, where it works as-is.\n'
     + '  Git Bash will not work either: it runs the Windows build of Node, which lands here too.')
 }
 
@@ -183,7 +193,7 @@ if (READ_CMDS.includes(cmd)) {
     else writeAll(2, `✖ ${msg}\n`)
     process.exit(1)
   }
-  if (!brain) refuse('no brain found — run `npx mastermind-brain` in this project first')
+  if (!brain) refuse('no brain found: run `npx mastermind-brain` in this project first')
   if (cmd === 'wrong-log') {
     const journal = join(brain, 'journal.md')
     const lines = existsSync(journal)
@@ -195,7 +205,7 @@ if (READ_CMDS.includes(cmd)) {
       { journal, count: lines.length, entries: lines },
       lines.length
         ? lines.join('\n')
-        : `no misses recorded yet in ${journal} — that means nothing has been logged, not that nothing was wrong`,
+        : `no misses recorded yet in ${journal}: that means nothing has been logged, not that nothing was wrong`,
     )
   }
 
@@ -243,11 +253,11 @@ if (READ_CMDS.includes(cmd)) {
       { brain, foreign: foreign.map(({ name, from }) => ({ name, from })), collisions,
         note: 'Precedence: this project\'s own skills → installed packs → MasterMind defaults. On a rule conflict the stricter rule wins.' },
       foreign.length === 0
-        ? 'no other skill packs installed — nothing to collide with'
+        ? 'no other skill packs installed: nothing to collide with'
         : [
             `${foreign.length} foreign skill(s) installed beside ${ours.length} MasterMind skills`,
             ...collisions.map((c) => c.kind === 'name'
-              ? `name   ${c.foreign} — same name as ours (yours is used; ours is mastermind-${c.foreign})`
+              ? `name   ${c.foreign}: same name as ours (yours is used; ours is mastermind-${c.foreign})`
               : `overlap ${c.foreign} ≈ ${c.ours} (${Math.round(c.share * 100)}% shared triggers)`),
             '',
             'Precedence: your project\'s skills → installed packs → MasterMind defaults.',
@@ -274,7 +284,7 @@ if (READ_CMDS.includes(cmd)) {
     if (!hit) {
       const near = items.filter((i) => i.name.includes(want) || want.includes(i.name))
       refuse(
-        `no ${kind} named "${want}"${near.length ? ` — did you mean ${near.map((n) => n.name).join(', ')}?` : ''}`,
+        `no ${kind} named "${want}"${near.length ? `: did you mean ${near.map((n) => n.name).join(', ')}?` : ''}`,
         { available: names },
       )
     }
@@ -299,13 +309,13 @@ if (READ_CMDS.includes(cmd)) {
         hints: [...hintNames],
         skills: allSkills.map(({ name, description }) => ({ name, description, hint: hintNames.has(name) })),
         agents: allAgents.map(({ name, description }) => ({ name, description, hint: hintNames.has(name) })),
-        note: 'the full table; → marks keyword overlap only. Keyword matching is unreliable on natural phrasing — judge from the descriptions, do not trust the arrows.',
+        note: 'the full table; → marks keyword overlap only. Keyword matching is unreliable on natural phrasing: judge from the descriptions, do not trust the arrows.',
       },
       [
         ...allSkills.map((s) => line('skill', s)),
         ...allAgents.map((a) => line('agent', a)),
         '',
-        '→ marks keyword overlap only, and it is often wrong — choose from the descriptions.',
+        '→ marks keyword overlap only, and it is often wrong: choose from the descriptions.',
         'then: mastermind skill <name>',
       ].join('\n'),
     )
@@ -315,9 +325,9 @@ if (READ_CMDS.includes(cmd)) {
 try {
   execFileSync('git', ['--version'], { stdio: 'ignore' })
 } catch {
-  fail('git is required (the brain is a git repo — that is also how you audit it).')
+  fail('git is required (the brain is a git repo: that is also how you audit it).')
 }
-// install.sh is the engine, and Alpine — the usual CI base image — ships without bash.
+// install.sh is the engine, and Alpine: the usual CI base image: ships without bash.
 try {
   execFileSync('bash', ['--version'], { stdio: 'ignore' })
 } catch {
@@ -334,7 +344,7 @@ const verifyCommit = (where, { cleanupOnMismatch = false } = {}) => {
   if (!PINNED_COMMIT) return // local checkout / unpublished: nothing to verify against
   let head = ''
   try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: where, encoding: 'utf8' }).trim() }
-  catch { bail(`cannot read the commit at ${where} — refusing to install unverified code.`) }
+  catch { bail(`cannot read the commit at ${where}: refusing to install unverified code.`) }
   if (head !== PINNED_COMMIT)
     bail(`brain at ${where} is commit ${head.slice(0, 12)}, but this release pins ${PINNED_COMMIT.slice(0, 12)}.\n`
       + '  The tag may have moved. Refusing to install code this release did not publish.')
@@ -343,7 +353,7 @@ const verifyCommit = (where, { cleanupOnMismatch = false } = {}) => {
     dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'],
       { cwd: where, encoding: 'utf8' }).trim()
   } catch {
-    bail(`cannot read the working tree at ${where} — refusing to run code this release cannot verify.\n`
+    bail(`cannot read the working tree at ${where}: refusing to run code this release cannot verify.\n`
       + `  Check it by hand: git -C ${where} status`)
   }
   if (dirty) {
@@ -363,7 +373,7 @@ if (!existsSync(MM_HOME)) {
   }
   verifyCommit(MM_HOME, { cleanupOnMismatch: true })
 } else if (!existsSync(join(MM_HOME, 'install.sh'))) {
-  fail(`${MM_HOME} exists but doesn't look like the MasterMind repo — move it aside and re-run.`)
+  fail(`${MM_HOME} exists but doesn't look like the MasterMind repo: move it aside and re-run.`)
 } else if (PINNED_COMMIT && !existsSync(join(MM_HOME, '.git'))) {
   fail(`${MM_HOME} has no git history, so this release cannot verify what it would run.\n`
     + `  A published MasterMind only executes the commit it was built from.\n`
@@ -375,13 +385,13 @@ if (!existsSync(MM_HOME)) {
     try { git(['symbolic-ref', '-q', 'HEAD']) } catch { onBranch = false }
     if (onBranch && !PINNED_COMMIT) {
       const st = run('git', ['pull', '--ff-only'], { cwd: MM_HOME })
-      if (st !== 0) fail(`update refused — ${MM_HOME} has local changes. Keep them: git -C ${MM_HOME} stash && npx mastermind-brain update. Discard them: git -C ${MM_HOME} checkout -- . && npx mastermind-brain update`)
+      if (st !== 0) fail(`update refused: ${MM_HOME} has local changes. Keep them: git -C ${MM_HOME} stash && npx mastermind-brain update. Discard them: git -C ${MM_HOME} checkout -- . && npx mastermind-brain update`)
     }
     else {
       const f = run('git', ['fetch', '--tags', '--depth', '1', 'origin', `refs/tags/${PIN}:refs/tags/${PIN}`], { cwd: MM_HOME })
-      if (f !== 0) fail(`could not fetch ${PIN} from ${REPO_URL} — the brain is unchanged; nothing was installed.`)
+      if (f !== 0) fail(`could not fetch ${PIN} from ${REPO_URL}: the brain is unchanged; nothing was installed.`)
       const c = run('git', ['checkout', '-q', PIN], { cwd: MM_HOME })
-      if (c !== 0) fail(`could not check out ${PIN} — the brain is unchanged; nothing was installed.`)
+      if (c !== 0) fail(`could not check out ${PIN}: the brain is unchanged; nothing was installed.`)
       verifyCommit(MM_HOME)
     }
   }
@@ -389,11 +399,11 @@ if (!existsSync(MM_HOME)) {
     let head = ''
     try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: MM_HOME, encoding: 'utf8' }).trim() } catch { /* verifyCommit reports it */ }
     if (head && head !== PINNED_COMMIT) {
-      console.log(`↻ brain at ${MM_HOME} is behind this release — syncing to ${PIN}`)
+      console.log(`↻ brain at ${MM_HOME} is behind this release: syncing to ${PIN}`)
       run('git', ['fetch', '--tags', '--depth', '1', 'origin', `refs/tags/${PIN}:refs/tags/${PIN}`], { cwd: MM_HOME })
       const c = run('git', ['checkout', '-q', PIN], { cwd: MM_HOME })
       if (c !== 0)
-        fail(`could not update ${MM_HOME} to ${PIN} — the brain is unchanged.\n`
+        fail(`could not update ${MM_HOME} to ${PIN}: the brain is unchanged.\n`
           + `  Fix it by hand: git -C ${MM_HOME} fetch --tags && git -C ${MM_HOME} checkout ${PIN}`)
     }
   }
@@ -404,6 +414,6 @@ if (!existsSync(MM_HOME)) {
 const engineArgs =
   cmd === 'check' ? ['--check', ...passthrough]
   : cmd === 'uninstall' ? ['--uninstall', ...passthrough]
-  : passthrough // init and update both end in a (re)install — that is the self-heal contract
+  : passthrough // init and update both end in a (re)install: that is the self-heal contract
 
 process.exit(run('bash', [join(MM_HOME, 'install.sh'), ...engineArgs], { cwd: process.cwd() }))

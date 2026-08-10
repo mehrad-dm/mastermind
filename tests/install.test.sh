@@ -393,6 +393,77 @@ is "the first root file survives"   "$(cat "$P"/.mastermind/CLAUDE.md.yours-* 2>
 is "the nested engine file replaces the collision" "$(count_in "$P/.mastermind/engineering/core/mindset.md" 'FIRST NESTED FILE')" "0"
 is "the root engine file replaces the collision"   "$(count_in "$P/.mastermind/CLAUDE.md" 'FIRST ROOT FILE')" "0"
 
+# ══ Every path the brain writes, not only the shipped engine files ═══════════
+# The containment guard covered ISO_ENGINE and ISO_OWNED. It did not cover the state files or
+# the context and field directories, so a dangling symlink at one of them made the write land
+# outside the project while the install still exited 0.
+echo "── a symlink at any brain path is refused, not written through"
+for _p in routes.map .manifest .manifest.hashes .installed .routes.generated VERSION \
+          engineering/contexts engineering/fields; do
+  P=$(proj "esc$(printf '%s' "$_p" | tr -c 'a-z' 'x')")
+  OUT="$TMP_REAL/victims/escape-$$"; rm -f "$OUT"
+  mkdir -p "$P/.mastermind/$(dirname "$_p")"
+  ln -s "$OUT" "$P/.mastermind/$_p"
+  run "$P" claude >/dev/null 2>&1 || true
+  is "$_p cannot escape the project" "$([ -e "$OUT" ] && echo escaped || echo contained)" "contained"
+done
+
+# The context directory is named by routes.map, so the repository chooses the path.
+echo "── a context path named by routes.map is checked too"
+P=$(proj ctxescape); mkdir -p "$P/apps/web"
+run "$P" claude cursor >/dev/null 2>&1
+cp -R "$P/.mastermind/engineering/fields/_template" "$P/.mastermind/engineering/fields/frontend"
+printf 'apps/web webctx\n' > "$P/.mastermind/routes.map"
+CTXOUT="$TMP_REAL/victims/ctx-$$"; rm -f "$CTXOUT"
+mkdir -p "$P/.mastermind/engineering/contexts"
+ln -s "$CTXOUT" "$P/.mastermind/engineering/contexts/webctx"
+out=$(run "$P" claude cursor 2>&1) || true
+is "the context symlink is refused"  "$(printf '%s' "$out" | grep -c 'points outside the brain')" "1"
+is "and nothing was created outside" "$([ -e "$CTXOUT" ] && echo escaped || echo contained)" "contained"
+
+# ══ A link of theirs that happens to point into the brain is still theirs ═════
+# Ownership meant "resolves somewhere inside .mastermind", so a project pointing AGENTS.md at
+# its own file in there had that link replaced with no backup and removed on uninstall.
+echo "── a project's own link into the brain survives"
+P=$(proj theirlink)
+run "$P" claude >/dev/null 2>&1
+printf 'MY PREFS\n' > "$P/.mastermind/prefs.md"
+rm -f "$P/AGENTS.md"; ln -s .mastermind/prefs.md "$P/AGENTS.md"
+run "$P" claude agents >/dev/null 2>&1
+is "ours is wired"            "$(readlink "$P/AGENTS.md")" ".mastermind/AGENTS.md"
+is "theirs was backed up"     "$(ls "$P"/AGENTS.md.bak-* 2>/dev/null | wc -l | tr -d ' ')" "1"
+run "$P" --uninstall >/dev/null 2>&1
+is "and theirs is handed back" "$(readlink "$P/AGENTS.md")" ".mastermind/prefs.md"
+
+# ══ Two projects, two records ════════════════════════════════════════════════
+# Sanitising the path made /a/b and /a_b the same filename, so each project inherited the
+# other's expected tools.
+echo "── project paths that sanitise alike keep separate records"
+mkdir -p "$TMP/coll/a/b" "$TMP/coll/a_b"
+(cd "$TMP/coll/a/b" && git init -q .); (cd "$TMP/coll/a_b" && git init -q .)
+(cd "$TMP/coll/a/b" && HOME="$SANDBOX_HOME" "$INSTALL" --shared claude >/dev/null 2>&1)
+(cd "$TMP/coll/a_b" && HOME="$SANDBOX_HOME" "$INSTALL" --shared claude cursor >/dev/null 2>&1)
+is "the nested project kept its own tools" \
+   "$(grep -rlxF "project=$TMP_REAL/coll/a/b" "$SANDBOX_HOME/.mastermind-state/projects" 2>/dev/null | head -1 | xargs -I{} grep -c '^tools=claude$' {} 2>/dev/null || echo 0)" "1"
+
+# ══ Retired names are accepted, never recorded ═══════════════════════════════
+echo "── a retired tool name does not become expected wiring"
+P=$(proj retired)
+run "$P" claude gemini >/dev/null 2>&1
+is "gemini is not in the record" "$(count_in "$P/.mastermind/.installed" 'gemini')" "0"
+is "claude still is"             "$(count_in "$P/.mastermind/.installed" 'tools=claude')" "1"
+
+# ══ The pointer we wrote before today is still ours to remove ════════════════
+# Releases up to 0.31.2 wrote the hint with an em dash. Cleanup matches whole lines, so the old
+# form has to stay recognised or our text is stranded in every existing user's file.
+echo "── a pointer written by an older release is still cleaned up"
+P=$(proj legacyhint)
+printf 'their notes\n\nFollow ./.mastermind/CLAUDE.md — the MasterMind brain for this project (skills, agents, engineering rigor).\n' > "$P/AGENTS.md"
+run "$P" claude >/dev/null 2>&1
+run "$P" --uninstall >/dev/null 2>&1
+is "the legacy pointer is gone"  "$(count_in "$P/AGENTS.md" 'the MasterMind brain for this project')" "0"
+is "their own text stayed"       "$(count_in "$P/AGENTS.md" 'their notes')" "1"
+
 # ══ The install record is data, so the doctor must survive it being wrong ═════
 echo "── a corrupted or hostile install record does not break the doctor"
 P=$(proj badrecord)
@@ -537,18 +608,18 @@ is "a mention alone is not wired" "$(run "$P" --check 2>&1 | grep -c "isn't set 
 echo "── a shared install leaves an expected-integration record"
 P=$(proj sharedrecord)
 run "$P" --shared claude cursor >/dev/null 2>&1
-_key="$(printf '%s' "$P" | tr -c 'A-Za-z0-9._-' '_')"
-is "the record lists both tools" "$(count_in "$SANDBOX_HOME/.mastermind-state/projects/$_key" 'tools=claude cursor')" "1"
+_recf="$(grep -rlxF "project=$P" "$SANDBOX_HOME/.mastermind-state/projects" 2>/dev/null | head -1)"
+is "the record lists both tools" "$(count_in "${_recf:-/nonexistent}" 'tools=claude cursor')" "1"
 # The record has to track removals too, or the doctor keeps demanding wiring the user dropped.
 run "$P" --uninstall cursor >/dev/null 2>&1
-is "a targeted uninstall drops that tool" "$(count_in "$SANDBOX_HOME/.mastermind-state/projects/$_key" 'cursor')" "0"
+is "a targeted uninstall drops that tool" "$(count_in "${_recf:-/nonexistent}" 'cursor')" "0"
 (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >"$TMP/check-shared-after-targeted-uninstall" 2>&1); rc=$?
 is "the shared doctor trusts the rewritten record" \
    "$(grep -c 'edited by hand' "$TMP/check-shared-after-targeted-uninstall" || true)" "0"
 is "the remaining shared integration is healthy" "$rc" "0"
 run "$P" --uninstall >/dev/null 2>&1
-_key="$(printf '%s' "$P" | tr -c 'A-Za-z0-9._-' '_')"
-is "a bare uninstall drops the record"    "$([ -f "$SANDBOX_HOME/.mastermind-state/projects/$_key" ] && echo present || echo gone)" "gone"
+_recf="$(grep -rlxF "project=$P" "$SANDBOX_HOME/.mastermind-state/projects" 2>/dev/null | head -1)"
+is "a bare uninstall drops the record"    "$(grep -rlxF "project=$P" "$SANDBOX_HOME/.mastermind-state/projects" 2>/dev/null | wc -l | tr -d ' ')" "0"
 
 echo "── files we did not generate are preserved, not destroyed"
 P=$(proj ownedpaths)
