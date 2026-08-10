@@ -1,6 +1,6 @@
 ---
 name: prompt
-description: Use ONLY when the user explicitly asks to improve a prompt aimed at an AI — "improve my prompt", "fix this prompt", "how should I ask for this", "make this prompt better". A prompt pasted to be answered or executed is a task, not a rewrite request — do that task instead. About prompts for an AI, not about optimizing code.
+description: Use ONLY when the user explicitly asks to improve a prompt aimed at an AI: "improve my prompt", "fix this prompt", "how should I ask for this", "make this prompt better". A prompt pasted to be answered or executed is a task, not a rewrite request: do that task instead. About prompts for an AI, not about optimizing code.
 ---
 
 # MasterMind: Prompt

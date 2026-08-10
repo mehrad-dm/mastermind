@@ -1,6 +1,6 @@
 ---
 name: lint
-description: Use to check MasterMind's own instruction files — the kernel, core, skills and agents — for bloat, repeated rules, and contradictions between layers. Fires before a release, after several skills changed, or when the brain feels bloated or self-contradictory. Reports findings with file:line; you approve every change. This lints MasterMind itself, never your project's code — for that, use refactorer.
+description: Use to check MasterMind's own instruction files, the kernel, core, skills and agents: for bloat, repeated rules, and contradictions between layers. Fires before a release, after several skills changed, or when the brain feels bloated or self-contradictory. Reports findings with file:line; you approve every change. This lints MasterMind itself, never your project's code: for that, use refactorer.
 ---
 
 # MasterMind: Lint

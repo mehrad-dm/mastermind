@@ -55,13 +55,13 @@ for (const dir of skillDirs) {
   if (!listedSkills.has(dir)) fail(`skills/README.md: skill "${dir}" not listed (the index must be complete)`)
 }
 for (const listed of listedSkills) {
-  if (!skillDirs.includes(listed)) fail(`skills/README.md: lists "${listed}" — no such skill dir`)
+  if (!skillDirs.includes(listed)) fail(`skills/README.md: lists "${listed}", no such skill dir`)
 }
 for (const file of ['skills/README.md', 'README.md']) {
   const text = readIfPresent(file)
   if (text === null) continue
   for (const m of text.matchAll(/`(mastermind-[a-z-]+)`/g)) {
-    if (!skillDirs.includes(m[1])) fail(`${file}: lists "${m[1]}" — no such skill dir`)
+    if (!skillDirs.includes(m[1])) fail(`${file}: lists "${m[1]}", no such skill dir`)
   }
 }
 
@@ -119,14 +119,14 @@ for (const pack of packs) {
 
   if (!top.includes('field.md')) fail(`engineering/fields/${pack}/: no field.md (the pack's table of contents)`)
   if (!top.includes('audit-rules.md')) {
-    fail(`engineering/fields/${pack}/: no audit-rules.md — code-reviewer would have no framework rules`)
+    fail(`engineering/fields/${pack}/: no audit-rules.md, code-reviewer would have no framework rules`)
   }
   for (const abs of files) {
     if (NON_ROUTABLE.has(abs.split('/').pop())) continue
     const rel = abs.slice(ROOT.length + 1)
     const fm = frontmatter(read(rel))
     if (!fm || !('route_when' in fm)) {
-      fail(`${rel}: no \`route_when\` frontmatter — build-router.mjs will skip it silently`)
+      fail(`${rel}: no \`route_when\` frontmatter, build-router.mjs will skip it silently`)
     }
   }
 }
@@ -136,13 +136,13 @@ const fieldless =
   /Current field:\s*\*\*\s*none/i.test(activeField) || /^\s*[-*]\s*\*\*Level:\*\*\s*0\b/m.test(activeField)
 const packRef = activeField.match(/^\s*[-*]\s*\*\*Field pack:\*\*\s*`([^`]+)`/m)
 if (fieldless) {
-  // no field by design — nothing to resolve
+  // no field by design: nothing to resolve
 } else if (!packRef) {
-  fail('engineering/active-field.md: no `- **Field pack:** `<path>`` line — nothing declares the active pack')
+  fail('engineering/active-field.md: no `- **Field pack:** `<path>`` line, nothing declares the active pack')
 } else {
   const packPath = packRef[1].replace(/\/$/, '')
   if (!existsSync(join(ROOT, packPath)) || !statSync(join(ROOT, packPath)).isDirectory()) {
-    fail(`engineering/active-field.md: field pack "${packRef[1]}" does not exist — the active field cannot load`)
+    fail(`engineering/active-field.md: field pack "${packRef[1]}" does not exist, the active field cannot load`)
   } else {
     for (const required of ['field.md', 'audit-rules.md']) {
       if (!existsSync(join(ROOT, packPath, required))) {
@@ -163,18 +163,18 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
     ? [...section.split(/^#/m)[0].matchAll(/^\s*[-*]\s*\*\*`([^`]+)`\*\*/gm)].map((m) => m[1].replace(/\/$/, ''))
     : []
   if (!listed.length) {
-    fail(`${rel}: re-vendor \`rm -rf\`s this directory but no preserve list found — expected bullets of the form "- **\`path\`** — why" after a line saying what must survive`)
+    fail(`${rel}: re-vendor \`rm -rf\`s this directory but no preserve list found: expected bullets of the form "- **\`path\`**, why" after a line saying what must survive`)
     continue
   }
   const rescued = [...text.matchAll(/^\s*cp\b[^\n]*?\$\{?P\}?\/([^"'\s]+)["']?\s+\/tmp\S*/gm)].map((m) =>
     m[1].replace(/\/$/, '')
   )
   for (const p of listed) {
-    if (!existsSync(join(ROOT, dir, p))) fail(`${rel}: preserved path "${p}" does not exist — the re-vendor would restore nothing`)
-    if (!rescued.includes(p)) fail(`${rel}: preserved path "${p}" is never copied aside by the re-vendor block — the list and the procedure have drifted`)
+    if (!existsSync(join(ROOT, dir, p))) fail(`${rel}: preserved path "${p}" does not exist, the re-vendor would restore nothing`)
+    if (!rescued.includes(p)) fail(`${rel}: preserved path "${p}" is never copied aside by the re-vendor block: the list and the procedure have drifted`)
   }
   for (const p of rescued) {
-    if (!listed.includes(p)) fail(`${rel}: re-vendor copies "${p}" aside but it is not in the preserve list — undocumented, so the next editor won't know it's ours`)
+    if (!listed.includes(p)) fail(`${rel}: re-vendor copies "${p}" aside but it is not in the preserve list: undocumented, so the next editor won't know it's ours`)
   }
 }
 
@@ -184,7 +184,7 @@ for (const hook of hasLiveHooks ? ['pre-commit', 'pre-push'] : []) {
   const live = join(ROOT, '.githooks', hook)
   const shipped = join(ROOT, 'skills', 'quarantine', 'assets', hook)
   if (!existsSync(live) || !existsSync(shipped)) {
-    fail(`${hook}: missing from .githooks/ or skills/quarantine/assets/ — both copies must exist`)
+    fail(`${hook}: missing from .githooks/ or skills/quarantine/assets/, both copies must exist`)
     continue
   }
   const norm = (p) =>
@@ -193,7 +193,7 @@ for (const hook of hasLiveHooks ? ['pre-commit', 'pre-push'] : []) {
       .trimEnd()
   if (norm(live) !== norm(shipped)) {
     fail(
-      `.githooks/${hook} differs from skills/quarantine/assets/${hook} — the guard protecting ` +
+      `.githooks/${hook} differs from skills/quarantine/assets/${hook}: the guard protecting ` +
         `this repo is not the guard we ship. Sync them (a fix must land in both).`
     )
   }
@@ -211,7 +211,7 @@ for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'RE
   for (const dead of RETIRED) {
     const re = new RegExp('(\\*\\*|`)' + dead + '(\\*\\*|`)')
     if (re.test(text) && !realNames.has(dead))
-      fail(`${menu} still advertises the retired name "${dead}" — it fails when typed`)
+      fail(`${menu} still advertises the retired name "${dead}": it fails when typed`)
   }
 }
 
@@ -275,7 +275,7 @@ if (journal !== null) {
   if (entries.length !== mentions.length) {
     const stray = mentions.filter((l) => !entries.includes(l)).map((l) => l.trim().slice(0, 60))
     fail(`journal.md: ${mentions.length} lines carry the miss marker but only ${entries.length} `
-      + `are entries — prose inflates every count of the log: "${stray[0]}…"`)
+      + `are entries: prose inflates every count of the log: "${stray[0]}…"`)
   }
 }
 
@@ -300,7 +300,7 @@ for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json'
     fail(`${f}: description drifted from the canonical one-liner ("${CANON}…")`)
   for (const dead of ['Copilot', 'Gemini']) {
     if (new RegExp(`"[^"]*${dead}[^"]*"`).test(text))
-      fail(`${f}: still advertises ${dead} — supported tools are Claude Code, Cursor and Codex`)
+      fail(`${f}: still advertises ${dead}, supported tools are Claude Code, Cursor and Codex`)
   }
 }
 

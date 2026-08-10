@@ -1,6 +1,6 @@
 ---
-title: Double-check — attacking your own answer before you hand it over
-blurb: When MasterMind is about to tell you something works, it first tries to prove itself wrong — with a reviewer that never gets told what the answer is supposed to be.
+title: Double-check, attacking your own answer before you hand it over
+blurb: When MasterMind is about to tell you something works, it first tries to prove itself wrong: with a reviewer that never gets told what the answer is supposed to be.
 ---
 
 ## The problem this solves

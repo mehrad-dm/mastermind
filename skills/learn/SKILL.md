@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Use when a task depends on tech you don't actually know — an unfamiliar library, a fast-moving framework, a tricky API, an unfamiliar codebase — or whenever "I think it works like…" is load-bearing. Just-in-time and task-scoped; distinct from levelup, which updates the durable knowledge base.
+description: Use when a task depends on tech you don't actually know, an unfamiliar library, a fast-moving framework, a tricky API, an unfamiliar codebase: or whenever "I think it works like…" is load-bearing. Just-in-time and task-scoped; distinct from levelup, which updates the durable knowledge base.
 ---
 
 # MasterMind: Learn

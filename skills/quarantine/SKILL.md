@@ -1,6 +1,6 @@
 ---
 name: quarantine
-description: Use whenever secrets or confidential material must be kept out of git — API keys, tokens, credentials, a client's internal patterns, private project data, real names, proprietary code. Triggers: "these keys must never end up in a commit", "make sure this never gets pushed", "this is sensitive", "don't commit this", "set up the lab", or any request to guard against leaking secrets. Also when a `lab/` folder already exists but its guards are missing or broken. (The quarantine lives on disk as `lab/` — the name existing projects already have.)
+description: Use whenever secrets or confidential material must be kept out of git: API keys, tokens, credentials, a client's internal patterns, private project data, real names, proprietary code. Triggers: "these keys must never end up in a commit", "make sure this never gets pushed", "this is sensitive", "don't commit this", "set up the lab", or any request to guard against leaking secrets. Also when a `lab/` folder already exists but its guards are missing or broken. (The quarantine lives on disk as `lab/`: the name existing projects already have.)
 ---
 
 # Lab Init: a safe place for project data
@@ -60,7 +60,7 @@ Run from the target repo root. The skill's files live in `assets/` next to this 
      git push --dry-run /tmp/mm-throwaway.git HEAD:refs/heads/mm-test   # must FAIL
      ```
 
-     Expect `✖ BLOCKED — commit <sha> temp: pre-push test contains confidential terms:`, then
+     Expect `✖ BLOCKED: commit <sha> temp: pre-push test contains confidential terms:`, then
      `Push aborted …` and a non-zero exit. If the push succeeds, the guard is not live: check
      `git config core.hooksPath`, that `.githooks/pre-push` is executable, and that the term is in
      `lab/.denylist` (the hook scans every file type, but skips `lab/` itself. That's the quarantine).

@@ -45,7 +45,7 @@ versions_agree() {
   done
   site_available || return $?
   for f in "$SITE/src/components/Footer.astro" "$SITE/src/pages/index.astro"; do
-    [ -f "$f" ] || { echo "$(basename "$f") not found — the site cannot be checked"; return 1; }
+    [ -f "$f" ] || { echo "$(basename "$f") not found: the site cannot be checked"; return 1; }
     grep -q "v$want" "$f" || { echo "$(basename "$f") ≠ v$want"; return 1; }
   done
   return 0
@@ -55,14 +55,14 @@ scan_is_fresh() {
   local before; before="$(mktemp)"
   cp "$REPO/.foglamp/scan.json" "$before"
   node "$REPO/scripts/update-scan.mjs" >/dev/null 2>&1 || { rm -f "$before"; return 1; }
-  diff -q "$before" "$REPO/.foglamp/scan.json" >/dev/null 2>&1 || { rm -f "$before"; echo "scan.json was stale — regenerated, commit it"; return 1; }
+  diff -q "$before" "$REPO/.foglamp/scan.json" >/dev/null 2>&1 || { rm -f "$before"; echo "scan.json was stale: regenerated, commit it"; return 1; }
   rm -f "$before"
 }
 
 site_available() {
   [ -d "$SITE" ] && return 0
   if [ -n "${MM_SKIP_SITE:-}" ]; then
-    echo "MM_SKIP_SITE set — the site is NOT verified for this release"
+    echo "MM_SKIP_SITE set: the site is NOT verified for this release"
     return 0
   fi
   echo "../mastermind-site is not checked out, so the site cannot be verified."
@@ -75,7 +75,7 @@ site_builds() {
   ( cd "$SITE" && npm run build )
 }
 
-echo "Preflight — everything that must pass before release"
+echo "Preflight: everything that must pass before release"
 echo
 echo "Code & tests"
 step "installer regression suite"      bash "$REPO/tests/install.test.sh"
@@ -104,11 +104,11 @@ echo
 rm -f "$LOG"
 if [ "$FAIL" -eq 0 ]; then
   if [ "${SKIPPED:-0}" -gt 0 ]; then
-    printf '%s✓ preflight: %d checks passed, %d could not run here — releasable.%s\n' "$g" "$PASS" "$SKIPPED" "$x"
+    printf '%s✓ preflight: %d checks passed, %d could not run here, releasable.%s\n' "$g" "$PASS" "$SKIPPED" "$x"
   else
-    printf '%s✓ preflight: %d checks passed — releasable.%s\n' "$g" "$PASS" "$x"
+    printf '%s✓ preflight: %d checks passed, releasable.%s\n' "$g" "$PASS" "$x"
   fi
   exit 0
 else
-  printf '%s✗ preflight: %d failed, %d passed — not releasable.%s\n' "$r" "$FAIL" "$PASS" "$x"; exit 1
+  printf '%s✗ preflight: %d failed, %d passed, not releasable.%s\n' "$r" "$FAIL" "$PASS" "$x"; exit 1
 fi

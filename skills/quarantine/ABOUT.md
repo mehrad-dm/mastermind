@@ -1,5 +1,5 @@
 ---
-title: Lab — a private room for data that must never be published
+title: Lab, a private room for data that must never be published
 blurb: Sets up a local, never-committed workspace for confidential material, plus automatic guards that block it from reaching a shared repository.
 ---
 

@@ -33,7 +33,7 @@ Explain the root cause in one or two sentences, then return the fixed component.
 ## Rubric
 
 1. Correctly identifies the stale closure: the interval callback captured the initial `remaining` value, so it always computes 30 - 1
-2. The fix makes the count actually reach 0 (functional updater setRemaining(r => r - 1), or a ref, or an effect keyed on remaining) — not just re-running the same broken code
+2. The fix makes the count actually reach 0 (functional updater setRemaining(r => r - 1), or a ref, or an effect keyed on remaining): not just re-running the same broken code
 3. The effect returns a cleanup that clears the interval, fixing both the unmount warning and the double-timer on re-mount
 4. onTimeout is called exactly once when the timer reaches 0, and the interval stops afterward (does not keep ticking or call onTimeout repeatedly)
 5. onTimeout is not called during render or inside the state-updater function; it is invoked from an effect or the interval callback after the state transition

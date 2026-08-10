@@ -1,5 +1,5 @@
 ---
-title: Explain — making an internal package understandable on the first read
+title: Explain, making an internal package understandable on the first read
 blurb: Writes usage documentation for your own shared code, so the next person (or the next AI) gets it right without reading the source.
 ---
 

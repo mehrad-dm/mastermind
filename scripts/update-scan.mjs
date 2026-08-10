@@ -27,7 +27,7 @@ const NEW_NODES = [
     sub: 'installer + agent lookups',
     sourceRef: 'cli/',
     detail:
-      'Installs the brain, and answers an agent mid-task: skills, skill, agents, agent, route, conflicts, wrong-log — from whichever brain the directory belongs to. Read-only.',
+      'Installs the brain, and answers an agent mid-task: skills, skill, agents, agent, route, conflicts, wrong-log, from whichever brain the directory belongs to. Read-only.',
   },
   { id: 'lab', label: 'Quarantine', kind: 'store', sub: 'private data, gitignored', group: 'Safety & honesty', sourceRef: 'skills/quarantine/' },
   {
@@ -38,7 +38,7 @@ const NEW_NODES = [
     group: 'Safety & honesty',
     sourceRef: 'hooks/session-start.sh',
     detail:
-      'SessionStart hook that re-injects the kernel on startup, clear, and compact — without it the brain is read once and fades as the context fills. Verified on Claude Code; wired for Cursor.',
+      'SessionStart hook that re-injects the kernel on startup, clear, and compact: without it the brain is read once and fades as the context fills. Verified on Claude Code; wired for Cursor.',
   },
   {
     id: 'installtests',
@@ -58,7 +58,7 @@ const NEW_NODES = [
     group: 'Knowledge',
     sourceRef: 'engineering/fields/_template/',
     detail:
-      'A swappable domain pack: what to know and which tools, for one real stack. No field ships — on the first task `init` detects the stack and builds the pack from the template; the project owns it.',
+      'A swappable domain pack: what to know and which tools, for one real stack. No field ships: on the first task `init` detects the stack and builds the pack from the template; the project owns it.',
   },
   {
     id: 'library',
@@ -105,7 +105,7 @@ const NEW_NODES = [
     group: 'Safety & honesty',
     sourceRef: 'journal.md',
     detail:
-      'Every falsified claim, recorded with what caught it — a test, a reviewer, the user, a measurement. Read back with `mastermind wrong-log`; levelup distils it. Self-graded entries do not count.',
+      'Every falsified claim, recorded with what caught it: a test, a reviewer, the user, a measurement. Read back with `mastermind wrong-log`; levelup distils it. Self-graded entries do not count.',
   },
   {
     id: 'crossos',
@@ -184,7 +184,7 @@ for (const n of g.nodes) {
   if (n.detail && n.detail.length > 200) bad.push(`node ${n.id}: detail ${n.detail.length} > 200 chars`)
   if (n.sub && n.sub.length > 40) bad.push(`node ${n.id}: sub ${n.sub.length} > 40 chars`)
   if (n.label && n.label.length > 40) bad.push(`node ${n.id}: label ${n.label.length} > 40 chars`)
-  if (n.group === '') bad.push(`node ${n.id}: empty group — omit the key instead`)
+  if (n.group === '') bad.push(`node ${n.id}: empty group, omit the key instead`)
 }
 for (const e of g.edges)
   if (e.label && e.label.length > 24) bad.push(`edge ${key(e)}: label ${e.label.length} > 24 chars`)

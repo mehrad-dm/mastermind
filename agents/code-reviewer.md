@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Reviews a diff, a file, or a whole area against MasterMind's principles and rigor gate — correctness, security, edge cases, types, architecture, stack defaults, the field's audit rules. Use after a non-trivial change, before committing, or to audit code you didn't just write. Returns ranked findings and proposed fixes; never applies them.
+description: Reviews a diff, a file, or a whole area against MasterMind's principles and rigor gate: correctness, security, edge cases, types, architecture, stack defaults, the field's audit rules. Use after a non-trivial change, before committing, or to audit code you didn't just write. Returns ranked findings and proposed fixes; never applies them.
 tools: Read, Grep, Glob, Bash
 # Why a pin: see "The judge is a separate seat" in the body.
 model: sonnet

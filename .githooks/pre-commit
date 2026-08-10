@@ -22,16 +22,16 @@ PATTERNS
 }
 
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
-  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1 — MasterMind guard BYPASSED. You own this.${NC}"
+  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: MasterMind guard BYPASSED. You own this.${NC}"
   exit 0
 fi
 
 staged() { git diff --cached --name-only --diff-filter=ACMR; }
 
-# ---- Layer 1: quarantine — lab/ and client packs must never be staged --------
+# ---- Layer 1: quarantine, lab/ and client packs must never be staged --------
 QUARANTINED=$(staged | grep -E '^lab/|-coding-patterns' || true)
 if [ -n "$QUARANTINED" ]; then
-  printf '%s\n' "${RED}✖ BLOCKED — quarantined path staged:${NC}"
+  printf '%s\n' "${RED}✖ BLOCKED: quarantined path staged:${NC}"
   printf '    %s\n' $QUARANTINED
   printf '%s\n' "  lab/ is for raw confidential input. It must never be committed."
   FAIL=1
@@ -48,7 +48,7 @@ if [ -f "$DENYLIST" ]; then
             | grep -E '^\+' | grep -v '^+++' \
             | grep -inE "$TERMS" || true)
     if [ -n "$HITS" ]; then
-      printf '%s\n' "${RED}✖ BLOCKED — confidential term(s) found in staged changes:${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED: confidential term(s) found in staged changes:${NC}"
       printf '%s\n' "$HITS" | head -15 | sed 's/^/    /'
       COUNT=$(printf '%s\n' "$HITS" | wc -l | tr -d ' ')
       [ "$COUNT" -gt 15 ] && printf '    … and %s more\n' "$((COUNT - 15))"
@@ -57,14 +57,14 @@ if [ -f "$DENYLIST" ]; then
     fi
   fi
 else
-  printf '%s\n' "${YEL}⚠  no lab/.denylist found — term scan skipped${NC}"
+  printf '%s\n' "${YEL}⚠  no lab/.denylist found: term scan skipped${NC}"
 fi
 
 # ---- Layer 3: real credential patterns (always on) ---------------------------
 SECRETS=$(git diff --cached -U0 | grep -E '^\+' | grep -v '^+++' \
   | grep -InE "$(mm_secret_patterns | paste -sd '|' -)" || true)
 if [ -n "$SECRETS" ]; then
-  printf '%s\n' "${RED}✖ BLOCKED — looks like a real credential:${NC}"
+  printf '%s\n' "${RED}✖ BLOCKED: looks like a real credential:${NC}"
   printf '%s\n' "$SECRETS" | head -5 | sed 's/^/    /'
   FAIL=1
 fi
@@ -80,7 +80,7 @@ if [ -f "$REPO_ROOT/scripts/build-router.mjs" ] && command -v node >/dev/null 2>
   if ! node "$REPO_ROOT/scripts/build-router.mjs" --check >/dev/null 2>&1; then
     node "$REPO_ROOT/scripts/build-router.mjs" >/dev/null 2>&1 \
       && git add "$REPO_ROOT/engineering/ROUTER.md" 2>/dev/null \
-      && printf '%s\n' "${YEL}↻ ROUTER.md was stale — regenerated and staged.${NC}"
+      && printf '%s\n' "${YEL}↻ ROUTER.md was stale: regenerated and staged.${NC}"
   fi
 fi
 # <<< repo-only

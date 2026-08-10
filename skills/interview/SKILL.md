@@ -1,6 +1,6 @@
 ---
 name: interview
-description: Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session — and whenever the user wants to be interviewed about it: "interview me", "ask me what you need", "question me on this", "tear this PRD/spec/plan apart", "what would kill this?". Symptoms: "make it better", "add the thing", or disagreement about what's in scope. Skip for a clear one-line change.
+description: Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session: and whenever the user wants to be interviewed about it: "interview me", "ask me what you need", "question me on this", "tear this PRD/spec/plan apart", "what would kill this?". Symptoms: "make it better", "add the thing", or disagreement about what's in scope. Skip for a clear one-line change.
 ---
 
 # MasterMind: Interview

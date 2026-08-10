@@ -131,10 +131,10 @@
         "id": "kernel",
         "label": "Kernel",
         "kind": "service",
-        "sub": "CLAUDE.md — always-on",
+        "sub": "CLAUDE.md, always-on",
         "group": "The brain",
         "sourceRef": "CLAUDE.md",
-        "detail": "Identity, prime directives, and the operating loop the AI reads first — the only always-on layer (~1.7k tokens)."
+        "detail": "Identity, prime directives, and the operating loop the AI reads first: the only always-on layer (~1.7k tokens)."
       },
       {
         "id": "core",
@@ -152,7 +152,7 @@
         "sub": "loads only what a task needs",
         "group": "The brain",
         "sourceRef": "scripts/build-router.mjs",
-        "detail": "Generates ROUTER.md so a task loads only the 1–2 files it needs — measured ~65% fewer tokens. No AI, no network."
+        "detail": "Generates ROUTER.md so a task loads only the 1–2 files it needs: measured ~65% fewer tokens. No AI, no network."
       },
       {
         "id": "manifest",
@@ -169,7 +169,7 @@
         "sub": "built per project from the template",
         "group": "Knowledge",
         "sourceRef": "engineering/fields/_template/",
-        "detail": "A swappable domain pack: what to know and which tools, for one real stack. No field ships — on the first task `init` detects the stack and builds the pack from the template; the project owns it."
+        "detail": "A swappable domain pack: what to know and which tools, for one real stack. No field ships: on the first task `init` detects the stack and builds the pack from the template; the project owns it."
       },
       {
         "id": "template",
@@ -300,7 +300,7 @@
         "sub": "the honesty apparatus",
         "group": "Safety & honesty",
         "sourceRef": "evals/",
-        "detail": "Baseline-vs-treatment rubric evals, blind-judged, results published — misses included."
+        "detail": "Baseline-vs-treatment rubric evals, blind-judged, results published: misses included."
       },
       {
         "id": "ci",
@@ -325,7 +325,7 @@
         "sub": "re-injects on compaction",
         "group": "Safety & honesty",
         "sourceRef": "hooks/session-start.sh",
-        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact — without it the brain is read once and fades as the context fills. Verified on Claude Code; wired for Cursor."
+        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact: without it the brain is read once and fades as the context fills. Verified on Claude Code; wired for Cursor."
       },
       {
         "id": "installtests",
@@ -351,7 +351,7 @@
         "kind": "entry",
         "sub": "installer + agent lookups",
         "sourceRef": "cli/",
-        "detail": "Installs the brain, and answers an agent mid-task: skills, skill, agents, agent, route, conflicts, wrong-log — from whichever brain the directory belongs to. Read-only."
+        "detail": "Installs the brain, and answers an agent mid-task: skills, skill, agents, agent, route, conflicts, wrong-log, from whichever brain the directory belongs to. Read-only."
       },
       {
         "id": "secretguards",
@@ -378,7 +378,7 @@
         "sub": "misses, with the catcher named",
         "group": "Safety & honesty",
         "sourceRef": "journal.md",
-        "detail": "Every falsified claim, recorded with what caught it — a test, a reviewer, the user, a measurement. Read back with `mastermind wrong-log`; levelup distils it. Self-graded entries do not count."
+        "detail": "Every falsified claim, recorded with what caught it: a test, a reviewer, the user, a measurement. Read back with `mastermind wrong-log`; levelup distils it. Self-graded entries do not count."
       },
       {
         "id": "crossos",

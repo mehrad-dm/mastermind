@@ -2,7 +2,7 @@ Happy to. Before touching code, I'd want to align on a standard so we're not jus
 
 **1. Audit first.** Quick inventory of every form: what it validates, when, and how errors surface. Half an hour of grepping saves us from guessing.
 
-**2. Agree on validation timing.** The pattern that tests best: validate on submit always, plus re-validate a field on blur *after* it's been touched once, and clear errors live as the user fixes them. Avoid validating pristine fields on blur — yelling at someone for an empty field they haven't reached yet is the most common complaint.
+**2. Agree on validation timing.** The pattern that tests best: validate on submit always, plus re-validate a field on blur *after* it's been touched once, and clear errors live as the user fixes them. Avoid validating pristine fields on blur: yelling at someone for an empty field they haven't reached yet is the most common complaint.
 
 **3. Centralize the rules.** One schema/validation layer per form (Zod, Yup, or whatever we already lean on) instead of hand-rolled `if` checks scattered around. Single source of truth for what "valid" means.
 

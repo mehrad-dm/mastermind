@@ -1,7 +1,7 @@
-# MasterMind — a portable, field-parameterized genius-builder brain
+# MasterMind: a portable, field-parameterized genius-builder brain
 
 This folder is **MasterMind**: a **model-agnostic knowledge base** that turns any capable AI into a
-dedicated genius builder + software architect. It is plain Markdown on purpose — no tool-specific
+dedicated genius builder + software architect. It is plain Markdown on purpose: no tool-specific
 mechanisms inside, so it loads from a file, a rule, or a pasted system prompt alike.
 
 ## Design principle: encode judgment, not knowledge
@@ -46,14 +46,14 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
             └── lessons.md        # durable lessons from real usage (the leveling record)
 ```
 
-No field pack ships — a pack tuned to someone else's stack is worse than none. `init` builds the field
+No field pack ships: a pack tuned to someone else's stack is worse than none. `init` builds the field
 for the project's real stack from this scaffold, and the project owns it thereafter.
 
 ## Load-on-demand map
 
 | Module | Load when |
 | --- | --- |
-| `core/mindset.md` | Always — the default way of thinking |
+| `core/mindset.md` | Always: the default way of thinking |
 | `core/principles.md` | Any design/refactor decision |
 | `core/rigor.md` | Every non-trivial task |
 | `core/agent-loop.md` | Executing any task |
@@ -62,7 +62,7 @@ for the project's real stack from this scaffold, and the project owns it thereaf
 | `fields/<active>/mentors.md` | Taste/philosophy is contested |
 | `fields/<active>/curriculum.md` | Going deep / recommending resources |
 | `fields/<active>/learning-sources.md` | Design-system work or an unfamiliar topic |
-| `fields/<active>/lessons.md` | Always relevant — what's been learned |
+| `fields/<active>/lessons.md` | Always relevant: what's been learned |
 
 ## How it improves (leveling up)
 
@@ -76,10 +76,10 @@ refreshes the curriculum against the live ecosystem, or bootstraps a new field p
 Run `install.sh` once to symlink the brain to `~/.mastermind/` + each tool's entry file (see the root
 `README.md` for the full table). Then:
 
-- **Claude Code** — auto-loaded via `~/.claude/CLAUDE.md` → the repo. Nothing more to do.
-- **Cursor** — `install.sh` generates `.cursor/rules/mastermind.mdc` with the kernel inlined.
+- **Claude Code**: auto-loaded via `~/.claude/CLAUDE.md` → the repo. Nothing more to do.
+- **Cursor**: `install.sh` generates `.cursor/rules/mastermind.mdc` with the kernel inlined.
 
-- **Codex** — reads the project's `AGENTS.md` → the brain. `--global` also wires `$CODEX_HOME/AGENTS.md`.
+- **Codex**: reads the project's `AGENTS.md` → the brain. `--global` also wires `$CODEX_HOME/AGENTS.md`.
 
 Those three are the supported set. Anything else is unwired and unclaimed.
 

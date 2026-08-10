@@ -38,14 +38,14 @@ const headlineGenerator = grab(headlineMeta, /\*\*Generator:\*\*\s*([^·]+)·/, 
 const headlineJudges = grab(section, /\*\*Judges:\*\*\s*([\s\S]+?)·/, 'the headline judges').replace(/\s+/g, ' ')
 const headlineN = Number(grab(section, /\*\*N=(\d+)\*\*/, 'the headline sample size'))
 
-const runSections = md.split(/^## /m).filter((s) => /^Run \S+ — \d{4}-\d{2}-\d{2}/.test(s))
+const runSections = md.split(/^## /m).filter((s) => /^Run \S+: \d{4}-\d{2}-\d{2}/.test(s))
 const featured = runSections.filter((s) => /^>\s*\*\*Featured on the site\.\*\*/m.test(s))
 if (featured.length !== 1) {
   die(`expected exactly one run marked "> **Featured on the site.**", found ${featured.length}`)
 }
 const latestSection = featured[0]
-const latestId = grab(latestSection, /^Run (\S+) — /, 'the featured run id')
-const latestDate = grab(latestSection, /^Run \S+ — (\d{4}-\d{2}-\d{2})/, 'the featured run date')
+const latestId = grab(latestSection, /^Run (\S+): /, 'the featured run id')
+const latestDate = grab(latestSection, /^Run \S+: (\d{4}-\d{2}-\d{2})/, 'the featured run date')
 const latestWhat = grab(latestSection, /^>\s*\*\*Featured on the site\.\*\*\s*(.+)$/m, 'the featured run description')
 const latestSummary = latestSection
   .split(/^>\s*\*\*Featured on the site\.\*\*.*$/m)[1]
@@ -95,7 +95,7 @@ const data = {
     savedPct: routerSaved,
     rangeLow: Math.min(...savings),
     rangeHigh: Math.max(...savings),
-    source: 'evals/pilot-multimodel/RESULTS.md — measured per task, Opus average of 4 tasks',
+    source: 'evals/pilot-multimodel/RESULTS.md, measured per task, Opus average of 4 tasks',
   },
   headline: {
     date: headlineDate,
@@ -118,14 +118,14 @@ const data = {
 
 const json = JSON.stringify(data, null, 2) + '\n'
 if (check) {
-  if (!existsSync(OUT)) { console.error(`✖ ${OUT} missing — run: node scripts/sync-evals.mjs`); process.exit(1) }
+  if (!existsSync(OUT)) { console.error(`✖ ${OUT} missing: run: node scripts/sync-evals.mjs`); process.exit(1) }
   if (readFileSync(OUT, 'utf8') !== json) {
-    console.error('✖ site eval numbers differ from evals/RESULTS.md — run: node scripts/sync-evals.mjs')
+    console.error('✖ site eval numbers differ from evals/RESULTS.md: run: node scripts/sync-evals.mjs')
     process.exit(1)
   }
   console.log('✓ site eval numbers match RESULTS.md')
 } else {
   mkdirSync(dirname(OUT), { recursive: true })
   writeFileSync(OUT, json)
-  console.log(`✓ wrote ${OUT.replace(SITE, 'site')} — ${headline.length} tasks, mean ${mean?.delta}`)
+  console.log(`✓ wrote ${OUT.replace(SITE, 'site')}: ${headline.length} tasks, mean ${mean?.delta}`)
 }

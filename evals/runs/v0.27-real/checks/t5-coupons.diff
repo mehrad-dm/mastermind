@@ -3,7 +3,7 @@
 @@ -0,0 +1,52 @@
 +import * as db from './db.js'
 +
-+// GET /coupons?page=N — paginated listing for the admin panel
++// GET /coupons?page=N: paginated listing for the admin panel
 +export async function listCoupons(page = 1) {
 +  const PAGE = 20
 +  const all = await db.listCoupons()
@@ -11,7 +11,7 @@
 +  return { page, total: all.length, coupons: all.slice(start, start + PAGE) }
 +}
 +
-+// GET /coupons/apply?code=X — look a coupon up and compute the discount
++// GET /coupons/apply?code=X: look a coupon up and compute the discount
 +export async function applyCoupon(code, subtotal) {
 +  try {
 +    const rows = await db.query(`SELECT * FROM coupons WHERE code = '${code}' AND active = 1`)
@@ -23,7 +23,7 @@
 +  return { valid: false }
 +}
 +
-+// POST /coupons — create (validated)
++// POST /coupons: create (validated)
 +export async function createCoupon(body) {
 +  const { code, percent } = body || {}
 +  if (typeof code !== 'string' || !/^[A-Z0-9_-]{3,24}$/.test(code)) throw new Error('invalid code')
@@ -31,7 +31,7 @@
 +  return db.insertCoupon({ code, percent, active: 1 })
 +}
 +
-+// DELETE /coupons/:id — admin only
++// DELETE /coupons/:id, admin only
 +export async function deleteCoupon(id) {
 +  return db.deleteCoupon(Number(id))
 +}

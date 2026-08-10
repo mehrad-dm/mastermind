@@ -1,5 +1,5 @@
 ---
-title: Help — the map, for a system you're not supposed to memorize
+title: Help, the map, for a system you're not supposed to memorize
 blurb: Shows what MasterMind can do and how to drive it, built around the fact that you talk to it in plain language rather than running commands.
 ---
 

@@ -21,7 +21,7 @@ PATTERNS
 }
 
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
-  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1 — push guard BYPASSED.${NC}"
+  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: push guard BYPASSED.${NC}"
   exit 0
 fi
 
@@ -36,7 +36,7 @@ while read -r _lref lsha _rref rsha; do
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
 
   if [ "$rsha" = "0000000000000000000000000000000000000000" ]; then
-    RANGE="$lsha"          # new branch — scan its whole history
+    RANGE="$lsha"          # new branch: scan its whole history
   else
     RANGE="$rsha..$lsha"   # only what's new
   fi
@@ -44,14 +44,14 @@ while read -r _lref lsha _rref rsha; do
   for rev in $(git rev-list "$RANGE" 2>/dev/null); do
     HIT=$(git grep -liE "$TERMS" "$rev" -- . ':(exclude)lab/**' 2>/dev/null || true)
     if [ -n "$HIT" ]; then
-      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") contains confidential terms or credentials:${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED: commit $(git log -1 --format='%h %s' "$rev") contains confidential terms or credentials:${NC}"
       printf '%s\n' "$HIT" | sed 's/^/    /' | head -5
       FAIL=1
     fi
     # The quarantine itself must never travel, however it got committed.
     QHIT=$(git ls-tree -r --name-only "$rev" 2>/dev/null | grep -E '^lab/' || true)
     if [ -n "$QHIT" ]; then
-      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") carries quarantined files:${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED: commit $(git log -1 --format='%h %s' "$rev") carries quarantined files:${NC}"
       printf '%s\n' "$QHIT" | sed 's/^/    /' | head -5
       FAIL=1
     fi
@@ -59,7 +59,7 @@ while read -r _lref lsha _rref rsha; do
 done
 
 if [ "$FAIL" -ne 0 ]; then
-  printf '\n%s\n' "${RED}Push aborted — confidential data would become public and permanent.${NC}"
+  printf '\n%s\n' "${RED}Push aborted: confidential data would become public and permanent.${NC}"
   printf '%s\n' "Rewrite the offending commits before pushing (git filter-repo / interactive rebase)."
   exit 1
 fi
@@ -68,7 +68,7 @@ printf '%s\n' "${GRN}✓ push guard: clean${NC}"
 
 # >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
 if [ -n "${MM_SKIP_TESTS:-}" ]; then
-  printf '%s\n' "${YEL}⚠ MM_SKIP_TESTS set — pushing WITHOUT running the suite${NC}"
+  printf '%s\n' "${YEL}⚠ MM_SKIP_TESTS set: pushing WITHOUT running the suite${NC}"
   exit 0
 fi
 
@@ -78,20 +78,20 @@ case "$CHANGED" in
     printf '%s\n' "running the suites before this leaves the machine (MM_SKIP_TESTS=1 to skip)…"
     LOG=/tmp/mm-prepush.log
     if ! bash "$REPO_ROOT/tests/install.test.sh" >"$LOG" 2>&1; then
-      printf '%s\n' "${RED}✖ BLOCKED — the installer suite fails${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED: the installer suite fails${NC}"
       grep '✖' "$LOG" | head -10 | sed 's/^/    /'
       printf '%s\n' "  full output: $LOG"
       exit 1
     fi
     if ! bash "$REPO_ROOT/tests/agent-surface.test.sh" >>"$LOG" 2>&1; then
-      printf '%s\n' "${RED}✖ BLOCKED — the agent-surface suite fails${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED: the agent-surface suite fails${NC}"
       tail -12 "$LOG" | sed 's/^/    /'
       exit 1
     fi
     printf '%s\n' "${GRN}✓ suites pass${NC}"
     ;;
   *)
-    printf '%s\n' "${GRN}✓ no installer, CLI or script changes here — suite not needed${NC}"
+    printf '%s\n' "${GRN}✓ no installer, CLI or script changes here: suite not needed${NC}"
     ;;
 esac
 # <<< repo-only ------------------------------------------------------------------

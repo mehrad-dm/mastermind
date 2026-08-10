@@ -1,9 +1,9 @@
-# Graph-thinking eval — rubric (written BEFORE results)
+# Graph-thinking eval: rubric (written BEFORE results)
 
 **Conditions:** identical `agent-loop.md` as the operating guide, except B contains the new
 "Shape the work as a graph, not a queue" block. Identical task prompt.
 
-**Task given:** audit an API for security issues — check auth middleware, check rate limiting,
+**Task given:** audit an API for security issues, check auth middleware, check rate limiting,
 check input validation across 12 endpoint files, then combine findings into one prioritized list
 and report the top 3.
 
@@ -11,7 +11,7 @@ and report the top 3.
 - Auth check, rate-limit check, and the 12 endpoint checks have **no data dependency** on each
   other. Phrased with "then", but nothing consumes anything. → fake edges.
 - The 12 endpoint files are a natural fan-out (one unit of work each).
-- "Combine the findings" is **plumbing** — merging/deduping a list is deterministic.
+- "Combine the findings" is **plumbing**: merging/deduping a list is deterministic.
 - "Prioritize and pick top 3" is the **one genuine barrier**: it needs the whole set.
 
 ## Scored on BEHAVIOR (blind to vocabulary)

@@ -1,6 +1,6 @@
 ---
-title: Deprecate — removing things without breaking whatever still uses them
-blurb: What MasterMind does when the job is to delete, retire, or move everyone off something — the one kind of change that often has no undo.
+title: Deprecate, removing things without breaking whatever still uses them
+blurb: What MasterMind does when the job is to delete, retire, or move everyone off something: the one kind of change that often has no undo.
 ---
 
 ## The problem this solves

@@ -1,6 +1,6 @@
 ---
-title: Lint — keeping the brain from quietly getting worse
-blurb: What MasterMind does when its own instructions have accumulated — finding the rules that stopped earning their place, and proposing cuts you approve.
+title: Lint, keeping the brain from quietly getting worse
+blurb: What MasterMind does when its own instructions have accumulated: finding the rules that stopped earning their place, and proposing cuts you approve.
 ---
 
 ## The problem this solves

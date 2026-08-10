@@ -1,5 +1,5 @@
 ---
-title: Interview — agreeing what to build before anyone builds it
+title: Interview, agreeing what to build before anyone builds it
 blurb: How MasterMind turns a vague ask into a precise, decided blueprint, so the build isn't a guess dressed up as progress.
 ---
 

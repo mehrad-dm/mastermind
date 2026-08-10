@@ -1,5 +1,5 @@
 ---
-title: Debug — finding the actual cause, not a convincing story
+title: Debug, finding the actual cause, not a convincing story
 blurb: What MasterMind does when a bug refuses to die, and why "it works now" is the most dangerous sentence in debugging.
 ---
 

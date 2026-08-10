@@ -13,7 +13,7 @@ try {
   const srv = spawn('node', [join(dir, 'src', 'server.js')], { cwd: dir, env: { ...process.env, PORT }, stdio: 'ignore' })
   await new Promise((r) => setTimeout(r, 900))
   try {
-    // fixture is module state: create via API from the clean boot (empty db) — seed products first is impossible over HTTP,
+    // fixture is module state: create via API from the clean boot (empty db), seed products first is impossible over HTTP,
     // so drive through db by a tiny bootstrap file executed in-process instead:
     srv.kill()
     const boot = `

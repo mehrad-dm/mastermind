@@ -1,6 +1,6 @@
 ---
 name: deprecate
-description: Use when something has to be removed or retired — a feature, endpoint, table column, config key, feature flag, package or whole service; migrating consumers off an old API or version; code that looks dead but might not be. Symptoms: "can we delete this?", "is anything still using this?", "we need everyone off v1", "kill the old one". Not for restructuring that keeps the interface — that's the `refactorer` agent.
+description: Use when something has to be removed or retired, a feature, endpoint, table column, config key, feature flag, package or whole service; migrating consumers off an old API or version; code that looks dead but might not be. Symptoms: "can we delete this?", "is anything still using this?", "we need everyone off v1", "kill the old one". Not for restructuring that keeps the interface: that's the `refactorer` agent.
 ---
 
 # MasterMind: Deprecate
