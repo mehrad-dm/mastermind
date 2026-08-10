@@ -2,7 +2,7 @@ name: freshness
 
 # Weekly check that MasterMind's curated resources still resolve and the curriculum
 # hasn't gone stale (a nudge to run `levelup refresh`). Advisory by design: it runs on
-# a schedule and via manual dispatch, NOT on every push — link liveness is flaky and
+# a schedule and via manual dispatch, NOT on every push: link liveness is flaky and
 # must never block a commit. A red run means a curriculum link 404'd or DNS-failed.
 # See scripts/check-links.mjs.
 

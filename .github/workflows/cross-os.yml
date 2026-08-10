@@ -139,7 +139,7 @@ jobs:
           if ($LASTEXITCODE -eq 0) { throw "expected a non-zero exit on native Windows" }
           if ("$out" -notmatch "WSL") { throw "expected the WSL pointer in: $out" }
           Write-Host "guard message OK: $out"
-          # GitHub's pwsh wrapper exits with $LASTEXITCODE, which is node's 1 — the correct
+          # GitHub's pwsh wrapper exits with $LASTEXITCODE, which is node's 1: the correct
           # refusal. The assertions above already decided the outcome, so end deliberately.
           exit 0
 
@@ -161,7 +161,7 @@ jobs:
           git checkout -q "${{ github.sha }}" 2>/dev/null || git checkout -q refs/mm/target
           mkdir -p /work/proj && cd /work/proj && git init -q .
 
-          # The guard under test belongs to the INSTALL path — install.sh needs bash. 0.29.0
+          # The guard under test belongs to the INSTALL path: install.sh needs bash. 0.29.0
           # asserted it against `skills`, a read-only lookup that needs a BRAIN, not bash: it
           # answered "no brain found", the grep for apk guidance never matched, and the step
           # proved nothing. Invoke the installer with no bash present and demand the real message.
@@ -178,11 +178,11 @@ jobs:
           [ -f .mastermind/VERSION ] || { echo "install produced no brain"; exit 1; }
           n=$(./.mastermind/bin/mastermind skills | wc -l)
           [ "$n" -gt 20 ] || { echo "skills table looks empty: $n lines"; exit 1; }
-          echo "alpine full install OK — $n lines"
+          echo "alpine full install OK: $n lines"
 
   wsl:
     # The Windows job above only proves the REFUSAL fires. The refusal tells people to use WSL,
-    # and until now nothing ever checked that WSL actually works — the docs pointed at an
+    # and until now nothing ever checked that WSL actually works: the docs pointed at an
     # untested path. This runs a genuine Ubuntu under WSL2 on a Windows runner and does the
     # whole install, so the advice is backed by a run rather than an assumption.
     runs-on: windows-latest
@@ -211,11 +211,11 @@ jobs:
           echo "node $(node --version) · $(uname -sr)"
           grep -qi microsoft /proc/version || { echo "not actually WSL"; exit 1; }
 
-          # Clone inside WSL rather than reaching into /mnt/c — no path translation, and it is
+          # Clone inside WSL rather than reaching into /mnt/c: no path translation, and it is
           # the same shape as what a user gets from npx.
           # WSL's shell does NOT inherit the runner's environment, so $GITHUB_REPOSITORY and
           # $GITHUB_SHA are unset in here. Substitute them before the shell starts rather than
-          # forwarding env through WSLENV — fewer moving parts, and it fails loudly if wrong.
+          # forwarding env through WSLENV: fewer moving parts, and it fails loudly if wrong.
           git clone -q "https://github.com/${{ github.repository }}" /brain
           cd /brain
           # On a pull_request, github.sha is the MERGE commit: it lives only under
@@ -236,4 +236,4 @@ jobs:
           node .mastermind/scripts/check-integrity.mjs >/dev/null
           ./.mastermind/bin/mastermind skills >/dev/null
           bash /brain/install.sh --check | tail -1
-          echo "WSL full install OK — $n skills"
+          echo "WSL full install OK: $n skills"

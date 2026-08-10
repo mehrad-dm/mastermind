@@ -1,5 +1,5 @@
 ---
-title: Learn — knowing the tool before using it on your project
+title: Learn: knowing the tool before using it on your project
 blurb: What MasterMind does when a task depends on technology it doesn't actually know, instead of writing confident code from memory.
 ---
 

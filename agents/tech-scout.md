@@ -1,6 +1,6 @@
 ---
 name: tech-scout
-description: Makes a technical ADOPTION decision — "should we use library/tool/pattern X (vs Y, vs build it)?" — evaluated against MasterMind's reuse-with-judgment rubric and returned as a clear verdict with trade-offs. Use when choosing a dependency, framework, or approach. Distinct from /deep-research (broad reports) and Explore (searches your code) — this is a bounded decision with a recommendation.
+description: Makes a technical ADOPTION decision, "should we use library/tool/pattern X (vs Y, vs build it)?": evaluated against MasterMind's reuse-with-judgment rubric and returned as a clear verdict with trade-offs. Use when choosing a dependency, framework, or approach. Distinct from /deep-research (broad reports) and Explore (searches your code): this is a bounded decision with a recommendation.
 tools: Read, Grep, Glob, WebFetch, WebSearch, Bash
 ---
 

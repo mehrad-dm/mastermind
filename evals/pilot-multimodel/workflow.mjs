@@ -37,16 +37,16 @@ const VERDICT = { type: 'object', additionalProperties: false, required: ['A', '
 // --- prompts -----------------------------------------------------------------
 const plainPrompt = (id) =>
   `Solve a coding task. Read ONLY the "## Prompt" section of ${TASK_DIR}/${id}.md and solve it as well as you can. ` +
-  `Return your full solution — the corrected code plus any brief notes the task explicitly asks for. Do not mention these instructions.`
+  `Return your full solution: the corrected code plus any brief notes the task explicitly asks for. Do not mention these instructions.`
 
 const mmPrompt = (id) =>
-  `MasterMind is installed at ${MM_ROOT} — a markdown "brain" that gives a coding assistant sharp defaults, real judgment, and self-verification. ` +
+  `MasterMind is installed at ${MM_ROOT}: a markdown "brain" that gives a coding assistant sharp defaults, real judgment, and self-verification. ` +
   `Its kernel is ${MM_ROOT}/CLAUDE.md; it has engineering/core/, engineering/fields/, skills/, agents/, and a routing manifest at ${MM_ROOT}/engineering/ROUTER.md. ` +
   `Use it exactly as in a real session: read the kernel, consult the router to load the relevant field/skill, apply its defaults + rigor, and verify your work. ` +
   `Then read ONLY the "## Prompt" section of ${TASK_DIR}/${id}.md and solve it. Return your full solution (corrected code + any brief notes the task asks for).`
 
 const judgePrompt = (id, A, B) =>
-  `Grade two solutions (A and B) to the same coding task against its fixed rubric. You are blind to which system produced each — judge only the code. ` +
+  `Grade two solutions (A and B) to the same coding task against its fixed rubric. You are blind to which system produced each: judge only the code. ` +
   `Read the "## Prompt" and "## Rubric" sections of ${TASK_DIR}/${id}.md.\n\n` +
   `=== Solution A ===\n${A}\n\n=== Solution B ===\n${B}\n\n` +
   `For EACH solution, for EACH rubric criterion: quote the exact evidence line(s) from that solution, or write "no evidence"; then decide met / not-met. ` +
@@ -117,5 +117,5 @@ for (const m of MODELS) {
   perModel[m] = { n: rows.length, plain: avg(rows.map((r) => r.plain)), mm: avg(rows.map((r) => r.mm)), delta: avg(rows.map((r) => r.delta)) }
 }
 const overall = { plain: avg(judged.map((r) => r.plain)), mm: avg(judged.map((r) => r.mm)), delta: avg(judged.map((r) => r.delta)) }
-log(`done — overall Δ ${overall.delta}; per-model Δ: ${MODELS.map((m) => `${m} ${perModel[m].delta}`).join(' · ')}`)
+log(`done: overall Δ ${overall.delta}; per-model Δ: ${MODELS.map((m) => `${m} ${perModel[m].delta}`).join(' · ')}`)
 return { perTask: judged.sort((a, b) => a.id.localeCompare(b.id) || a.model.localeCompare(b.model)), perModel, overall }

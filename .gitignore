@@ -3,11 +3,11 @@
 .idea/
 .vscode/
 
-# Project-local MasterMind workspace (prefs + generated cycle reports) — created
+# Project-local MasterMind workspace (prefs + generated cycle reports): created
 # when USING the brain in a project; never part of the brain repo itself.
 .mastermind/
 
-# Client/project pattern packs — LOCAL ONLY, never publish.
+# Client/project pattern packs: LOCAL ONLY, never publish.
 # (~/.mastermind is a symlink to this PUBLIC repo, so local-only requires ignoring.)
 engineering/fields/*/*-coding-patterns.md
 engineering/fields/*/*-coding-patterns/
@@ -19,7 +19,7 @@ engineering/fields/*/*-coding-patterns/
 # unrelated skills/lab/ skill directory.
 /lab/
 
-# Foglamp scan — commit .foglamp/scan.json (public architecture data, no secrets);
+# Foglamp scan: commit .foglamp/scan.json (public architecture data, no secrets);
 # NEVER commit the lock file (holds the secret editToken). The token lives as the
 # GitHub Actions secret FOGLAMP_EDIT_TOKEN, used by .github/workflows/foglamp.yml.
 /.foglamp/scan.lock.json
@@ -28,9 +28,9 @@ engineering/fields/*/*-coding-patterns/
 __pycache__/
 *.pyc
 
-# Eval run artifacts — generations, judgements, scratch projects. Reproducible, never committed.
+# Eval run artifacts: generations, judgements, scratch projects. Reproducible, never committed.
 /.eval-run/
 
-# eval raw artifacts: replies, judge outputs, workspaces — results live in SUMMARY.json + RESULTS.md
+# eval raw artifacts: replies, judge outputs, workspaces, results live in SUMMARY.json + RESULTS.md
 evals/runs/*/raw/
 evals/runs/*/raw-work/

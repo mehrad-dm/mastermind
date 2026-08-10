@@ -8,7 +8,7 @@ const RAW = join(HERE, 'raw')
 const WORK = '/tmp/mm-h2h'; mkdirSync(WORK, { recursive: true })
 const OURS = readFileSync('/Users/zed/Desktop/Projects/mastermind/skills/debug/SKILL.md', 'utf8')
 const RIVAL = readFileSync(process.env.RIVAL_PATH, 'utf8')
-const PROMPT = "Customers report the cart preview total sometimes disagrees with the final order total for the same items. It makes no sense to me — both use the same prices. Find the actual cause and fix it correctly."
+const PROMPT = "Customers report the cart preview total sometimes disagrees with the final order total for the same items. It makes no sense to me: both use the same prices. Find the actual cause and fix it correctly."
 const strip = (s) => s.replace(/^---[\s\S]*?---\n/, '')
 const ARMS = { none: null, ours: strip(OURS), rival: strip(RIVAL) }
 const sh = (cmd, args, opts) => new Promise((res) => {

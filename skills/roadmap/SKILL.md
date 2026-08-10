@@ -1,6 +1,6 @@
 ---
 name: roadmap
-description: Use when work spans weeks and the reasoning behind it is piling up — returning to a project after time away, "why did we decide X?", "where did we land on this?", "what's still open?", onboarding someone onto a long-running build, or a choice everyone remembers making and nobody can find. Not one session's state (that's `handoff`), not scoping one feature (that's `interview`).
+description: Use when work spans weeks and the reasoning behind it is piling up: returning to a project after time away, "why did we decide X?", "where did we land on this?", "what's still open?", onboarding someone onto a long-running build, or a choice everyone remembers making and nobody can find. Not one session's state (that's `handoff`), not scoping one feature (that's `interview`).
 ---
 
 # MasterMind: Map

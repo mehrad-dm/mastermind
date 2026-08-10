@@ -13,7 +13,7 @@ PROJ="$WORK/proj"; mkdir -p "$PROJ/sub/deeper"
 # a minimal fake brain: the surface must work off the on-disk shape, nothing else
 mkdir -p "$PROJ/.mastermind/skills/performance" "$PROJ/.mastermind/agents"
 echo "0.0.0-test" > "$PROJ/.mastermind/VERSION"
-printf -- '---\nname: performance\ndescription: Use when something is slow — a slow query or page load.\n---\n\n# body line\nmeasure first\n' \
+printf -- '---\nname: performance\ndescription: Use when something is slow, a slow query or page load.\n---\n\n# body line\nmeasure first\n' \
   > "$PROJ/.mastermind/skills/performance/SKILL.md"
 printf -- '---\nname: code-reviewer\ndescription: Reviews a diff against the rigor gate.\n---\n\nreviewer body\n' \
   > "$PROJ/.mastermind/agents/code-reviewer.md"
@@ -96,7 +96,7 @@ check "a typo creates nothing" "$([ -z "$(ls -A "$TYPO")" ] && echo yes || echo 
 out=$( (cd "$TYPO" && HOME="$TYPO" MASTERMIND_HOME="$TYPO/absent" "${CLI[@]}" skilss 2>&1) | head -1 )
 case "$out" in *"Did you mean"*) ok "a typo suggests the real command";; *) bad "no suggestion: $out";; esac
 
-# Provenance signs the CLI, not the brain it clones — so a MOVED TAG must be refused.
+# Provenance signs the CLI, not the brain it clones: so a MOVED TAG must be refused.
 SRC="$WORK/fake-brain"; mkdir -p "$SRC"
 ( cd "$SRC" && git init -q . && printf '#!/usr/bin/env bash\necho installed\n' > install.sh \
   && git add -A && git -c user.email=t@t -c user.name=t -c core.hooksPath=/dev/null commit -qm seed \
@@ -108,7 +108,7 @@ case "$out" in *"this release pins 000000000000"*) ok "a moved tag is refused (c
 echo "conflicts"
 CONF="$WORK/conf"; mkdir -p "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/optimize"
 echo "0.0.0-test" > "$CONF/.mastermind/VERSION"
-printf -- '---\nname: performance\ndescription: Use when something is slow — a slow query, slow page load, high memory or a timeout.\n---\n' \
+printf -- '---\nname: performance\ndescription: Use when something is slow, a slow query, slow page load, high memory or a timeout.\n---\n' \
   > "$CONF/.mastermind/skills/performance/SKILL.md"
 printf -- '---\nname: optimize\ndescription: Speed things up. Use for slow pages, slow queries, high memory, long load times, or any performance problem.\n---\n' \
   > "$CONF/.claude/skills/optimize/SKILL.md"

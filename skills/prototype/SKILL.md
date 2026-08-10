@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Use when the right approach is genuinely unknown and reality will teach faster than planning — a risky unvalidated assumption, an unfamiliar integration, "will this even work", "try something quick". The result is explicitly throwaway and does not ship.
+description: Use when the right approach is genuinely unknown and reality will teach faster than planning: a risky unvalidated assumption, an unfamiliar integration, "will this even work", "try something quick". The result is explicitly throwaway and does not ship.
 ---
 
 # MasterMind: Prototype

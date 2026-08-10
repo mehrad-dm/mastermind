@@ -1,10 +1,10 @@
 # mastermind-brain
 
-Installs [MasterMind](https://mastermind.mehrad.me) — a markdown brain that gives your AI coding
+Installs [MasterMind](https://mastermind.mehrad.me), a markdown brain that gives your AI coding
 tools judgment and rigor: sharp defaults, real decisions, and the discipline to verify before
 saying done. For Claude Code, Cursor and Codex.
 
-You don't learn commands. You describe what you want, and it applies the right discipline — 22
+You don't learn commands. You describe what you want, and it applies the right discipline: 22
 skills and 4 specialist agents it reaches for on its own, from debugging to review to keeping
 secrets out of git.
 
@@ -21,7 +21,7 @@ npx mastermind-brain uninstall  # clean removal
 
 Cursor and Codex have no native skill mechanism, so an agent there either pastes the whole
 library into context or guesses a path. These lookups answer from whichever brain the current
-directory belongs to — the project's own `.mastermind/` first, then the shared clone:
+directory belongs to: the project's own `.mastermind/` first, then the shared clone:
 
 ```bash
 mastermind skills                    # the routing table: every skill, one line each
@@ -33,7 +33,7 @@ mastermind conflicts                 # what else is installed, and where it over
 ```
 
 Add `--json` to any of them for structured output. They are read-only: no install, no
-network, no writes — if no brain is installed they say so and exit non-zero. Without a global
+network, no writes: if no brain is installed they say so and exit non-zero. Without a global
 install, call the shim in the clone: `~/.mastermind/bin/mastermind skills`.
 
 Most machines end up with several skill packs installed. `conflicts` lists the foreign skills it
@@ -45,11 +45,11 @@ rule wins.
 `route` deliberately does not shortlist. Keyword overlap picks the right skill for requests
 phrased like the descriptions, but only hints correctly for 2 of 8 requests phrased the way
 people actually talk ("the invoice screen takes nine seconds to open"), so it marks candidates
-and always returns every option — hiding the right skill behind a confident guess would be
+and always returns every option: hiding the right skill behind a confident guess would be
 worse than not guessing. The model routes; this just puts the table in front of it.
 
 Why npx over `curl | bash`: every release is a versioned, immutable, provenance-signed npm
-artifact, and fresh installs pin the brain to the matching git tag — you always know exactly
+artifact, and fresh installs pin the brain to the matching git tag: you always know exactly
 what ran. The brain lives at `~/.mastermind` (a plain git repo you can read end to end);
 projects get their own committed copy in `<project>/.mastermind/`.
 

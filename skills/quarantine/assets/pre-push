@@ -21,7 +21,7 @@ PATTERNS
 }
 
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
-  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1 — push guard BYPASSED.${NC}"
+  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: push guard BYPASSED.${NC}"
   exit 0
 fi
 
@@ -36,7 +36,7 @@ while read -r _lref lsha _rref rsha; do
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
 
   if [ "$rsha" = "0000000000000000000000000000000000000000" ]; then
-    RANGE="$lsha"          # new branch — scan its whole history
+    RANGE="$lsha"          # new branch: scan its whole history
   else
     RANGE="$rsha..$lsha"   # only what's new
   fi
@@ -44,14 +44,14 @@ while read -r _lref lsha _rref rsha; do
   for rev in $(git rev-list "$RANGE" 2>/dev/null); do
     HIT=$(git grep -liE "$TERMS" "$rev" -- . ':(exclude)lab/**' 2>/dev/null || true)
     if [ -n "$HIT" ]; then
-      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") contains confidential terms or credentials:${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED: commit $(git log -1 --format='%h %s' "$rev") contains confidential terms or credentials:${NC}"
       printf '%s\n' "$HIT" | sed 's/^/    /' | head -5
       FAIL=1
     fi
     # The quarantine itself must never travel, however it got committed.
     QHIT=$(git ls-tree -r --name-only "$rev" 2>/dev/null | grep -E '^lab/' || true)
     if [ -n "$QHIT" ]; then
-      printf '%s\n' "${RED}✖ BLOCKED — commit $(git log -1 --format='%h %s' "$rev") carries quarantined files:${NC}"
+      printf '%s\n' "${RED}✖ BLOCKED: commit $(git log -1 --format='%h %s' "$rev") carries quarantined files:${NC}"
       printf '%s\n' "$QHIT" | sed 's/^/    /' | head -5
       FAIL=1
     fi
@@ -59,7 +59,7 @@ while read -r _lref lsha _rref rsha; do
 done
 
 if [ "$FAIL" -ne 0 ]; then
-  printf '\n%s\n' "${RED}Push aborted — confidential data would become public and permanent.${NC}"
+  printf '\n%s\n' "${RED}Push aborted: confidential data would become public and permanent.${NC}"
   printf '%s\n' "Rewrite the offending commits before pushing (git filter-repo / interactive rebase)."
   exit 1
 fi

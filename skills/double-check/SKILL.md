@@ -1,6 +1,6 @@
 ---
 name: double-check
-description: Use when you are about to tell the user something works, hand over a decision you feel confident about, or make a change that can't be undone — and when a review came back suspiciously clean. Symptoms: "are you sure?", "you said that was fixed last time", nothing to report, the answer feels too tidy. Not for a routine small change; not for reviewing a finished diff — that's `code-reviewer`; not for driving a finished change end-to-end to get evidence — that's `qa`. Doubt tests a claim (a diagnosis, a design call, an answer), which is often not runnable code.
+description: Use when you are about to tell the user something works, hand over a decision you feel confident about, or make a change that can't be undone: and when a review came back suspiciously clean. Symptoms: "are you sure?", "you said that was fixed last time", nothing to report, the answer feels too tidy. Not for a routine small change; not for reviewing a finished diff: that's `code-reviewer`; not for driving a finished change end-to-end to get evidence: that's `qa`. Doubt tests a claim (a diagnosis, a design call, an answer), which is often not runnable code.
 ---
 
 # MasterMind: Double-check

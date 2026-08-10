@@ -1,5 +1,5 @@
 ---
-title: Perf — making the correct thing fast, with numbers to prove it
+title: Perf: making the correct thing fast, with numbers to prove it
 blurb: What MasterMind does when something is slow, and why "feels faster" is not a result.
 ---
 

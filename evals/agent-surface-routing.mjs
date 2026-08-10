@@ -13,7 +13,7 @@ const PARAPHRASE = [
   ['does it actually work? drive it end to end before we ship', 'qa'],
   ['this is sensitive client data, do not commit it', 'quarantine'],
   ['we need to remove the old v1 endpoint, is anything still using it?', 'deprecate'],
-  ['I am about to say this is fixed — are you sure?', 'double-check'],
+  ['I am about to say this is fixed: are you sure?', 'double-check'],
   ['set up mastermind for this project', 'init'],
   ['write docs for our internal package so people stop misusing it', 'explain'],
   ['I am pausing this, make it survive the next session', 'handoff'],
@@ -47,7 +47,7 @@ const score = (cases) => {
   for (const [q, want] of cases) {
     const { all, hints } = route(q)
     if (all.includes(want)) recall++
-    else missed.push({ request: q.slice(0, 52), want, note: 'MISSING FROM TABLE — a real bug' })
+    else missed.push({ request: q.slice(0, 52), want, note: 'MISSING FROM TABLE, a real bug' })
     if (hints.includes(want)) hinted++
   }
   return { n: cases.length, recall, hinted, missed }
@@ -68,7 +68,7 @@ if (missed.length) {
 }
 console.log(
   '\nin-table is the contract: the model always sees every option and judges from the'
-  + '\ndescriptions. hinted is the keyword arrows only — weak on organic phrasing by'
+  + '\ndescriptions. hinted is the keyword arrows only: weak on organic phrasing by'
   + '\nmeasurement, which is why they mark and never filter. Paraphrased cases reuse the'
   + '\ndescriptions\' own vocabulary and read high by construction.',
 )

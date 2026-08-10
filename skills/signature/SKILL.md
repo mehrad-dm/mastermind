@@ -1,6 +1,6 @@
 ---
 name: signature
-description: Use when code should match a team's real code style and conventions the user keeps correcting the AI toward — "make it match our codebase", "follow our patterns", "you keep writing it wrong" — or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`.
+description: Use when code should match a team's real code style and conventions the user keeps correcting the AI toward: "make it match our codebase", "follow our patterns", "you keep writing it wrong": or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`.
 ---
 
 # Signature: capture a team's code style, turn it into rules the AI follows

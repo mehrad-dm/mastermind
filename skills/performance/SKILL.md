@@ -1,6 +1,6 @@
 ---
 name: performance
-description: Use when something is slow — "why is this slow", "optimize this", "make it faster", jank, lag, a slow query, slow page load, slow render, slow build, high memory, a timeout. Not for correctness bugs; that's debug.
+description: Use when something is slow, "why is this slow", "optimize this", "make it faster", jank, lag, a slow query, slow page load, slow render, slow build, high memory, a timeout. Not for correctness bugs; that's debug.
 ---
 
 # Perf: measure, find the real bottleneck, fix the biggest, verify

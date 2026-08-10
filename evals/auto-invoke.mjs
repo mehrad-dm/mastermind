@@ -21,7 +21,7 @@ const CORE = [
   { prompt: 'before I demo this to the client, make sure the cart flow actually holds up', expected: ['qa'] },
   { prompt: 'interview me about the discounts feature before you build anything', expected: ['interview'] },
   { prompt: "there is a .env with live credentials in here and I do not want it reaching github", expected: ['quarantine'] },
-  { prompt: 'you said the discount rounding was fixed — are you certain? check yourself before I merge', expected: ['double-check', 'qa', 'code-reviewer'] },
+  { prompt: 'you said the discount rounding was fixed, are you certain? check yourself before I merge', expected: ['double-check', 'qa', 'code-reviewer'] },
   { prompt: 'we want to kill the legacy cart endpoint, find out if anything still uses it', expected: ['deprecate'] },
 ]
 const EXTRA = [
@@ -29,7 +29,7 @@ const EXTRA = [
   { prompt: 'write a proper guide for our internal auth package, people keep misusing it', expected: ['explain'] },
   { prompt: 'I am stopping here today, set things up so we can resume cleanly tomorrow', expected: ['handoff'] },
   { prompt: 'you keep formatting things differently from the rest of our code, learn our way', expected: ['signature'] },
-  { prompt: 'we always use 2-space indent in this repo, you used tabs — keep that in mind from now on', expected: ['levelup', 'signature'] },
+  { prompt: 'we always use 2-space indent in this repo, you used tabs, keep that in mind from now on', expected: ['levelup', 'signature'] },
   { prompt: 'sharpen this prompt before I send it: summarize customer feedback by theme', expected: ['prompt'] },
   { prompt: 'summarize the customer feedback in this repo by theme and list the top 3 complaints', forbidden: ['prompt'] },
   { prompt: 'what can you actually do for me here?', expected: ['help'] },
@@ -161,7 +161,7 @@ if (broken.length) {
 }
 if (broken.length) {
   const reasons = [...new Set(broken.map((r) => r.infra))].join(', ')
-  console.error(`✖ harness failure — ${broken.length}/${results.length} sessions could not run (${reasons}).`)
+  console.error(`✖ harness failure: ${broken.length}/${results.length} sessions could not run (${reasons}).`)
   console.error('  This says nothing about routing. Fix the environment and re-run.')
   process.exit(2)
 }
@@ -179,7 +179,7 @@ for (const c of CASES) {
   rows.push({
     prompt: c.prompt.slice(0, 44),
     expected: label(c),
-    fired: mine.map((r) => r.got || '—').join(','),
+    fired: mine.map((r) => r.got || ', ').join(','),
     hit: mine.length > 1 ? `${good}/${mine.length}` : (good ? 'yes' : 'no'),
   })
 }
@@ -193,7 +193,7 @@ if (REPS > 1) {
       const r = results.filter((x) => x.prompt === c.prompt)[i]
       return r && isHit(c, r.got)
     }).length)
-  console.log(`per-rep: ${perRep.map((n) => `${n}/${CASES.length}`).join(' · ')} — read the range, not the mean`)
+  console.log(`per-rep: ${perRep.map((n) => `${n}/${CASES.length}`).join(' · ')}, read the range, not the mean`)
   if (flaky.length) console.log(`unstable across reps: ${flaky.join(', ')}`)
 }
 if (process.env.CROWDED) console.log(`a foreign skill won: ${foreign}/${total}`)

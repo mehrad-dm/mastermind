@@ -36,7 +36,7 @@ for (const d of readdirSync(join(REPO, 'skills'), { withFileTypes: true })) {
   if (!d.isDirectory()) continue
   const about = join(REPO, 'skills', d.name, 'ABOUT.md')
   if (!existsSync(about)) {
-    console.error(`✖ skills/${d.name} has no ABOUT.md — every skill needs a human-facing article`)
+    console.error(`✖ skills/${d.name} has no ABOUT.md: every skill needs a human-facing article`)
     process.exit(1)
   }
   const [meta, body] = fm(readFileSync(about, 'utf8'))
@@ -55,11 +55,11 @@ for (const f of readdirSync(join(REPO, 'agents', 'about'))) {
 items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
 
 // Neighbours for prev/next, wrapping around so the library is browsable end to end.
-const short = (t) => t.split(/\s+—\s+/)[1] ?? t
+const short = (t) => t.split(/:\s+/)[1] ?? t
 
 const seoTitle = (t) => {
   const full = `${t} · MasterMind`
-  return full.length <= 60 ? full : `${t.split(/\s+—\s+/)[0]} · MasterMind`
+  return full.length <= 60 ? full : `${t.split(/:\s+/)[0]} · MasterMind`
 }
 
 const metaDesc = (s) => (s.length <= 155 ? s : `${s.slice(0, 155).replace(/\s+\S*$/, '')}…`)
@@ -102,15 +102,15 @@ if (CHECK) {
   }
   for (const f of have) if (!wanted.has(f)) stale++
   if (stale) {
-    console.error(`✖ library pages stale (${stale}) — run: node scripts/build-library.mjs`)
+    console.error(`✖ library pages stale (${stale}): run: node scripts/build-library.mjs`)
     process.exit(1)
   }
-  console.log(`✓ library pages up to date — ${items.length} pages`)
+  console.log(`✓ library pages up to date: ${items.length} pages`)
   process.exit(0)
 }
 
 if (!existsSync(SITE)) {
-  console.error(`✖ ${SITE} is not checked out — nothing to write. Clone the site repo beside this one.`)
+  console.error(`✖ ${SITE} is not checked out: nothing to write. Clone the site repo beside this one.`)
   process.exit(1)
 }
 
@@ -118,5 +118,5 @@ if (existsSync(OUT)) rmSync(OUT, { recursive: true }) // prune renamed/removed s
 mkdirSync(OUT, { recursive: true })
 for (const [f, content] of wanted) writeFileSync(join(OUT, f), content)
 console.log(
-  `✓ wrote ${items.length} library pages — ${items.filter((i) => i.kind === 'skill').length} skills, ${items.filter((i) => i.kind === 'agent').length} agents`,
+  `✓ wrote ${items.length} library pages: ${items.filter((i) => i.kind === 'skill').length} skills, ${items.filter((i) => i.kind === 'agent').length} agents`,
 )

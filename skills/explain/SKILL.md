@@ -1,6 +1,6 @@
 ---
 name: explain
-description: Use when an internal package, module, or shared component has little or no usage documentation and people (or future AI sessions) keep using it wrong — "document this", "write docs for our library", onboarding someone onto an internal API, or handing a package to another team.
+description: Use when an internal package, module, or shared component has little or no usage documentation and people (or future AI sessions) keep using it wrong: "document this", "write docs for our library", onboarding someone onto an internal API, or handing a package to another team.
 ---
 
 # Document Package: make an internal package self-explaining to any model

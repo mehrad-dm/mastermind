@@ -1,6 +1,6 @@
 ---
 name: report
-description: Use when the user asks for a written record of what was done — "write it up", "give me a report", "summarize what you changed", "document this cycle" — or at the end of a build/QA cycle ONLY if the project's cycle-report preference is on. Off by default: never produce one unprompted, and skip it for a one-line change.
+description: Use when the user asks for a written record of what was done: "write it up", "give me a report", "summarize what you changed", "document this cycle": or at the end of a build/QA cycle ONLY if the project's cycle-report preference is on. Off by default: never produce one unprompted, and skip it for a one-line change.
 ---
 
 # report: a receipt for the work

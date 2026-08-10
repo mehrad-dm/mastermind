@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Use when work needs to survive losing context — before a /clear on a long task, when pausing something unfinished, when handing over to a teammate or the next session, when the context window is filling up on multi-day work, or when a long multi-step task starts re-covering ground it already finished. Not the project's decision history across weeks — that's `roadmap`.
+description: Use when work needs to survive losing context, before a /clear on a long task, when pausing something unfinished, when handing over to a teammate or the next session, when the context window is filling up on multi-day work, or when a long multi-step task starts re-covering ground it already finished. Not the project's decision history across weeks: that's `roadmap`.
 ---
 
 # MasterMind: Handoff

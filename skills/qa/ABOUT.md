@@ -1,5 +1,5 @@
 ---
-title: QA — proving it works, not asserting it works
+title: QA: proving it works, not asserting it works
 blurb: How MasterMind confirms a change actually does what you asked, and why tests are your call but verification never is.
 ---
 

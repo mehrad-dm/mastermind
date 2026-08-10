@@ -1,6 +1,6 @@
 ---
 name: help
-description: Use when the user asks what MasterMind can do or how to drive it — "help", "what can you do", "how do I use this", "what commands are there", "list your skills", "what are my options" — or when they seem unsure how to get started.
+description: Use when the user asks what MasterMind can do or how to drive it: "help", "what can you do", "how do I use this", "what commands are there", "list your skills", "what are my options": or when they seem unsure how to get started.
 ---
 
 # Help: what MasterMind can do, and how to use it

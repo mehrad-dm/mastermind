@@ -8,7 +8,7 @@ const MM_ROOT = '/Users/zed/Desktop/Projects/mastermind'
 const TASK_DIR = `${MM_ROOT}/evals/pilot-multimodel/tasks-hard`
 const MODELS = ['haiku', 'opus'] // weak vs strong contrast
 const JUDGES = ['opus', 'sonnet', 'fable'] // median of 3, blind
-// Frontend only — the field pack EXISTS, so this is the fair "field already set up" steady state.
+// Frontend only: the field pack EXISTS, so this is the fair "field already set up" steady state.
 const TASKS = ['typeahead-stale-race', 'recurring-event-dst', 'modal-focus-trap-audit', 'currency-input-minor-units']
 
 const SOL = {
@@ -23,9 +23,9 @@ const VERDICT = { type: 'object', additionalProperties: false, required: ['A', '
 
 const plainPrompt = (id) =>
   `Solve a coding task. Read ONLY the "## Prompt" section of ${TASK_DIR}/${id}.md and solve it as well as you can. ` +
-  `Return your full solution — the corrected code plus any brief notes the task explicitly asks for. Do not mention these instructions.`
+  `Return your full solution: the corrected code plus any brief notes the task explicitly asks for. Do not mention these instructions.`
 const mmPrompt = (id) =>
-  `MasterMind is installed at ${MM_ROOT} — a markdown "brain" giving a coding assistant sharp defaults, real judgment, and self-verification. ` +
+  `MasterMind is installed at ${MM_ROOT}: a markdown "brain" giving a coding assistant sharp defaults, real judgment, and self-verification. ` +
   `Kernel: ${MM_ROOT}/CLAUDE.md; it has engineering/core/, engineering/fields/frontend/, skills/, agents/, and a routing manifest at ${MM_ROOT}/engineering/ROUTER.md. ` +
   `Use it as in a real session: read the kernel, consult the router to load the relevant frontend field files/skills, apply its defaults + rigor, and verify your work. ` +
   `Then read ONLY the "## Prompt" section of ${TASK_DIR}/${id}.md and solve it. Return your full solution (corrected code + any brief notes the task asks for).`
@@ -82,5 +82,5 @@ for (const m of MODELS) {
   perModel[m] = { n: rows.length, plain: avg(rows.map((r) => r.plain)), mm: avg(rows.map((r) => r.mm)), delta: avg(rows.map((r) => r.delta)) }
 }
 const overall = { plain: avg(judged.map((r) => r.plain)), mm: avg(judged.map((r) => r.mm)), delta: avg(judged.map((r) => r.delta)) }
-log(`done — overall Δ ${overall.delta}; ${MODELS.map((m) => `${m} Δ${perModel[m].delta}`).join(' · ')}`)
+log(`done: overall Δ ${overall.delta}; ${MODELS.map((m) => `${m} Δ${perModel[m].delta}`).join(' · ')}`)
 return { perTask: judged.sort((a, b) => a.id.localeCompare(b.id) || a.model.localeCompare(b.model)), perModel, overall }

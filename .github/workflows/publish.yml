@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   # Publishing used to check only the version string. Everything a release promises is
-  # verified here first, and publish depends on it — a red gate means nothing reaches npm.
+  # verified here first, and publish depends on it: a red gate means nothing reaches npm.
   gate:
     runs-on: ubuntu-latest
     steps:
@@ -90,7 +90,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 22
-      # Trusted publishing authenticates over OIDC, so no registry-url/token stub is needed —
+      # Trusted publishing authenticates over OIDC, so no registry-url/token stub is needed: 
       # and that stub made an unauthenticated `npm install -g npm` 404. npm >= 11.5.1 is
       # required for OIDC, and Node 22 ships 10.x.
       # Pinned, not floating: `npm@latest` would hand a release-day npm regression, or a
@@ -100,7 +100,7 @@ jobs:
       - run: npm --version
       # The tarball ships the CLI only; the brain is cloned at install time, so provenance
       # alone does not cover the code users execute. Stamp the exact commit this tag points
-      # at — the CLI refuses to install a clone whose HEAD does not match it, which closes
+      # at: the CLI refuses to install a clone whose HEAD does not match it, which closes
       # the moved-tag hole. Written into the published package only, never committed.
       - name: stamp the immutable commit into the package
         working-directory: cli

@@ -32,8 +32,8 @@ CREATE TABLE order_items (
 ## Rubric
 
 1. Price is snapshotted onto each order line at purchase time (e.g. order_items.unit_price), so later product price edits cannot change historical totals
-2. Money is stored as an exact type — integer cents (with the unit named/commented) or NUMERIC/DECIMAL — never FLOAT/REAL, fixing the off-by-a-cent errors
+2. Money is stored as an exact type: integer cents (with the unit named/commented) or NUMERIC/DECIMAL: never FLOAT/REAL, fixing the off-by-a-cent errors
 3. Product deletion can no longer destroy order history: ON DELETE CASCADE from order_items to products is removed in favor of RESTRICT / soft-delete (e.g. discontinued_at flag), and the note explains the choice
 4. order_items gains integrity constraints: quantity with CHECK (quantity > 0), NOT NULL on its columns, and a primary key or unique constraint on (order_id, product_id) or a surrogate key
-5. Deleting an order still cleans up (or restricts) its own order_items deliberately — the orders→order_items relationship remains consistent, not orphanable
+5. Deleting an order still cleans up (or restricts) its own order_items deliberately: the orders→order_items relationship remains consistent, not orphanable
 6. The total-computation note derives the total from the snapshotted line data (SUM(unit_price * quantity)), not from the live products table

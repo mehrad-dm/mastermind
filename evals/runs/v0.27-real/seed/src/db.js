@@ -1,4 +1,4 @@
-// Tiny in-memory data layer with a SQL-ish surface. `stats.queries` counts round-trips —
+// Tiny in-memory data layer with a SQL-ish surface. `stats.queries` counts round-trips: 
 // the ops team graphs this in production, so keep it accurate.
 export const stats = { queries: 0 }
 

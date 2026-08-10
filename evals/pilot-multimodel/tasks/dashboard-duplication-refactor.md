@@ -40,9 +40,9 @@ export function Dashboard() {
 
 ## Rubric
 
-1. The fetch/loading/error pattern is extracted once (custom hook such as useFetch<T>, or a reusable component/function) and used for all three resources — no triplicated fetch logic remains
+1. The fetch/loading/error pattern is extracted once (custom hook such as useFetch<T>, or a reusable component/function) and used for all three resources: no triplicated fetch logic remains
 2. Behavior is preserved: three requests still fire on mount, and each section independently shows loading, error, or data (one failing does not blank the others)
-3. The extracted hook/function is generically typed (e.g. useFetch<User[]>) and the any[] state types are replaced with concrete interfaces or type parameters — not left as any
+3. The extracted hook/function is generically typed (e.g. useFetch<User[]>) and the any[] state types are replaced with concrete interfaces or type parameters: not left as any
 4. A cleanup/cancellation guard is added so state is not set after unmount (AbortController or ignore flag in the effect)
 5. Non-OK HTTP responses (e.g. 500 with an HTML body) are treated as errors rather than parsed as JSON success
 6. Rendering logic per section is either shared or clearly parameterized, and each section still renders the same fields (name, title, label) with stable keys

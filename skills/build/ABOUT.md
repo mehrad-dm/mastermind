@@ -1,5 +1,5 @@
 ---
-title: Build — the whole loop, not just the typing
+title: Build: the whole loop, not just the typing
 blurb: What MasterMind does when you ask for a feature, and why "it compiles" is not the same as "it works."
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: refactorer
-description: Restructures working code toward better design WITHOUT changing behavior — deeper modules, a cleaner data model, illegal states made unrepresentable, tangled dependencies unpicked. Use to pay down design/architectural debt on code that already works. Distinct from code-reviewer (finds problems, doesn't edit) and /simplify (tactical cleanup) — this is strategic, behavior-preserving redesign, verified green.
+description: Restructures working code toward better design WITHOUT changing behavior: deeper modules, a cleaner data model, illegal states made unrepresentable, tangled dependencies unpicked. Use to pay down design/architectural debt on code that already works. Distinct from code-reviewer (finds problems, doesn't edit) and /simplify (tactical cleanup): this is strategic, behavior-preserving redesign, verified green.
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

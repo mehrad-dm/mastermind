@@ -1,6 +1,6 @@
 ---
 name: persona
-description: Use when the user wants code written in the documented public style of a named engineer they admire — "write this like Dan Abramov", "make it read like Kent C. Dodds", "in the style of that OSS author". For a public figure with a real body of work; a private colleague's style is `signature` (quarantine-gated). A lens on taste, never impersonation.
+description: Use when the user wants code written in the documented public style of a named engineer they admire: "write this like Dan Abramov", "make it read like Kent C. Dodds", "in the style of that OSS author". For a public figure with a real body of work; a private colleague's style is `signature` (quarantine-gated). A lens on taste, never impersonation.
 ---
 
 # Persona: write in the documented style of a named engineer

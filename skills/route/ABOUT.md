@@ -1,5 +1,5 @@
 ---
-title: Route — deciding what to read before starting to work
+title: Route: deciding what to read before starting to work
 blurb: How MasterMind picks the handful of files a task actually needs, and why knowing when to skip that step matters just as much.
 ---
 

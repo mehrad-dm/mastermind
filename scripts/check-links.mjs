@@ -70,7 +70,7 @@ async function check(url) {
   try {
     let r = await fetch(url, { ...opts, method: 'HEAD' })
     if (r.status === 405 || r.status === 501 || r.status === 403) {
-      // some servers reject HEAD or bots — retry with a light GET
+      // some servers reject HEAD or bots: retry with a light GET
       r = await fetch(url, { ...opts, method: 'GET', headers: { ...opts.headers, range: 'bytes=0-0' } })
     }
     if (r.status >= 200 && r.status < 400) return { url, kind: 'OK', status: r.status }
@@ -102,14 +102,14 @@ async function run() {
   const now = new Date()
   const stale = staleNotes.filter((n) => (now.getFullYear() - n.year) * 12 + (now.getMonth() + 1 - n.month) > STALE_MONTHS)
 
-  console.log(`\nMasterMind link check — ${urls.length} resources across ${files.length} curated files\n`)
+  console.log(`\nMasterMind link check: ${urls.length} resources across ${files.length} curated files\n`)
   if (dead.length) {
-    console.log(`✖ DEAD (${dead.length}) — fix these:`)
+    console.log(`✖ DEAD (${dead.length}): fix these:`)
     for (const r of dead) console.log(`  ${String(r.status).padEnd(8)} ${r.url}\n           ← ${[...targets.get(r.url)].join(', ')}`)
     console.log('')
   }
   if (blocked.length) {
-    console.log(`⚠ BLOCKED/transient (${blocked.length}) — reachable but bot-gated or slow; check by hand if unsure:`)
+    console.log(`⚠ BLOCKED/transient (${blocked.length}): reachable but bot-gated or slow; check by hand if unsure:`)
     for (const r of blocked) console.log(`  ${String(r.status).padEnd(8)} ${r.url}`)
     console.log('')
   }
@@ -119,7 +119,7 @@ async function run() {
     console.log('')
   }
   if (stale.length) {
-    console.log(`◷ STALE (${stale.length}) — verified >${STALE_MONTHS} months ago; run \`levelup refresh\`:`)
+    console.log(`◷ STALE (${stale.length}): verified >${STALE_MONTHS} months ago; run \`levelup refresh\`:`)
     for (const s of stale) console.log(`  ${s.year}-${String(s.month).padStart(2, '0')}  ${s.file}`)
     console.log('')
   }

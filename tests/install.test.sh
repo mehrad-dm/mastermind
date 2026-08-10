@@ -20,7 +20,7 @@ SANDBOX_HOME="$TMP/home"; mkdir -p "$SANDBOX_HOME"
 REAL_HOME_LINK="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
 trap 'now="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"
       if [ "$now" != "$REAL_HOME_LINK" ]; then
-        printf "\n\033[0;31m✖ a test modified the real ~/.mastermind (%s → %s) — restoring\033[0m\n" "$REAL_HOME_LINK" "$now" >&2
+        printf "\n\033[0;31m✖ a test modified the real ~/.mastermind (%s → %s): restoring\033[0m\n" "$REAL_HOME_LINK" "$now" >&2
         [ "$REAL_HOME_LINK" = none ] || ln -sfn "$REAL_HOME_LINK" "$HOME/.mastermind"
       fi
       rm -rf "$TMP"' EXIT
@@ -458,7 +458,7 @@ is "claude still is"             "$(count_in "$P/.mastermind/.installed" 'tools=
 # form has to stay recognised or our text is stranded in every existing user's file.
 echo "── a pointer written by an older release is still cleaned up"
 P=$(proj legacyhint)
-printf 'their notes\n\nFollow ./.mastermind/CLAUDE.md — the MasterMind brain for this project (skills, agents, engineering rigor).\n' > "$P/AGENTS.md"
+printf 'their notes\n\nFollow ./.mastermind/CLAUDE.md: the MasterMind brain for this project (skills, agents, engineering rigor).\n' > "$P/AGENTS.md"
 run "$P" claude >/dev/null 2>&1
 run "$P" --uninstall >/dev/null 2>&1
 is "the legacy pointer is gone"  "$(count_in "$P/AGENTS.md" 'the MasterMind brain for this project')" "0"
@@ -645,7 +645,7 @@ echo "── a project uninstall does not edit the global Codex file"
 P=$(proj codexscope)
 mkdir -p "$SANDBOX_HOME/.codex"
 { printf 'MY CODEX GLOBAL\n\n'
-  printf 'Follow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).\n'
+  printf 'Follow ~/.mastermind/CLAUDE.md: the MasterMind brain (skills, agents, engineering rigor).\n'
 } > "$SANDBOX_HOME/.codex/AGENTS.md"
 run "$P" claude codex >/dev/null 2>&1
 run "$P" --uninstall >/dev/null 2>&1
@@ -707,8 +707,8 @@ printf '{"model":"opus","hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type
 run "$P" claude cursor >/dev/null 2>&1
 # An earlier install left this behind; uninstall must still clean it up.
 mkdir -p "$P/.github/hooks"; printf '{}\n' > "$P/.github/hooks/mastermind.json"
-printf 'MY GEMINI RULE\n\nFollow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).\n' > "$P/GEMINI.md"
-printf 'MY COPILOT RULE\n\nFollow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).\n' > "$P/.github/copilot-instructions.md"
+printf 'MY GEMINI RULE\n\nFollow ~/.mastermind/CLAUDE.md: the MasterMind brain (skills, agents, engineering rigor).\n' > "$P/GEMINI.md"
+printf 'MY COPILOT RULE\n\nFollow ~/.mastermind/CLAUDE.md: the MasterMind brain (skills, agents, engineering rigor).\n' > "$P/.github/copilot-instructions.md"
 run "$P" --uninstall claude cursor >/dev/null 2>&1
 is "bootstrap hook unwired" "$(python3 -c "
 import json;d=json.load(open('$P/.claude/settings.json'))
@@ -742,10 +742,10 @@ yes_ "no ~/.mastermind left in the copied docs" "$([ "$(grep -rl '~/\.mastermind
 
 run "$P" claude >/dev/null 2>&1
 run "$P" claude >/dev/null 2>&1
-is "idempotent — no duplicate aliases" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILLS"
+is "idempotent: no duplicate aliases" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILLS"
 yes_ "stays isolated without the flag" "$(readlink "$P/.claude/skills/build" | grep -o '\.mastermind/skills/build')"
 
-echo "── isolated: no field is shipped — the project builds its own, and keeps it"
+echo "── isolated: no field is shipped, the project builds its own, and keeps it"
 is "scaffold shipped"        "$([ -d "$P/.mastermind/engineering/fields/_template" ] && echo y)" "y"
 is "no default field shipped" "$([ -d "$P/.mastermind/engineering/fields/frontend" ] && echo present || echo absent)" "absent"
 mkdir -p "$P/.mastermind/engineering/fields/myfield"
@@ -759,7 +759,7 @@ is "project stack rules preserved" "$(count_in "$P/.mastermind/engineering/field
 is "project field choice preserved" "$(grep -c 'OUR FIELD CHOICE' "$P/.mastermind/engineering/active-field.md")" "1"
 is "engine refreshed, not preserved" "$(grep -c 'TAMPERED' "$P/.mastermind/engineering/core/mindset.md")" "0"
 
-echo "── isolated: real isolation — one project cannot change another"
+echo "── isolated: real isolation, one project cannot change another"
 is "the shared clone is untouched" "$(grep -rc 'OUR LESSON\|TAMPERED\|OUR FIELD CHOICE' "$REPO/engineering/core" | grep -cv ':0$')" "0"
 yes_ "--isolated --global is refused" "$( (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --isolated --global 2>&1 || true) | grep -o 'per-project by definition')"
 is "uninstall keeps the project's own brain" "$([ -d "$P/.mastermind" ] && echo kept)" "kept"
@@ -825,7 +825,7 @@ P=$(proj sharedreg); run "$P" --shared agents >/dev/null 2>&1
 is "no project brain created" "$([ -e "$P/.mastermind" ] && echo created || echo none)" "none"
 is "AGENTS.md targets the clone" "$(readlink "$P/AGENTS.md")" "$REPO/AGENTS.md"
 yes_ "--check calls it healthy"  "$(run "$P" --check --shared agents 2>&1 | grep -o 'healthy here')"
-# `codex` was the old name for this exact target — the alias keeps old commands working.
+# `codex` was the old name for this exact target: the alias keeps old commands working.
 P=$(proj alias); run "$P" --shared codex >/dev/null 2>&1
 is "codex alias still wires AGENTS.md" "$(readlink "$P/AGENTS.md")" "$REPO/AGENTS.md"
 
@@ -843,7 +843,7 @@ echo "── isolated update: retire what upstream dropped, keep what the projec
 CLONE="$TMP/clone"; rm -rf "$CLONE"; cp -R "$REPO/." "$CLONE/" 2>/dev/null
 P=$(proj retire)
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" --isolated claude >/dev/null 2>&1)
-# The project's own field — what `init` builds in real use.
+# The project's own field: what `init` builds in real use.
 mkdir -p "$P/.mastermind/engineering/fields/myfield"
 echo "OURS" > "$P/.mastermind/engineering/fields/myfield/our-team-notes.md"
 echo "OUR LESSON" >> "$P/.mastermind/engineering/fields/myfield/lessons.md"
@@ -861,7 +861,7 @@ printf 'engineering/fields/frontend/web-animations.md\n' >> "$P/.mastermind/.man
 (cd "$P" && HOME="$SANDBOX_HOME" "$CLONE/install.sh" claude >/dev/null 2>&1)
 is "a pre-0.27 pack is never gutted" "$(cat "$P/.mastermind/engineering/fields/frontend/web-animations.md" 2>/dev/null)" "LEGACY"
 
-echo "── project under \$HOME with the shared clone present — must NOT resolve PROJECT=\$HOME"
+echo "── project under \$HOME with the shared clone present: must NOT resolve PROJECT=\$HOME"
 AH="$TMP/anchorhome"; mkdir -p "$AH/Projects/proj/src"
 ln -sfn "$REPO" "$AH/.mastermind"                       # the shared clone, as a symlink
 (cd "$AH" && HOME="$AH" "$REPO/install.sh" --global claude >/dev/null 2>&1)  # global wiring exists
@@ -935,7 +935,7 @@ is "unneeded AGENTS anchor removed with the last tool" "$(count_in "$P/apps/web/
 is "their content survives"  "$(count_in "$P/apps/web/CLAUDE.md" 'internal auth')" "1"
 is "cursor rule removed"     "$([ -f "$P/apps/web/.cursor/rules/mastermind.mdc" ] && echo present || echo gone)" "gone"
 
-echo "── single-project (no routes.map) is untouched — the common case stays simple"
+echo "── single-project (no routes.map) is untouched: the common case stays simple"
 P=$(proj single); (cd "$P" && git init -q .)
 run "$P" --isolated claude >/dev/null 2>&1
 is "no contexts dir created" "$([ -d "$P/.mastermind/engineering/contexts" ] && echo made || echo none)" "none"

@@ -26,7 +26,7 @@ Write the implementation. Handle every edge case implied by the doc comment; sta
 
 ## Rubric
 
-1. Returns the full window [{start: dayStart, end: dayEnd}] when busy is empty, and [] when busy fully covers the window — no crash, no zero-length or inverted slots
+1. Returns the full window [{start: dayStart, end: dayEnd}] when busy is empty, and [] when busy fully covers the window: no crash, no zero-length or inverted slots
 2. Handles unsorted input correctly (sorts by start before sweeping), verified by the algorithm not assuming input order
 3. Merges overlapping AND touching busy intervals (e.g. [540,600] + [600,660] yields no free gap at 600, and [540,660] + [550,570] does not create a phantom slot inside)
 4. Clamps busy intervals that extend before dayStart or after dayEnd, and ignores intervals entirely outside the window

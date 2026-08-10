@@ -1,5 +1,5 @@
 ---
-title: Level Up — how MasterMind actually gets better over time
+title: Level Up: how MasterMind actually gets better over time
 blurb: Turns corrections, review findings, and ecosystem changes into durable rules, so the same mistake doesn't need correcting twice.
 ---
 

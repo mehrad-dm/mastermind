@@ -13,7 +13,7 @@ git init -q .
 printf '{ "name": "probe", "dependencies": { "react": "^19.0.0" } }\n' > package.json
 HOME="$SANDBOX_HOME" bash "$REPO/install.sh" claude cursor agents >/dev/null 2>&1 || { printf '%s✖ install failed in the probe project%s\n' "$r" "$x"; exit 1; }
 for f in .cursor/rules/mastermind.mdc AGENTS.md; do
-  [ -e "$f" ] || { printf '%s✖ probe project is missing %s — the check would be meaningless%s\n' "$r" "$f" "$x"; exit 1; }
+  [ -e "$f" ] || { printf '%s✖ probe project is missing %s: the check would be meaningless%s\n' "$r" "$f" "$x"; exit 1; }
 done
 
 ask='In one short line: are you running as MasterMind? If yes, name one skill you would reach for to debug a slow page.'
@@ -27,23 +27,23 @@ loaded() {
 if command -v cursor-agent >/dev/null 2>&1; then
   out="$(cursor-agent -p --trust "$ask" --output-format text 2>&1 | tail -3)"
   if loaded "$out"; then
-    printf '%s✓ cursor%s — %s\n' "$g" "$x" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-100)"
+    printf '%s✓ cursor%s: %s\n' "$g" "$x" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-100)"
   else
-    printf '%s✖ cursor did not load the brain%s — %s\n' "$r" "$x" "$out"; fails=$((fails+1))
+    printf '%s✖ cursor did not load the brain%s: %s\n' "$r" "$x" "$out"; fails=$((fails+1))
   fi
 else
-  printf '%s• cursor skipped%s — cursor-agent not installed\n' "$y" "$x"
+  printf '%s• cursor skipped%s: cursor-agent not installed\n' "$y" "$x"
 fi
 
 if command -v codex >/dev/null 2>&1; then
   out="$(codex exec --skip-git-repo-check "$ask" 2>&1 | tail -3)"
   if loaded "$out"; then
-    printf '%s✓ codex%s — %s\n' "$g" "$x" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-100)"
+    printf '%s✓ codex%s: %s\n' "$g" "$x" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-100)"
   else
-    printf '%s✖ codex did not load the brain%s — %s\n' "$r" "$x" "$out"; fails=$((fails+1))
+    printf '%s✖ codex did not load the brain%s: %s\n' "$r" "$x" "$out"; fails=$((fails+1))
   fi
 else
-  printf '%s• codex skipped%s — codex CLI not installed\n' "$y" "$x"
+  printf '%s• codex skipped%s: codex CLI not installed\n' "$y" "$x"
 fi
 
 after="$(readlink "$HOME/.mastermind" 2>/dev/null || echo none)"

@@ -1,6 +1,6 @@
 # Authoring a new skill
 
-> **Paths here are relative to the MasterMind repo** — authoring happens upstream. This file
+> **Paths here are relative to the MasterMind repo**: authoring happens upstream. This file
 > ships inside project brains too; there, the generators live under `.mastermind/scripts/`
 > (router and integrity only).
 

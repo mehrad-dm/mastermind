@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Designs the solution BEFORE code is written — module/API boundaries, data model, state, contracts, and tech decisions, for whatever field is active (frontend, backend, mobile…). Use for any non-trivial feature, new module, or architectural choice. Returns a concrete design + one-line rationale per decision, not code.
+description: Designs the solution BEFORE code is written, module/API boundaries, data model, state, contracts, and tech decisions, for whatever field is active (frontend, backend, mobile…). Use for any non-trivial feature, new module, or architectural choice. Returns a concrete design + one-line rationale per decision, not code.
 tools: Read, Grep, Glob, WebFetch, WebSearch
 ---
 
