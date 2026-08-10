@@ -66,7 +66,7 @@ You don't type a command. Say any of these and MasterMind reaches for `build`:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ building this — will verify before handoff
+🧠 MasterMind ▸ building this: will verify before handoff
    └ build · understand → design → implement → verify → review
 ```
 

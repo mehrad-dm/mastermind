@@ -15,6 +15,9 @@ history lives in git.
 - The package description on npm, the plugin manifest and the marketplace listing lose theirs
   too. They were written as a JSON escape, so a search for the character itself walked
   past all three, and those are the lines people read before they install anything.
+- Another 18 in the README tree diagrams, the shell snippets people copy, and the announce
+  lines in four skills' ABOUT pages. Two remain in the installer on purpose: they are the
+  pointer text written by releases up to 0.31.2, and uninstall matches that text to remove it.
 
 ## [0.31.4] · 2026-08-11
 

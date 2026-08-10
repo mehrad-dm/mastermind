@@ -21,22 +21,22 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
 
 ```
 ~/.mastermind/                    # canonical, tool-neutral (symlink → the repo)
-├── CLAUDE.md                     # the kernel — always loaded, tiny
+├── CLAUDE.md                     # the kernel: always loaded, tiny
 ├── AGENTS.md                     # → CLAUDE.md (the open entry file for agentic tools)
 ├── agents/                       # specialist roles (architect, code-reviewer, refactorer, tech-scout)
 ├── skills/                       # growable library (build, debug, interview, learn, qa, … + levelup)
 └── engineering/
     ├── README.md                 # this file
     ├── active-field.md           # which field is active + how leveling works
-    ├── ROUTER.md                 # generated manifest (scripts/build-router.mjs) — load only what a task needs
-    ├── core/                     # UNIVERSAL — field-agnostic
+    ├── ROUTER.md                 # generated manifest (scripts/build-router.mjs): load only what a task needs
+    ├── core/                     # UNIVERSAL: field-agnostic
     │   ├── mindset.md            # genius-builder mental models (the operating soul)
     │   ├── principles.md         # decision framework + clean-code laws
     │   ├── rigor.md              # the quality gate + refuse-list + the verdict
     │   ├── agent-loop.md         # how to execute: verify-loop, explore→plan→implement, context
-    │   └── product-sense.md      # product & business literacy — scope tasks & specs right
+    │   └── product-sense.md      # product & business literacy: scope tasks & specs right
     └── fields/
-        └── _template/            # FIELD SCAFFOLD — init builds a field from this
+        └── _template/            # FIELD SCAFFOLD: init builds a field from this
             ├── field.md          # pack manifest
             ├── stack-defaults.md # opinionated tool-by-tool defaults
             ├── mentors.md        # the field's authorities to align with
