@@ -23,6 +23,8 @@ jobs:
           node-version: 22
       - run: |
           test "v$(cat VERSION)" = "$GITHUB_REF_NAME" || { echo "tag/VERSION mismatch"; exit 1; }
+          grep -q "^## \[${GITHUB_REF_NAME#v}\]" CHANGELOG.md ||
+            { echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME#v}"; exit 1; }
       - run: bash tests/install.test.sh
       - run: bash tests/agent-surface.test.sh
       - run: node scripts/check-integrity.mjs
@@ -30,8 +32,10 @@ jobs:
       - run: node scripts/check-links.mjs
       - run: node scripts/lint-brain.mjs --strict
       - run: node evals/agent-surface-routing.mjs
-      # The site is a private repository. MASTERMIND_SITE_KEY is a read-only deploy key for it:
-      # scoped to that one repo, unlike a token that could read everything the account owns.
+      # MASTERMIND_SITE_KEY is a read-only deploy key for the private site repository, scoped to
+      # that one repo. This fails the release when it cannot read: the check exists to stop the
+      # published pages drifting from the instructions behind them, and a check that shrugs is
+      # not one. MM_ALLOW_UNCHECKED_LIBRARY=1 in the repo variables is the deliberate override.
       - id: sitesrc
         continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -44,11 +48,17 @@ jobs:
         env:
           MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
         run: node scripts/build-library.mjs --check
-      - name: say so when the library could not be checked
+      - name: refuse to release without checking the library
         if: steps.sitesrc.outcome != 'success'
         run: |
-          echo "::warning::the site repository could not be read, so the library pages were NOT checked against the skill and agent sources. Check that MASTERMIND_SITE_KEY is still a valid deploy key on mastermind-site."
-          echo "· library check skipped: no access to the site repository" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ vars.MM_ALLOW_UNCHECKED_LIBRARY }}" = "1" ]; then
+            echo "::warning::the site could not be read and MM_ALLOW_UNCHECKED_LIBRARY is set, so the library pages were NOT checked"
+            echo "· library check skipped by explicit override" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "::error::the site repository could not be read, so the library pages cannot be checked against the skill and agent sources."
+          echo "Fix MASTERMIND_SITE_KEY on mastermind-site, or set the repository variable MM_ALLOW_UNCHECKED_LIBRARY=1 to release without this evidence." >&2
+          exit 1
       - name: the published tarball contains exactly what we intend
         working-directory: cli
         run: |
@@ -105,15 +115,25 @@ jobs:
       # The gate job checked the tarball, but that was before the stamp rewrote package.json.
       # What actually ships is this file, so the contract is re-checked against it: the same
       # three paths, the version still matching the tag, and a real commit SHA in the stamp.
-      - name: re-verify the stamped package is what we intend to publish
+      # Pack ONCE, verify that file, publish that file. `npm publish` from the directory repacks,
+      # so what shipped was never the thing any check had looked at.
+      - name: pack the release artifact
         working-directory: cli
         run: |
-          npm pack --dry-run --json > /tmp/pack-stamped.json
+          set -e
+          npm pack --pack-destination "$RUNNER_TEMP" --json > "$RUNNER_TEMP/pack-stamped.json"
+          ls -l "$RUNNER_TEMP"/mastermind-brain-*.tgz
+
+      - name: re-verify the stamped package is what we intend to publish
+        working-directory: cli
+        env:
+          PACK_JSON: ${{ runner.temp }}/pack-stamped.json
+        run: |
           node -e '
             const fs = require("fs");
             // Same two shapes as the gate job. This step runs the PINNED npm, which is the
             // one that changed, and reading only the array form is what stopped 0.31.0.
-            const raw = require("/tmp/pack-stamped.json");
+            const raw = require(process.env.PACK_JSON);
             const p = Array.isArray(raw) ? raw[0] : Object.values(raw)[0];
             if (!p) { console.error("npm pack --json produced nothing usable"); process.exit(1) }
             const files = p.files.map(f => f.path).sort();
@@ -130,8 +150,33 @@ jobs:
               { console.error("commit stamp does not match this run"); process.exit(1) }
             console.log(`stamped package OK: v${pkg.version} @ ${pkg.commit}`);
           '
-      - run: npm publish --provenance --access public
+      # Prepared BEFORE publishing. Extracting the notes afterwards meant a missing changelog
+      # section published npm permanently and then failed, leaving no Release and no way back.
+      - name: prepare the release notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -e
+          V="${TAG#v}"
+          notes="$(awk -v v="## [$V]" '
+            index($0, v) == 1 { inb = 1; next }
+            inb && /^## \[/    { exit }
+            inb                { print }
+          ' CHANGELOG.md)"
+          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            echo "CHANGELOG.md has no '## [$V]' section, so there are no notes to publish" >&2
+            exit 1
+          fi
+          printf '%s\n' "$notes" > "$RUNNER_TEMP/notes.md"
+          echo "release notes ready: $(wc -l < "$RUNNER_TEMP/notes.md") lines"
+
+      - name: publish the artifact that was verified
         working-directory: cli
+        run: |
+          set -e
+          tgz="$(ls "$RUNNER_TEMP"/mastermind-brain-*.tgz)"
+          echo "publishing $tgz"
+          npm publish "$tgz" --provenance --access public
 
       # Six tags shipped without one, because creating it was a step someone had to remember
       # after the excitement of publishing. The changelog already contains the notes, so this
@@ -142,21 +187,9 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -e
-          V="${TAG#v}"
-          # The section for this version, without its own heading line.
-          notes="$(awk -v v="## [$V]" '
-            index($0, v) == 1 { inb = 1; next }
-            inb && /^## \[/    { exit }
-            inb                { print }
-          ' CHANGELOG.md)"
-          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
-            echo "CHANGELOG.md has no '## [$V]' section, so there are no notes to publish" >&2
-            exit 1
-          fi
-          printf '%s\n' "$notes" > /tmp/notes.md
           title="$(git tag -l --format='%(contents:subject)' "$TAG" | head -1)"
           [ -n "$title" ] || title="$TAG"
           # --latest explicitly: GitHub marks the most recently CREATED release as latest, not
           # the highest version, so backfilling an older tag silently demotes the current one.
-          gh release create "$TAG" --title "$title" --notes-file /tmp/notes.md --verify-tag --latest
+          gh release create "$TAG" --title "$title" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag --latest
           echo "released $TAG"

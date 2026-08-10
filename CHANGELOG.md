@@ -4,6 +4,65 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.3] · 2026-08-10
+
+A further external review found 16 issues. All 16 are addressed here. Two were release blockers.
+
+### Fixed: the installer could write outside the project
+
+The containment guard covered the engine files it ships and not the state it keeps. A repository
+that shipped a dangling symlink at `.mastermind/routes.map` or `.mastermind/.manifest.hashes`
+made the installer create a file anywhere on the machine, and the install still exited 0.
+
+Every path the brain writes is now checked, including the context directories named at run time
+by `routes.map`. Reproduced against 0.31.2 for both paths, and covered by tests that fail there.
+
+### Fixed: the release could publish to npm and then fail
+
+The GitHub Release notes were read from the changelog *after* `npm publish`. A missing changelog
+section published npm permanently and then errored, leaving a version on the registry with no
+release behind it. The notes are prepared and proven first, and the gate now refuses a tag whose
+version has no changelog section before any job runs.
+
+`npm publish` also repacked the package rather than publishing the file that had just been
+verified, so what shipped was never the artifact any check had inspected. One tarball is now
+packed, verified and published, and the cross-platform job exercises it with the same pinned npm.
+
+### Fixed: preservation and state
+
+- A project's own symlink was treated as ours whenever it happened to resolve inside the brain,
+  so `AGENTS.md` pointing at a file in `.mastermind/` was replaced with no backup and removed on
+  uninstall. Ownership now means pointing at exactly what we would create.
+- Two projects whose paths differ only where the old key sanitised them, `a/b` and `a_b`, shared
+  one install record and inherited each other's expected tools. Records are keyed by a hash of
+  the path. Records written under the old key are still read.
+- Retired tool names were recorded as installed while wiring nothing, and the doctor then
+  reported the project healthy. They are accepted for uninstall and never recorded.
+
+### Changed
+
+- An unknown flag is rejected before the brain is cloned. `--bogus` used to clone first and
+  refuse afterwards, leaving state behind for a command that never ran.
+- The library check fails the release when it cannot read the site, rather than warning. The
+  repository variable `MM_ALLOW_UNCHECKED_LIBRARY` is the deliberate override.
+- The installer suites run on every pull request, so a red suite can be made a required check.
+  The cross-platform matrix stays a release gate.
+- `agents` is no longer listed as a tool you name: `AGENTS.md` is always wired, and
+  `mastermind agents` lists the agents.
+- 87 em dashes removed from installer and CLI output. The pointer line MasterMind appends
+  changed with them, so the previous wording is still recognised and cleaned up; without that,
+  our text would have been stranded in the files of everyone who installed before this release.
+
+### Website
+
+- The interactive map is no longer embedded on arrival. It loads when asked, sandboxed and with
+  no referrer, so reading the architecture page does not announce the visit to a third party.
+- The router section claimed a task loads one or two files. Across the measured tasks it was two
+  to four, and the panel now says which numbers describe the illustration and which the average.
+- A failed copy showed nothing to a sighted reader: the button said "copy" whether or not it had
+  worked. It now shows the failure and still announces it.
+- The Codex link landed on a generic documentation root. It points at the CLI documentation.
+
 ## [0.31.2] · 2026-08-10
 
 ### Fixed

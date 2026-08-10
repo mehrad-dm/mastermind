@@ -19,3 +19,16 @@ jobs:
           node-version: 22
       - run: node scripts/check-integrity.mjs
       - run: node scripts/build-router.mjs --check   # ROUTER.md must be regenerated when routed files change
+
+  # Runs on every pull request with no path filter, so it can be a REQUIRED check. The cross-OS
+  # matrix is path-filtered and therefore cannot be required without deadlocking docs-only PRs,
+  # which left a failing installer suite able to merge. The full matrix still gates the release.
+  suites:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 22
+      - run: bash tests/install.test.sh
+      - run: bash tests/agent-surface.test.sh
