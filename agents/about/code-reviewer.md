@@ -1,5 +1,5 @@
 ---
-title: Code reviewer, the second pair of eyes that never saw your reasoning
+title: Code reviewer: the second pair of eyes that never saw your reasoning
 blurb: What MasterMind does before a change is called done, and why the reviewer is deliberately kept ignorant of the conversation that produced the code.
 ---
 

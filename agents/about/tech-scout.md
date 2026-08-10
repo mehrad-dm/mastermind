@@ -1,5 +1,5 @@
 ---
-title: Tech scout, adopt it, or build it yourself
+title: Tech scout: adopt it, or build it yourself
 blurb: How MasterMind decides whether to bring in an outside tool or write the few lines you own, and why the answer comes back as a verdict rather than a list.
 ---
 

@@ -55,11 +55,11 @@ for (const f of readdirSync(join(REPO, 'agents', 'about'))) {
 items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
 
 // Neighbours for prev/next, wrapping around so the library is browsable end to end.
-const short = (t) => t.split(/\s+: \s+/)[1] ?? t
+const short = (t) => t.split(/:\s+/)[1] ?? t
 
 const seoTitle = (t) => {
   const full = `${t} · MasterMind`
-  return full.length <= 60 ? full : `${t.split(/\s+, \s+/)[0]} · MasterMind`
+  return full.length <= 60 ? full : `${t.split(/:\s+/)[0]} · MasterMind`
 }
 
 const metaDesc = (s) => (s.length <= 155 ? s : `${s.slice(0, 155).replace(/\s+\S*$/, '')}…`)

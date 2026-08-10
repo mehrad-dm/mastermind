@@ -1,5 +1,5 @@
 ---
-title: Persona, writing in a named engineer's documented style
+title: Persona: writing in a named engineer's documented style
 blurb: What MasterMind does when you want code written in the public style of an engineer you admire: grounded in their real work, stated as homage, never impersonation.
 ---
 

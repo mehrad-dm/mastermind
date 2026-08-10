@@ -1,5 +1,5 @@
 ---
-title: Init, twenty seconds of setup, then out of your way
+title: Init: twenty seconds of setup, then out of your way
 blurb: Sets MasterMind up for one project by reading your stack instead of interrogating you, and asks at most a single question.
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: Architect, deciding the shape before the first line
+title: Architect: deciding the shape before the first line
 blurb: What MasterMind does before it builds anything non-trivial, and why the expensive mistakes are all made in the first ten minutes.
 ---
 

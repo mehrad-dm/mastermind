@@ -1,5 +1,5 @@
 ---
-title: Prompt, turning a rough ask into one an AI can actually execute
+title: Prompt: turning a rough ask into one an AI can actually execute
 blurb: Rewrites a vague request into a precise, well-structured prompt, so you stop paying for answers to the question you didn't mean to ask.
 ---
 

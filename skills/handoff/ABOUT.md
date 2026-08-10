@@ -1,5 +1,5 @@
 ---
-title: Handoff, surviving the moment the memory resets
+title: Handoff: surviving the moment the memory resets
 blurb: Captures just enough of an unfinished task that the next session, or the next person, can pick it up cold without redoing the thinking.
 ---
 

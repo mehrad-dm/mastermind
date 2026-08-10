@@ -1,5 +1,5 @@
 ---
-title: Signature, turning your team's tacit style into rules
+title: Signature: turning your team's tacit style into rules
 blurb: What MasterMind does when code needs to match your team's real conventions: the style you keep correcting the AI toward but have never written down.
 ---
 

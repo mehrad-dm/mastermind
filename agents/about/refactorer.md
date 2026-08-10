@@ -1,5 +1,5 @@
 ---
-title: Refactorer, changing the shape without changing the behavior
+title: Refactorer: changing the shape without changing the behavior
 blurb: What MasterMind does to code that works but has become hard to work in, and the one promise it never breaks.
 ---
 

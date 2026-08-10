@@ -1,5 +1,5 @@
 ---
-title: Report, a receipt for the work, only if you asked for one
+title: Report: a receipt for the work, only if you asked for one
 blurb: Turns a finished cycle into a short shareable record of what changed, what was decided, and how it was verified: off by default and never produced unprompted.
 ---
 

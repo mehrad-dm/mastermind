@@ -1,5 +1,5 @@
 ---
-title: Map, the memory a long project keeps of itself
+title: Map: the memory a long project keeps of itself
 blurb: Keeps a running record of what a months-long project has decided and why, what's still genuinely open, and what was deliberately left off the table.
 ---
 

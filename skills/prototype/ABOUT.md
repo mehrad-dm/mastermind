@@ -1,5 +1,5 @@
 ---
-title: Prototype, buying knowledge cheaply, then throwing the receipt away
+title: Prototype: buying knowledge cheaply, then throwing the receipt away
 blurb: What MasterMind does when nobody knows whether an approach will work, and why the code it writes is meant to be deleted.
 ---
 
