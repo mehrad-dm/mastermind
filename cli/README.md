@@ -12,7 +12,7 @@ secrets out of git.
 cd my-project
 npx mastermind-brain            # install into this project (all your AI tools)
 npx mastermind-brain --global   # Claude Code in every project
-npx mastermind-brain check      # doctor — is this project wired?
+npx mastermind-brain check      # doctor: is this project wired?
 npx mastermind-brain update     # refresh the brain + repair links
 npx mastermind-brain uninstall  # clean removal
 ```

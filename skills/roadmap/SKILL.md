@@ -22,9 +22,9 @@ outlives the sessions: a decision map the project owns and appends to for the li
 A decision entry, and the reversal of one, look like this:
 
 ```text
-2026-03-04 · Sessions live in Postgres, not Redis — one datastore to operate, and
+2026-03-04 · Sessions live in Postgres, not Redis: one datastore to operate, and
              nothing needed sub-millisecond reads. → specs/auth.md
-2026-05-19 · REVERSES 2026-03-04 — sessions move to Redis. The read path became the
+2026-05-19 · REVERSES 2026-03-04: sessions move to Redis. The read path became the
              p99 at 340ms once org switching landed. The original reason still held;
              the traffic changed. → PR #412
 ```

@@ -4,6 +4,15 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.5] · 2026-08-11
+
+### Changed
+
+- The last 17 em dashes leave the shipped brain. They sat inside fenced examples, which the
+  earlier sweep skipped to protect strings that are compared rather than read. These were not
+  that: they are the example output MasterMind is told to print, including the line it announces
+  work with, so they were the most visible ones we shipped.
+
 ## [0.31.4] · 2026-08-11
 
 ### Changed
