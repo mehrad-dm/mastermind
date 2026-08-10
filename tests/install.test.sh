@@ -41,6 +41,13 @@ echo "── syntax"
 bash -n "$INSTALL" && ok "install.sh parses" || no "install.sh parses"
 bash -n "$REPO/hooks/session-start.sh" && ok "session-start.sh parses" || no "session-start.sh parses"
 
+echo "── contradictory storage modes refuse before writing"
+P=$(proj contradictory)
+out=$(run "$P" --isolated --shared claude 2>&1); rc=$?
+is "opposite modes exit 2" "$rc" "2"
+is "opposite modes explain the conflict" "$(printf '%s' "$out" | grep -c 'opposite modes')" "1"
+is "opposite modes create nothing" "$([ -z "$(ls -A "$P")" ] && echo yes || echo no)" "yes"
+
 echo "── clean install"
 P=$(proj clean); OUT=$(run "$P" claude)
 is "all skills linked" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILLS"
@@ -252,6 +259,20 @@ is "so deleted wiring is still caught after a repair" "$([ "$rc" -ne 0 ] && echo
 run "$P" --uninstall cursor >/dev/null 2>&1
 is "uninstall drops that tool from the record" \
    "$(sed -n 's/^tools=//p' "$P/.mastermind/.installed" 2>/dev/null | tr ' ' '\n' | grep -cx cursor)" "0"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >"$TMP/check-after-targeted-uninstall" 2>&1); rc=$?
+is "the doctor trusts a record rewritten by targeted uninstall" \
+   "$(grep -c 'edited by hand' "$TMP/check-after-targeted-uninstall" || true)" "0"
+is "the remaining integrations are healthy after targeted uninstall" "$rc" "0"
+
+echo "── agents and codex aliases keep their shared AGENTS.md until both are removed"
+P=$(proj agent-aliases); run "$P" agents codex >/dev/null 2>&1
+run "$P" --uninstall codex >/dev/null 2>&1
+is "uninstalling codex keeps AGENTS.md for agents" "$([ -e "$P/AGENTS.md" ] && echo kept || echo gone)" "kept"
+is "agents remains healthy" "$(run "$P" --check 2>&1 | grep -c 'healthy here')" "1"
+run "$P" codex >/dev/null 2>&1
+run "$P" --uninstall agents >/dev/null 2>&1
+is "uninstalling agents keeps AGENTS.md for codex" "$([ -e "$P/AGENTS.md" ] && echo kept || echo gone)" "kept"
+is "codex remains healthy" "$(run "$P" --check 2>&1 | grep -c 'healthy here')" "1"
 
 echo "── uninstall takes our pointer back out of the files it appended to"
 P=$(proj pointer); mkdir -p "$P/.claude"
@@ -301,6 +322,62 @@ is "the edited file is named"     "$(printf '%s' "$out" | grep -c 'replacing you
 is "and only that one"            "$(printf '%s' "$out" | grep -c 'replacing your edit')" "1"
 is "the refresh still happened"   "$(count_in "$P/.mastermind/engineering/core/mindset.md" 'PROJECT EDIT')" "0"
 
+# ══ The record says whether it was edited ═════════════════════════════════════
+echo "── a hand-edited install record is called out"
+P=$(proj tamper)
+run "$P" claude >/dev/null 2>&1
+is "the record carries a digest" "$(count_in "$P/.mastermind/.installed" '^digest=')" "1"
+is "an untouched record is quiet" "$(run "$P" --check 2>&1 | grep -c 'edited by hand')" "0"
+python3 - "$P/.mastermind/.installed" <<'EOF'
+import pathlib, re, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(re.sub(r"^tools=.*$", "tools=claude cursor codex", p.read_text(), count=1, flags=re.M))
+EOF
+is "an edited record is reported" "$(run "$P" --check 2>&1 | grep -c 'edited by hand')" "1"
+
+# ══ A new upstream file never lands on top of the project's own ═══════════════
+echo "── a colliding project file is kept, not overwritten"
+P=$(proj collide)
+run "$P" claude >/dev/null 2>&1
+printf 'MY OWN VERSION\n' > "$P/.mastermind/engineering/core/mindset.md"
+python3 - "$P/.mastermind/.manifest.hashes" <<'EOF'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text("\n".join(l for l in p.read_text().split("\n") if not l.endswith("  engineering/core/mindset.md")))
+EOF
+# A longer sibling path must not be mistaken for ownership of mindset.md itself.
+printf 'not-a-real-hash  engineering/core/mindset.md.extra\n' >> "$P/.mastermind/.manifest.hashes"
+out=$(run "$P" claude 2>&1)
+is "the collision is announced"  "$(printf '%s' "$out" | grep -c 'your project already had')" "1"
+is "their content is preserved" "$(cat "$P"/.mastermind/engineering/core/*.yours-* 2>/dev/null | grep -c 'MY OWN VERSION')" "1"
+is "and ours is installed"      "$(count_in "$P/.mastermind/engineering/core/mindset.md" 'MY OWN VERSION')" "0"
+
+echo "── a colliding project directory is kept, not recursively deleted"
+P=$(proj collide-dir)
+run "$P" claude >/dev/null 2>&1
+rm -f "$P/.mastermind/engineering/core/mindset.md" "$P/.mastermind/CLAUDE.md"
+mkdir -p "$P/.mastermind/engineering/core/mindset.md" "$P/.mastermind/CLAUDE.md"
+printf 'NESTED DIRECTORY\n' > "$P/.mastermind/engineering/core/mindset.md/user.txt"
+printf 'ROOT DIRECTORY\n' > "$P/.mastermind/CLAUDE.md/user.txt"
+out=$(run "$P" claude 2>&1)
+is "both directory collisions are announced" "$(printf '%s' "$out" | grep -c 'where your project had a directory')" "2"
+is "the nested directory survives" "$(cat "$P"/.mastermind/engineering/core/mindset.md.yours-*/user.txt 2>/dev/null)" "NESTED DIRECTORY"
+is "the root directory survives"   "$(cat "$P"/.mastermind/CLAUDE.md.yours-*/user.txt 2>/dev/null)" "ROOT DIRECTORY"
+is "the nested engine file is installed" "$([ -f "$P/.mastermind/engineering/core/mindset.md" ] && echo yes || echo no)" "yes"
+is "the root engine file is installed"   "$([ -f "$P/.mastermind/CLAUDE.md" ] && echo yes || echo no)" "yes"
+
+echo "── a first install preserves regular files in a pre-existing brain tree"
+P=$(proj first-install-collide)
+mkdir -p "$P/.mastermind/engineering/core"
+printf 'FIRST NESTED FILE\n' > "$P/.mastermind/engineering/core/mindset.md"
+printf 'FIRST ROOT FILE\n' > "$P/.mastermind/CLAUDE.md"
+out=$(run "$P" claude 2>&1)
+is "both first-install collisions are announced" "$(printf '%s' "$out" | grep -c 'which your project already had')" "2"
+is "the first nested file survives" "$(cat "$P"/.mastermind/engineering/core/mindset.md.yours-* 2>/dev/null)" "FIRST NESTED FILE"
+is "the first root file survives"   "$(cat "$P"/.mastermind/CLAUDE.md.yours-* 2>/dev/null)" "FIRST ROOT FILE"
+is "the nested engine file replaces the collision" "$(count_in "$P/.mastermind/engineering/core/mindset.md" 'FIRST NESTED FILE')" "0"
+is "the root engine file replaces the collision"   "$(count_in "$P/.mastermind/CLAUDE.md" 'FIRST ROOT FILE')" "0"
+
 # ══ The install record is data, so the doctor must survive it being wrong ═════
 echo "── a corrupted or hostile install record does not break the doctor"
 P=$(proj badrecord)
@@ -311,6 +388,10 @@ is "it still produces a report"  "$(printf '%s' "$out" | grep -cE 'healthy|issue
 printf '' > "$P/.mastermind/.installed"
 out=$(run "$P" --check 2>&1) || true
 is "an empty record still reports" "$(printf '%s' "$out" | grep -cE 'healthy|issue')" "1"
+printf 'digest=not-a-real-digest\n' > "$P/.mastermind/.installed"
+out=$(run "$P" --check 2>&1) || true
+is "a digest-only record still reports" "$(printf '%s' "$out" | grep -cE 'healthy|issue')" "1"
+is "a digest-only record is identified as edited" "$(printf '%s' "$out" | grep -c 'edited by hand')" "1"
 rm -f "$P/.mastermind/.installed"
 out=$(run "$P" --check 2>&1) || true
 is "a deleted record is announced"  "$(printf '%s' "$out" | grep -c 'no install record here')" "1"
@@ -360,7 +441,7 @@ printf 'apps/web frontend\n' > "$P/.mastermind/routes.map"
 run "$P" claude cursor >/dev/null 2>&1
 is "a complete route reports ok" "$(run "$P" --check 2>&1 | grep -c 'route apps/web/ → frontend (frontend)')" "1"
 rm -f "$P/apps/web/AGENTS.md"
-is "a missing AGENTS.md anchor is caught" "$(run "$P" --check 2>&1 | grep -c 'AGENTS.md anchor missing')" "1"
+is "an unrecorded AGENTS surface is not demanded" "$(run "$P" --check 2>&1 | grep -c 'route apps/web/ → frontend (frontend)')" "1"
 run "$P" claude cursor >/dev/null 2>&1
 rm -f "$P/apps/web/.cursor/rules/mastermind.mdc"
 is "a missing Cursor rule is caught"      "$(run "$P" --check 2>&1 | grep -c 'Cursor rule is missing')" "1"
@@ -446,6 +527,10 @@ is "the record lists both tools" "$(count_in "$SANDBOX_HOME/.mastermind-state/pr
 # The record has to track removals too, or the doctor keeps demanding wiring the user dropped.
 run "$P" --uninstall cursor >/dev/null 2>&1
 is "a targeted uninstall drops that tool" "$(count_in "$SANDBOX_HOME/.mastermind-state/projects/$_key" 'cursor')" "0"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --check >"$TMP/check-shared-after-targeted-uninstall" 2>&1); rc=$?
+is "the shared doctor trusts the rewritten record" \
+   "$(grep -c 'edited by hand' "$TMP/check-shared-after-targeted-uninstall" || true)" "0"
+is "the remaining shared integration is healthy" "$rc" "0"
 run "$P" --uninstall >/dev/null 2>&1
 _key="$(printf '%s' "$P" | tr -c 'A-Za-z0-9._-' '_')"
 is "a bare uninstall drops the record"    "$([ -f "$SANDBOX_HOME/.mastermind-state/projects/$_key" ] && echo present || echo gone)" "gone"
@@ -536,6 +621,8 @@ printf '{"model":"opus","hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type
 run "$P" claude cursor >/dev/null 2>&1
 # An earlier install left this behind; uninstall must still clean it up.
 mkdir -p "$P/.github/hooks"; printf '{}\n' > "$P/.github/hooks/mastermind.json"
+printf 'MY GEMINI RULE\n\nFollow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).\n' > "$P/GEMINI.md"
+printf 'MY COPILOT RULE\n\nFollow ~/.mastermind/CLAUDE.md — the MasterMind brain (skills, agents, engineering rigor).\n' > "$P/.github/copilot-instructions.md"
 run "$P" --uninstall claude cursor >/dev/null 2>&1
 is "bootstrap hook unwired" "$(python3 -c "
 import json;d=json.load(open('$P/.claude/settings.json'))
@@ -543,6 +630,8 @@ print(len([e for e in d.get('hooks',{}).get('SessionStart',[]) if 'session-start
 is "their settings survive uninstall" "$(python3 -c "
 import json;d=json.load(open('$P/.claude/settings.json'));print(d.get('model'),'PreToolUse' in d.get('hooks',{}))")" "opus True"
 is "legacy copilot hook file removed" "$([ -f "$P/.github/hooks/mastermind.json" ] && echo present || echo gone)" "gone"
+is "legacy Gemini pointer removed but user content kept" "$(count_in "$P/GEMINI.md" 'MY GEMINI RULE') $(count_in "$P/GEMINI.md" 'mastermind/CLAUDE.md')" "1 0"
+is "legacy Copilot pointer removed but user content kept" "$(count_in "$P/.github/copilot-instructions.md" 'MY COPILOT RULE') $(count_in "$P/.github/copilot-instructions.md" 'mastermind/CLAUDE.md')" "1 0"
 
 echo "── --global --uninstall must not delete project files"
 P=$(proj gscope); GH="$TMP/globalhome"; mkdir -p "$GH"
@@ -756,6 +845,7 @@ sed -i.bak 's/^field:.*/field: frontend/' "$P/.mastermind/engineering/contexts/w
 run "$P" claude >/dev/null 2>&1
 run "$P" --uninstall claude >/dev/null 2>&1
 is "generated block removed" "$(grep -c 'MASTERMIND:START' "$P/apps/web/CLAUDE.md" 2>/dev/null)" "0"
+is "unneeded AGENTS anchor removed with the last tool" "$(count_in "$P/apps/web/AGENTS.md" 'MASTERMIND:START')" "0"
 is "their content survives"  "$(count_in "$P/apps/web/CLAUDE.md" 'internal auth')" "1"
 is "cursor rule removed"     "$([ -f "$P/apps/web/.cursor/rules/mastermind.mdc" ] && echo present || echo gone)" "gone"
 

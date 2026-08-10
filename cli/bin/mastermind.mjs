@@ -21,6 +21,27 @@ const PIN = process.env.MASTERMIND_REF || `v${VERSION}`
 const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route', 'wrong-log', 'conflicts']
 const COMMANDS = [...READ_CMDS, 'check', 'update', 'uninstall', 'init']
 const argv = process.argv.slice(2)
+
+if (argv.includes('--help') || argv.includes('-h')) {
+  console.log(`MasterMind
+
+  mastermind [tools...]       wire this project (default: the tools it detects)
+  mastermind check            report what is wired here and what is broken
+  mastermind update           update the brain and repair this project
+  mastermind uninstall        remove MasterMind wiring from this project
+  mastermind skills           list the skill routing table
+
+Tools:   claude · cursor · codex · agents
+Flags:   --global · --shared · --isolated · --json
+
+Requires: Bash, Git, and Node 18 or newer. On Windows, run it inside WSL.`)
+  process.exit(0)
+}
+if (argv.includes('--version') || argv.includes('-V')) {
+  console.log(VERSION)
+  process.exit(0)
+}
+
 const cmdAt = argv.findIndex((a) => !a.startsWith('-'))
 const cmd = cmdAt >= 0 && COMMANDS.includes(argv[cmdAt]) ? argv.splice(cmdAt, 1)[0] : 'init'
 const passthrough = argv // --global, --shared, etc. go straight to the engine

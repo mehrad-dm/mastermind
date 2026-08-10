@@ -67,8 +67,8 @@ else
   esac
   CSP="$(curl -fsSI "$SITE_URL/architecture" 2>/dev/null | tr -d '\r' | grep -i '^content-security-policy:' || true)"
   if [ -z "$CSP" ]; then skip "no CSP header served for /architecture"
-  elif case "$CSP" in *frame-src*) true ;; *) false ;; esac; then ok "the CSP allows the embedded map"
-  else bad "the CSP has no frame-src, so the embedded map is blocked"; fi
+  elif case "$CSP" in *"frame-src https://www.foglamp.dev"*) true ;; *) false ;; esac; then ok "the CSP allows the canonical embedded-map origin"
+  else bad "the CSP does not allow https://www.foglamp.dev, so the embedded map is blocked"; fi
 fi
 
 # --- The Release object -------------------------------------------------------

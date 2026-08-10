@@ -1,0 +1,66 @@
+name: site-live
+
+# Nothing in CI had ever looked at the website. The two repositories are siblings, the publish
+# workflow checks out one of them, and every site guarantee ran on one person's laptop. That is
+# how the architecture page shipped with its map blocked by the CSP: correct to a crawler, empty
+# to a person, and no job in the world was loading it.
+on:
+  # The site is deployed from its own repository after the package tag is pushed. Running this on
+  # that tag would test the previous deployment by design, so releases use verify-release.sh after
+  # the site push; this workflow is the independent daily/manual production regression check.
+  schedule: [{ cron: '17 7 * * *' }]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: the deployed site matches this repository
+        env:
+          SITE: https://mastermind.mehrad.me
+        run: |
+          set -euo pipefail
+          fail=0
+          note() { printf '  %s\n' "$*"; }
+          bad()  { printf '::error::%s\n' "$*"; fail=1; }
+
+          V="$(cat VERSION)"
+          note "expecting v$V"
+
+          html="$(curl -fsS --retry 3 --retry-delay 5 "$SITE/")"
+          case "$html" in
+            *"v$V"*) note "the site shows v$V" ;;
+            *) bad "the site does not show v$V; it has: $(printf '%s' "$html" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | sort -u | tr '\n' ' ')" ;;
+          esac
+
+          # The pages a person actually lands on. A 404 here is invisible to anyone not looking.
+          for path in / /start /library /architecture /library/build /library/code-reviewer; do
+            code="$(curl -fsS -o /dev/null -w '%{http_code}' --retry 2 "$SITE$path" || true)"
+            [ "$code" = 200 ] && note "$path -> 200" || bad "$path -> ${code:-no response}"
+          done
+
+          # A CSP that blocks an embed fails silently in the browser and nowhere else.
+          csp="$(curl -fsSI "$SITE/architecture" | tr -d '\r' | grep -i '^content-security-policy:' || true)"
+          case "$csp" in
+            *"frame-src https://www.foglamp.dev"*) note "the CSP allows the canonical embedded-map origin" ;;
+            '') bad "no CSP header on /architecture" ;;
+            *) bad "the CSP does not allow https://www.foglamp.dev, so the embedded map is blocked" ;;
+          esac
+
+          for h in strict-transport-security x-content-type-options referrer-policy; do
+            curl -fsSI "$SITE/" | tr -d '\r' | grep -qi "^$h:" && note "$h present" || bad "$h missing"
+          done
+
+          # Every skill and agent we ship must have a page, or the library is lying about itself.
+          for n in $(ls -d skills/*/ | xargs -n1 basename) $(ls agents/*.md | xargs -n1 basename | sed 's/\.md$//'); do
+            code="$(curl -fsS -o /dev/null -w '%{http_code}' "$SITE/library/$n" || true)"
+            [ "$code" = 200 ] || bad "library/$n -> ${code:-no response}, but we ship it"
+          done
+          note "checked $(ls -d skills/*/ | wc -l | tr -d ' ') skills and $(ls agents/*.md | wc -l | tr -d ' ') agents"
+
+          exit $fail

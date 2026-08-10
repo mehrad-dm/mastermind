@@ -27,7 +27,7 @@ normally** ("build me X", "why is this slow?", "review this") and MasterMind app
 automatically. It **improves itself** over time, and it supports [**Claude Code, Cursor and Codex**](#where-its-tested),
 nothing else.
 
-> **🗺️ New here?** Explore the <a href="https://foglamp.dev/scan/mastermind-mkfscq" target="_blank" rel="noopener"><b>live interactive map</b></a>.
+> **🗺️ New here?** Explore the <a href="https://www.foglamp.dev/scan/mastermind-mkfscq" target="_blank" rel="noopener"><b>live interactive map</b></a>.
 
 ## Why it exists
 

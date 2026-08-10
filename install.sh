@@ -52,6 +52,11 @@ for _t in ${TOOLS+"${TOOLS[@]}"}; do
   esac
 done
 
+if [ "$ISOLATED" = 1 ] && [ "$SHARED" = 1 ]; then
+  printf '%s\n' '--isolated and --shared are opposite modes — pick one.' >&2
+  exit 2
+fi
+
 g=$'\033[0;32m'; y=$'\033[0;33m'; r=$'\033[0;31m'; x=$'\033[0m'
 
 [ "$ISOLATED" = 1 ] && [ "$SCOPE" = global ] && {
@@ -139,7 +144,7 @@ fi
 CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
 CODEX_GLOBAL="$CODEX_HOME_DIR/AGENTS.md"
 
-if [ "$SCOPE" = project ] && [ "$SHARED" = 0 ] && [ "$MODE" != uninstall ]; then ISOLATED=1; fi
+if [ "$SCOPE" = project ] && [ "$SHARED" = 0 ] && [ "$MODE" = install ]; then ISOLATED=1; fi
 if [ "$SCOPE" = project ] && { [ "$ISOLATED" = 1 ] || { [ "$SHARED" = 0 ] && [ -f "$PROJECT/.mastermind/VERSION" ] && [ ! -L "$PROJECT/.mastermind" ]; }; }; then
   BRAIN="$PROJECT/.mastermind"; ISOLATED=1
 else
@@ -268,7 +273,7 @@ mm_preserve_foreign() {
   local dst="$1"
   [ -e "$dst" ] || return 0
   mm_is_generated "$dst" && return 0
-  local bak="$dst.bak-$(date +%Y%m%d%H%M%S)"
+  local bak="$dst.bak-$(date +%Y%m%d%H%M%S)-$$"
   mv "$dst" "$bak"; warn "backed up your existing $(basename "$dst") → $bak"
   mkdir -p "$(dirname "$dst")" && printf '%s\n' "$bak" > "$dst.mm-backup"
 }
@@ -292,7 +297,7 @@ safe_link() {
     return
   fi
   if [ -e "$dst" ] && [ ! -L "$dst" ]; then
-    local bak="$dst.bak-$(date +%Y%m%d%H%M%S)"
+    local bak="$dst.bak-$(date +%Y%m%d%H%M%S)-$$"
     mv "$dst" "$bak"; warn "backed up your existing $(basename "$dst") → $bak"
     mkdir -p "$(dirname "$dst")" && printf '%s\n' "$bak" > "$dst.mm-backup"
   fi
@@ -357,7 +362,7 @@ wire_brain_file() {
   fi
   mkdir -p "$(dirname "$dst")"
   if [ -L "$dst" ] && ! is_ours "$dst"; then
-    local bak="$dst.bak-$(date +%Y%m%d%H%M%S)"
+    local bak="$dst.bak-$(date +%Y%m%d%H%M%S)-$$"
     mv "$dst" "$bak"; warn "backed up your existing $(basename "$dst") symlink → $bak"
     printf '%s\n' "$bak" > "$dst.mm-backup"
   fi
@@ -641,9 +646,9 @@ mm_strip_anchor_dir() {
   case "/$adir/" in */../*) return 0 ;; esac
   [ -d "$PROJECT/$adir" ] || return 0
   abs="$(mm_resolve_inside_project "$PROJECT/$adir")" || return 0
-  mm_strip_block "$abs/CLAUDE.md" && n=$((n + 1)) || true
-  mm_strip_block "$abs/AGENTS.md" || true
-  mm_remove_generated "$abs/.cursor/rules/mastermind.mdc" >/dev/null && n=$((n + 1))
+  if mm_remove_route_surface claude; then mm_strip_block "$abs/CLAUDE.md" && n=$((n + 1)) || true; fi
+  if [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ] || mm_remove_agents_wiring; then mm_strip_block "$abs/AGENTS.md" || true; fi
+  if mm_remove_route_surface cursor; then mm_remove_generated "$abs/.cursor/rules/mastermind.mdc" >/dev/null && n=$((n + 1)) || true; fi
   return 0
 }
 
@@ -652,7 +657,7 @@ remove_context_anchors() {
   local glob line adir abs
   local led; led="$(mm_ledger_dirs || true)"
   for adir in $led; do mm_strip_anchor_dir "$adir"; done
-  rm -f "$(mm_routes_ledger)"
+  [ ${#TOOLS[@]} -eq 0 ] && rm -f "$(mm_routes_ledger)"
   [ -f "$map" ] || return 0
   while IFS= read -r line; do
     line="${line//$'\r'/}"
@@ -666,9 +671,9 @@ remove_context_anchors() {
     case "/$adir/" in */../*) continue ;; esac
     [ -d "$PROJECT/$adir" ] || continue
     abs="$(mm_resolve_inside_project "$PROJECT/$adir")" || continue
-    mm_strip_block "$abs/CLAUDE.md" && n=$((n + 1)) || true
-    mm_strip_block "$abs/AGENTS.md" || true
-    mm_remove_generated "$abs/.cursor/rules/mastermind.mdc" >/dev/null && n=$((n + 1))
+    if mm_remove_route_surface claude; then mm_strip_block "$abs/CLAUDE.md" && n=$((n + 1)) || true; fi
+    if [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ] || mm_remove_agents_wiring; then mm_strip_block "$abs/AGENTS.md" || true; fi
+    if mm_remove_route_surface cursor; then mm_remove_generated "$abs/.cursor/rules/mastermind.mdc" >/dev/null && n=$((n + 1)) || true; fi
   done < "$map"
 }
 
@@ -677,6 +682,35 @@ mm_wants() {
   local t
   for t in ${TOOLS[@]+"${TOOLS[@]}"}; do [ "$t" = "$1" ] && return 0; done
   return 1
+}
+
+MM_REMAINING_TOOLS=""
+MM_REMOVE_ALL_ROUTE_SURFACES=0
+if [ "$MODE" = uninstall ]; then
+  if [ ${#TOOLS[@]} -eq 0 ]; then
+    MM_REMOVE_ALL_ROUTE_SURFACES=1
+  else
+    _before_record="$(mm_record_file)"
+    if [ -f "$_before_record" ]; then
+      MM_REMAINING_TOOLS="$(sed -n 's/^tools=//p' "$_before_record")"
+      for _selected in ${TOOLS[@]+"${TOOLS[@]}"}; do
+        MM_REMAINING_TOOLS="$(printf '%s' "$MM_REMAINING_TOOLS" | tr ' ' '\n' | awk -v selected="$_selected" '$0 != selected' | tr '\n' ' ')"
+      done
+      MM_REMAINING_TOOLS="$(printf '%s' "$MM_REMAINING_TOOLS" | sed 's/  */ /g; s/^ //; s/ $//')"
+      [ -z "$MM_REMAINING_TOOLS" ] && MM_REMOVE_ALL_ROUTE_SURFACES=1
+    fi
+  fi
+fi
+
+mm_remove_route_surface() {
+  [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ] || mm_wants "$1"
+}
+
+mm_remove_agents_wiring() {
+  [ ${#TOOLS[@]} -eq 0 ] && return 0
+  { mm_wants agents || mm_wants codex; } || return 1
+  case " $MM_REMAINING_TOOLS " in *' agents '*|*' codex '*) return 1 ;; esac
+  return 0
 }
 
 if [ "$MODE" = uninstall ]; then
@@ -690,16 +724,16 @@ if [ "$MODE" = uninstall ]; then
     shopt -u nullglob
   fi
   # AGENTS.md is what Codex reads, so either name owns it.
-  if mm_wants agents || mm_wants codex; then
+  if mm_remove_agents_wiring; then
     [ -n "$AGENTS_FILE" ] && { remove_link "$AGENTS_FILE" && n=$((n + 1)); }
   fi
   mm_wants claude && restore_backup "$CLAUDE_DIR/CLAUDE.md"
   # AGENTS.md had no restore path at all, so a preserved original stayed preserved forever.
-  [ -n "${AGENTS_FILE:-}" ] && restore_backup "$AGENTS_FILE"
-  [ "$SCOPE" = global ] && [ -n "${CODEX_GLOBAL:-}" ] && restore_backup "$CODEX_GLOBAL"
-  [ "$SCOPE" = global ] && restore_backup "$CLAUDE_DIR/engineering"
+  if mm_remove_agents_wiring; then [ -n "${AGENTS_FILE:-}" ] && restore_backup "$AGENTS_FILE"; fi
+  [ "$SCOPE" = global ] && mm_wants codex && [ -n "${CODEX_GLOBAL:-}" ] && restore_backup "$CODEX_GLOBAL"
+  [ "$SCOPE" = global ] && mm_wants claude && restore_backup "$CLAUDE_DIR/engineering"
   # Codex's global file is ours only when it's our symlink; remove_link leaves a real file alone.
-  [ "$SCOPE" = global ] && { remove_link "$CODEX_GLOBAL" && n=$((n + 1)); }
+  [ "$SCOPE" = global ] && mm_wants codex && { remove_link "$CODEX_GLOBAL" && n=$((n + 1)); }
   if [ "$SCOPE" = project ]; then
     remove_context_anchors    # keeps each app's own CLAUDE.md content
     if mm_wants cursor; then
@@ -708,10 +742,10 @@ if [ "$MODE" = uninstall ]; then
     restore_backup "$PROJECT/.cursor/rules/mastermind.mdc"
     restore_backup "$PROJECT/.cursor/rules/mastermind-field.mdc"
     fi
-    remove_link "$PROJECT/GEMINI.md"                       && n=$((n + 1))
-    remove_link "$PROJECT/.github/copilot-instructions.md" && n=$((n + 1))
+    if mm_wants gemini || [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ]; then remove_link "$PROJECT/GEMINI.md" && n=$((n + 1)); fi
+    if mm_wants copilot || [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ]; then remove_link "$PROJECT/.github/copilot-instructions.md" && n=$((n + 1)); fi
     # Removed on filename alone until now, which destroyed any same-named file the user owned.
-    if [ -f "$PROJECT/.github/hooks/mastermind.json" ]; then
+    if { mm_wants copilot || [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ]; } && [ -f "$PROJECT/.github/hooks/mastermind.json" ]; then
       if mm_is_generated "$PROJECT/.github/hooks/mastermind.json" \
          || grep -qF 'hooks/session-start.sh' "$PROJECT/.github/hooks/mastermind.json" 2>/dev/null \
          || [ "$(tr -d '[:space:]' < "$PROJECT/.github/hooks/mastermind.json")" = '{}' ]; then
@@ -748,11 +782,11 @@ if [ "$MODE" = uninstall ]; then
       esac
     fi
   fi
-  if [ -f "$CLAUDE_DIR/settings.json" ] && ! command -v node >/dev/null 2>&1; then
+  if mm_wants claude && [ -f "$CLAUDE_DIR/settings.json" ] && ! command -v node >/dev/null 2>&1; then
     warn "node is not installed, so settings.json was left as it is — the bootstrap hook is still registered"
     UNFINISHED=$((UNFINISHED + 1))
   fi
-  if [ -f "$CLAUDE_DIR/settings.json" ] && command -v node >/dev/null 2>&1; then
+  if mm_wants claude && [ -f "$CLAUDE_DIR/settings.json" ] && command -v node >/dev/null 2>&1; then
     MM_SETTINGS="$CLAUDE_DIR/settings.json" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
       const fs=require("fs"); const p=process.env.MM_SETTINGS;
       let s; try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); }
@@ -773,9 +807,13 @@ if [ "$MODE" = uninstall ]; then
          UNFINISHED=$((UNFINISHED + 1)) ;;
     esac
   fi
-  for f in ${AGENTS_FILE:+"$AGENTS_FILE"} ${CLAUDE_DIR:+"$CLAUDE_DIR/CLAUDE.md"} \
-           "$PROJECT/GEMINI.md" "$PROJECT/.github/copilot-instructions.md" \
-           $([ "$SCOPE" = global ] && printf '%s' "${CODEX_GLOBAL:-}"); do
+  _cleanup_files=()
+  if mm_remove_agents_wiring; then [ -n "${AGENTS_FILE:-}" ] && _cleanup_files+=("$AGENTS_FILE"); fi
+  mm_wants claude && _cleanup_files+=("$CLAUDE_DIR/CLAUDE.md")
+  if mm_wants gemini || [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ]; then _cleanup_files+=("$PROJECT/GEMINI.md"); fi
+  if mm_wants copilot || [ "$MM_REMOVE_ALL_ROUTE_SURFACES" = 1 ]; then _cleanup_files+=("$PROJECT/.github/copilot-instructions.md"); fi
+  [ "$SCOPE" = global ] && mm_wants codex && [ -n "${CODEX_GLOBAL:-}" ] && _cleanup_files+=("$CODEX_GLOBAL")
+  for f in ${_cleanup_files[@]+"${_cleanup_files[@]}"}; do
     [ -f "$f" ] || continue                        # symlinks are removed above, not edited
    for HINT in "$HINT_GLOBAL" "$HINT_ISOLATED"; do
     grep -qF "$HINT" "$f" || continue
@@ -802,12 +840,14 @@ if [ "$MODE" = uninstall ]; then
   elif [ -f "$_recf" ]; then
     _keep="$(sed -n 's/^tools=//p' "$_recf")"
     for _g in ${TOOLS[@]+"${TOOLS[@]}"}; do
-      _keep="$(printf '%s' "$_keep" | tr ' ' '\n' | grep -vx "$_g" | tr '\n' ' ')"
+      _keep="$(printf '%s' "$_keep" | tr ' ' '\n' | awk -v selected="$_g" '$0 != selected' | tr '\n' ' ')"
     done
     _keep="$(printf '%s' "$_keep" | sed 's/  */ /g; s/^ //; s/ $//')"
     if [ -n "$_keep" ]; then
-      _tf="$(mktemp)"; sed "s|^tools=.*|tools=$_keep|" "$_recf" > "$_tf"
-      cat "$_tf" > "$_recf"; rm -f "$_tf"
+      _tf="$(mktemp)"; sed "s|^tools=.*|tools=$_keep|" "$_recf" | grep -v '^digest=' > "$_tf"
+      cat "$_tf" > "$_recf"
+      printf 'digest=%s\n' "$(mm_hash "$_tf")" >> "$_recf"
+      rm -f "$_tf"
     else
       rm -f "$_recf"
     fi
@@ -878,6 +918,23 @@ ISO_ENGINE=(CLAUDE.md AGENTS.md engineering/core skills agents hooks bin cli
             scripts/build-router.mjs scripts/check-integrity.mjs)
 ISO_OWNED=(engineering/active-field.md engineering/ROUTER.md)
 
+mm_preserve_engine_directory() {
+  local path="$1" rel="$2" keep
+  [ -d "$path" ] && [ ! -L "$path" ] || return 0
+  keep="$path.yours-$(date +%Y%m%d%H%M%S)-$$"
+  mv "$path" "$keep"
+  warn "this release needs a file at $rel, where your project had a directory — yours is kept at $(basename "$keep")"
+}
+
+mm_preserve_untracked_engine_file() {
+  local path="$1" rel="$2" hashes="$3" keep
+  [ -f "$path" ] || return 0
+  if [ -f "$hashes" ] && awk -v rel="$rel" '$2 == rel { found=1 } END { exit !found }' "$hashes" 2>/dev/null; then return 0; fi
+  keep="$path.yours-$(date +%Y%m%d%H%M%S)-$$"
+  cp -p "$path" "$keep"
+  warn "this release adds $rel, which your project already had — yours is kept at $(basename "$keep")"
+}
+
 sync_isolated_brain() {
   local dst="$PROJECT/.mastermind" d
   local SHIPPED; SHIPPED="$(mktemp)"
@@ -900,15 +957,21 @@ sync_isolated_brain() {
       while IFS= read -r ef; do
         erel="${ef#"$REPO/$d/"}"
         mm_assert_no_symlink_path "$dst" "$d/$erel"
+        mm_preserve_engine_directory "$dst/$d/$erel" "$d/$erel"
+        # A project file where an engine file lands has no trustworthy ownership unless its hash
+        # is in our ledger. This includes both a newly added upstream path and the very first install
+        # into a pre-existing .mastermind tree.
+        mm_preserve_untracked_engine_file "$dst/$d/$erel" "$d/$erel" "$HASHES"
         mkdir -p "$(dirname "$dst/$d/$erel")"
         if [ -f "$dst/$d/$erel" ] && [ -f "$HASHES" ]; then
-          _was="$(grep -F "  $d/$erel" "$HASHES" 2>/dev/null | head -1 | cut -d' ' -f1)"
+          # `|| true`: under set -e a grep that matches nothing fails the assignment and kills
+          # the installer mid-refresh. A path with no recorded hash is normal, not an error.
+          _was="$(awk -v rel="$d/$erel" '$2 == rel { print $1; exit }' "$HASHES" 2>/dev/null || true)"
           if [ -n "$_was" ]; then
             _now="$(mm_hash "$dst/$d/$erel")"
             [ "$_now" = "$_was" ] || warn "replacing your edit to $d/$erel (engine file; copy it out if you need it)"
           fi
         fi
-        if [ -d "$dst/$d/${erel:?}" ] && [ ! -L "$dst/$d/$erel" ]; then rm -rf "$dst/$d/${erel:?}"; fi
         rm -rf "$dst/$d/${erel:?}.mm-new"
         cp -Rp "$ef" "$dst/$d/$erel.mm-new"
         mv -f "$dst/$d/$erel.mm-new" "$dst/$d/$erel"
@@ -916,7 +979,9 @@ sync_isolated_brain() {
       done < <(find "$REPO/$d" \( -type f -o -type l \) ! -name ABOUT.md ! -path '*/about/*')
     else
       mkdir -p "$(dirname "$dst/$d")"
-      rm -rf "$dst/${d:?}"
+      mm_preserve_engine_directory "$dst/$d" "$d"
+      mm_preserve_untracked_engine_file "$dst/$d" "$d" "$HASHES"
+      rm -f "$dst/${d:?}"
       cp -Rp "$REPO/$d" "$dst/$d"
       printf '%s\n' "$d" >> "$SHIPPED"
     fi
@@ -1157,6 +1222,13 @@ if [ ${#TOOLS[@]} -eq 0 ]; then
       printf '%sno project here — checking the global install instead.%s\n\n' "$y" "$x"
     _recf="$(mm_record_file)"
     if [ -f "$_recf" ]; then
+      _want="$(sed -n 's/^digest=//p' "$_recf" | head -1)"
+      if [ -n "$_want" ]; then
+        _body="$(mktemp)"; grep -v '^digest=' "$_recf" > "$_body" || true
+        [ "$(mm_hash "$_body")" = "$_want" ] ||
+          warn "the install record was edited by hand, so what it says SHOULD be wired may not be what was"
+        rm -f "$_body"
+      fi
       _rec="$(sed -n 's/^tools=//p' "$_recf")"
       for _t in $_rec; do TOOLS+=("$_t"); done
       unset _rec _t
@@ -1219,6 +1291,9 @@ if [ "$MODE" = install ]; then
     printf 'tools=%s\n' "$_rec_all"
     printf 'project=%s\n' "$PROJECT"
   } > "$_recf"
+  # Tamper-evident, not tamper-proof: signing buys nothing against someone who can already edit
+  # install.sh. This only lets the doctor say "this was edited by hand" instead of believing it.
+  printf 'digest=%s\n' "$(mm_hash "$_recf")" >> "$_recf"
 fi
 
 check_routes() {
@@ -1244,6 +1319,10 @@ check_routes() {
     [ -d "$PROJECT/$adir" ] || continue
     local _bad=0 _f
     for _f in CLAUDE.md AGENTS.md; do
+      case "$_f" in
+        CLAUDE.md) mm_wants claude || continue ;;
+        AGENTS.md) { mm_wants agents || mm_wants codex; } || continue ;;
+      esac
       if [ ! -f "$PROJECT/$adir/$_f" ] || ! grep -q 'MASTERMIND:START' "$PROJECT/$adir/$_f"; then
         bad "route $adir/ → $ctx: $_f anchor missing — re-run install.sh"; _bad=1; continue
       fi
@@ -1252,11 +1331,13 @@ check_routes() {
       grep -qF "engineering/fields/$field/" "$PROJECT/$adir/$_f" ||
         { bad "route $adir/ → $ctx: $_f does not import field '$field'"; _bad=1; }
     done
-    if mm_is_generated "$PROJECT/$adir/.cursor/rules/mastermind.mdc"; then
-      grep -qF "$ctx" "$PROJECT/$adir/.cursor/rules/mastermind.mdc" ||
-        { bad "route $adir/ → $ctx: the Cursor rule does not name this context"; _bad=1; }
-    else
-      bad "route $adir/ → $ctx: the Cursor rule is missing — re-run install.sh"; _bad=1
+    if mm_wants cursor; then
+      if mm_is_generated "$PROJECT/$adir/.cursor/rules/mastermind.mdc"; then
+        grep -qF "$ctx" "$PROJECT/$adir/.cursor/rules/mastermind.mdc" ||
+          { bad "route $adir/ → $ctx: the Cursor rule does not name this context"; _bad=1; }
+      else
+        bad "route $adir/ → $ctx: the Cursor rule is missing — re-run install.sh"; _bad=1
+      fi
     fi
     if [ "$_bad" = 0 ]; then ok "route $adir/ → $ctx ($field)"
     else ISSUES=$((ISSUES + 1)); fi

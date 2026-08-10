@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, rmSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT = join(REPO, '..', 'mastermind-site', 'src', 'pages', 'library')
+const SITE = process.env.MASTERMIND_SITE
+  ? resolve(process.env.MASTERMIND_SITE)
+  : join(REPO, '..', 'mastermind-site')
+const OUT = join(SITE, 'src', 'pages', 'library')
 const CHECK = process.argv.includes('--check')
 
 const fm = (src) => {
@@ -37,13 +40,17 @@ for (const d of readdirSync(join(REPO, 'skills'), { withFileTypes: true })) {
     process.exit(1)
   }
   const [meta, body] = fm(readFileSync(about, 'utf8'))
-  items.push({ kind: 'skill', name: d.name, title: meta.title ?? d.name, blurb: meta.blurb ?? '', body: clean(body) })
+  const skillMeta = fm(readFileSync(join(REPO, 'skills', d.name, 'SKILL.md'), 'utf8'))[0]
+  items.push({ kind: 'skill', name: d.name, title: meta.title ?? d.name, blurb: meta.blurb ?? '',
+               trigger: skillMeta.description ?? '', body: clean(body) })
 }
 for (const f of readdirSync(join(REPO, 'agents', 'about'))) {
   if (!f.endsWith('.md')) continue
   const [meta, body] = fm(readFileSync(join(REPO, 'agents', 'about', f), 'utf8'))
   const name = f.replace(/\.md$/, '')
-  items.push({ kind: 'agent', name, title: meta.title ?? name, blurb: meta.blurb ?? '', body: clean(body) })
+  const agentMeta = fm(readFileSync(join(REPO, 'agents', `${name}.md`), 'utf8'))[0]
+  items.push({ kind: 'agent', name, title: meta.title ?? name, blurb: meta.blurb ?? '',
+               trigger: agentMeta.description ?? '', body: clean(body) })
 }
 items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
 
@@ -68,6 +75,7 @@ heading: ${q(it.title)}
 title: ${q(seoTitle(it.title))}
 description: ${q(metaDesc(it.blurb))}
 blurb: ${q(it.blurb)}
+trigger: ${q(it.trigger)}
 prevName: ${q(prev.name)}
 prevBlurb: ${q(short(prev.title))}
 nextName: ${q(next.name)}
@@ -82,9 +90,11 @@ let stale = 0
 const wanted = new Map(items.map((it, i) => [`${it.name}.md`, page(it, i, items)]))
 
 if (CHECK) {
-  if (!existsSync(join(REPO, '..', 'mastermind-site'))) {
-    console.log('· site repo not checked out beside this one — skipping the library check')
-    process.exit(0)
+  if (!existsSync(SITE)) {
+    // Exit 2, not 0: preflight reads 2 as "could not run here" and leaves it out of the passed
+    // count. Exiting 0 made a check that never ran look like one that passed.
+    console.log('· site repo not checked out beside this one, so the library pages were not checked')
+    process.exit(2)
   }
   const have = existsSync(OUT) ? new Set(readdirSync(OUT).filter((f) => f.endsWith('.md'))) : new Set()
   for (const [f, want] of wanted) {
@@ -99,7 +109,6 @@ if (CHECK) {
   process.exit(0)
 }
 
-const SITE = join(REPO, '..', 'mastermind-site')
 if (!existsSync(SITE)) {
   console.error(`✖ ${SITE} is not checked out — nothing to write. Clone the site repo beside this one.`)
   process.exit(1)

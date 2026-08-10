@@ -20,6 +20,15 @@ printf -- '---\nname: code-reviewer\ndescription: Reviews a diff against the rig
 
 echo "agent surface"
 
+META="$WORK/meta"; mkdir -p "$META"
+out=$(cd "$META" && HOME="$META" MASTERMIND_HOME="$META/absent" "${CLI[@]}" --help 2>/dev/null)
+check "--help exits without installing" "$?" "0"
+case "$out" in *"mastermind skills"*) ok "--help prints the command surface";; *) bad "--help output is incomplete";; esac
+[ -e "$META/absent" ] && bad "--help created a brain" || ok "--help creates nothing"
+out=$(cd "$META" && HOME="$META" MASTERMIND_HOME="$META/absent" "${CLI[@]}" --version 2>/dev/null)
+check "--version comes from the package without installing" "$out" "$(node -p "require('$ROOT/cli/package.json').version")"
+[ -e "$META/absent" ] && bad "--version created a brain" || ok "--version creates nothing"
+
 out=$(cd "$PROJ/sub/deeper" && "${CLI[@]}" skills --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["brain"])')
 check "resolves the project brain from a subdirectory" "$out" "$PROJ/.mastermind"
 

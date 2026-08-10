@@ -18,9 +18,10 @@ DRY=0
 case "$NEW" in
   '' ) die "usage: scripts/release.sh <version> [--dry-run]   (current: $(cat VERSION))" ;;
   v* ) die "give the version without the leading v: ${NEW#v}" ;;
-  [0-9]*.[0-9]*.[0-9]*) : ;;
-  *  ) die "'$NEW' is not a semver version" ;;
 esac
+if [[ ! "$NEW" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+  die "'$NEW' is not a release version (expected: major.minor.patch)"
+fi
 
 OLD="$(cat VERSION)"
 [ "$NEW" = "$OLD" ] && die "already at $NEW"

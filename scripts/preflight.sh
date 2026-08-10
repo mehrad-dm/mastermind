@@ -19,6 +19,12 @@ step() {
 
 shell_parses() { local f; for f in "$@"; do bash -n "$f" || return 1; done; }
 
+release_rejects_bad_versions() {
+  local out
+  out="$(bash "$REPO/scripts/release.sh" '1x.2y.3z' --dry-run 2>&1)" && return 1
+  case "$out" in *"not a release version"*) return 0 ;; *) printf '%s\n' "$out"; return 1 ;; esac
+}
+
 step_live() {
   local name="$1"; shift
   "$@" >"$LOG" 2>&1
@@ -77,10 +83,11 @@ step "agent-callable surface"          bash "$REPO/tests/agent-surface.test.sh"
 step "skill routing accuracy"          node "$REPO/evals/agent-surface-routing.mjs"
 step_live "skills auto-invoke (live)"  node "$REPO/evals/auto-invoke.mjs"
 step "shell scripts parse"             shell_parses "$REPO/scripts/release.sh" "$REPO/scripts/verify-release.sh" "$REPO/scripts/prove-regression.sh" "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/tests/agent-surface.test.sh" "$REPO/bin/mastermind" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
+step "release version grammar"         release_rejects_bad_versions
 
 echo "Repo integrity"
 step "router in sync"                  node "$REPO/scripts/build-router.mjs" --check
-step "library pages in sync"           node "$REPO/scripts/build-library.mjs" --check
+step_live "library pages in sync"      node "$REPO/scripts/build-library.mjs" --check
 step "indexes/counts/references"       node "$REPO/scripts/check-integrity.mjs"
 step "cited resources resolve"         node "$REPO/scripts/check-links.mjs"
 step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --strict
