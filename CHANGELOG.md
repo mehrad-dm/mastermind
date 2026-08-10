@@ -4,6 +4,25 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.1] · 2026-08-10
+
+Housekeeping. No behaviour changes.
+
+### Changed
+
+- 1,363 lines of comments removed across the brain and the site. `install.sh` alone carried 459,
+  and 55% of all comment lines sat in blocks of four or more: paragraphs above one-line guards.
+  The brain went from 25% comments to 4%. The reasoning lives in this changelog and in
+  `RELEASING.md`, which is where it is read when someone asks why something is the way it is.
+- A design note for an unshipped skill no longer ships. It sat in `skills/`, was linked from the
+  index, was advertised on the website, and was copied into every project that installed the
+  brain, while describing intent rather than anything anyone could use.
+- The homepage drops its results section and renumbers the rest. Eval numbers stay off the site
+  until the eval is rigorous enough to publish.
+- `actions/checkout` 4 to 7.0.1, `actions/setup-node` 4 to 7.0.0 and `Vampire/setup-wsl` 3.1.4
+  to 7.0.0, across 20 pins in six workflows, each resolved against the upstream repository.
+  `checkout` v4 was the source of the Node 20 deprecation warning on every run.
+
 ## [0.31.0] · 2026-08-10
 
 The largest correctness release so far. A detailed external review of 0.30.1 returned 107
