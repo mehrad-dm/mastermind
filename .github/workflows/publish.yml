@@ -30,16 +30,26 @@ jobs:
       - run: node scripts/check-links.mjs
       - run: node scripts/lint-brain.mjs --strict
       - run: node evals/agent-surface-routing.mjs
-      # The library is generated into a separate repository. Check out that source explicitly:
-      # a missing sibling must be neither a false pass nor an exit-2 release failure.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      # The site lives in a private repository, so the default token cannot read it. Without a
+      # token that can, CI genuinely cannot check the library, and a release must not be blocked
+      # by evidence it has no way to gather. Set MASTERMIND_SITE_TOKEN to turn this on.
+      - id: sitesrc
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: mehrad-dm/mastermind-site
           path: site-checkout
+          token: ${{ secrets.MASTERMIND_SITE_TOKEN || github.token }}
       - name: the public library matches the skill and agent sources
+        if: steps.sitesrc.outcome == 'success'
         env:
           MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
         run: node scripts/build-library.mjs --check
+      - name: say so when the library could not be checked
+        if: steps.sitesrc.outcome != 'success'
+        run: |
+          echo "::warning::the site repository could not be read, so the library pages were NOT checked against the skill and agent sources. Set MASTERMIND_SITE_TOKEN to enable it."
+          echo "· library check skipped: no access to the site repository" >> "$GITHUB_STEP_SUMMARY"
       - name: the published tarball contains exactly what we intend
         working-directory: cli
         run: |
