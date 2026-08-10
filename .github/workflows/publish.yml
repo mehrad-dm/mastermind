@@ -27,10 +27,19 @@ jobs:
       - run: bash tests/agent-surface.test.sh
       - run: node scripts/check-integrity.mjs
       - run: node scripts/build-router.mjs --check
-      - run: node scripts/build-library.mjs --check
       - run: node scripts/check-links.mjs
       - run: node scripts/lint-brain.mjs --strict
       - run: node evals/agent-surface-routing.mjs
+      # The library is generated into a separate repository. Check out that source explicitly:
+      # a missing sibling must be neither a false pass nor an exit-2 release failure.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: mehrad-dm/mastermind-site
+          path: site-checkout
+      - name: the public library matches the skill and agent sources
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: node scripts/build-library.mjs --check
       - name: the published tarball contains exactly what we intend
         working-directory: cli
         run: |

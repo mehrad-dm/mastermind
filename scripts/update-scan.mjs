@@ -12,6 +12,15 @@ const g = d.graph
 
 const NEW_NODES = [
   {
+    id: 'install',
+    label: 'install.sh',
+    kind: 'entry',
+    sub: 'safe project wiring + updates',
+    sourceRef: 'install.sh',
+    detail:
+      'Copies an isolated brain into the project by default, then wires Claude Code, Cursor and Codex without replacing project-owned instructions. Shared and global modes are explicit opt-ins.',
+  },
+  {
     id: 'cli',
     label: 'npx mastermind-brain',
     kind: 'entry',
@@ -102,11 +111,11 @@ const NEW_NODES = [
     id: 'crossos',
     label: 'Cross-OS CI',
     kind: 'service',
-    sub: 'linux · windows guard · alpine',
+    sub: 'Linux · macOS · Windows · WSL · Alpine',
     group: 'Safety & honesty',
     sourceRef: '.github/workflows/cross-os.yml',
     detail:
-      'Runs the install and the lookup surface on Linux, asserts native Windows refuses with the WSL pointer, and checks the Alpine no-bash guard then a full install once bash exists.',
+      'Runs source and packed-package installs on Linux and macOS, asserts native Windows refuses clearly, and completes real installs in WSL and Alpine.',
   },
 ]
 
@@ -123,7 +132,7 @@ const NEW_EDGES = [
   { from: 'ci', to: 'installtests', kind: 'triggers' },
   { from: 'ci', to: 'library', kind: 'triggers', label: 'checks docs are in sync' },
   { from: 'ci', to: 'integrity', kind: 'triggers' },
-  { from: 'ci', to: 'crossos', kind: 'triggers', label: 'linux · win · alpine' },
+  { from: 'ci', to: 'crossos', kind: 'triggers', label: '5-platform matrix' },
   { from: 'cli', to: 'wronglog', kind: 'reads', label: 'wrong-log' },
   { from: 'levelup', to: 'wronglog', kind: 'reads', label: 'distils the misses' },
   { from: 'autoinvoke', to: 'install', kind: 'triggers', label: 'installs, then asks' },
@@ -166,6 +175,7 @@ d.stats = {
   ...d.stats,
   agents: count('agents', (e) => e.isFile() && e.name.endsWith('.md')),
   tools: count('skills', (e) => e.isDirectory()),
+  integrations: (d.topIntegrations ?? []).length,
 }
 
 const bad = []
