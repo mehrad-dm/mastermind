@@ -30,16 +30,15 @@ jobs:
       - run: node scripts/check-links.mjs
       - run: node scripts/lint-brain.mjs --strict
       - run: node evals/agent-surface-routing.mjs
-      # The site lives in a private repository, so the default token cannot read it. Without a
-      # token that can, CI genuinely cannot check the library, and a release must not be blocked
-      # by evidence it has no way to gather. Set MASTERMIND_SITE_TOKEN to turn this on.
+      # The site is a private repository. MASTERMIND_SITE_KEY is a read-only deploy key for it:
+      # scoped to that one repo, unlike a token that could read everything the account owns.
       - id: sitesrc
         continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: mehrad-dm/mastermind-site
           path: site-checkout
-          token: ${{ secrets.MASTERMIND_SITE_TOKEN || github.token }}
+          ssh-key: ${{ secrets.MASTERMIND_SITE_KEY }}
       - name: the public library matches the skill and agent sources
         if: steps.sitesrc.outcome == 'success'
         env:
@@ -48,7 +47,7 @@ jobs:
       - name: say so when the library could not be checked
         if: steps.sitesrc.outcome != 'success'
         run: |
-          echo "::warning::the site repository could not be read, so the library pages were NOT checked against the skill and agent sources. Set MASTERMIND_SITE_TOKEN to enable it."
+          echo "::warning::the site repository could not be read, so the library pages were NOT checked against the skill and agent sources. Check that MASTERMIND_SITE_KEY is still a valid deploy key on mastermind-site."
           echo "· library check skipped: no access to the site repository" >> "$GITHUB_STEP_SUMMARY"
       - name: the published tarball contains exactly what we intend
         working-directory: cli
