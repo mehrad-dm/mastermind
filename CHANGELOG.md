@@ -4,6 +4,16 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.10] · 2026-08-11
+
+### Changed
+
+- A new check has to be proven both ways before it is wired in: firing against the commit that
+  carried the defect, clean against the current tree, and every current flag read rather than
+  counted. The rule about tests already said this; checks were never covered by it, and both
+  checks added recently flagged the wrong thing on their first run. A check that fires on the
+  wrong thing is worse than none, because people learn to skip it.
+
 ## [0.31.9] · 2026-08-11
 
 ### Changed

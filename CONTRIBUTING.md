@@ -70,6 +70,23 @@ Both checks run in `preflight.sh`, in CI on every pull request, at the release g
 `pre-push`. If a line genuinely needs an exemption, add it to the script with the reason attached,
 so the exception is on the record rather than in someone's memory.
 
+## A new check is proven both ways before it is wired in
+
+The rule above about tests applies to checks too, and for the same reason: a check nobody has
+watched fail is not known to work. Before wiring one into `preflight.sh` or CI:
+
+- run it against the commit that carried the defect, and confirm it **fires**
+- run it against the current tree, and confirm it is **clean**
+- say how many things it flags on the current tree, and look at every one
+
+That last step is the one that gets skipped. Both checks added recently flagged the wrong thing on
+their first run: the comment limit counted a heredoc the installer writes into a user's file, and
+the pipeline check flagged three dozen `printf | sed | head` lines where the exit status is
+discarded. Neither was caught by a test. They were caught by reading the output.
+
+A check that fires on the wrong thing is worse than no check, because people learn to skip it, and
+then it is not there on the day it would have mattered.
+
 ## When a lesson repeats, it becomes a check
 
 Notes do not run. Every rule in this repo that stayed prose has been broken again later, and every
