@@ -21,6 +21,18 @@ AIza[0-9A-Za-z_-]{35}
 PATTERNS
 }
 
+# >>> repo-only: not shipped in skills/quarantine/assets/pre-commit
+# master only takes changes through a pull request, so a local commit on it is always a mistake,
+# and every one of them diverges from origin at the next squash merge.
+BRANCH="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+if [ "$BRANCH" = "master" ] && [ "${MM_ALLOW_MASTER_COMMIT:-0}" != "1" ]; then
+  printf '%s\n' "${RED}✖ BLOCKED: committing straight to master.${NC}"
+  printf '%s\n' "  Branch first:  git switch -c fix/whatever"
+  printf '%s\n' "  Deliberate exception: ${YEL}MM_ALLOW_MASTER_COMMIT=1 git commit …${NC}"
+  exit 1
+fi
+# <<< repo-only
+
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
   printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: MasterMind guard BYPASSED. You own this.${NC}"
   exit 0

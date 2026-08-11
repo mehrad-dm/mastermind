@@ -70,6 +70,21 @@ Both checks run in `preflight.sh`, in CI on every pull request, at the release g
 `pre-push`. If a line genuinely needs an exemption, add it to the script with the reason attached,
 so the exception is on the record rather than in someone's memory.
 
+## When a lesson repeats, it becomes a check
+
+Notes do not run. Every rule in this repo that stayed prose has been broken again later, and every
+one that became a gate has not. The em dash rule shipped three times before a check existed. The
+`grep -q` under `pipefail` bug was found, fixed, written down, and then written straight back in
+by the person who had fixed it.
+
+So: **the second time a lesson is violated, it stops being a note and becomes a gate.** Not the
+first, most mistakes are one-offs and a check for each would drown the real ones. The second time
+is the signal that memory is not going to hold it.
+
+Keep the gate narrow. `check-shell-patterns.mjs` flags `grep -q` downstream of a pipe and
+deliberately ignores `head`, which is almost always harmless truncation: a check that fires on the
+wrong thing teaches people to ignore it, which is worse than not having it.
+
 ## Adding a skill
 
 The skill library grows freely: add one for any distinct, useful workflow. Hold the bar that keeps a
