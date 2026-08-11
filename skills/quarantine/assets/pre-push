@@ -20,6 +20,9 @@ AIza[0-9A-Za-z_-]{35}
 PATTERNS
 }
 
+# stdin can only be read once, so capture the refs before any loop consumes them.
+REFS="$(cat)"
+
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
   printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: push guard BYPASSED.${NC}"
   exit 0
@@ -31,8 +34,6 @@ TERMS="$({ mm_secret_patterns
   } | grep -vE '^$' | paste -sd '|' -)"
 
 FAIL=0
-# stdin can only be read once, so capture the refs before any loop consumes them.
-REFS="$(cat)"
 # <local ref> <local sha> <remote ref> <remote sha>
 while read -r _lref lsha _rref rsha; do
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue

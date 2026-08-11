@@ -4,6 +4,27 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.8] · 2026-08-11
+
+### Fixed
+
+- The tag guard added in 0.31.7 refused valid release tags. It read the changelog through a pipe
+  into `grep -q`, which exits as soon as it matches, and the writer's SIGPIPE became the
+  pipeline's status under `pipefail`. A perfectly good tag was reported as missing its changelog
+  section, which would have blocked the next release.
+- That guard also ran after the flag that skips the secret scan, so a bypass meant for one thing
+  waved through an irreversible tag. It now runs above every bypass, and refuses rather than
+  continues when it cannot resolve the tag's commit or read `origin/master`.
+- It no longer falls back to a cached `origin/master`. A stale tracking ref can vouch for a
+  commit the branch no longer contains, and the push reaches the network anyway.
+- `verify-release.sh` accepted any ruleset that mentioned tags. It now checks that the rule is
+  active, covers `refs/tags/v*`, blocks both moving and deleting, and has no bypass actor.
+- It also checks that the published Release is immutable, and reads the marketplace version out
+  of the version field rather than searching the whole document, where an unrelated field could
+  hide a stale manifest.
+- Failed API calls are no longer read as answers. The GitHub CLI prints its error body to
+  standard output, so a missing release was being reported as an editable one.
+
 ## [0.31.7] · 2026-08-11
 
 ### Changed
