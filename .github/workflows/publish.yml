@@ -227,5 +227,8 @@ jobs:
           [ -n "$title" ] || title="$TAG"
           # --latest explicitly: GitHub marks the most recently CREATED release as latest, not
           # the highest version, so backfilling an older tag silently demotes the current one.
-          gh release create "$TAG" --title "$title" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag --latest
+          gh release create "$TAG" --title "$title" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag --latest || {
+            echo "::error::npm already has $TAG but the GitHub Release was not created. Recover with the command in RELEASING.md."
+            exit 1
+          }
           echo "released $TAG"

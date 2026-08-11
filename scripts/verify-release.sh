@@ -71,11 +71,30 @@ else
   else bad "the CSP does not allow https://www.foglamp.dev, so the embedded map is blocked"; fi
 fi
 
+# --- What the Claude Code marketplace serves ----------------------------------
+# It reads these two files straight off master, so pushing master IS the marketplace release.
+printf '\n'
+RAW="https://raw.githubusercontent.com/mehrad-dm/mastermind/master"
+for f in .claude-plugin/marketplace.json .claude-plugin/plugin.json; do
+  BODY="$(curl -fsSL "$RAW/$f" 2>/dev/null || true)"
+  if [ -z "$BODY" ]; then skip "could not read $f from master"; continue; fi
+  case "$BODY" in
+    *"\"$V\""*) ok "the marketplace serves $V in $(basename "$f")" ;;
+    *)          bad "$(basename "$f") on master does not say $V" ;;
+  esac
+done
+
 # --- The Release object -------------------------------------------------------
 printf '\n'
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   if gh release view "v$V" >/dev/null 2>&1; then ok "a GitHub Release exists for v$V"
   else bad "there is no GitHub Release for v$V (the tag alone is not a release)"; fi
+  # Protection that lapses silently is protection nobody notices losing.
+  RULES="$(gh api repos/mehrad-dm/mastermind/rulesets 2>/dev/null || true)"
+  case "$RULES" in
+    *'"target":"tag"'*) ok "release tags are protected by a ruleset" ;;
+    *)                  bad "no tag ruleset is active, so v* tags can be moved or deleted" ;;
+  esac
 else
   skip "gh is not authenticated, so the Release object was not checked"
 fi
