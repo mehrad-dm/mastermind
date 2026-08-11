@@ -43,16 +43,9 @@ jobs:
           set -e
           sudo apt-get update -qq && sudo apt-get install -y shellcheck >/dev/null
           shellcheck --version | head -2
-          # -x follows sourced files; the floor is `warning` so style notes do not block a
-          # release while genuine quoting and expansion bugs do. The exclusions are deliberate:
-          #   SC2088  a literal ~ inside quotes is correct in the messages we PRINT to the user
-          #   SC2155  declare-and-assign is used widely and none of these calls can fail usefully
-          #   SC2034  a variable kept for readability in the test harness
-          #   SC2010  ls | grep over a controlled sandbox path in the tests
-          #   SC1007  `CDPATH= cd` is the standard idiom, not a mistyped assignment
-          #   SC2154  a variable assigned inside a trap body, which shellcheck cannot see
-          # SC2318 is NOT excluded: it caught a real one, where a second assignment in the same
-          # `local` read the caller's variable instead of the one being set.
+          # Excluded as false positives here: a printed literal ~ (SC2088), declare-and-assign
+          # (SC2155), test-harness readability (SC2034, SC2010), `CDPATH= cd` (SC1007), and a
+          # trap-assigned variable (SC2154). SC2318 stays on: it caught a real bug.
           shellcheck -x -S warning -s bash -e SC2088,SC2155,SC2034,SC2010,SC1007,SC2154 \
             install.sh \
             hooks/session-start.sh \

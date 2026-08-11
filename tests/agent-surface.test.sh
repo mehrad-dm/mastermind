@@ -164,6 +164,20 @@ git -C "$DIRTY/.mastermind" checkout -- install.sh
 out=$(cd "$DIRTY/proj" && env -u MASTERMIND_HOME HOME="$DIRTY" node "$PINDIR/bin/mastermind.mjs" 2>&1 | grep -c "isolated brain")
 case "$out" in 1) ok "the same clone installs once it is clean";; *) bad "clean clone refused too";; esac
 
+# A flag the command cannot use must be refused before the clone, not by the engine after it.
+FLAGSCOPE="$WORK/flagscope"; mkdir -p "$FLAGSCOPE/proj"
+(cd "$FLAGSCOPE/proj" && git init -q .)
+for bad_args in "--json" "--json --global" "check --json"; do
+  rm -rf "$FLAGSCOPE/home"
+  # shellcheck disable=SC2086
+  (cd "$FLAGSCOPE/proj" && MASTERMIND_HOME="$FLAGSCOPE/home" node "$ROOT/cli/bin/mastermind.mjs" $bad_args >/dev/null 2>&1)
+  rc=$?
+  case "$rc:$([ -d "$FLAGSCOPE/home" ] && echo made || echo clean)" in
+    2:clean) ok "\`$bad_args\` is refused with nothing written";;
+    *) bad "\`$bad_args\` exited $rc and left $([ -d "$FLAGSCOPE/home" ] && echo state || echo nothing)";;
+  esac
+done
+
 PREV_TAG=$(git -C "$ROOT" tag --list 'v*' --sort=-v:refname | sed -n 2p)
 if [ -n "$PREV_TAG" ]; then
   LIFE="$WORK/lifecycle"; mkdir -p "$LIFE/proj"

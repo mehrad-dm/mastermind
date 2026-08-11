@@ -67,6 +67,22 @@ fi
 printf '%s\n' "${GRN}✓ push guard: clean${NC}"
 
 # >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
+# Above MM_SKIP_TESTS on purpose: that flag skips a slow suite, this takes under a second.
+if command -v node >/dev/null 2>&1 && [ -f "$REPO_ROOT/scripts/check-prose.mjs" ]; then
+  node "$REPO_ROOT/scripts/check-prose.mjs" >/dev/null 2>&1
+  case $? in
+    0|2) printf '%s\n' "${GRN}✓ no em dashes${NC}" ;;
+    *)   printf '%s\n' "${RED}✖ BLOCKED: em dashes would be pushed${NC}"
+         node "$REPO_ROOT/scripts/check-prose.mjs" 2>&1 | sed 's/^/    /' | head -12
+         exit 1 ;;
+  esac
+  if ! node "$REPO_ROOT/scripts/check-comments.mjs" >/dev/null 2>&1; then
+    printf '%s\n' "${RED}✖ BLOCKED: a comment block is over the house limit${NC}"
+    node "$REPO_ROOT/scripts/check-comments.mjs" 2>&1 | sed 's/^/    /' | head -10
+    exit 1
+  fi
+fi
+
 if [ -n "${MM_SKIP_TESTS:-}" ]; then
   printf '%s\n' "${YEL}⚠ MM_SKIP_TESTS set: pushing WITHOUT running the suite${NC}"
   exit 0

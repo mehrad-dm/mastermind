@@ -4,6 +4,39 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.6] · 2026-08-11
+
+### Fixed
+
+- A chain of symlinks could walk out of the brain one innocent hop at a time. Containment read
+  only the first link's own text, and a relative link with no `..` in it can point at the link
+  that leaves. The installer would report success while writing outside the project. Containment
+  is now decided on the resolved end of the chain, and a broken or cyclic chain refuses.
+- A project's own skill or agent link was treated as ours whenever it resolved anywhere inside
+  the brain. Pointing `build` at your own `team-build` got it silently repointed at ours on
+  install and deleted on uninstall. Ownership now means pointing at exactly the file we would
+  have linked, so your wiring survives both halves of the lifecycle and ours arrives alongside it.
+- Installing only retired tool names built the whole brain and then exited 1 without recording
+  the install. An all-retired list left nothing to print, and an empty result kills the script
+  under `pipefail`.
+- `mastermind --json` cloned the brain before rejecting the flag, leaving state behind for a
+  command that never ran. Flags are now checked against the resolved command before any clone.
+- All 26 library pages on the website lost their subtitles. The layout split the heading on a
+  colon surrounded by spaces, and the titles had moved to a plain colon in 0.31.4.
+- The router graphic labelled one task and measured another, showing the four-task average
+  against a caption describing a single file. It now shows that task's own numbers.
+
+### Changed
+
+- A release tag must point at a commit on `master`. The branch ruleset never covered tags, so a
+  version bump that skipped the pull request and every required check could still be published.
+- The exact tarball that gets uploaded is now installed and run before the upload, rather than
+  only being read. The cross-platform matrix packs its own equivalent, which is not the same file.
+- Comment blocks are capped at five lines, ten for a file header, and enforced. The rule was
+  agreed and unenforced, which is the same reason em dashes shipped three times.
+- `RELEASING.md`, `SECURITY.md` and `CONTRIBUTING.md` said three required checks and described a
+  site key that silently skips its check. Both stopped being true.
+
 ## [0.31.5] · 2026-08-11
 
 ### Changed

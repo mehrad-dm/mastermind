@@ -18,6 +18,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0           # merge-base cannot answer the check below in a shallow clone
+      # The ruleset protects refs/heads/master, and a tag can be pushed from any commit at all.
+      # Without this, a version bump that never saw a pull request or a required check could be
+      # tagged straight to npm. Nothing else in this job runs until the tag is on master.
+      - name: the tagged commit is on master
+        run: |
+          set -e
+          git fetch --no-tags --quiet origin +refs/heads/master:refs/remotes/origin/master
+          master="$(git rev-parse --verify refs/remotes/origin/master)"
+          git merge-base --is-ancestor "$GITHUB_SHA" "$master" || {
+            echo "::error::$GITHUB_REF_NAME points at $GITHUB_SHA, which is not on master. Release refused."
+            exit 1
+          }
+          echo "$GITHUB_SHA is on master ($master)"
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 22
@@ -32,6 +47,9 @@ jobs:
       - run: node scripts/check-links.mjs
       - run: node scripts/lint-brain.mjs --strict
       - run: node evals/agent-surface-routing.mjs
+      # Repo only until the site checkout below; exit 2 says so rather than passing quietly.
+      - run: node scripts/check-prose.mjs || [ "$?" = 2 ]
+      - run: node scripts/check-comments.mjs
       # MASTERMIND_SITE_KEY is a read-only deploy key for the private site repository, scoped to
       # that one repo. This fails the release when it cannot read: the check exists to stop the
       # published pages drifting from the instructions behind them, and a check that shrugs is
@@ -48,6 +66,11 @@ jobs:
         env:
           MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
         run: node scripts/build-library.mjs --check
+      - name: no em dashes on the website either
+        if: steps.sitesrc.outcome == 'success'
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: node scripts/check-prose.mjs
       - name: refuse to release without checking the library
         if: steps.sitesrc.outcome != 'success'
         run: |
@@ -90,12 +113,10 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 22
-      # Trusted publishing authenticates over OIDC, so no registry-url/token stub is needed: 
-      # and that stub made an unauthenticated `npm install -g npm` 404. npm >= 11.5.1 is
-      # required for OIDC, and Node 22 ships 10.x.
-      # Pinned, not floating: `npm@latest` would hand a release-day npm regression, or a
-      # compromised publish, direct control of the job that holds our OIDC identity. Bump this
-      # deliberately when a newer npm is wanted; the version only has to satisfy OIDC's >= 11.5.1.
+      # OIDC needs npm >= 11.5.1 and Node 22 ships 10.x. No registry-url stub: it made an
+      # unauthenticated `npm install -g npm` 404.
+      # Pinned, not floating: `npm@latest` would hand a bad release day direct control of the
+      # job holding our OIDC identity.
       - run: npm install -g npm@12.0.2 --registry=https://registry.npmjs.org
       - run: npm --version
       # The tarball ships the CLI only; the brain is cloned at install time, so provenance
@@ -150,6 +171,21 @@ jobs:
               { console.error("commit stamp does not match this run"); process.exit(1) }
             console.log(`stamped package OK: v${pkg.version} @ ${pkg.commit}`);
           '
+      # Every check so far read the artifact, none ran it, and cross-OS runs a separate pack.
+      # `--version` and `--help` return before the CLI clones, so this needs no network.
+      - name: run the artifact that is about to be published
+        run: |
+          set -e
+          tgz="$(ls "$RUNNER_TEMP"/mastermind-brain-*.tgz)"
+          echo "smoke testing $tgz"
+          npm install -g --prefix "$RUNNER_TEMP/smoke" --no-audit --no-fund "$tgz"
+          bin="$RUNNER_TEMP/smoke/bin/mastermind"
+          test -x "$bin" || { echo "no binary at $bin"; ls -l "$RUNNER_TEMP/smoke/bin" || true; exit 1; }
+          got="$("$bin" --version)"
+          [ "$got" = "${GITHUB_REF_NAME#v}" ] ||
+            { echo "--version printed '$got', expected '${GITHUB_REF_NAME#v}'"; exit 1; }
+          "$bin" --help | grep -q 'mastermind check' || { echo "--help output is not the CLI's"; exit 1; }
+          echo "the tarball installs and runs: v$got"
       # Prepared BEFORE publishing. Extracting the notes afterwards meant a missing changelog
       # section published npm permanently and then failed, leaving no Release and no way back.
       - name: prepare the release notes

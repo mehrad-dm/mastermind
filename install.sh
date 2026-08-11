@@ -178,7 +178,7 @@ mm_assert_no_symlink_path() {
   local rel="$2"
   local cur="$base"
   local rest="$rel"
-  local seg target
+  local seg real rbase
   while [ -n "$rest" ]; do
     seg="${rest%%/*}"
     if [ "$seg" = "$rest" ]; then rest=""; else rest="${rest#*/}"; fi
@@ -190,13 +190,18 @@ mm_assert_no_symlink_path() {
         "$r" "${cur#"$PROJECT"/}" "$(readlink "$cur")" "$x" >&2
       exit 1
     fi
-    target="$(readlink "$cur")"
-    case "$target" in
-      /*|*..*)
-        printf '%s! %s points outside the brain (-> %s).%s Refusing to write through it.\n' \
-          "$r" "${cur#"$PROJECT"/}" "$target" "$x" >&2
-        exit 1 ;;
-    esac
+    # The whole chain, not this hop's text: a relative link can point at one that leaves.
+    real="$(mm_realpath "$cur")" || {
+      printf '%s! %s is a broken or cyclic symlink chain.%s Refusing to write through it.\n' \
+        "$r" "${cur#"$PROJECT"/}" "$x" >&2
+      exit 1
+    }
+    rbase="$(cd -P "$base" 2>/dev/null && pwd -P)" || rbase=""
+    if [ -z "$rbase" ] || ! mm_inside "$rbase" "$real"; then
+      printf '%s! %s points outside the brain (-> %s).%s Refusing to write through it.\n' \
+        "$r" "${cur#"$PROJECT"/}" "$real" "$x" >&2
+      exit 1
+    fi
   done
   return 0
 }
@@ -343,7 +348,8 @@ link_skill() {
   local dst="$base/$name" alt="$base/mastermind-$name"
   local target="$dst" renamed=0   # separate `local`: same-statement $dst isn't set yet
 
-  if path_exists "$dst" && ! is_ours "$dst"; then target="$alt"; renamed=1; fi
+  # Ownership is "points at exactly this skill", not "points somewhere inside the brain".
+  if path_exists "$dst" && ! links_to "$dst" "$src"; then target="$alt"; renamed=1; fi
 
   if [ "$MODE" = check ]; then
     if links_to "$target" "$src" && [ -e "$target" ]; then
@@ -359,7 +365,7 @@ link_skill() {
   fi
 
   # The project owns BOTH names: refuse rather than clobber anything of theirs.
-  if [ "$renamed" = 1 ] && path_exists "$alt" && ! is_ours "$alt"; then
+  if [ "$renamed" = 1 ] && path_exists "$alt" && ! links_to "$alt" "$src"; then
     warn "you own both '$name' and 'mastermind-$name': MasterMind's $kind skipped"
     SKIPPED=$((SKIPPED + 1)); return 1
   fi
@@ -368,7 +374,7 @@ link_skill() {
   if [ "$renamed" = 1 ]; then
     warn "you already have a $kind '$name': installed MasterMind's as 'mastermind-$name' (both work)"
     RENAMED=$((RENAMED + 1))
-  elif is_ours "$alt"; then
+  elif links_to "$alt" "$src"; then
     # Their colliding file is gone, so ours reclaimed the real name: drop the alias.
     rm -f "$alt"
   fi
@@ -617,6 +623,21 @@ remove_link() {
   return 1
 }
 
+# Resolving inside the brain is not ownership: a project's own build -> team-build does too.
+mm_is_our_capability() {
+  local p="$1" name kind rbrain got
+  [ -L "$p" ] || return 1
+  case "$p" in
+    */agents/*) kind=agents ;;
+    */skills/*) kind=skills ;;
+    *) return 1 ;;
+  esac
+  name="$(basename "$p")"; name="${name#mastermind-}"
+  rbrain="$(cd -P "$BRAIN" 2>/dev/null && pwd -P)" || return 1
+  got="$(mm_realpath "$p")" || return 1
+  [ "$got" = "$rbrain/$kind/$name" ]
+}
+
 restore_backup() {
   local f="$1" bak=""
   path_exists "$f" && return 0
@@ -745,7 +766,10 @@ if [ "$MODE" = uninstall ]; then
     remove_link "$CLAUDE_DIR/CLAUDE.md"   && n=$((n + 1))
     remove_link "$CLAUDE_DIR/engineering" && n=$((n + 1))
     shopt -s nullglob
-    for l in "$CLAUDE_DIR"/skills/* "$CLAUDE_DIR"/agents/*; do remove_link "$l" && n=$((n + 1)); done
+    for l in "$CLAUDE_DIR"/skills/* "$CLAUDE_DIR"/agents/*; do
+      mm_is_our_capability "$l" || continue
+      rm -f "$l"; ok "removed $(basename "$l")"; n=$((n + 1))
+    done
     shopt -u nullglob
   fi
   # AGENTS.md is what Codex reads, so either name owns it.
@@ -1319,8 +1343,9 @@ if [ "$MODE" = install ]; then
   [ -f "$_recf" ] && _rec_prev="$(sed -n 's/^tools=//p' "$_recf")"
   # Retired names are accepted so `--uninstall gemini` still works, but recording them made the
   # doctor expect wiring that was never created and then report the install healthy.
+  # `|| true`: an all-retired list prints nothing, and under pipefail that kills the installer.
   _rec_all="$(printf '%s %s\n' "$_rec_prev" "${TOOLS[*]}" | tr ' ' '\n' | grep -v '^$' |
-    grep -vxE 'gemini|copilot' | sort -u | tr '\n' ' ')"
+    grep -vxE 'gemini|copilot' | sort -u | tr '\n' ' ' || true)"
   _rec_all="${_rec_all% }"
   mkdir -p "$(dirname "$_recf")"
   { printf 'version=%s\n' "$(cat "$REPO/VERSION" 2>/dev/null || echo unknown)"
