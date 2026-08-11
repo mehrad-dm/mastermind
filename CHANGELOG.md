@@ -4,6 +4,23 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.7] · 2026-08-11
+
+### Changed
+
+- Release tags cannot be moved or deleted, by anyone, and published Releases can no longer be
+  edited. What a version points at is now fixed once it ships. Tag creation is deliberately left
+  open: the release workflow already refuses a commit that is not on `master`, and a creation
+  rule with a mis-set bypass would lock releases out entirely.
+- The homepage example reads its measurement out of the eval data instead of carrying a copy, so
+  the number on the page cannot drift from the run behind it. The sync now refuses if the row it
+  quotes leaves the results file.
+- `verify-release.sh` checks two more surfaces: the manifests the plugin marketplace serves off
+  `master`, and that the tag ruleset is still active. Both were being confirmed by hand, which is
+  how a release step gets skipped.
+- The release job says what to do if it publishes to npm and then fails to create the Release,
+  rather than leaving the two out of step with no note of it.
+
 ## [0.31.6] · 2026-08-11
 
 ### Fixed

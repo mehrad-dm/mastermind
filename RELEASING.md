@@ -52,6 +52,23 @@ mis-set bypass would lock releases out entirely. Moving a tag is the real damage
 commit and refuses a clone that does not match it, so a moved tag breaks every install rather
 than fixing any, and it makes the GitHub source archive disagree with what npm serves.
 
+## Releases are immutable too
+
+Immutable Releases is enabled on the repository, so a published Release and its assets cannot be
+edited or replaced afterwards. Combined with the tag ruleset, what a version points at is fixed
+once it ships.
+
+The publish job creates the Release **after** `npm publish`, and that order is deliberate under
+immutability. If the Release step ever fails, npm has the version and GitHub does not, which one
+command fixes:
+
+```
+gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <(sed -n '/^## \[X.Y.Z\]/,/^## \[/p' CHANGELOG.md) --verify-tag --latest
+```
+
+The reverse order would leave an immutable Release for a version that never reached npm, which
+nothing can clean up.
+
 ## What the website repository does not have
 
 `mastermind-site` runs CI on pull requests, but nothing requires it to pass: rulesets and branch
