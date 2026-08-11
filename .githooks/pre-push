@@ -20,6 +20,46 @@ AIza[0-9A-Za-z_-]{35}
 PATTERNS
 }
 
+# stdin can only be read once, so capture the refs before any loop consumes them.
+REFS="$(cat)"
+
+# >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
+# A pushed release tag can never be moved: the ruleset forbids it. Everything the release gate
+# would check has to be true BEFORE the push, and above the bypass, which is meant for the
+# secret scan and must not wave a tag through.
+while read -r lref lsha _rref _rsha; do
+  case "$lref" in refs/tags/v[0-9]*) ;; *) continue ;; esac
+  TAG="${lref#refs/tags/}"; WANT="${TAG#v}"
+  tag_refuse() { printf '%s\n' "${RED}✖ BLOCKED: $1${NC}"; printf '%s\n' "  A pushed tag cannot be moved, so the version would be burnt."; exit 1; }
+
+  TARGET="$(git rev-parse -q --verify "$lsha^{commit}" 2>/dev/null)" ||
+    tag_refuse "$TAG does not resolve to a commit."
+  [ -n "$TARGET" ] || tag_refuse "$TAG does not resolve to a commit."
+
+  # A live fetch every time, never a cached tracking ref: the push reaches the network anyway,
+  # and a stale origin/master could vouch for a commit that master no longer contains.
+  git fetch -q --no-tags origin master 2>/dev/null ||
+    tag_refuse "cannot reach origin to confirm $TAG is on master."
+  MASTER="$(git rev-parse -q --verify FETCH_HEAD 2>/dev/null || true)"
+  [ -n "$MASTER" ] || tag_refuse "origin/master cannot be read, so $TAG cannot be shown to be on it."
+  git merge-base --is-ancestor "$TARGET" "$MASTER" 2>/dev/null ||
+    tag_refuse "$TAG points at $(git rev-parse --short "$TARGET"), which is not on master."
+
+  GOT="$(git show "$TARGET:VERSION" 2>/dev/null | tr -d '[:space:]')"
+  [ "$GOT" = "$WANT" ] || tag_refuse "$TAG points at a commit whose VERSION is '${GOT:-unreadable}', not $WANT."
+
+  # A here-string, not a pipe: `grep -q` exits early, the writer takes SIGPIPE, and under
+  # pipefail that 141 reads as "not found" on a changelog that is perfectly fine.
+  LOG="$(git show "$TARGET:CHANGELOG.md" 2>/dev/null || true)"
+  grep -q "^## \\[$WANT\\]" <<<"$LOG" ||
+    tag_refuse "$TAG has no '## [$WANT]' section in CHANGELOG.md at that commit."
+
+  printf '%s\n' "${GRN}✓ $TAG is on master, VERSION and CHANGELOG agree${NC}"
+done <<REFLIST
+$REFS
+REFLIST
+# <<< repo-only ------------------------------------------------------------------
+
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
   printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: push guard BYPASSED.${NC}"
   exit 0
@@ -31,8 +71,6 @@ TERMS="$({ mm_secret_patterns
   } | grep -vE '^$' | paste -sd '|' -)"
 
 FAIL=0
-# stdin can only be read once, so capture the refs before any loop consumes them.
-REFS="$(cat)"
 # <local ref> <local sha> <remote ref> <remote sha>
 while read -r _lref lsha _rref rsha; do
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
@@ -71,34 +109,6 @@ fi
 printf '%s\n' "${GRN}✓ push guard: clean${NC}"
 
 # >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
-# A pushed release tag can never be moved: the ruleset forbids it. So everything the release
-# gate would check has to be true BEFORE the push, not after.
-while read -r lref lsha _rref _rsha; do
-  case "$lref" in refs/tags/v[0-9]*) ;; *) continue ;; esac
-  TAG="${lref#refs/tags/}"; WANT="${TAG#v}"
-  TARGET="$(git rev-parse "$lsha^{commit}" 2>/dev/null)" || continue
-  git fetch -q --no-tags origin master 2>/dev/null || true
-  MASTER="$(git rev-parse -q --verify FETCH_HEAD 2>/dev/null || git rev-parse -q --verify origin/master 2>/dev/null || echo)"
-  if [ -z "$MASTER" ]; then
-    printf '%s\n' "${YEL}⚠ cannot read origin/master, so $TAG was not checked against it${NC}"
-  elif ! git merge-base --is-ancestor "$TARGET" "$MASTER" 2>/dev/null; then
-    printf '%s\n' "${RED}✖ BLOCKED: $TAG points at $(git rev-parse --short "$TARGET"), which is not on master.${NC}"
-    printf '%s\n' "  A pushed tag cannot be moved. Re-tag origin/master, or the version is burnt."
-    exit 1
-  fi
-  GOT="$(git show "$TARGET:VERSION" 2>/dev/null | tr -d '[:space:]')"
-  if [ "$GOT" != "$WANT" ]; then
-    printf '%s\n' "${RED}✖ BLOCKED: $TAG points at a commit whose VERSION is '${GOT:-unreadable}', not $WANT.${NC}"
-    exit 1
-  fi
-  if ! git show "$TARGET:CHANGELOG.md" 2>/dev/null | grep -q "^## \[$WANT\]"; then
-    printf '%s\n' "${RED}✖ BLOCKED: $TAG has no '## [$WANT]' section in CHANGELOG.md at that commit.${NC}"
-    exit 1
-  fi
-  printf '%s\n' "${GRN}✓ $TAG is on master, VERSION and CHANGELOG agree${NC}"
-done <<REFLIST
-$REFS
-REFLIST
 
 # Above MM_SKIP_TESTS on purpose: that flag skips a slow suite, this takes under a second.
 if command -v node >/dev/null 2>&1 && [ -f "$REPO_ROOT/scripts/check-prose.mjs" ]; then

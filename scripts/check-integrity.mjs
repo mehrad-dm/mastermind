@@ -178,7 +178,7 @@ for (const rel of docFiles.filter((p) => p.endsWith('SOURCE.md'))) {
   }
 }
 
-const REPO_ONLY = [/^# >>> repo-only:[\s\S]*?^# <<< repo-only[^\n]*\n/m]
+const REPO_ONLY = [/^# >>> repo-only:[\s\S]*?^# <<< repo-only[^\n]*\n/gm]
 const hasLiveHooks = existsSync(join(ROOT, '.githooks'))
 for (const hook of hasLiveHooks ? ['pre-commit', 'pre-push'] : []) {
   const live = join(ROOT, '.githooks', hook)

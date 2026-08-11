@@ -78,10 +78,16 @@ RAW="https://raw.githubusercontent.com/mehrad-dm/mastermind/master"
 for f in .claude-plugin/marketplace.json .claude-plugin/plugin.json; do
   BODY="$(curl -fsSL "$RAW/$f" 2>/dev/null || true)"
   if [ -z "$BODY" ]; then skip "could not read $f from master"; continue; fi
-  case "$BODY" in
-    *"\"$V\""*) ok "the marketplace serves $V in $(basename "$f")" ;;
-    *)          bad "$(basename "$f") on master does not say $V" ;;
-  esac
+  # The version field, not any occurrence of the string: an unrelated field would mask a stale one.
+  GOT="$(printf '%s' "$BODY" | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      try { const j = JSON.parse(s); console.log(j.version ?? j.plugins?.[0]?.version ?? "") }
+      catch { console.log("") }
+    })' 2>/dev/null || true)"
+  if [ -z "$GOT" ]; then bad "$(basename "$f") on master has no readable version field"
+  elif [ "$GOT" = "$V" ]; then ok "the marketplace serves $V in $(basename "$f")"
+  else bad "$(basename "$f") on master says $GOT, not $V"; fi
 done
 
 # --- The Release object -------------------------------------------------------
@@ -89,11 +95,57 @@ printf '\n'
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   if gh release view "v$V" >/dev/null 2>&1; then ok "a GitHub Release exists for v$V"
   else bad "there is no GitHub Release for v$V (the tag alone is not a release)"; fi
-  # Protection that lapses silently is protection nobody notices losing.
-  RULES="$(gh api repos/mehrad-dm/mastermind/rulesets 2>/dev/null || true)"
-  case "$RULES" in
-    *'"target":"tag"'*) ok "release tags are protected by a ruleset" ;;
-    *)                  bad "no tag ruleset is active, so v* tags can be moved or deleted" ;;
+
+  # gh prints the error body to STDOUT on a non-2xx, so its exit status is the only honest
+  # signal. Reading the body as data turns "could not ask" into "asked, and the answer is bad".
+  if IMM="$(gh api "repos/mehrad-dm/mastermind/releases/tags/v$V" -q '.immutable' 2>/dev/null)"; then
+    case "$IMM" in
+      true) ok "the Release for v$V is immutable" ;;
+      *)    bad "the Release for v$V is editable, so its notes and assets can still be changed" ;;
+    esac
+  else
+    skip "could not read whether the Release for v$V is immutable"
+  fi
+
+  # "A tag ruleset exists" is not the property we want. Check what it actually enforces.
+  if ! RULESETS="$(gh api repos/mehrad-dm/mastermind/rulesets 2>/dev/null)"; then RULESETS=""; fi
+  VERDICT="$(printf '%s' "$RULESETS" | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let all
+      try { all = JSON.parse(s) } catch { return console.log("unreadable") }
+      const tags = (Array.isArray(all) ? all : []).filter((r) => r.target === "tag")
+      if (!tags.length) return console.log("none")
+      console.log(tags.map((r) => r.id).join(","))
+    })' 2>/dev/null || true)"
+  case "$VERDICT" in
+    ""|unreadable) skip "could not read the repository rulesets" ;;
+    none)          bad "no tag ruleset is active, so v* tags can be moved or deleted" ;;
+    *)
+      RULE_OK=0
+      for id in ${VERDICT//,/ }; do
+        DETAIL="$(gh api "repos/mehrad-dm/mastermind/rulesets/$id" 2>/dev/null)" || { LAST_WHY="could not be read"; continue; }
+        [ -n "$DETAIL" ] || { LAST_WHY="could not be read"; continue; }
+        WHY="$(printf '%s' "$DETAIL" | node -e '
+          let s = ""
+          process.stdin.on("data", (d) => (s += d)).on("end", () => {
+            let r; try { r = JSON.parse(s) } catch { return console.log("unreadable") }
+            const rules = new Set((r.rules || []).map((x) => x.type))
+            const inc = r.conditions?.ref_name?.include || []
+            const problems = []
+            if (r.enforcement !== "active") problems.push("not active")
+            if (!inc.some((p) => p === "refs/tags/v*" || p === "~ALL")) problems.push("does not cover refs/tags/v*")
+            if (!rules.has("update")) problems.push("does not block moving a tag")
+            if (!rules.has("deletion")) problems.push("does not block deleting a tag")
+            if ((r.bypass_actors || []).length) problems.push("has bypass actors")
+            console.log(problems.length ? problems.join(", ") : "ok")
+          })' 2>/dev/null || true)"
+        [ "$WHY" = "ok" ] && { RULE_OK=1; break; }
+        LAST_WHY="$WHY"
+      done
+      if [ "$RULE_OK" = 1 ]; then ok "release tags cannot be moved or deleted, by anyone"
+      elif [ "${LAST_WHY:-}" = "could not be read" ]; then skip "could not read the tag ruleset's rules"
+      else bad "the tag ruleset does not protect v* properly: ${LAST_WHY:-unreadable}"; fi ;;
   esac
 else
   skip "gh is not authenticated, so the Release object was not checked"
