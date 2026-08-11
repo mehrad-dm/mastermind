@@ -168,7 +168,7 @@ case "$out" in 1) ok "the same clone installs once it is clean";; *) bad "clean 
 FLAGSCOPE="$WORK/flagscope"; mkdir -p "$FLAGSCOPE/proj"
 (cd "$FLAGSCOPE/proj" && git init -q .)
 for bad_args in "--json" "--json --global" "check --json"; do
-  rm -rf "$FLAGSCOPE/home"
+  rm -rf "${FLAGSCOPE:?}/home"
   # shellcheck disable=SC2086
   (cd "$FLAGSCOPE/proj" && MASTERMIND_HOME="$FLAGSCOPE/home" node "$ROOT/cli/bin/mastermind.mjs" $bad_args >/dev/null 2>&1)
   rc=$?
