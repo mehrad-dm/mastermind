@@ -78,9 +78,9 @@ deleted, a spawned subagent still behaved as MasterMind, because the session's h
 mutates nothing:
 
 ```bash
-# baseline — user-level settings and memory excluded, HOME untouched
+# baseline: user-level settings and memory excluded, HOME untouched
 cd /tmp/empty-dir      && claude -p --setting-sources project,local "<task>"
-# treatment — same flag, same model; the ONLY difference is a project with MasterMind installed
+# treatment: same flag, same model; the ONLY difference is a project with MasterMind installed
 cd /my-mastermind-proj && claude -p --setting-sources project,local "<task>"
 ```
 

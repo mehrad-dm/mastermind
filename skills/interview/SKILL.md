@@ -16,7 +16,7 @@ blank question gets answered.** One or two lines, then proceed or ask:
 
 ```text
 Reading it as: a way to see which jobs failed overnight, so the morning starts with a fix not a search.
-~70% sure — what I'm missing is whether "failed" includes timeouts.
+~70% sure: what I'm missing is whether "failed" includes timeouts.
 ```
 
 **If you do have to ask: one question at a time, and answer it yourself first.** A batch of questions
@@ -26,7 +26,7 @@ attached, people correct a wrong guess far faster than they compose an answer:
 
 ```text
 Q: Should a failed import roll back the whole batch, or keep the rows that parsed?
-   I'd keep the good rows and report the failures — a 5,000-row file failing on row 4,900
+   I'd keep the good rows and report the failures: a 5,000-row file failing on row 4,900
    is the case people actually hit. Say the word if you'd rather it be all-or-nothing.
 ```
 

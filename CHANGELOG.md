@@ -4,6 +4,21 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.5] · 2026-08-11
+
+### Changed
+
+- The last 17 em dashes leave the shipped brain. They sat inside fenced examples, which the
+  earlier sweep skipped to protect strings that are compared rather than read. These were not
+  that: they are the example output MasterMind is told to print, including the line it announces
+  work with, so they were the most visible ones we shipped.
+- The package description on npm, the plugin manifest and the marketplace listing lose theirs
+  too. They were written as a JSON escape, so a search for the character itself walked
+  past all three, and those are the lines people read before they install anything.
+- Another 18 in the README tree diagrams, the shell snippets people copy, and the announce
+  lines in four skills' ABOUT pages. Two remain in the installer on purpose: they are the
+  pointer text written by releases up to 0.31.2, and uninstall matches that text to remove it.
+
 ## [0.31.4] · 2026-08-11
 
 ### Changed

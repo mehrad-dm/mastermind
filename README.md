@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.31.4-7c6bff" alt="version 0.31.4" />
+  <img src="https://img.shields.io/badge/version-0.31.5-7c6bff" alt="version 0.31.5" />
   <img src="https://img.shields.io/badge/status-experimental-e0a800" alt="status: experimental" />
   <img src="https://img.shields.io/badge/license-MIT-555" alt="license MIT" />
 </p>
 
-<p align="center"><sub><b>⚗️ Experimental (v0.31.4).</b> Under active development: not yet stable, but usable. Its
+<p align="center"><sub><b>⚗️ Experimental (v0.31.5).</b> Under active development: not yet stable, but usable. Its
 effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md</a>); APIs and defaults may change.</sub></p>
 
 > **Make your AI coding assistant trustworthy.** MasterMind is plain Markdown that gives **Claude Code,
@@ -62,13 +62,13 @@ change and start relying on the output.
 ## Architecture: a lean kernel + on-demand modules
 
 ```text
-CLAUDE.md                     # the kernel — always loaded, tiny
+CLAUDE.md                     # the kernel: always loaded, tiny
 engineering/
 ├── active-field.md           # which field is active + how leveling works
 ├── ROUTER.md                 # generated map: loads only the files a task needs
-├── core/                     # UNIVERSAL — how to think & work (field-agnostic)
+├── core/                     # UNIVERSAL: how to think & work (field-agnostic)
 │   ├── mindset · principles · rigor · agent-loop · product-sense
-└── fields/_template/         # FIELD SCAFFOLD — init builds your field from this
+└── fields/_template/         # FIELD SCAFFOLD: init builds your field from this
     ├── stack-defaults · mentors · curriculum · learning-sources · lessons
     └── audit-rules.md        # framework-specific defect checks (for code-reviewer)
 agents/                       # architect · code-reviewer · refactorer · tech-scout
@@ -81,7 +81,7 @@ lab/                          # your private, gitignored space for sensitive pro
 **First, you need an AI coding tool**: MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/claude-code), [Cursor](https://cursor.com), or [Codex](https://developers.openai.com/codex). Then, **from inside the project you want it in**:
 
 ```bash
-# Per-project (default) — wires MasterMind into THIS project, for every AI tool you have:
+# Per-project (default): wires MasterMind into THIS project, for every AI tool you have:
 cd my-project
 npx mastermind-brain
 
@@ -158,7 +158,7 @@ same brain. Nothing a lesson learned in one client repo can leak into another.
 | Committed to the repo? | yes, teammates get the same brain | nothing added |
 
 ```bash
-cd my-project && npx mastermind-brain                 # isolated — its own brain
+cd my-project && npx mastermind-brain                 # isolated: its own brain
 cd my-project && npx mastermind-brain --shared        # opt back into the single shared clone
 ```
 
@@ -217,7 +217,7 @@ which have no native skill mechanism, it can ask for the one skill it needs inst
 whole library into context. They are read-only, so nothing installs or changes when you run them.
 
 ```bash
-mastermind skills                      # the routing table — every skill, one line each
+mastermind skills                      # the routing table: every skill, one line each
 mastermind skill performance           # the instructions it actually follows
 mastermind route "why is this slow?"   # the table again, with keyword matches arrowed
 mastermind conflicts                   # what else is installed, and where it overlaps

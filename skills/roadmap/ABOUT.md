@@ -79,7 +79,7 @@ You don't type a command. Say something like:
 You'll see it engage in your terminal:
 
 ```
-🧠 MasterMind ▸ picking the long thread back up — what we decided, what's still open
+🧠 MasterMind ▸ picking the long thread back up: what we decided, what's still open
    └ roadmap · destination → decisions → open questions → fog
 ```
 

@@ -23,7 +23,7 @@ cd mastermind
 # Use it locally: symlink the repo to where tools look for the brain.
 ln -s "$PWD" ~/.mastermind
 
-# Enable the safety guards (they block accidental commits of private data — see below).
+# Enable the safety guards (they block accidental commits of private data, see below).
 git config core.hooksPath .githooks
 ```
 

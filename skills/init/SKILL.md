@@ -74,7 +74,7 @@ first: a few lines, not a document:
 Detected: Next.js 15 · React 19 · TypeScript · Postgres/Prisma · Vitest
 I'll build a `frontend` field with: stack defaults for this exact combination ·
 review rules for React 19 · an empty lessons file that fills as we work.
-Starting now — say the word if the stack reading is off.
+Starting now: say the word if the stack reading is off.
 ```
 
 State it and proceed; this announces rather than asks. It costs one line and catches the one failure
@@ -93,7 +93,7 @@ Both paths finish with a **~5-line** report so the setup is visible and the user
   stack:       Next.js 15 · React 19 · Postgres/Prisma   (detected)
   fields:      frontend + backend (built from _template for your stack)
   conventions: matched your existing style
-  next:        tell me what to build — I'll run the build loop.
+  next:        tell me what to build, I'll run the build loop.
 ```
 
 Then proceed straight into their actual task: the report is a line you pass through, not a checkpoint.

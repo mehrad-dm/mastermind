@@ -9,7 +9,7 @@ Present this as a clear, friendly menu (adapt length to the ask). **Open with th
 lead with the one thing that matters most, then the tables. Keep it scannable. Header:
 
 ```
-🧠  MasterMind — a genius-builder brain for your AI
+🧠  MasterMind: a genius-builder brain for your AI
     22 skills · 4 agents · Claude Code · Cursor · Codex
 ```
 
@@ -21,9 +21,9 @@ last few turns were about, whether a field pack exists yet):
 
 ```text
 Most useful here right now
-  · init      — no field pack yet for this Django project; one-time setup, then I'm sharper on it
-  · quarantine — there's client data in this repo; this keeps it out of git
-  · handoff   — this session is long; a handoff survives the reset
+  · init: no field pack yet for this Django project; one-time setup, then I'm sharper on it
+  · quarantine: there's client data in this repo; this keeps it out of git
+  · handoff: this session is long; a handoff survives the reset
 ```
 
 A full menu is a catalogue; three fitting picks are advice. Then give the tables below: the catalogue

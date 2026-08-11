@@ -64,7 +64,7 @@ test suite / TDD) rather than doing them unasked.
 It is proof-of-life, not a permission prompt.
 
 ```text
-🧠 MasterMind ▸ building — will verify before handoff     ← plain language, and who checks
+🧠 MasterMind ▸ building: will verify before handoff     ← plain language, and who checks
    └ frontend pack · plan → implement → verify            ← internals, for whoever wants them
    … work …
 🧠 verified ▸ 37/37 tests · typecheck ✓ · 2 issues found and fixed before handoff

@@ -81,8 +81,8 @@ instead**, and hand the list back at the end:
 
 ```text
 Noticed, not touched:
-  · src/utils/format.ts — unused import, unrelated to this change
-  · OrderRow re-renders on every parent tick — pre-existing, would need its own slice
+  · src/utils/format.ts: unused import, unrelated to this change
+  · OrderRow re-renders on every parent tick: pre-existing, would need its own slice
 → Want tasks for these?
 ```
 

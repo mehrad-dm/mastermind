@@ -66,9 +66,9 @@ Say so instead, in this shape:
 ```text
 CONFLICT
   The spec calls for REST endpoints; every existing route in this app is GraphQL.
-  a) Follow the spec — new REST surface alongside the existing schema
-  b) Follow the codebase — express it in the current GraphQL schema
-  c) Something else — tell me what I'm missing
+  a) Follow the spec: new REST surface alongside the existing schema
+  b) Follow the codebase: express it in the current GraphQL schema
+  c) Something else: tell me what I'm missing
 → I'd take (b): one surface is cheaper to run than two, and nothing here needs REST.
 ```
 
