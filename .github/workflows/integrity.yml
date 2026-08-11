@@ -19,6 +19,9 @@ jobs:
           node-version: 22
       - run: node scripts/check-integrity.mjs
       - run: node scripts/build-router.mjs --check   # ROUTER.md must be regenerated when routed files change
+      # Repo only here; exit 2 is the site not being checked out, which the release gate covers.
+      - run: node scripts/check-prose.mjs || [ "$?" = 2 ]
+      - run: node scripts/check-comments.mjs
 
   # Runs on every pull request with no path filter, so it can be a REQUIRED check. The cross-OS
   # matrix is path-filtered and therefore cannot be required without deadlocking docs-only PRs,

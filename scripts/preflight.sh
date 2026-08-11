@@ -91,6 +91,8 @@ step_live "library pages in sync"      node "$REPO/scripts/build-library.mjs" --
 step "indexes/counts/references"       node "$REPO/scripts/check-integrity.mjs"
 step "cited resources resolve"         node "$REPO/scripts/check-links.mjs"
 step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --strict
+step_live "no em dashes (repo + site)" node "$REPO/scripts/check-prose.mjs"
+step      "comments stay rare and short" node "$REPO/scripts/check-comments.mjs"
 
 echo "Release consistency"
 step "version strings agree (repo + site)"   versions_agree

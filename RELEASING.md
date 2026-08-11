@@ -27,7 +27,8 @@ gh pr create --fill
 gh pr merge --auto --squash        # merges itself once the checks are green
 ```
 
-`master` requires a pull request and three passing checks (`check`, `analyze`, `shellcheck`). No
+`master` requires a pull request and four passing checks (`check`, `suites`, `analyze`,
+`shellcheck`). No
 approval is required, so you are never blocked waiting on yourself. The PR exists so CI runs
 **before** the code is on `master`, and so the diff gets read once outside the context that wrote
 it.
@@ -35,6 +36,14 @@ it.
 `pre-push` runs the installer and agent-surface suites locally whenever the push touches
 `install.sh`, `cli/`, `bin/`, `tests/`, `hooks/` or `scripts/`, so you find breakage in seconds
 rather than in a CI queue. `MM_SKIP_TESTS=1 git push` overrides it and says so out loud.
+
+## What the website repository does not have
+
+`mastermind-site` runs CI on pull requests, but nothing requires it to pass: rulesets and branch
+protection are gated behind a paid plan for private repositories, and that repository is private.
+A direct push to `main` therefore deploys without CI. This is a known and accepted gap, not an
+oversight. Closing it means making the repository public or upgrading the plan. Until then, treat
+`verify-release.sh` and the daily `site-live` run as the checks that actually cover the site.
 
 ## Fixing a bug
 
@@ -91,12 +100,19 @@ Pushing the tag is the only irreversible step. Nothing reaches npm before it.
 
 `publish.yml` will not publish unless, on that exact commit:
 
+- the tagged commit is an ancestor of `origin/master`. A ruleset protects the branch, not the
+  tags, so without this a version bump that never saw a pull request or a required check could
+  be tagged straight to npm
 - the tag matches `VERSION`
 - both suites, integrity, router, links, brain lint and the routing eval all pass
 - the library pages match the skill and agent sources, when CI can read the site (see below)
 - the packed tarball contains exactly `README.md`, `bin/mastermind.mjs`, `package.json`
 - **every** platform passes: Linux on Node 18 and 22, macOS, Alpine, WSL, the native-Windows
-  refusal guard, and an install from the actual stamped tarball
+  refusal guard, and an install from a tarball packed the way the release packs it: the same
+  pinned npm, a commit stamp written the same way. That proves the packing recipe produces an
+  installable package on this commit. It is not the published bytes: those are packed later, in
+  the publish job, after the stamp is written, and are then installed and run there before the
+  upload
 
 Then it stamps the commit SHA into the published `package.json`, re-verifies the stamped package
 (contents, version against the tag, a real 40-character SHA matching this run), publishes with
@@ -108,10 +124,11 @@ clone whose `HEAD` does not match it. That is what closes the moved-tag hole.
 
 **The library check needs the site repository, which is private.** It reads it with
 `MASTERMIND_SITE_KEY`, a read-only deploy key on `mastermind-site`. If that key is missing or
-revoked the checkout fails, the check is skipped, and the job summary says so; the release still
-goes out. That is deliberate: a release must not be held hostage by evidence CI cannot gather,
-and it must not pretend it gathered it either. If you see that warning, the published pages were
-not compared against the instructions behind them.
+revoked the checkout fails, and the gate fails with it: no release goes out. A check that
+skips itself when its input disappears is a check that can pass by failing, which is the exact
+failure this process exists to prevent. To ship anyway, set the repository variable
+`MM_ALLOW_UNCHECKED_LIBRARY=1`; the job summary then records that the library pages were not
+compared against the instructions behind them, so the gap is on the record rather than silent.
 
 ### The website is checked separately
 
@@ -155,10 +172,12 @@ deploys on push to its own repository; the repo does not deploy it.
 A missing site checkout or an absent Claude CLI both land here. Decide whether shipping without
 that evidence is acceptable, and if it is, set the documented override so the gap is on the record.
 
-**The job summary says the library was not checked.** `MASTERMIND_SITE_KEY` is missing, revoked,
-or no longer valid on `mastermind-site`. Regenerate a read-only deploy key there and set the
-secret again. Until then the published pages are not being compared against the skill and agent
-sources, and only a person reading the pages would notice a mismatch.
+**The gate says the site repository could not be read.** `MASTERMIND_SITE_KEY` is missing,
+revoked, or no longer valid on `mastermind-site`. Regenerate a read-only deploy key there and
+set the secret again; releases are blocked until then. Setting the repository variable
+`MM_ALLOW_UNCHECKED_LIBRARY=1` ships without that evidence, and while it is set the published
+pages are not being compared against the skill and agent sources: only a person reading the
+pages would notice a mismatch. Remove the variable once the key works again.
 
 **A test fails only on macOS.** That is bash 3.2 and the `/tmp` and `/var` symlinks, which caused
 four separate path defects. Always resolve both sides of a path comparison before comparing them.

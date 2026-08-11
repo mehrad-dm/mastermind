@@ -45,6 +45,31 @@ There's no build step and no dependencies: you edit Markdown and test behavioral
 - **Lessons are earned.** New entries in a field's `lessons.md` come from real usage or a code-review
   finding, with the "why" attached.
 
+## House style: how we write
+
+Two rules about the writing itself. Both are enforced, because both were broken repeatedly while
+everyone agreed with them.
+
+- **No em dashes. Anywhere.** Not in prose, code, comments, commit messages, changelog entries or
+  the website. Use a colon when what follows explains what came before, a comma otherwise. It is
+  the most reliable tell that a machine wrote the line. `scripts/check-prose.mjs` looks for the
+  character, the JSON escape and the HTML entities, including inside fenced code blocks,
+  because the announce line MasterMind prints is written in one. Two lines in `install.sh` are
+  exempt on the record: uninstall matches that exact text to remove pointers written before
+  0.31.3, so rewording it would strand our text in existing users' files.
+
+- **Comments are rare, short, and explain why.** Never restate what the line does. If the reason
+  needs a paragraph, it belongs in `CHANGELOG.md`, not above a guard. `scripts/check-comments.mjs`
+  caps a comment block at five lines, ten for a file header, and reports files where comments run
+  over 30% of the code as something to look at rather than a failure.
+
+- **Never name who found a defect**, or that a review or audit happened, in anything public:
+  commits, the changelog, code comments, the website. Say what broke and what it cost.
+
+Both checks run in `preflight.sh`, in CI on every pull request, at the release gate, and in
+`pre-push`. If a line genuinely needs an exemption, add it to the script with the reason attached,
+so the exception is on the record rather than in someone's memory.
+
 ## Adding a skill
 
 The skill library grows freely: add one for any distinct, useful workflow. Hold the bar that keeps a
@@ -109,7 +134,7 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    gh pr merge --auto --squash
    ```
 
-   `master` requires a pull request and three green checks, with no approval required, so you are
+   `master` requires a pull request and four green checks, with no approval required, so you are
    never waiting on yourself. The reason for the PR is not ceremony: users run `master` directly
    (`~/.mastermind` is a clone of it), so CI has to run before code lands there, not after.
 

@@ -33,7 +33,7 @@ if (argv.includes('--help') || argv.includes('-h')) {
   mastermind agents           list the agents
 
 Tools:   claude · cursor · codex        AGENTS.md is always wired, so it is not a tool you name
-Flags:   --global · --shared · --isolated · --json
+Flags:   --global · --shared · --isolated        --json is for the listing commands above
 
 Requires: Bash, Git, and Node 18 or newer. On Windows, run it inside WSL.`)
   process.exit(0)
@@ -54,6 +54,15 @@ if (badFlag) {
 
 const cmdAt = argv.findIndex((a) => !a.startsWith('-'))
 const cmd = cmdAt >= 0 && COMMANDS.includes(argv[cmdAt]) ? argv.splice(cmdAt, 1)[0] : 'init'
+
+// A flag the resolved command has no use for is still a mistake, and the engine only says so
+// after the clone. `--json` on an install is the one users hit.
+const READ_ONLY_FLAGS = ['--json']
+const misplaced = argv.find((a) => READ_ONLY_FLAGS.includes(a) && !READ_CMDS.includes(cmd))
+if (misplaced) {
+  console.error(`${misplaced} applies to ${READ_CMDS.join(', ')}, not to \`mastermind ${cmd}\`.`)
+  process.exit(2)
+}
 const passthrough = argv // --global, --shared, etc. go straight to the engine
 
 const TOOLS = ['claude', 'cursor', 'codex']

@@ -594,10 +594,25 @@ is "and it points where it did"    "$(readlink "$P/AGENTS.md")" "RULES.md"
 echo "── a link aimed at the wrong target is reported"
 P=$(proj wrongtarget)
 run "$P" claude >/dev/null 2>&1
+# A real brain skill, but not this name's: repair by adding the alias, not by taking theirs.
 ln -sfn ../../.mastermind/skills/debug "$P/.claude/skills/build"
-is "the doctor rejects it" "$(run "$P" --check 2>&1 | grep -c 'build points at')" "1"
+is "the doctor rejects it" "$(run "$P" --check 2>&1 | grep -c 'is not linked to MasterMind')" "1"
 run "$P" claude >/dev/null 2>&1
 is "and re-running repairs it" "$(run "$P" --check 2>&1 | grep -c 'healthy')" "1"
+is "their link is left alone"  "$(readlink "$P/.claude/skills/build")" "../../.mastermind/skills/debug"
+yes_ "ours arrives as the alias" "$(readlink "$P/.claude/skills/mastermind-build" 2>/dev/null)"
+
+# Their own link, aimed at their own skill, must survive both halves of the lifecycle.
+P=$(proj ownskilllink)
+run "$P" claude >/dev/null 2>&1
+mkdir -p "$P/.mastermind/skills/team-build"; printf 'OURS\n' > "$P/.mastermind/skills/team-build/SKILL.md"
+rm -rf "$P/.claude/skills/build"
+ln -s ../../.mastermind/skills/team-build "$P/.claude/skills/build"
+run "$P" claude >/dev/null 2>&1
+is "install keeps their aim"   "$(readlink "$P/.claude/skills/build")" "../../.mastermind/skills/team-build"
+run "$P" --uninstall >/dev/null 2>&1
+is "uninstall keeps their link" "$(readlink "$P/.claude/skills/build" 2>/dev/null)" "../../.mastermind/skills/team-build"
+is "uninstall takes ours"       "$([ -L "$P/.claude/skills/mastermind-build" ] && echo kept || echo gone)" "gone"
 
 # ══ A file that mentions the pointer is not a file that carries it ════════════
 echo "── an incidental mention does not count as wiring"
@@ -1029,6 +1044,18 @@ is   "and writes no GEMINI.md" "$([ -e "$P/GEMINI.md" ] && echo present || echo 
 yes_ "copilot explains itself" "$(run "$P" copilot 2>&1 | grep -o 'no longer wired automatically')"
 is   "and writes no copilot file" "$([ -e "$P/.github/copilot-instructions.md" ] && echo present || echo none)" "none"
 
+# The message printed and then the run died, so assert the status, not just the output.
+for retired in gemini copilot; do
+  P=$(proj "only$retired")
+  run "$P" "$retired" >/dev/null 2>&1
+  is "$retired alone still finishes"     "$?" "0"
+  is "$retired alone records the install" "$([ -f "$P/.mastermind/.installed" ] && echo yes || echo NO)" "yes"
+  is "$retired alone records no tools"    "$(sed -n 's/^tools=//p' "$P/.mastermind/.installed" 2>/dev/null)" ""
+done
+P=$(proj onlyretiredboth)
+run "$P" gemini copilot >/dev/null 2>&1
+is "both retired together still finishes" "$?" "0"
+
 echo "── AGENTS.md is wired even with no tool installed"
 # The brain is plain Markdown; AGENTS.md is how every tool we don't wire natively reads it.
 P=$(proj noagent); mkdir -p "$TMP/emptyhome"
@@ -1058,6 +1085,39 @@ P=$(proj ownlink)
 (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
 out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
 is "re-install still succeeds with our own symlinks" "$(printf '%s' "$out" | grep -c 'Refusing to write through')" "0"
+
+# `a -> b` has no ".." in it, and `b` can be the link that leaves.
+echo "── a chain of symlinks cannot walk out of the brain one innocent hop at a time"
+P=$(proj chain2); mkdir -p "$TMP/out2"; printf 'ORIGINAL' > "$TMP/out2/sentinel"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+rm -f "$P/.mastermind/.manifest.hashes"
+ln -s hop "$P/.mastermind/.manifest.hashes"; ln -s "$TMP/out2/sentinel" "$P/.mastermind/hop"
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
+yes_ "two-hop chain is refused"      "$(printf '%s' "$out" | grep -o 'points outside the brain')"
+is   "its target is untouched"       "$(cat "$TMP/out2/sentinel")" "ORIGINAL"
+
+P=$(proj chain3); mkdir -p "$TMP/out3"; printf 'ORIGINAL' > "$TMP/out3/sentinel"
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+rm -f "$P/.mastermind/routes.map"
+ln -s h1 "$P/.mastermind/routes.map"; ln -s h2 "$P/.mastermind/h1"; ln -s "$TMP/out3/sentinel" "$P/.mastermind/h2"
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
+yes_ "three-hop chain is refused"    "$(printf '%s' "$out" | grep -o 'points outside the brain')"
+is   "its target is untouched"       "$(cat "$TMP/out3/sentinel")" "ORIGINAL"
+
+# A cycle resolves to nothing at all, which must refuse rather than loop or fall through.
+P=$(proj chaincycle)
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+rm -f "$P/.mastermind/routes.map"
+ln -s cyb "$P/.mastermind/routes.map"; ln -s cya "$P/.mastermind/cyb"; ln -s cyb "$P/.mastermind/cya"
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)" || true
+yes_ "a cyclic chain is refused"     "$(printf '%s' "$out" | grep -o 'broken or cyclic symlink chain')"
+
+# The mirror image: a link that does not exist yet is normal, since the installer creates it.
+P=$(proj chaindangling)
+(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" >/dev/null 2>&1) || true
+rm -f "$P/.mastermind/routes.map"; ln -s notyet "$P/.mastermind/routes.map"
+out="$(cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" 2>&1)"; rc=$?
+is "a dangling link inside the brain still installs" "$rc" "0"
 
 echo "── uninstall gives back what install displaced"
 H="$TMP/restore-home"; mkdir -p "$H/.claude"

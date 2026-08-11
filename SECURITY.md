@@ -48,8 +48,9 @@ match the skill and agent instructions behind them.
 - It cannot write. A push with it is refused by GitHub.
 - It does not expire, so nothing breaks silently on a renewal date.
 - To revoke: delete it from `mastermind-site` → Settings → Deploy keys, and delete the
-  `MASTERMIND_SITE_KEY` secret from this repository. The release still works afterwards; the
-  library check is skipped and the job summary says so.
+  `MASTERMIND_SITE_KEY` secret from this repository. Releases then fail at the gate until a
+  new key is set, or until the repository variable `MM_ALLOW_UNCHECKED_LIBRARY=1` is set to
+  ship without the library check; the job summary records that the check did not run.
 
 Actions are pinned to full commit SHAs rather than tags, so a moved tag upstream cannot change
 what runs. `npm` itself is pinned in the publish job for the same reason.
