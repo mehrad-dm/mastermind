@@ -31,7 +31,9 @@ TERMS="$({ mm_secret_patterns
   } | grep -vE '^$' | paste -sd '|' -)"
 
 FAIL=0
-# stdin: <local ref> <local sha> <remote ref> <remote sha>
+# stdin can only be read once, so capture the refs before any loop consumes them.
+REFS="$(cat)"
+# <local ref> <local sha> <remote ref> <remote sha>
 while read -r _lref lsha _rref rsha; do
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
 
@@ -56,7 +58,9 @@ while read -r _lref lsha _rref rsha; do
       FAIL=1
     fi
   done
-done
+done <<REFLIST
+$REFS
+REFLIST
 
 if [ "$FAIL" -ne 0 ]; then
   printf '\n%s\n' "${RED}Push aborted: confidential data would become public and permanent.${NC}"
@@ -67,6 +71,35 @@ fi
 printf '%s\n' "${GRN}✓ push guard: clean${NC}"
 
 # >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
+# A pushed release tag can never be moved: the ruleset forbids it. So everything the release
+# gate would check has to be true BEFORE the push, not after.
+while read -r lref lsha _rref _rsha; do
+  case "$lref" in refs/tags/v[0-9]*) ;; *) continue ;; esac
+  TAG="${lref#refs/tags/}"; WANT="${TAG#v}"
+  TARGET="$(git rev-parse "$lsha^{commit}" 2>/dev/null)" || continue
+  git fetch -q --no-tags origin master 2>/dev/null || true
+  MASTER="$(git rev-parse -q --verify FETCH_HEAD 2>/dev/null || git rev-parse -q --verify origin/master 2>/dev/null || echo)"
+  if [ -z "$MASTER" ]; then
+    printf '%s\n' "${YEL}⚠ cannot read origin/master, so $TAG was not checked against it${NC}"
+  elif ! git merge-base --is-ancestor "$TARGET" "$MASTER" 2>/dev/null; then
+    printf '%s\n' "${RED}✖ BLOCKED: $TAG points at $(git rev-parse --short "$TARGET"), which is not on master.${NC}"
+    printf '%s\n' "  A pushed tag cannot be moved. Re-tag origin/master, or the version is burnt."
+    exit 1
+  fi
+  GOT="$(git show "$TARGET:VERSION" 2>/dev/null | tr -d '[:space:]')"
+  if [ "$GOT" != "$WANT" ]; then
+    printf '%s\n' "${RED}✖ BLOCKED: $TAG points at a commit whose VERSION is '${GOT:-unreadable}', not $WANT.${NC}"
+    exit 1
+  fi
+  if ! git show "$TARGET:CHANGELOG.md" 2>/dev/null | grep -q "^## \[$WANT\]"; then
+    printf '%s\n' "${RED}✖ BLOCKED: $TAG has no '## [$WANT]' section in CHANGELOG.md at that commit.${NC}"
+    exit 1
+  fi
+  printf '%s\n' "${GRN}✓ $TAG is on master, VERSION and CHANGELOG agree${NC}"
+done <<REFLIST
+$REFS
+REFLIST
+
 # Above MM_SKIP_TESTS on purpose: that flag skips a slow suite, this takes under a second.
 if command -v node >/dev/null 2>&1 && [ -f "$REPO_ROOT/scripts/check-prose.mjs" ]; then
   node "$REPO_ROOT/scripts/check-prose.mjs" >/dev/null 2>&1

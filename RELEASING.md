@@ -126,7 +126,13 @@ git push origin v0.31.0        # this is what publishes
 git -C ../mastermind-site push # this is what deploys the site
 ```
 
-Pushing the tag is the only irreversible step. Nothing reaches npm before it.
+Pushing the tag is the only irreversible step, and now doubly so: the ruleset forbids moving it,
+so a tag on the wrong commit burns that version. `pre-push` refuses a `v*` tag unless its commit
+is on `origin/master` and that commit's `VERSION` and `CHANGELOG.md` match the tag.
+
+That guard exists because a squash merge leaves a local `master` that has *diverged* rather than
+fast-forwarded whenever you committed to `master` before branching. `git pull --ff-only` then
+refuses, leaves you on the old commit, and the next `git tag` silently tags the wrong thing.
 
 ### 4. What CI does with the tag
 
