@@ -37,6 +37,14 @@ it.
 `install.sh`, `cli/`, `bin/`, `tests/`, `hooks/` or `scripts/`, so you find breakage in seconds
 rather than in a CI queue. `MM_SKIP_TESTS=1 git push` overrides it and says so out loud.
 
+## What the website repository does not have
+
+`mastermind-site` runs CI on pull requests, but nothing requires it to pass: rulesets and branch
+protection are gated behind a paid plan for private repositories, and that repository is private.
+A direct push to `main` therefore deploys without CI. This is a known and accepted gap, not an
+oversight. Closing it means making the repository public or upgrading the plan. Until then, treat
+`verify-release.sh` and the daily `site-live` run as the checks that actually cover the site.
+
 ## Fixing a bug
 
 Every bug fix ships with a test, and **the test has to fail against the release that had the bug**:
