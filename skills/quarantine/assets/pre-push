@@ -31,7 +31,9 @@ TERMS="$({ mm_secret_patterns
   } | grep -vE '^$' | paste -sd '|' -)"
 
 FAIL=0
-# stdin: <local ref> <local sha> <remote ref> <remote sha>
+# stdin can only be read once, so capture the refs before any loop consumes them.
+REFS="$(cat)"
+# <local ref> <local sha> <remote ref> <remote sha>
 while read -r _lref lsha _rref rsha; do
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
 
@@ -56,7 +58,9 @@ while read -r _lref lsha _rref rsha; do
       FAIL=1
     fi
   done
-done
+done <<REFLIST
+$REFS
+REFLIST
 
 if [ "$FAIL" -ne 0 ]; then
   printf '\n%s\n' "${RED}Push aborted: confidential data would become public and permanent.${NC}"
