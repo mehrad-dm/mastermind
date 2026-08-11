@@ -37,6 +37,21 @@ it.
 `install.sh`, `cli/`, `bin/`, `tests/`, `hooks/` or `scripts/`, so you find breakage in seconds
 rather than in a CI queue. `MM_SKIP_TESTS=1 git push` overrides it and says so out loud.
 
+## Tags are immutable once pushed
+
+`.github/tag-ruleset.json` stops any `v*` tag being moved or deleted, by anyone, with no bypass.
+Apply it once:
+
+```
+gh api --method POST repos/mehrad-dm/mastermind/rulesets --input .github/tag-ruleset.json
+```
+
+It deliberately does **not** restrict tag creation. Creating a tag is already gated by the
+release workflow, which refuses a commit that is not on `master`, and a creation rule with a
+mis-set bypass would lock releases out entirely. Moving a tag is the real damage: the CLI pins a
+commit and refuses a clone that does not match it, so a moved tag breaks every install rather
+than fixing any, and it makes the GitHub source archive disagree with what npm serves.
+
 ## What the website repository does not have
 
 `mastermind-site` runs CI on pull requests, but nothing requires it to pass: rulesets and branch
