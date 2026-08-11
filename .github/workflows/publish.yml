@@ -50,6 +50,7 @@ jobs:
       # Repo only until the site checkout below; exit 2 says so rather than passing quietly.
       - run: node scripts/check-prose.mjs || [ "$?" = 2 ]
       - run: node scripts/check-comments.mjs
+      - run: node scripts/check-shell-patterns.mjs
       # MASTERMIND_SITE_KEY is a read-only deploy key for the private site repository, scoped to
       # that one repo. This fails the release when it cannot read: the check exists to stop the
       # published pages drifting from the instructions behind them, and a check that shrugs is

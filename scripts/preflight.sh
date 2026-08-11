@@ -93,6 +93,7 @@ step "cited resources resolve"         node "$REPO/scripts/check-links.mjs"
 step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --strict
 step_live "no em dashes (repo + site)" node "$REPO/scripts/check-prose.mjs"
 step      "comments stay rare and short" node "$REPO/scripts/check-comments.mjs"
+step      "no early-exit pipe under pipefail" node "$REPO/scripts/check-shell-patterns.mjs"
 
 echo "Release consistency"
 step "version strings agree (repo + site)"   versions_agree

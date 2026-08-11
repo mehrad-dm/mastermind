@@ -4,6 +4,20 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.31.9] · 2026-08-11
+
+### Changed
+
+- Committing straight to `master` is refused. `master` only takes changes through a pull request,
+  so a local commit on it is always a mistake, and each one leaves a branch that has diverged
+  rather than fast-forwarded at the next squash merge, which is how a release tag nearly ended up
+  on a commit without its own version bump.
+- A pipeline whose reader exits early now fails a check. `grep -q` stops at the first match, the
+  writer dies of SIGPIPE, and under `pipefail` a successful search reports 141. That defect was
+  found and fixed twice, written down, and then written back in. It is a gate now rather than a
+  note. `head` is deliberately not flagged: it is nearly always harmless truncation, and a check
+  that fires on the wrong thing teaches people to ignore it.
+
 ## [0.31.8] · 2026-08-11
 
 ### Fixed

@@ -124,6 +124,11 @@ if command -v node >/dev/null 2>&1 && [ -f "$REPO_ROOT/scripts/check-prose.mjs" 
     node "$REPO_ROOT/scripts/check-comments.mjs" 2>&1 | sed 's/^/    /' | head -10
     exit 1
   fi
+  if ! node "$REPO_ROOT/scripts/check-shell-patterns.mjs" >/dev/null 2>&1; then
+    printf '%s\n' "${RED}✖ BLOCKED: a pipeline reader exits early under pipefail${NC}"
+    node "$REPO_ROOT/scripts/check-shell-patterns.mjs" 2>&1 | sed 's/^/    /' | head -10
+    exit 1
+  fi
 fi
 
 if [ -n "${MM_SKIP_TESTS:-}" ]; then
