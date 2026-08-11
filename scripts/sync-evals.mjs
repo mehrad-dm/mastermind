@@ -87,6 +87,11 @@ const routerRouted = avgRow ? num(avgRow[1]) : 0
 const routerSaved = avgRow ? num(avgRow[2]) : 0
 const savings = perTask.map((t) => t.saved)
 
+// The homepage shows one task, not the average, so the number it draws has to come from the same
+// file as everything else. A hardcoded copy stayed green here while the site went stale.
+const example = perTask.find((x) => x.task.toLowerCase() === 'animation (opus)')
+if (!example) die('the animation (opus) row is gone from RESULTS.md, so the homepage example would go stale')
+
 const data = {
   generatedFrom: 'evals/RESULTS.md + engineering/ROUTER.md',
   router: {
@@ -96,6 +101,7 @@ const data = {
     rangeLow: Math.min(...savings),
     rangeHigh: Math.max(...savings),
     source: 'evals/pilot-multimodel/RESULTS.md, measured per task, Opus average of 4 tasks',
+    example: { task: example.task, routed: example.withRouter, savedPct: example.saved },
   },
   headline: {
     date: headlineDate,
