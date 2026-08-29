@@ -247,7 +247,10 @@ const projectDir = () => {
   let gitRoot = null
   let pkg = null
   for (let d = dir; ; ) {
-    if (existsSync(join(d, '.git'))) gitRoot = d
+    // Stop at the nearest one: without this the walk kept climbing and the
+    // outermost repo won, so a project inside a repo (or under a home directory
+    // that is itself a repo) resolved to the wrong root, or to none at all.
+    if (existsSync(join(d, '.git'))) { gitRoot = d; break }
     if (!pkg && existsSync(join(d, 'package.json'))) pkg = d
     const up = dirname(d)
     if (up === d || parsePath(d).root === d) break

@@ -84,6 +84,9 @@ SUBJECT="$(awk -v v="[$NEW]" '
   f && /^## \[/ { exit }
   f && /^- / { sub(/^- /, ""); gsub(/[*`]/, ""); print; exit }
 ' CHANGELOG.md | cut -c1-72)"
+# The bug this replaced was an empty result substituted away in silence, so an
+# empty one fails here rather than shipping a tag with no subject.
+[ -n "$SUBJECT" ] || die "CHANGELOG.md [$NEW] has no leading '- ' bullet to take a tag subject from"
 printf '\n%s── tagging%s\n' "$b" "$x"
 say "git add -A && git commit -m 'release: v$NEW'"
 say "git tag -a v$NEW"

@@ -39,7 +39,10 @@ try {
   const env = /log ?in|logged out|auth|api key|401|403|quota|rate limit|subscription|expired/i.test(why)
   console.error(`cursor-agent is installed but cannot run a session${env ? ' (account or auth)' : ''}:`)
   console.error(why.trim().split('\n').slice(-3).join('\n'))
-  process.exit(SKIP)
+  // Only an environment we cannot control is a skip. Anything else is the CLI or
+  // this harness failing, and reporting that as "not a regression" is how a broken
+  // gate reads green to whoever accepts the skip.
+  process.exit(env ? SKIP : 1)
 }
 
 const work = mkdtempSync(join(tmpdir(), 'mm-cursor-'))
@@ -51,7 +54,7 @@ mkdirSync(home, { recursive: true })
 try {
   execFileSync('git', ['init', '-q', '.'], { cwd: proj })
   execFileSync('bash', [join(ROOT, 'install.sh'), 'cursor'], {
-    cwd: proj, stdio: 'ignore', env: { ...process.env, HOME: home },
+    cwd: proj, stdio: 'ignore', timeout: 300000, env: { ...process.env, HOME: home },
   })
 } catch (e) {
   rmSync(work, { recursive: true, force: true })

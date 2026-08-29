@@ -207,6 +207,13 @@ const realNames = new Set([
   ...readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name),
   ...readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, '')),
 ])
+const RX_META = /[.*+?^${}()|[\]\\]/g
+// A skill is listed when its name opens an entry: a table cell, a bullet, or an item
+// after a separator. A mention inside another entry's prose ("inside `build`") is not a
+// listing, and matching the bare word anywhere passed on the prose around the menu.
+const menuToken = (n) =>
+  new RegExp('(?:^|[|\u00b7:])[ \t]*\\[?(`|\\*\\*)' + n.replace(RX_META, '\\$&') + '\\1', 'm')
+
 const RETIRED = ['perf', 'spec', 'spike', 'lab', 'doubt', 'map']
 for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'README.md']) {
   const file = join(ROOT, menu)
@@ -221,7 +228,7 @@ for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'RE
   // `clarify` and `deepen` reached neither the help menu nor the marketplace listing.
   // README.md is a highlights list and does not claim to be complete, so it is exempt.
   if (menu === 'README.md') continue
-  const unlisted = skillDirs.filter((n) => !new RegExp(`\\b${n}\\b`).test(text))
+  const unlisted = skillDirs.filter((n) => !menuToken(n).test(text))
   if (unlisted.length)
     fail(`${menu} never names ${unlisted.length} shipped skill(s): ${unlisted.join(', ')}`)
 }
@@ -302,9 +309,7 @@ for (const manifest of ['.claude-plugin/marketplace.json', '.claude-plugin/plugi
       fail(`${manifest} advertises "${token}", which is not a skill or agent on disk`)
   // Only the other direction was checked, so a new skill shipped unadvertised: the
   // marketplace listing people install from undercounted what the plugin actually carries.
-  const unlisted = readdirSync(join(ROOT, 'skills'), { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !advertised.has(e.name))
-    .map((e) => e.name)
+  const unlisted = skillDirs.filter((n) => !advertised.has(n))
   if (unlisted.length)
     fail(`${manifest} ships ${unlisted.length} skill(s) it never names: ${unlisted.join(', ')}`)
 }
