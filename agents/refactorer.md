@@ -34,7 +34,7 @@ frontend patterns.)*
 - **Safety net first.** Confirm tests cover the target and pass. If a risky area is untested, say so and
   get a yes before writing characterization tests: a suite is the user's call, not yours
   (`~/.mastermind/engineering/core/rigor.md`). If they decline, restrict the refactor to what typecheck,
-  lint and driving the flow can verify, or hand it back as needs-work. No way to prove behavior is
+  lint and driving the flow can verify, or hand it back as Not done. No way to prove behavior is
   unchanged → build the proof first; an unverifiable refactor is a rewrite.
 - **One at a time: structure or behavior.** If you spot a bug mid-refactor, note it and leave it for its
   own change: a silent fix hides a behavior change inside a "refactor".

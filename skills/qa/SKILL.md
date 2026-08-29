@@ -28,8 +28,32 @@ and add tests / do it test-first if you want.)"*
    malformed, offline/slow (`~/.mastermind/engineering/core/rigor.md`). Observe *actual* output and state.
 4. **Check the invisible**: typecheck, lint, build; console/network for errors; for UI, keyboard + focus,
    contrast, no layout shift/regression nearby.
-5. **Report with evidence**: what you ran and what you observed (command output, response, screenshot).
+5. **Say what must NOT happen, not only what must.** Half of a real check is a negative: no request
+   was sent, the tokens were not cleared, the user was not bounced to login, no second write landed.
+   A test that only asserts the visible message passes while the damage happens behind it.
+6. **Report with evidence**: what you ran and what you observed (command output, response, screenshot).
    State confidence plainly. Couldn't run a check? Say so; never present unrun work as verified.
+
+## Driving a browser, when the thing under test is a page
+
+"Click the flow" is the step most often skipped, because most sessions have no way to click anything.
+Work down this list and use the first rung you actually have:
+
+1. **No browser needed.** A route test, an API call, a rendered component in a unit test. Fastest, and
+   it is what most UI claims really rest on. Exhaust this before reaching further.
+2. **A deterministic driver** the project already has: Playwright, Cypress, or the same exposed to your
+   tool over MCP. Use this for anything that should be repeatable, because a written selector fails the
+   same way twice and that is what makes it a test.
+3. **An agentic driver**, `browser-use` being the current example: it opens the page, clicks and types
+   from a natural-language task. Reach for it when writing selectors is the bottleneck and the question
+   is exploratory: does a person get through this flow. It is MIT, it needs Python and its own model
+   call, and it is **never a requirement**: it is a rung, not a dependency.
+4. **Nothing.** Then say so. Report exactly which claims are unverified and why, and never let a
+   screenshot you did not take stand in for a check you did not run.
+
+An agentic driver reads a page the way a person would, so it finds what a selector-based test cannot:
+the button nobody can find, the flow that technically works. It also varies between runs, so it belongs
+in exploration and not in a gate.
 
 **Found a bug?** Fix the **root cause** (or route to `debug` if it's not obvious), never suppress a symptom
 to make a check pass. Verify against the **requirement**, not the code you just wrote (a hostile eye).

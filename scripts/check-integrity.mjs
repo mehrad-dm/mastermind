@@ -69,7 +69,7 @@ for (const file of ['skills/README.md', 'README.md']) {
 const docFiles = []
 ;(function walk(d) {
   for (const e of readdirSync(join(ROOT, d), { withFileTypes: true })) {
-    if (e.name === 'node_modules' || e.name === 'lab' || e.name.startsWith('.git')) continue
+    if (e.name === 'node_modules' || e.name === 'lab' || e.name === 'private' || e.name === 'local' || e.name.startsWith('.git')) continue
     const p = `${d}/${e.name}`
     if (e.isDirectory()) walk(p)
     else if (e.name.endsWith('.md')) docFiles.push(p.replace(/^\.\//, ''))
@@ -127,6 +127,10 @@ for (const pack of packs) {
     const fm = frontmatter(read(rel))
     if (!fm || !('route_when' in fm)) {
       fail(`${rel}: no \`route_when\` frontmatter, build-router.mjs will skip it silently`)
+    }
+    if (fm && fm.field && !pack.startsWith('_') && fm.field !== pack) {
+      fail(`${rel}: declares \`field: ${fm.field}\` inside the "${pack}" pack, so it would route under `
+        + `the wrong name. A pack copied or half-renamed passes every other check.`)
     }
   }
 }
@@ -213,6 +217,13 @@ for (const menu of ['skills/help/SKILL.md', 'CLAUDE.md', 'skills/README.md', 'RE
     if (re.test(text) && !realNames.has(dead))
       fail(`${menu} still advertises the retired name "${dead}": it fails when typed`)
   }
+  // Only retired names were checked, so a menu could silently omit a shipped skill:
+  // `clarify` and `deepen` reached neither the help menu nor the marketplace listing.
+  // README.md is a highlights list and does not claim to be complete, so it is exempt.
+  if (menu === 'README.md') continue
+  const unlisted = skillDirs.filter((n) => !new RegExp(`\\b${n}\\b`).test(text))
+  if (unlisted.length)
+    fail(`${menu} never names ${unlisted.length} shipped skill(s): ${unlisted.join(', ')}`)
 }
 
 const aboutPairs = [
@@ -285,9 +296,17 @@ for (const manifest of ['.claude-plugin/marketplace.json', '.claude-plugin/plugi
   const blob = JSON.stringify(JSON.parse(readFileSync(file, 'utf8')))
   const listed = blob.match(/(?:Skills|skills & agents):([^.]+)/)?.[1]
   if (!listed) continue
-  for (const token of listed.split(/[,+]/).map((t) => t.trim().replace(/^agents:\s*/, '')))
+  const advertised = new Set(listed.split(/[,+]/).map((t) => t.trim().replace(/^agents:\s*/, '')))
+  for (const token of advertised)
     if (/^[a-z][a-z-]{2,}$/.test(token) && !realNames.has(token))
       fail(`${manifest} advertises "${token}", which is not a skill or agent on disk`)
+  // Only the other direction was checked, so a new skill shipped unadvertised: the
+  // marketplace listing people install from undercounted what the plugin actually carries.
+  const unlisted = readdirSync(join(ROOT, 'skills'), { withFileTypes: true })
+    .filter((e) => e.isDirectory() && !advertised.has(e.name))
+    .map((e) => e.name)
+  if (unlisted.length)
+    fail(`${manifest} ships ${unlisted.length} skill(s) it never names: ${unlisted.join(', ')}`)
 }
 
 const CANON = 'A markdown brain that gives your AI coding tools judgment and rigor'

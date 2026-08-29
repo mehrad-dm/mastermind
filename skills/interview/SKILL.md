@@ -85,9 +85,9 @@ you noticed but were not asked for goes under **Suggested (not done)**: never fo
 1. **Problem & outcome**: the real user/business outcome, in one or two lines (not the literal request
    if they differ). *What outcome, for whom, why now?*
 2. **Scope**: what's **in**, and explicitly what's **out** (deferred as follow-ups). A coherent slice.
-3. **Name the key terms (glossary).** List the domain nouns actually in use; define each in one sentence
-   **+ what NOT to call it** (synonyms to avoid); resolve any word that means two things (or two words
-   that mean one). One concept, one name: then use these exact names in the spec, types, and code. Names
+3. **Name the key terms (glossary).** List the domain nouns actually in use. Define each in one
+   sentence, **plus what NOT to call it**, so the synonyms are on the record. Then resolve any word
+   that means two things, or two words that mean one. One concept, one name: then use these exact names in the spec, types, and code. Names
    are the data model in disguise; muddled naming is a bug waiting to happen.
 4. **Interfaces & data**: the files/modules touched, the key types, the API/data contracts.
 5. **Acceptance criteria**: observable behavior that means "done," from the user's view (not "compiles").

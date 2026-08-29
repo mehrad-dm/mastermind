@@ -91,7 +91,7 @@ npx mastermind-brain --global
 
 Every npm release is a **versioned, immutable, provenance-signed artifact**, and a fresh install pins
 the brain to the matching git tag: you always know exactly what ran, and you can read all of it first
-(`npm pack mastermind-brain`: the whole CLI is ~10 KB packed, 26 KB unpacked, on top of this repo).
+(`npm pack mastermind-brain`: the whole CLI is ~11 KB packed, 32 KB unpacked, on top of this repo).
 
 
 MasterMind installs **per project by default**, and **each project gets its own copy of the brain** in
@@ -146,16 +146,18 @@ With `--global`, Claude Code is wired once in `~/` for every project instead.
 
 ### Each project gets its own brain (isolated by default)
 
-A per-project install now **copies** the engine into `<project>/.mastermind/`: its own field, its
-own `lessons.md`, its own stack defaults: and commits it, so a teammate cloning the repo gets the
-same brain. Nothing a lesson learned in one client repo can leak into another.
+A per-project install **copies** the engine into `<project>/.mastermind/`, so the project owns its
+field, its `lessons.md` and its stack defaults, and a lesson learned in one client repo cannot leak
+into another. Commit that directory and a teammate cloning the repo gets the same brain: the
+installer never commits for you. A fresh install ships **no field**, only the template; `init`
+builds one from your actual stack on the first real task.
 
 | | *(default)* isolated | `--shared` |
 | --- | --- | --- |
 | The brain lives in | `<project>/.mastermind/`: its own copy | `~/.mastermind`: one copy for all |
 | Field, `lessons.md`, `stack-defaults` | **owned by this project** | shared by every project |
 | Updating | re-run `npx mastermind-brain` here, when you choose | `npx mastermind-brain update` refreshes the shared clone for every project at once |
-| Committed to the repo? | yes, teammates get the same brain | nothing added |
+| Committed to the repo? | commit `.mastermind/` and teammates get the same brain | only project state: `brief.md`, `prefs.md`, a `.gitignore`, and the `AGENTS.md` pointer |
 
 ```bash
 cd my-project && npx mastermind-brain                 # isolated: its own brain
@@ -204,6 +206,8 @@ matching skill. (Power users *can* type `/name` as a shortcut, but nobody has to
 | give a fuzzy ask | turns it into a crisp spec: problem, scope, terms, acceptance (`interview`) |
 | want code to fit your team | captures the codebase's real style → name-free rules it follows (`signature`) |
 | want code in a style you admire | writes in the documented public style of an engineer you name, e.g. Dan Abramov, Kent C. Dodds (`persona`) |
+| did not follow the last answer | re-pitches it in plain words or as a picture, and learns where it wrote badly (`clarify`) |
+| feel the design is hurting | surveys the area, ranks what is costing you, you pick one to fix (`deepen`) |
 
 Also auto-applied (and callable by name): `explain` (AI-friendly docs for an internal package), `quarantine`
 (a private, gitignored space for sensitive data), `handoff`, and `levelup` (teach MasterMind something durable).
@@ -258,10 +262,12 @@ fail loudly, not to make one impossible.
 
 ## Where it's tested
 
-MasterMind is plain Markdown with no runtime. It is developed and measured on **Claude Code**: that's where
-the numbers in [`evals/RESULTS.md`](evals/RESULTS.md) come from: and it is exercised on **Cursor**, where the
-kernel and the active field pack are injected as always-on rules. Neither tool has its own mechanisms broken
-by it.
+MasterMind is plain Markdown with no runtime. It is developed and measured on **Claude Code**: most of
+the numbers in [`evals/RESULTS.md`](evals/RESULTS.md) come from there. **Codex is now measured too**, with
+a treatment-and-control run that asks a live session which skill it would use: the latest is 3 of 3 with
+the brain against 1 of 3 without it, and the control is noisy, so read it as a trend. **Cursor** is
+exercised live, confirming it loads the brain, but its routing is not yet measured. None of the three has
+its own mechanisms broken by it.
 
 The installer wires those two plus `AGENTS.md`. Everywhere else the brain still loads. It's just files: but
 whether it changes that tool's output is not something we've measured, so it isn't something we claim. If you

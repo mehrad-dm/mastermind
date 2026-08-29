@@ -19,10 +19,10 @@ reset. Capture just enough to resume cold: high signal, low tokens.
 
 ## Rules
 Summarize and link, point to detail rather than pasting it. Write it where the next session
-will look (`HANDOFF.md`, a scratch file, or the issue). Prune it when the work completes.
+will look (`.mastermind/HANDOFF.md`, a scratch file, or the issue). Prune it when the work completes.
 
 ## Output
-A tight `HANDOFF.md`: goal, state checklist, decisions, file map, gotchas, resume+verify steps.
+A tight `.mastermind/HANDOFF.md`: goal, state checklist, decisions, file map, gotchas, resume+verify steps.
 
 ## The ledger: for work that outlives one context window
 

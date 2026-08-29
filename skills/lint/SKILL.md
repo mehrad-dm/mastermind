@@ -22,8 +22,9 @@ see the guard at the bottom for why that constraint is not negotiable.
 node scripts/lint-brain.mjs        # add --strict to exit non-zero on high findings
 ```
 
-Run it from the MasterMind clone. A per-project isolated brain ships no `scripts/`: if that's where you
-are, say so and run Pass B alone rather than hand-counting.
+Run it from the MasterMind clone. An installed brain ships only `build-router.mjs` and
+`check-integrity.mjs`, not this one: if that's where you are, say so and run Pass B alone rather
+than hand-counting.
 
 Counting is not judgment, so it shouldn't depend on a model remembering to do it: and a hand-count
 drifts between runs, which makes two reports incomparable. The script reports every item below, sorted

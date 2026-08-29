@@ -47,8 +47,8 @@ There's no build step and no dependencies: you edit Markdown and test behavioral
 
 ## House style: how we write
 
-Two rules about the writing itself. Both are enforced, because both were broken repeatedly while
-everyone agreed with them.
+Rules about the writing itself. Each is enforced, because each was broken repeatedly while
+everyone agreed with it.
 
 - **No em dashes. Anywhere.** Not in prose, code, comments, commit messages, changelog entries or
   the website. Use a colon when what follows explains what came before, a comma otherwise. It is
@@ -66,7 +66,18 @@ everyone agreed with them.
 - **Never name who found a defect**, or that a review or audit happened, in anything public:
   commits, the changelog, code comments, the website. Say what broke and what it cost.
 
-Both checks run in `preflight.sh`, in CI on every pull request, at the release gate, and in
+- **A directive states one thing, and states it.** Bullets and numbered steps in a skill body or an
+  agent brief are instructions parsed by a reader who cannot ask a follow-up. Two verbs joined by
+  "and" is two steps. "Should probably", "try to" and "where possible" reopen the decision the rule
+  existed to close. `scripts/check-instructions.mjs` **fails** a directive over 30 words or one that
+  hedges, and **reports** the ones carrying more than one action. That last count is judgment, not a
+  rule, so it is shown and never fatal: enforcing it flagged two dozen legitimate two-part bullets,
+  and a gate that fires on the wrong thing gets skipped. Frontmatter, tables, quotes and code are
+  skipped, because a `description` is a trigger list by design.
+  The register is `engineering/core/clarity.md`, which is STE-informed: ASD-STE100 is free to obtain
+  and not free to redistribute, so we follow the discipline and never reproduce the standard.
+
+These checks run in `preflight.sh`, in CI on every pull request, at the release gate, and in
 `pre-push`. If a line genuinely needs an exemption, add it to the script with the reason attached,
 so the exception is on the record rather than in someone's memory.
 
@@ -197,6 +208,30 @@ ambiguous or buried: tighten it.
 Each of these was argued once and decided. Reopening one needs a new argument, not a preference.
 
 - **Per-project install is the default**; `--global` is opt-in.
+- **Uninstall leaves `.mastermind/.gitignore` behind, on purpose.** After the engine is removed the
+  directory can still hold `private/`, `local/` and a handoff. Deleting the ignore file would make
+  that material visible to git on the way out, which is the opposite of what it is for.
+- **A browser driver is a rung, never a requirement.** `qa` told the model to "click the flow" and the
+  brain shipped no way to click anything, so the instruction was aspirational. It now names the ladder:
+  no browser, a deterministic driver (Playwright and friends) for anything repeatable, an agentic
+  driver (`browser-use`, MIT) for exploratory flows where writing selectors is the bottleneck, and
+  saying so plainly when none is available. Agentic drivers vary between runs, so they explore and
+  never gate.
+- **A code-intelligence index is used when present, never required, and never vendored.** Scouted
+  against the adopt rubric: it clears the gates and lands on ADOPT WITH GUARDRAILS. The guardrails are
+  named. Its published benchmarks are self-reported with no third-party replication, so cite them as
+  claims. Repowise is **AGPL-3.0 and this repo is MIT**: pointing at an MCP server the user installed
+  is fine, copying any of its code into this repo is not. And the rule that outranks both: it stays an
+  optional accelerator, so nothing here may stop working when it is absent.
+- **We do not wire a Codex hook.** Codex 0.147 has the mechanism: `SessionStart` exists, the `hooks`
+  feature is on by default, and its output schema is byte-identical to Claude's
+  (`hookSpecificOutput.hookEventName` + `additionalContext`, read out of the binary's own JSON schema).
+  It still never fires for `codex exec`. Tested three ways: repo-local `.codex/hooks.json`, user-level
+  `hooks.json` under an isolated `CODEX_HOME`, and the nested Claude-style shape with `enabled: true`,
+  all with `--dangerously-bypass-hook-trust`. The binary explains it: a hook must be reviewed and
+  **enabled** once in the TUI, and that flag bypasses trust, not enabled. An installer cannot do that
+  for a user, so shipping the file would claim a parity that does not exist. Revisit when Codex can
+  enable a hook non-interactively.
 - **The project always wins.** On a skill-name collision the user's file is never displaced: ours
   installs as `mastermind-<name>` and both work. If theirs is later removed, ours reclaims the plain
   name and the alias is pruned.

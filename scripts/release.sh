@@ -58,8 +58,7 @@ edit "cli/package.json"   "cli/package.json"                 "s/\"version\": \"$
 edit "plugin manifest"    ".claude-plugin/plugin.json"       "s/$OLD/$NEW/g"
 edit "marketplace"        ".claude-plugin/marketplace.json"  "s/$OLD/$NEW/g"
 edit "README"             "README.md"                        "s/$OLD/$NEW/g"
-edit "site footer"        "$SITE/src/components/Footer.astro" "s/v$OLD/v$NEW/g"
-edit "site homepage"      "$SITE/src/pages/index.astro"       "s/v$OLD/v$NEW/g"
+edit "site version"       "$SITE/src/site.config.ts"          "s/v$OLD/v$NEW/g"
 
 # --- Nothing left behind ------------------------------------------------------
 if [ "$DRY" = 0 ]; then
@@ -80,7 +79,11 @@ printf '\n%s── gates%s\n' "$b" "$x"
 ./scripts/preflight.sh || die "preflight failed; the release stops here"
 
 # --- Tag ----------------------------------------------------------------------
-SUBJECT="$(sed -n "/^## \[$NEW\]/,/^$/p" CHANGELOG.md | sed -n '3p' | cut -c1-72)"
+SUBJECT="$(awk -v v="[$NEW]" '
+  index($0, "## " v) == 1 { f = 1; next }
+  f && /^## \[/ { exit }
+  f && /^- / { sub(/^- /, ""); gsub(/[*`]/, ""); print; exit }
+' CHANGELOG.md | cut -c1-72)"
 printf '\n%s── tagging%s\n' "$b" "$x"
 say "git add -A && git commit -m 'release: v$NEW'"
 say "git tag -a v$NEW"
@@ -89,12 +92,13 @@ cat <<NEXT
 ${b}Not done automatically, because each one leaves this machine:${x}
 
   1. review the diff          git diff --stat HEAD
-  2. commit both repos        git commit -am "release: v$NEW"
-                              git -C "$SITE" commit -am "v$NEW"
+  2. commit both repos        git add -A && git commit -m "release: v$NEW"
+                              git -C "$SITE" add -A && git -C "$SITE" commit -m "v$NEW"
+                              (-a stages tracked files only: an ADDED file would miss the tag)
   3. tag                      git tag -a "v$NEW" -m "v$NEW${SUBJECT:+: $SUBJECT}"
   4. push the code            git push
-  5. push the tag             git push origin "v$NEW"     ${y}# this publishes to npm${x}
-  6. deploy the site          git -C "$SITE" push
+  5. deploy the site FIRST    git -C "$SITE" push          ${y}# the tag gate reads the pushed site${x}
+  6. push the tag             git push origin "v$NEW"      ${y}# this publishes to npm${x}
   7. verify all three agree   scripts/verify-release.sh $NEW
 
 NEXT

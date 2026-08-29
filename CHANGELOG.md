@@ -4,6 +4,77 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.32.0] · 2026-08-30
+
+### Added
+
+- Two skills for the moments the brain kept missing. `clarify` fires when an answer did not
+  land ("I did not follow that", "say it simply") and re-pitches it in plain words or as a
+  picture, because a shorter version of an unclear thing is still unclear. `deepen` surveys an
+  area, ranks where the design actually costs something, and hands the chosen one to the
+  `refactorer`. It refuses any candidate whose cost cannot be named as a future event, so
+  taste never reaches the list.
+- `engineering/core/clarity.md`, the register for anything written for a reader: what to do
+  when prose cannot carry the shape, and which drawing to reach for instead.
+- A live routing eval for Cursor and one for Codex, so the claim that the brain reaches those
+  two tools rests on a measurement rather than on a file being in the right place. Each one
+  installs into a scratch project, asks real questions through the real CLI, and runs the same
+  cases against a control. Both skip rather than fail where the tool or the account cannot run
+  them, and a skipped check blocks a release unless the skip is accepted on the record.
+- An instruction gate. Directives in the brain's own files are held to one action and a word
+  count, and hedged wording fails, because an instruction nobody can follow exactly is a
+  suggestion wearing an imperative.
+- Third-party skills the user installed elsewhere are now reachable through MasterMind on all
+  three tools, without being mixed into ours. Where a name collides the foreign skill keeps the
+  plain name and ours answers to `mastermind-<name>`, so a pack the user chose is never
+  silently shadowed by us.
+- A private workspace that is never committed or published, and per-project `prefs.md` and
+  `brief.md` seeded at install.
+- The reviewer now looks for the change that weakens what would have caught it: an assertion
+  rewritten to match new behaviour, a test deleted or skipped, a threshold moved, a gate that
+  passes for a new reason. Each has to be argued in the diff, and silence is the finding. It
+  also asks for the evidence a change actually ran, matches review depth to blast radius,
+  treats a diff too large to hold in one head as a finding in itself, and reads instructions
+  aimed at a future agent as a payload rather than as prose.
+
+### Changed
+
+- The closing verdict is said in plain words now: **Done**, **Done, not fully checked**,
+  **Not done**, **Wrong thing**, each with its evidence and a line that says what was not
+  checked. `ship / needs-work / redirect` read like a rubric and told the user nothing about
+  what had actually been proven.
+- The release runs in one order now: the site goes out before the tag, so the page and the
+  published version never disagree in public, even briefly.
+
+### Fixed
+
+- The marketplace listing people install from advertised 22 skills while the plugin shipped
+  24, and the `help` menu, whose whole job is showing that menu, named neither of the two new
+  ones. The integrity check proved every advertised name exists on disk but never that every
+  shipped skill is advertised, so the drift could only ever be found by hand. It now runs both
+  directions, and the menus that claim to be complete are held to it.
+- A routing eval reported zero because its auth probe ran under a different home directory
+  than the calls it certified, so every measured call died on authentication and the failure
+  was swallowed into an empty string. The probe and the measurement now share one environment,
+  in both evals. A zero is the shape a broken harness makes, so it is diagnosed before it is
+  published.
+- Attribution no longer gates those evals. A control that keeps the brain's files but drops the
+  rule wiring still answers like the treatment, because the agent simply reads them, so a
+  delta of zero was failing a brain that demonstrably works.
+- The installer could be steered outside the project through a symlinked path. Containment
+  now resolves the nearest existing ancestor rather than trusting a path that does not exist
+  yet, and the global link refuses any live brain, whether it is a directory or a link.
+- In a monorepo the CLI took the first directory holding a `package.json` as the project, so
+  a package inside a repo answered for the whole thing. The git root wins now.
+- A skill written by someone else could carry its description in a YAML block scalar, which
+  the reader treated as an empty line and skipped, so the skill was invisible to routing.
+- The publish workflow installed the site with `npm ci` on a pnpm-only lockfile, which would
+  have failed the first time it ran against the site.
+- The release tag lost its subject every time. It was read from the third line of the
+  changelog section, but the range it was read from ended at the blank line directly under
+  the heading, so the line never existed and the empty result was substituted away in
+  silence. It now takes the section's first bullet.
+
 ## [0.31.10] · 2026-08-11
 
 ### Changed

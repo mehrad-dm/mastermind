@@ -18,6 +18,8 @@ const PARAPHRASE = [
   ['write docs for our internal package so people stop misusing it', 'explain'],
   ['I am pausing this, make it survive the next session', 'handoff'],
   ['what can you do? show me the options', 'help'],
+  ['I did not follow that, can you put it more simply?', 'clarify'],
+  ['it takes five files to add one field here, where should we clean up?', 'deepen'],
   ['improve this prompt before I send it to the model', 'prompt'],
   ['make it match our team conventions, you keep writing it wrong', 'signature'],
   ['I do not know if this approach will even work, try something quick', 'prototype'],

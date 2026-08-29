@@ -63,4 +63,6 @@ correctness-with-citation → same, tagged for the `code-reviewer` audit. Fronte
 - **One incident is not a pattern**: respect the promotion bar.
 - **Let tooling own what tooling enforces**: if a lint rule/type/template guarantees it, strengthen that; keep only the "why."
 - **`code-reviewer` finds defects; this captures style.** Keep the layers separate.
-- **A named private colleague's style stays here (quarantine-gated), never in `persona`.** `persona` is for public figures with a documented body of work; a real coworker's style is Mode-A material and never leaves the quarantine.
+- **A named private colleague's style stays here, never in `persona`.** `persona` is for public
+  figures with a documented body of work. A real coworker's style is Mode-A material: quarantine-gated,
+  and it never leaves.

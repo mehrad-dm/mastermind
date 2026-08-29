@@ -33,6 +33,8 @@ const EXTRA = [
   { prompt: 'sharpen this prompt before I send it: summarize customer feedback by theme', expected: ['prompt'] },
   { prompt: 'summarize the customer feedback in this repo by theme and list the top 3 complaints', forbidden: ['prompt'] },
   { prompt: 'what can you actually do for me here?', expected: ['help'] },
+  { prompt: 'I did not follow any of that, say it simply', expected: ['clarify'] },
+  { prompt: 'this area keeps getting harder to change, where is the design costing us most?', expected: ['deepen'] },
 ]
 const ONLY = process.env.ONLY
 const ALL = FULL ? [...CORE, ...EXTRA] : CORE

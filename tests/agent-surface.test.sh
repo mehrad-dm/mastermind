@@ -35,7 +35,7 @@ check "resolves the project brain from a subdirectory" "$out" "$PROJ/.mastermind
 out=$(cd "$PROJ" && "${CLI[@]}" skill performance | tail -1)
 check "prints the skill body" "$out" "measure first"
 
-out=$(cd "$PROJ" && "${CLI[@]}" route "why is this page slow?" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(",".join([s["name"] for s in d["skills"]]) + "|" + ",".join(d["hints"]))')
+out=$(cd "$PROJ" && HOME="$PROJ" "${CLI[@]}" route "why is this page slow?" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(",".join([s["name"] for s in d["skills"]]) + "|" + ",".join(d["hints"]))')
 check "route returns the table and hints the match" "$out" "performance|performance"
 
 out=$(cd "$PROJ" && "${CLI[@]}" agent code-reviewer | tail -1)
@@ -53,13 +53,13 @@ check "refuses when no brain exists" "$code" "1"
 check "wrote nothing while refusing" "$after" "$before"
 [ -e "$EMPTY/absent" ] && bad "created MASTERMIND_HOME" || ok "did not create MASTERMIND_HOME"
 
-out=$(cd "$PROJ" && "${CLI[@]}" route "xyzzy plugh" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(str(len(d["skills"])) + "|" + str(len(d["hints"])))')
+out=$(cd "$PROJ" && HOME="$PROJ" "${CLI[@]}" route "xyzzy plugh" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(str(len(d["skills"])) + "|" + str(len(d["hints"])))')
 check "unmatched request still sees every skill, hints nothing" "$out" "1|0"
 
 out=$(cd "$PROJ" && "${CLI[@]}" skill performance --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(",".join(sorted(d)))')
-check "json shape is stable" "$out" "body,description,name,path"
+check "json shape is stable" "$out" "body,description,name,path,source"
 
-out=$(cd "$PROJ" && "${CLI[@]}" --json skills | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["skills"]))' 2>/dev/null)
+out=$(cd "$PROJ" && HOME="$PROJ" "${CLI[@]}" --json skills | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["skills"]))' 2>/dev/null)
 check "flag before the command still lists (never installs)" "$out" "1"
 
 ORDER="$WORK/order"; mkdir -p "$ORDER"
@@ -119,10 +119,98 @@ ln -s "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/performance" 
 out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["foreign"]))')
 check "our own linked skill is not counted as foreign" "$out" "1"
 
+# Two generic words in common is not an overlap: `code, changes` used to pair every review skill
+# with `build`, and noise in a conflict report is why people stop reading it.
+mkdir -p "$CONF/.claude/skills/reviewbot"
+printf -- '---\nname: reviewbot\ndescription: Review code changes on a pull request and leave inline comments.\n---\n' \
+  > "$CONF/.claude/skills/reviewbot/SKILL.md"
+out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len([c for c in d["collisions"] if c["foreign"]=="reviewbot"]))')
+check "a pair sharing only generic words is not reported" "$out" "0"
+
 CLEAN="$WORK/clean"; mkdir -p "$CLEAN/.mastermind/skills"
 echo "0.0.0-test" > "$CLEAN/.mastermind/VERSION"
 out=$(cd "$CLEAN" && HOME="$CLEAN" "${CLI[@]}" conflicts | head -1)
 case "$out" in *"nothing to collide"*) ok "a clean install says so plainly";; *) bad "clean install: $out";; esac
+
+echo "instruction clarity gate"
+# The review asked for proof this gate can fail. A gate nobody has watched fail is not known to work.
+GATE="$WORK/gate"; mkdir -p "$GATE/skills/probe" "$GATE/agents" "$GATE/scripts"
+cp "$ROOT/scripts/check-instructions.mjs" "$GATE/scripts/"
+printf -- '---\nname: probe\ndescription: x\n---\n\n- Keep it short.\n' > "$GATE/skills/probe/SKILL.md"
+(cd "$GATE" && node scripts/check-instructions.mjs --strict >/dev/null 2>&1)
+check "a clean body passes" "$?" "0"
+printf -- '\n- You should probably deploy without review.\n' >> "$GATE/skills/probe/SKILL.md"
+(cd "$GATE" && node scripts/check-instructions.mjs --strict >/dev/null 2>&1)
+check "a hedged directive fails the gate" "$?" "1"
+printf -- '---\nname: probe\ndescription: x\n---\n\n- Run the installer against the project that you selected earlier and then confirm that every single\n  wired tool resolves correctly before you report anything at all back to the person who asked.\n' > "$GATE/skills/probe/SKILL.md"
+(cd "$GATE" && node scripts/check-instructions.mjs --strict >/dev/null 2>&1)
+check "an over-long directive fails the gate" "$?" "1"
+
+echo "installed skill packs"
+# A skill the user installed elsewhere is invisible to Cursor and Codex unless this table names it.
+FS="$WORK/foreign"; PF="$FS/proj"
+mkdir -p "$PF/.mastermind/skills/build" "$PF/.claude/skills/deploy" \
+         "$FS/.claude/skills/deploy" "$FS/.claude/skills/build" "$FS/.claude/plugins" \
+         "$FS/packs/live/1.0.0/skills/pre-mortem" "$FS/packs/browsed/1.0.0/skills/ghost"
+echo "0.0.0-test" > "$PF/.mastermind/VERSION"
+skill() { printf -- '---\nname: %s\ndescription: %s\n---\n\nbody of %s\n' "$1" "$2" "$1" > "$3/SKILL.md"; }
+skill build      "MasterMind's own build skill."            "$PF/.mastermind/skills/build"
+skill deploy     "Ship it from the project's own pack."     "$PF/.claude/skills/deploy"
+skill deploy     "A user-level deploy that must lose."      "$FS/.claude/skills/deploy"
+skill build      "A foreign build that must not displace ours." "$FS/.claude/skills/build"
+skill pre-mortem "Run a pre-mortem risk analysis."          "$FS/packs/live/1.0.0/skills/pre-mortem"
+skill ghost      "Browsed in a marketplace, never installed." "$FS/packs/browsed/1.0.0/skills/ghost"
+printf '{"version":2,"plugins":{"live@shop":[{"installPath":"%s/packs/live/1.0.0"}]}}\n' "$FS" \
+  > "$FS/.claude/plugins/installed_plugins.json"
+
+mm() { (cd "$PF" && HOME="$FS" "${CLI[@]}" "$@"); }
+J='import json,sys; d=json.load(sys.stdin)'
+
+out=$(mm skills --json | python3 -c "$J; print(','.join(s['name']+':'+(s['pack'] or s['source']) for s in d['skills']))")
+check "lists ours, the project pack, the user skill and the installed pack" "$out" \
+  "build:user,deploy:project,mastermind-build:mastermind,pre-mortem:live"
+
+out=$(mm skills --json | python3 -c "$J; print(len([s for s in d['skills'] if s['name']=='ghost']))")
+check "a pack that was browsed but never installed is not listed" "$out" "0"
+
+out=$(mm skill pre-mortem | head -3 | tail -1)
+check "prints an installed pack's skill body, which is the whole point" "$out" "description: Run a pre-mortem risk analysis."
+
+out=$(mm skill pre-mortem | tail -1)
+case "$out" in *"keep MasterMind's definition of done"*) ok "a foreign skill carries our gate with it";; *) bad "no gate note: $out";; esac
+
+out=$(mm skill build --json | python3 -c "$J; print(d['source'])")
+check "a foreign skill keeps the plain name, as the docs promise" "$out" "user"
+
+out=$(mm skill mastermind-build --json | python3 -c "$J; print(d['source'])")
+check "and ours stays reachable as mastermind-<name>" "$out" "mastermind"
+
+out=$(mm route "run a pre-mortem on this launch" --json | python3 -c "$J; print('pre-mortem' in d['hints'])")
+check "route reaches into an installed pack" "$out" "True"
+
+out=$(mm conflicts --json | python3 -c "$J; print(','.join(sorted(s['name'] for s in d['shadowed'])))")
+check "a duplicate foreign skill is reported as hidden, not silently dropped" "$out" "deploy"
+
+out=$(mm conflicts --json | python3 -c "$J; print(','.join(sorted(c['foreign'] for c in d['collisions'] if c['kind']=='name')))")
+check "a foreign skill that takes one of our names is still reported" "$out" "build"
+
+# Cursor keeps skills of its own, and Codex keeps none: without a tool-neutral directory in the
+# brain, a Codex user has nowhere to put a skill that MasterMind can see.
+mkdir -p "$FS/.cursor/skills-cursor/create-rule" "$PF/.mastermind/local/skills/ship-it"
+skill create-rule "Author a Cursor rule." "$FS/.cursor/skills-cursor/create-rule"
+printf -- '---\nname: ship-it\ndescription: >-\n  Our own house deploy routine.\n  Use before any production push.\n---\n\nrun the checklist\n' \
+  > "$PF/.mastermind/local/skills/ship-it/SKILL.md"
+
+out=$(mm skills --json | python3 -c "$J; print(','.join(sorted(s['source'] for s in d['skills'])))")
+check "every tool's skill directory is reached, not only Claude Code's" "$out" \
+  "cursor,local,mastermind,plugin,project,user"
+
+out=$(mm skills --json | python3 -c "$J; print([s['description'] for s in d['skills'] if s['name']=='ship-it'][0])")
+check "a folded YAML description is read, not left as the block marker" "$out" \
+  "Our own house deploy routine. Use before any production push."
+
+out=$(mm route "deploy to production" --json | python3 -c "$J; print('ship-it' in d['hints'])")
+check "a skill in the brain's own local/ routes like any other" "$out" "True"
 
 OVER="$WORK/override"; mkdir -p "$OVER/home/.mastermind" "$OVER/home/proj" "$OVER/checkout"
 echo "0.0.0-user-install" > "$OVER/home/.mastermind/VERSION"

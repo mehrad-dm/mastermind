@@ -24,6 +24,15 @@ a foundation gets the full loop. Match the ceremony to what the task warrants.
 2. **Design** (non-trivial only): invoke the **`architect`** agent to produce the blueprint:
    module/component boundaries + interfaces, state model, data flow, key types, edge-case list. For a
    multi-file or unfamiliar change, write the design/spec down before coding. Skip for a clear one-file fix.
+   **Cut the work into thin vertical slices, never horizontal layers.** A slice crosses every layer
+   and is visible when it lands. Left alone a model builds horizontally, all the data layer, then all
+   the API, then all the UI, which is faster to write and hides every integration failure until the
+   end. The rate of feedback is the ceiling on quality, so the slice exists to move that failure
+   forward.
+   **Show the shape before you write it, not in prose.** The types, the signatures, the call stack, the
+   file layout: the forms in `~/.mastermind/engineering/core/clarity.md`. This is the internal detail
+   that never reaches an architecture document and that a model still gets wrong, and it is far cheaper
+   to correct a call tree than the code under it. One screen, then build.
 
 3. **Decide the stack**: apply the active field's `stack-defaults.md`. Choose the simplest thing that
    fully works; deviate only for a stated reason. Consult `mentors.md` if a call is contested.

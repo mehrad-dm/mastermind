@@ -24,6 +24,8 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 | [`qa`](./qa/SKILL.md) | …finish something / want it tested. Prove it works end-to-end; tests / TDD only if you say so (offered after a build). |
 | [`report`](./report/SKILL.md) | …ask for a report / write-up of a cycle (or automatically at the end of build/qa, if you turned it on). A shareable record: Markdown default, HTML optional. Opt-in, off by default. |
 | [`prototype`](./prototype/SKILL.md) | …face a risky unknown. A fast throwaway prototype to learn, then rebuild properly. |
+| [`clarify`](./clarify/SKILL.md) | …did not follow the last answer. Re-pitches it in plain words or as a picture, and records where MasterMind wrote badly. |
+| [`deepen`](./deepen/SKILL.md) | …feel the design is hurting but not what to fix. Surveys an area, ranks candidates by the cost each will cause, you pick one. |
 | [`double-check`](./double-check/SKILL.md) | …are about to claim something works, or a review came back suspiciously clean. Interrogates the claim *before* handoff: the reviewer never sees your conclusion. |
 | [`deprecate`](./deprecate/SKILL.md) | …need to remove, migrate, or retire something. Expand → migrate → contract, and proof that nothing still reads it. |
 

@@ -19,6 +19,18 @@ engineering/fields/*/*-coding-patterns/
 # unrelated skills/lab/ skill directory.
 /lab/
 
+# ── Private: this repo's own working space. NEVER committed, never released. ──
+# Handoffs, session notes, plans, scratch. Distinct from lab/, which is for raw
+# confidential INPUT that gets genericized before anything leaves it; nothing in
+# private/ is ever meant to ship in any form. HANDOFF.md is here too: it is where
+# the handoff skill writes by default.
+/private/
+/HANDOFF.md
+
+# Skills you write or install into the brain yourself. Outside skills/ on purpose: a user skill
+# that collided with a future upstream one made `git pull` abort and froze the brain.
+/local/
+
 # Foglamp scan: commit .foglamp/scan.json (public architecture data, no secrets);
 # NEVER commit the lock file (holds the secret editToken). The token lives as the
 # GitHub Actions secret FOGLAMP_EDIT_TOKEN, used by .github/workflows/foglamp.yml.
@@ -34,3 +46,6 @@ __pycache__/
 # eval raw artifacts: replies, judge outputs, workspaces, results live in SUMMARY.json + RESULTS.md
 evals/runs/*/raw/
 evals/runs/*/raw-work/
+
+# Local Remotion video workspace and generated media.
+/video/
