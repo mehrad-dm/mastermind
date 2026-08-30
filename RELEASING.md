@@ -13,6 +13,16 @@ A skipped test that exits 0. A doctor that infers state from artifacts that were
 gate that passes because the site is not checked out. A verifier whose answer inverts on long
 input. Each of those shipped, each looked green.
 
+The second rule, which cost a version number:
+
+> **A check that only ever runs in one environment has not been tested, it has been rehearsed.**
+
+v0.32.0 passed all 22 local gates and could not publish. One script resolved the website as a
+folder beside this repo, which is true on a developer's machine and false in every release run,
+where the site is checked out under another name. It had never once run in the layout that
+matters. When a check reads anything outside this repository, run it where the release runs it,
+or accept that a green result says nothing about that path.
+
 ---
 
 ## Day to day
