@@ -117,12 +117,43 @@ is "the project actually got wired" "$(ls "$P/.claude/skills" 2>/dev/null | wc -
 is "~/.mastermind is still the real clone" "$([ -d "$H/.mastermind" ] && [ ! -L "$H/.mastermind" ] && echo dir)" "dir"
 is "no link written inside the brain" "$([ -e "$H/.mastermind/mastermind" ] && echo present || echo gone)" "gone"
 
+echo "── a route whose parent links out of the project is refused, not followed"
+ESC="$TMP_REAL/escape"; mkdir -p "$ESC/outside"
+P=$(proj routeescape); mkdir -p "$P/apps/web"
+ln -s "$ESC/outside" "$P/apps/web/.cursor"
+H5="$TMP_REAL/eschome"; mkdir -p "$H5"
+(cd "$P" && HOME="$H5" "$INSTALL" cursor >/dev/null 2>&1) || true
+F="$P/.mastermind/engineering/fields/web"; mkdir -p "$F"
+for f in field.md audit-rules.md stack-defaults.md; do printf -- '---\nroute_when: web work\n---\n\n# x\n' > "$F/$f"; done
+printf '# Active field\n\n## Current field: **web**\n- **Level:** 1.\n- **Field pack:** `engineering/fields/web/`\n' > "$P/.mastermind/engineering/active-field.md"
+printf 'apps/web   web\n' > "$P/.mastermind/routes.map"
+out=$( (cd "$P" && HOME="$H5" "$INSTALL" cursor 2>&1) || true )
+is "nothing was written outside the project" "$(find "$ESC/outside" -type f 2>/dev/null | wc -l | tr -d ' ')" "0"
+is "and it said why" "$(printf '%s' "$out" | grep -c 'resolves outside the project')" "1"
+
 echo "── a DIFFERENT brain already at ~/.mastermind is refused, not written into"
 H2="$TMP_REAL/otherbrain"; mkdir -p "$H2/.mastermind/skills"
 P=$(proj otherwired)
 out=$( (cd "$P" && HOME="$H2" "$INSTALL" claude 2>&1) || true )
 is "refused with a clear reason" "$(printf '%s' "$out" | grep -c 'different brain')" "1"
 is "nothing written inside their clone" "$([ -e "$H2/.mastermind/mastermind" ] && echo present || echo gone)" "gone"
+
+echo "── a ~/.mastermind LINK to a different brain is refused too, not silently redirected"
+H3="$TMP_REAL/linkedbrain"; mkdir -p "$H3" "$TMP_REAL/theirclone/skills"
+ln -sfn "$TMP_REAL/theirclone" "$H3/.mastermind"
+P=$(proj linkwired)
+out=$( (cd "$P" && HOME="$H3" "$INSTALL" claude 2>&1) || true )
+is "the link is refused" "$(printf '%s' "$out" | grep -c 'different brain')" "1"
+is "and it still points where it did" "$(readlink "$H3/.mastermind")" "$TMP_REAL/theirclone"
+is "the message says how to repoint it deliberately" "$(printf '%s' "$out" | grep -c 'ln -sfn')" "1"
+
+echo "── but a link left dangling by a deleted clone is safe to reclaim"
+H4="$TMP_REAL/danglinghome"; mkdir -p "$H4"
+ln -sfn "$TMP_REAL/deleted-clone" "$H4/.mastermind"
+P=$(proj danglewired)
+(cd "$P" && HOME="$H4" "$INSTALL" claude >/dev/null 2>&1); rc=$?
+is "a dangling link installs cleanly" "$rc" "0"
+is "and now points at this clone" "$(readlink "$H4/.mastermind")" "$REPO"
 
 echo "── the isolated brain can run the commands init tells the model to run"
 P=$(proj isoscripts); run "$P" claude >/dev/null 2>&1
@@ -837,7 +868,9 @@ yes_ "and wires to it" "$(readlink "$P/AGENTS.md" | grep -o '\.mastermind/AGENTS
 
 echo "── --shared opts back into the single shared clone"
 P=$(proj sharedreg); run "$P" --shared agents >/dev/null 2>&1
-is "no project brain created" "$([ -e "$P/.mastermind" ] && echo created || echo none)" "none"
+is "no engine copied into the project" \
+   "$([ -e "$P/.mastermind/VERSION" ] || [ -d "$P/.mastermind/skills" ] && echo engine || echo none)" "none"
+is "but project state is seeded" "$([ -f "$P/.mastermind/brief.md" ] && echo yes || echo no)" "yes"
 is "AGENTS.md targets the clone" "$(readlink "$P/AGENTS.md")" "$REPO/AGENTS.md"
 yes_ "--check calls it healthy"  "$(run "$P" --check --shared agents 2>&1 | grep -o 'healthy here')"
 # `codex` was the old name for this exact target: the alias keeps old commands working.

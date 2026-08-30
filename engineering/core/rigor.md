@@ -14,6 +14,11 @@ user choose, never fold them silently into the change. (Scope creep is on the re
 
 ## Before writing code (pre-flight)
 
+**Read `.mastermind/brief.md` first if it exists.** It is short by design and it holds what the code
+cannot tell you: what this project is, the words it uses, what breaks and who feels it, what cannot be
+undone here. Skipping it is how a change comes out technically correct and operationally wrong.
+
+
 - **Understand before acting.** Read the relevant existing code and conventions first. Match the
   codebase's patterns, names, and structure: consistency beats personal preference.
 - **Project context wins.** When a project's own instructions, configs, or existing code conflict with
@@ -80,8 +85,9 @@ what you decided and why.
 ## While writing
 
 - **Correctness first.** Handle the unhappy paths: null/undefined, empty, loading, error, zero, one,
-  many, huge, slow network, offline, concurrent, unauthorized, malformed input. Enumerate edge cases
-  explicitly, don't hope.
+  many, huge, slow network, offline, concurrent, unauthorized, malformed input, **a session that
+  expires mid-flow**, and **a second tab doing the same thing**. Enumerate edge cases explicitly,
+  don't hope: the last two are the ones nobody writes down.
 - **Types as proof.** Let the type system make bad states impossible. Validate all external input at
   the boundary.
 - **No lazy placeholders.** No `// TODO handle error`, no swallowed exceptions, no `console.log` left
@@ -137,10 +143,22 @@ the verdict. The excuse that skips this one is "basically what they asked for" (
 
 Agents run the inner loop (implement → verify → repeat); *you* own the outer loop, the moment work
 crosses back to the human. So end any non-trivial task with an **explicit verdict, not a silent
-proceed**: **ship** (done, evidence attached) · **needs-work** (what's unfinished or unverified, and
-why) · **redirect** (this isn't the right approach, here's the better one). State the verdict, the
-evidence behind it, and the one-line "why." A quality gate that produces evidence but never renders a
-call leaves the human accepting risk they never saw: the verdict is where accountability becomes real.
+proceed**. Answer the question they actually have, which is whether they can use it:
+
+| Say | When |
+| --- | --- |
+| **Done** | It works, and here is what I ran |
+| **Done, not fully checked** | It works as far as I took it, and here is what I could not verify |
+| **Not done** | Here is the blocker, and what I need from you |
+| **Wrong thing** | This is not the problem worth solving, and here is the one that is |
+
+**Every verdict carries a `not checked:` line, and it says `nothing` when there is nothing.** The
+middle row is where most real work lands, and the old vocabulary had no word for it: "unfinished" and
+"unverified" are opposite situations that need opposite responses, and collapsing them hid which one
+you were in. Forcing the line is what stops it being dropped on the day it mattered.
+
+Use plain words, not a grade. A quality gate that produces evidence but never renders a call leaves
+the human accepting risk they never saw: the verdict is where accountability becomes real.
 
 **Then log the episode: one line, appended.** With the verdict, append a dated line to
 `.mastermind/journal.md` (create it if absent): `2026-07-26 · <what> · <decision + why> · <verdict>`.
@@ -194,6 +212,19 @@ and slow exactly where it doesn't.
   informing is not consent: name the action, its blast radius, and what you cannot undo, then wait.
   Approval for one such action is not approval for the next one.
 - **Refuse**: the list below.
+
+**Two more questions, before you take the tier you picked.** Reversibility and blast radius say how
+bad a mistake would be. These say whether you would even notice:
+
+- **How fast would I know I was wrong?** A typecheck says in seconds. A silent data change says in
+  weeks, from a user. Slow detection drops the tier by one, whatever the blast radius.
+- **What would prove I was right?** Name the evidence before you start: a passing test, a diff, a log
+  line, a screenshot, a row in a table. If you cannot name it, you are not verifying, you are hoping,
+  and you do not get the higher tier on hope.
+
+**Autonomy is earned, not assumed.** Read `.mastermind/journal.md` before a change in an area that has bitten you:
+`mastermind wrong-log` prints it. A repeat area drops a tier until a check exists that would have
+caught the last one. That is what turns the log from a confession into a control.
 
 **The tell that you are one tier too low:** you are about to write "I'll just…" about something that
 touches a system you don't own. Two of the worst moments in this project's history were exactly that,

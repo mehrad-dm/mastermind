@@ -25,7 +25,7 @@ thumbs-up before fanning out across the package.
 
 1. **Discover the public units.** Read the package's public entry (`index.ts`/exports) for the real list,
    components, exported functions, hooks, services, classes. Note any existing docs' style and **match it**.
-2. **Read the source of truth, then write.** For each unit: the implementation, its types, its
+2. **Never write a line you have not read the source for.** For each unit: the implementation, its types, its
    variants/options, its tests/stories, and **one real usage** in the codebase. Verify every claim against
    the code (never document a guess; mark "unverified" or omit).
 3. **Write a colocated doc** (a `README.md`/doc beside the unit) with a consistent template:

@@ -31,7 +31,7 @@ This applies it to a *claim*, not only to a diff.
    > summarize: report what fails the contract, or state plainly that you could not find anything
    > after thorough examination.
 
-   **Hand the artifact over via a file or stdin, never interpolated into a shell-quoted argument**,
+   **Hand the artifact over via a file or stdin.** Never interpolate it into a shell-quoted argument:
    code and prompts carry backticks, `$(...)`, and quotes that truncate the message or execute in your
    shell. A clipped artifact reviews clean for the worst reason: the flaw didn't survive the paste.
 

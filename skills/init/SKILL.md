@@ -37,10 +37,17 @@ like 20 seconds, then you're working.
      narrow exception to "skip the directory listing" below: a full tree is re-derivable noise, but
      these few pointers are what stop every future task from re-running discovery. Then point
      `active-field.md` at it and regenerate the router **from the brain you are installed into**:
-     `node .mastermind/scripts/build-router.mjs` (per-project, the default), or
-     `node ~/.mastermind/scripts/build-router.mjs` with `--shared`. A bare `scripts/…` path is
-     the project's own directory and fails with MODULE_NOT_FOUND.
-3. **Respect the project**: match its conventions and keep the stack it already chose
+     `node .mastermind/scripts/build-router.mjs` for a per-project brain, the default. Under
+     `--shared` the brain is the one in your home directory, so run that same script from there.
+     A bare `scripts/…` path is the project's own directory and fails with MODULE_NOT_FOUND.
+3. **Fill the project brief** (`.mastermind/brief.md`). An isolated install seeds it; under
+   `--shared` there is no project brain, so create the file yourself at that path. The field pack holds the
+   stack; the brief holds *this* project: what it is, the words it uses for its own ideas, what breaks
+   and who feels it, what cannot be undone here, and how it ships. Most of it comes from step 1. Ask
+   the user only for what the code cannot tell you, which is usually who feels an outage and which
+   actions are irreversible. **Keep it under about 40 lines**: it is read every session. This is what
+   stops a change that is technically correct and operationally wrong.
+4. **Respect the project**: match its conventions and keep the stack it already chose
    (`stack-defaults.md`: the project wins).
 
 ## Path B: greenfield (empty folder / nothing built yet)
@@ -105,7 +112,8 @@ After the ready report, offer these once: both skippable, both default **off**:
 > *(1) a short written **report** at the end of each build/QA cycle? (markdown / html)*
 > *(2) **plan-first**: on bigger tasks, should I show the plan and wait for your OK before editing?"*
 
-Record the answers in **`.mastermind/prefs.md`** (create it), one line each. Both preferences are defined by
+Record the answers in **`.mastermind/prefs.md`**, seeded by an isolated install and created by you
+under `--shared`, one line each. Both preferences are defined by
 their implementations, **`skills/build/SKILL.md`** (plan-first gate) and **`skills/report/SKILL.md`**
 (`cycle-report` values); read those for the exact keys and accepted values rather than restating them here.
 Ask once and let it go: a shrug or silence defaults both `off` and you move straight on. They can change

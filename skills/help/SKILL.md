@@ -10,7 +10,7 @@ lead with the one thing that matters most, then the tables. Keep it scannable. H
 
 ```
 🧠  MasterMind: a genius-builder brain for your AI
-    22 skills · 4 agents · Claude Code · Cursor · Codex
+    24 skills · 4 agents · Claude Code · Cursor · Codex
 ```
 
 ## Lead with what fits *this* project
@@ -61,6 +61,8 @@ of them by hand.
 | **deprecate** | remove/migrate/retire safely: expand → migrate → contract | deleting a feature, column, flag, or endpoint | *"can we delete this?"* |
 | **roadmap** | a durable decision map for multi-week work | work spanning many sessions; "why did we decide X?" | *"map this project"* |
 | **lint** | check MasterMind's own files for bloat, repeated rules, contradictions | before a release, or the brain feels bloated | *"lint the brain"* |
+| **clarify** | re-pitch an answer that did not land, in plain words or as a picture | you say "I did not follow that", "simpler", "you lost me" | *"say that simply"* |
+| **deepen** | survey an area and rank where the design costs most, you pick one | "this is getting messy", "why is this so hard to change?" | *"where is this hurting?"* |
 | **handoff** | write a concise handoff so work survives a reset/teammate | before a long-task `/clear`, pausing, or handing off | *"write a handoff"* |
 | **help** | show this menu, what every skill/agent does and when it fires | you ask "what can you do?" / "help" / "how do I use this" | *"what can you do?"* |
 

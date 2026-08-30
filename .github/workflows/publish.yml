@@ -43,6 +43,8 @@ jobs:
       - run: bash tests/install.test.sh
       - run: bash tests/agent-surface.test.sh
       - run: node scripts/check-integrity.mjs
+      - run: node scripts/check-instructions.mjs --strict
+      - run: node evals/agent-surface-cost.mjs --strict
       - run: node scripts/build-router.mjs --check
       - run: node scripts/check-links.mjs
       - run: node scripts/lint-brain.mjs --strict
@@ -72,6 +74,24 @@ jobs:
         env:
           MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
         run: node scripts/check-prose.mjs
+      - name: the site agrees with the repo, and still builds
+        if: steps.sitesrc.outcome == 'success'
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: |
+          set -euo pipefail
+          SITE="$GITHUB_WORKSPACE/site-checkout"
+          WANT="$(cat VERSION)"
+          GOT="$(sed -n "s/.*version:[[:space:]]*'\(v[0-9.]*\)'.*/\1/p" "$SITE/src/site.config.ts" | head -1)"
+          [ -n "$GOT" ] || { echo "site.config.ts declares no version"; exit 1; }
+          [ "$GOT" = "v$WANT" ] || { echo "site says $GOT, repo says v$WANT"; exit 1; }
+          S=$(find skills -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+          A=$(find agents -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+          BAD="$(grep -rnoE '[0-9]+ (skills|agents)' "$SITE/src" | grep -vE ":${S} skills\$|:${A} agents\$" || true)"
+          [ -z "$BAD" ] || { echo "the site states a count the repo does not:"; printf '%s\n' "$BAD"; exit 1; }
+          node scripts/sync-evals.mjs --check
+          corepack enable
+          ( cd "$SITE" && corepack prepare --activate && pnpm install --frozen-lockfile && pnpm run build )
       - name: refuse to release without checking the library
         if: steps.sitesrc.outcome != 'success'
         run: |

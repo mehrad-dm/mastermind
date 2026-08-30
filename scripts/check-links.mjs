@@ -13,7 +13,7 @@ const UA = 'Mozilla/5.0 (compatible; MasterMind-linkcheck/1.0; +https://mastermi
 const TLDS = 'com|dev|org|io|net|guru|gg|es|xyz'
 const SKIP = ['/ui-ux-pro-max/', '/lab/', '/_', 'ROUTER.md']   // /_ skips all _-prefixed scaffolding
 
-const EXCLUDE_DIRS = new Set(['.git', '.github', 'node_modules', '.eval-run', 'lab'])
+const EXCLUDE_DIRS = new Set(['.git', '.github', 'node_modules', '.eval-run', 'lab', 'private', 'local'])
 const EXCLUDE_FILES = new Set(['CHANGELOG.md'])
 
 // --- collect curated markdown files ------------------------------------------
@@ -78,8 +78,8 @@ async function check(url) {
     return { url, kind: 'DEAD', status: r.status }
   } catch (e) {
     const msg = String(e?.name === 'TimeoutError' ? 'timeout' : e?.cause?.code || e?.message || e)
-    // DNS / connection failures are genuinely dead; timeouts are treated as transient warnings.
-    if (msg === 'timeout') return { url, kind: 'BLOCKED', status: 'timeout' }
+    const TRANSIENT = /^(timeout|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|EPIPE|UND_ERR_CONNECT_TIMEOUT|UND_ERR_SOCKET|CERT_|ERR_TLS|DEPTH_ZERO)/
+    if (TRANSIENT.test(msg)) return { url, kind: 'BLOCKED', status: msg }
     return { url, kind: 'DEAD', status: msg }
   }
 }

@@ -28,7 +28,8 @@ The `init` skill sets this once, at the first task. The user can change it anyti
 
 ## What goes in it: signal, not a log
 
-1. **Title + verdict**: ship / needs-work / redirect, one line why.
+1. **Title + verdict**: Done · Done, not fully checked · Not done · Wrong thing, one line why,
+   and the `not checked:` line.
 2. **What changed**: files touched (path + one-line what), grouped by area.
 3. **Key decisions**: the non-obvious calls and the one-line reason (not what the model already knows).
 4. **How it was verified**: what was actually run/observed end-to-end, and what it produced.

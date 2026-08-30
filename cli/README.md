@@ -19,7 +19,7 @@ npx mastermind-brain uninstall  # clean removal
 
 ## Commands an agent calls for itself
 
-Cursor and Codex have no native skill mechanism, so an agent there either pastes the whole
+MasterMind's skills are not native to Cursor or Codex, so an agent there either pastes the whole
 library into context or guesses a path. These lookups answer from whichever brain the current
 directory belongs to: the project's own `.mastermind/` first, then the shared clone:
 

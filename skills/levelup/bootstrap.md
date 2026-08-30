@@ -22,5 +22,6 @@ high bar for their real stack, from one command. MasterMind ships no field, only
 5. **Keep the pack routable.** Every pack file except `field.md` needs `route_when` frontmatter, and the
    pack needs `field.md` + `audit-rules.md`, or the router skips it silently. Verify with
    `node .mastermind/scripts/check-integrity.mjs`, then regenerate with
-   `node .mastermind/scripts/build-router.mjs`. (With `--shared`, use `~/.mastermind/scripts/…`.
-   A bare `scripts/…` is the project's own directory and fails with MODULE_NOT_FOUND.)
+   `node .mastermind/scripts/build-router.mjs`. (Under `--shared`, run the same scripts from the
+   brain in your home directory. A bare `scripts/…` is the project's own directory and fails with
+   MODULE_NOT_FOUND.)

@@ -10,7 +10,7 @@
   "stats": {
     "agents": 4,
     "models": 1,
-    "tools": 22,
+    "tools": 24,
     "integrations": 4
   },
   "topModels": [
@@ -325,7 +325,7 @@
         "sub": "re-injects on compaction",
         "group": "Safety & honesty",
         "sourceRef": "hooks/session-start.sh",
-        "detail": "SessionStart hook that re-injects the kernel on startup, clear, and compact: without it the brain is read once and fades as the context fills. Verified on Claude Code; wired for Cursor."
+        "detail": "Re-injects the kernel on startup, clear and compact, so it does not fade as context fills. Verified on Claude Code, wired for Cursor. Codex gets none: its hooks need enabling by hand in the TUI."
       },
       {
         "id": "installtests",
@@ -388,6 +388,32 @@
         "group": "Safety & honesty",
         "sourceRef": ".github/workflows/cross-os.yml",
         "detail": "Runs source and packed-package installs on Linux and macOS, asserts native Windows refuses clearly, and completes real installs in WSL and Alpine."
+      },
+      {
+        "id": "codexrouting",
+        "label": "Codex routing eval",
+        "kind": "service",
+        "sub": "does the brain steer Codex?",
+        "group": "Safety & honesty",
+        "sourceRef": "evals/codex-routing.mjs",
+        "detail": "Installs into a scratch project wired for Codex alone, then asks a live `codex exec` session to name the skill it would use. Before it, every Codex claim rested on a file being in the right place."
+      },
+      {
+        "id": "instructions",
+        "label": "Instruction clarity",
+        "kind": "service",
+        "sub": "one directive, one instruction",
+        "group": "Safety & honesty",
+        "sourceRef": "scripts/check-instructions.mjs",
+        "detail": "Caps a directive in a skill or agent brief at 30 words and flags hedging: these are instructions parsed by a reader who cannot ask a follow-up. STE-informed; frontmatter and code are skipped."
+      },
+      {
+        "id": "projectstate",
+        "label": "Project state",
+        "kind": "store",
+        "sub": "prefs + brief, yours to edit",
+        "sourceRef": "prefs.seed.md",
+        "detail": "Seeded by the installer and never overwritten: prefs.md holds cycle-report and plan-first, brief.md holds what this project is, its own words, what breaks, and what cannot be undone."
       }
     ],
     "edges": [
@@ -642,6 +668,24 @@
         "to": "lab",
         "kind": "reads",
         "label": "never let it out"
+      },
+      {
+        "from": "codexrouting",
+        "to": "codex",
+        "kind": "triggers",
+        "label": "drives a live session"
+      },
+      {
+        "from": "instructions",
+        "to": "moreskills",
+        "kind": "reads",
+        "label": "every skill body"
+      },
+      {
+        "from": "install",
+        "to": "projectstate",
+        "kind": "writes",
+        "label": "seeds, never overwrites"
       }
     ]
   }

@@ -92,13 +92,28 @@ Measure twice, cut once.
 
 ## Context is the fundamental constraint
 
-Performance degrades as context fills. Protect it:
+Performance degrades as context fills, and not gently: reasoning quality falls off well before the
+window does, in practice somewhere around a hundred thousand tokens. A larger window buys retrieval,
+not judgment.
+
+**Prefer clearing and rehydrating over compacting.** A compaction leaves a lossy summary of the
+reasoning that produced it, and every later turn reasons on that sediment without knowing what was
+dropped. Writing a `handoff` and starting clean costs one turn and restores from something you can
+read and correct. Compaction is what happens to you; a handoff is what you choose.
+
+Protect it:
 
 - **Delegate investigation to subagents.** Reading many files to answer a question burns context;
   a subagent explores in its own window and reports back a summary. Use them for research *and* for a
   fresh-eyes review.
 - **Scope explorations narrowly**: "investigate X" without bounds reads hundreds of files. Give it a
   target.
+- **Ask the index before you re-derive.** Some projects carry a code-intelligence layer that already
+  answers what most exploration is looking for: the dependency graph, churn hotspots, ownership, test
+  gaps, dead code, the decision behind a shape. Query it first and spend the context you saved on the
+  judgment. Repowise is one such tool at the time of writing, exposed over MCP so any of the three
+  supported tools can reach it. **Optional, always**: check whether one is present, use it if it is,
+  and work exactly as before when it is not.
 - **Keep the always-on layer light**: a bloated CLAUDE.md gets *ignored*; important rules get lost in
   noise. Push sometimes-relevant depth into on-demand docs/skills. (This is why MasterMind is built the
   way it is: validate every always-loaded line: "would removing this cause a mistake?")
@@ -159,12 +174,42 @@ implementation, which converts a technical check into a compliance ritual. The d
 The two failure directions are the same as under pressure everywhere: **fold** (implement everything,
 verify nothing) and **dig in** (relitigate everything). Hold the substance; skip the argument.
 
+## Fix the contract before you dispatch
+
+An agent with a task and no stopping condition grinds until something interrupts it, and returns
+whatever it had at that moment. Before handing work to an isolated context, fix five things and put
+them in the brief:
+
+1. **The goal**, in one sentence.
+2. **Non-goals**: what it must not touch. This is the half that gets skipped and the half that
+   prevents a surprise diff.
+3. **The stopping condition**, ideally something measurable: "until the suite is green", "until you
+   have read these six files", "three candidates, then stop". Not "when it looks right".
+4. **The evidence it must return**: the failing line, the diff, the file and line number. Name the
+   artifact, not "a summary".
+5. **What to do when blocked**: come back with the question, never guess and continue.
+
+Give it the change and the requirement, **never your account of them**. Your account already contains
+your conclusion, and a reviewer handed a conclusion grades the conclusion.
+
 ## Workflows vs. agents, and the composition patterns
 
 - **Workflow** = LLM + tools on **predefined code paths** → use for well-defined tasks; predictable,
   consistent, cheap.
 - **Agent** = LLM **dynamically directs its own process** → use for open-ended problems where you
   can't predict the number of steps and flexibility beats latency.
+
+**Choosing between one agent, a few subagents, and orchestration in code.** The question is not how
+hard the task is, it is where the plan should live:
+
+- **One agent** when the work fits one context window. The fresh-context review above still applies:
+  fitting in one window decides where the work happens, never who grades it.
+- **A few subagents** when a handful of pieces are independent and you still want to adapt the plan
+  as their answers come back.
+- **Orchestration in code** when there are many items, each needs a judgment call, and verification
+  has to happen whether or not anyone remembers. Putting the plan in code rather than in a context
+  window is what makes every item get the same treatment. The fan-out is what costs tokens, not the
+  code that schedules it, so uniformity across many items has to be the reason.
 
 Reach for these building blocks, simplest first:
 

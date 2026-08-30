@@ -23,6 +23,9 @@ jobs:
       - run: node scripts/check-prose.mjs || [ "$?" = 2 ]
       - run: node scripts/check-comments.mjs
       - run: node scripts/check-shell-patterns.mjs
+      - run: node scripts/check-instructions.mjs --strict
+      - run: node evals/agent-surface-cost.mjs --strict
+      - run: node evals/agent-surface-routing.mjs
 
   # Runs on every pull request with no path filter, so it can be a REQUIRED check. The cross-OS
   # matrix is path-filtered and therefore cannot be required without deadlocking docs-only PRs,

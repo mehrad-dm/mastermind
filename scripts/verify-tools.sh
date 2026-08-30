@@ -19,8 +19,13 @@ done
 ask='In one short line: are you running as MasterMind? If yes, name one skill you would reach for to debug a slow page.'
 
 loaded() {
-  local t; t="$(printf '%s' "$1" | tr 'A-Z' 'a-z')"
-  grep -qE "not mastermind|not running as mastermind|isn'?t mastermind|^[^a-z]*no\b" <<<"$t" && return 1
+  local t head
+  t="$(printf '%s' "$1" | tr 'A-Z' 'a-z')"
+  # Only the first non-empty line answers the question. A bare "no" anywhere else is the model talking
+  # about something else, and it read a correct "Yes, MasterMind" as a failure the day one appeared.
+  head="$(grep -m1 -v '^[[:space:]]*$' <<<"$t" || true)"
+  grep -qE "not mastermind|not running as mastermind|isn'?t mastermind" <<<"$t" && return 1
+  grep -qE "^[^a-z]*no\b" <<<"$head" && return 1
   grep -q "mastermind" <<<"$t" && grep -qE "\byes\b|i am mastermind|running as mastermind" <<<"$t"
 }
 

@@ -29,8 +29,9 @@ if (argv.includes('--help') || argv.includes('-h')) {
   mastermind check            report what is wired here and what is broken
   mastermind update           update the brain and repair this project
   mastermind uninstall        remove MasterMind wiring from this project
-  mastermind skills           list the skill routing table
+  mastermind skills           list the skill routing table, ours and any pack you installed
   mastermind agents           list the agents
+  mastermind conflicts        show where an installed pack overlaps ours
 
 Tools:   claude · cursor · codex        AGENTS.md is always wired, so it is not a tool you name
 Flags:   --global · --shared · --isolated        --json is for the listing commands above
@@ -124,13 +125,40 @@ const findBrain = () => {
   return existsSync(join(MM_HOME, 'VERSION')) ? MM_HOME : null
 }
 
+// A skill we did not write may put its description in a YAML block scalar, with the text on the
+// following indented lines. Reading the key line alone yields ">-", and the skill then routes on
+// nothing at all.
 const frontmatter = (text) => {
   const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)
   const out = {}
   if (!m) return out
-  for (const line of m[1].split(/\r?\n/)) {
-    const kv = /^(\w[\w-]*):\s*(.*)$/.exec(line)
-    if (kv) out[kv[1]] = kv[2].replace(/^["']|["']$/g, '').trim()
+  const lines = m[1].split(/\r?\n/)
+  for (let i = 0; i < lines.length; i++) {
+    const kv = /^(\w[\w-]*):\s*(.*)$/.exec(lines[i])
+    if (!kv) continue
+    let value = kv[2].trim()
+    if (value === '' || /^[|>](?:[-+]?\d*|\d+[-+]?)$/.test(value)) {
+      const block = []
+      while (i + 1 < lines.length && (/^\s+\S/.test(lines[i + 1]) || /^\s*$/.test(lines[i + 1]))) {
+        const next = lines[i + 1]
+        if (/^\s*$/.test(next)) {
+          const more = lines.slice(i + 2).find((l) => !/^\s*$/.test(l))
+          if (!more || !/^\s+\S/.test(more)) break
+        }
+        block.push(lines[++i].trim())
+      }
+      while (block.length && block[block.length - 1] === '') block.pop()
+      if (block.length) value = block.join(' ').replace(/\s+/g, ' ').trim()
+    }
+    if (/^"[\s\S]*"$/.test(value)) {
+      value = value.slice(1, -1)
+        .replace(/\\U([0-9a-fA-F]{8})|\\u([0-9a-fA-F]{4})/g, (_, u8, u4) =>
+          String.fromCodePoint(parseInt(u8 || u4, 16)))
+        .replace(/\\(["\\/])/g, '$1').replace(/\\n/g, ' ').replace(/\\t/g, ' ')
+    } else if (/^'[\s\S]*'$/.test(value)) {
+      value = value.slice(1, -1).replace(/''/g, "'")
+    }
+    out[kv[1]] = value.trim()
   }
   return out
 }
@@ -164,6 +192,118 @@ const listCapabilities = (brain, kind) => {
   return out.sort((a, b) => a.name.localeCompare(b.name))
 }
 
+const readSkillsFrom = (root, source, pack = '') => {
+  const out = []
+  if (!existsSync(root)) return out
+  let entries
+  try { entries = readdirSync(root, { withFileTypes: true }) } catch { return out }
+  const dirs = []
+  for (const e of entries) {
+    if (!e.isDirectory() && !e.isSymbolicLink()) continue
+    if (existsSync(join(root, e.name, 'SKILL.md'))) { dirs.push(join(root, e.name)); continue }
+    let nested = []
+    try { nested = readdirSync(join(root, e.name), { withFileTypes: true }) } catch { continue }
+    for (const n of nested) {
+      if (!n.isDirectory() && !n.isSymbolicLink()) continue
+      if (existsSync(join(root, e.name, n.name, 'SKILL.md'))) dirs.push(join(root, e.name, n.name))
+    }
+  }
+  for (const dir of dirs) {
+    const e = { name: dir.split('/').pop() }
+    const file = join(dir, 'SKILL.md')
+    let real
+    try { real = realpathSync(file) } catch { continue }
+    let fm
+    try { fm = frontmatter(readFileSync(file, 'utf8')) } catch { continue }
+    out.push({ name: fm.name || e.name, description: fm.description || '', path: real, source, pack })
+  }
+  return out
+}
+
+// Installed plugin packs, resolved through the registry rather than by globbing the cache: the
+// cache also holds marketplace packs that were browsed and never installed.
+const pluginPackRoots = () => {
+  const reg = join(homedir(), '.claude', 'plugins', 'installed_plugins.json')
+  if (!existsSync(reg)) return []
+  let parsed
+  try { parsed = JSON.parse(readFileSync(reg, 'utf8')) } catch { return [] }
+  const roots = []
+  for (const [key, installs] of Object.entries(parsed?.plugins ?? {})) {
+    if (!Array.isArray(installs)) continue
+    for (const inst of installs) {
+      if (!inst?.installPath) continue
+      roots.push({ pack: String(key).split('@')[0], root: join(inst.installPath, 'skills') })
+    }
+  }
+  return roots
+}
+
+// Every place the three supported tools keep skills, plus one that belongs to no tool. Codex has
+// no skill directory of its own, so without `local/skills` a Codex user has nowhere to put one.
+const projectDir = () => {
+  let dir
+  try { dir = process.cwd() } catch { return null }
+  const home = homedir()
+  let gitRoot = null
+  let pkg = null
+  for (let d = dir; ; ) {
+    // Stop at the nearest one: without this the walk kept climbing and the
+    // outermost repo won, so a project inside a repo (or under a home directory
+    // that is itself a repo) resolved to the wrong root, or to none at all.
+    if (existsSync(join(d, '.git'))) { gitRoot = d; break }
+    if (!pkg && existsSync(join(d, 'package.json'))) pkg = d
+    const up = dirname(d)
+    if (up === d || parsePath(d).root === d) break
+    d = up
+  }
+  const found = gitRoot || pkg || dir
+  return found === home ? null : found
+}
+
+const skillRoots = (brain) => {
+  const home = homedir()
+  const codexHome = process.env.CODEX_HOME || join(home, '.codex')
+  const project = projectDir()
+  return [
+    ...(project ? [
+      [join(project, '.claude', 'skills'), 'project'],
+      [join(project, '.cursor', 'skills'), 'project'],
+      [join(project, '.codex', 'skills'), 'project'],
+    ] : []),
+    [join(brain, 'local', 'skills'), 'local'],
+    [join(home, '.claude', 'skills'), 'user'],
+    [join(home, '.cursor', 'skills'), 'cursor'],
+    [join(home, '.cursor', 'skills-cursor'), 'cursor'],
+    [join(codexHome, 'skills'), 'codex'],
+  ]
+}
+
+// Precedence, highest first: this project's own skills, then ones placed by hand, then installed
+// packs. A skill that resolves back into a brain's own `skills/` is ours, however it was linked.
+const discoverForeign = (brain) => {
+  const ourSkillDirs = []
+  for (const b of [brain, MM_HOME]) {
+    try { if (existsSync(b)) ourSkillDirs.push(join(realpathSync(b), 'skills')) } catch { /* unreadable */ }
+  }
+  const found = [
+    ...skillRoots(brain).flatMap(([root, source]) => readSkillsFrom(root, source)),
+    ...pluginPackRoots().flatMap(({ pack, root }) => readSkillsFrom(root, 'plugin', pack)),
+  ]
+  const kept = []
+  const shadowed = []
+  const byName = new Set()
+  const byPath = new Set()
+  for (const s of found) {
+    if (ourSkillDirs.some((d) => s.path.startsWith(d + '/'))) continue
+    if (byPath.has(s.path)) continue
+    byPath.add(s.path)
+    if (byName.has(s.name)) { shadowed.push(s); continue }
+    byName.add(s.name)
+    kept.push(s)
+  }
+  return { foreign: kept, shadowed }
+}
+
 const STOP = new Set(('a an the is are was were be been being do does did doing this that these those'
   + ' i we you it my our your its of to in on at for with from by and or but not no so if then than'
   + ' can could should would will just very really please help me my how what why when where which'
@@ -190,7 +330,14 @@ if (READ_CMDS.includes(cmd)) {
   const brain = findBrain()
   const writeAll = (fd, s) => {
     const buf = Buffer.from(s, 'utf8')
-    for (let off = 0; off < buf.length; ) off += writeSync(fd, buf, off, buf.length - off)
+    try {
+      for (let off = 0; off < buf.length; ) off += writeSync(fd, buf, off, buf.length - off)
+    } catch (e) {
+      // `mastermind skills | head` closes the pipe early. That is the reader's choice, not our
+      // error, and a node stack trace in the middle of a shell pipeline is noise.
+      if (e && (e.code === 'EPIPE' || e.code === 'ERR_STREAM_DESTROYED')) process.exit(0)
+      throw e
+    }
   }
   const emit = (obj, text) => {
     const out = json ? `${JSON.stringify(obj, null, 2)}\n` : text
@@ -204,49 +351,38 @@ if (READ_CMDS.includes(cmd)) {
   }
   if (!brain) refuse('no brain found: run `npx mastermind-brain` in this project first')
   if (cmd === 'wrong-log') {
-    const journal = join(brain, 'journal.md')
-    const lines = existsSync(journal)
-      ? readFileSync(journal, 'utf8')
-          .split(/\r?\n/)
-          .filter((l) => /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(l.trim()))
-      : []
+    const proj = projectDir()
+    const seen = new Set()
+    const journals = [proj && join(proj, '.mastermind', 'journal.md'), join(brain, 'journal.md')]
+      .filter((f) => f && existsSync(f) && !seen.has(f) && seen.add(f))
+    const lines = journals.flatMap((f) =>
+      readFileSync(f, 'utf8')
+        .split(/\r?\n/)
+        .filter((l) => /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(l.trim())))
+    const where = journals.length ? journals.join(' + ') : join(brain, 'journal.md')
     emit(
-      { journal, count: lines.length, entries: lines },
+      { journals, count: lines.length, entries: lines },
       lines.length
         ? lines.join('\n')
-        : `no misses recorded yet in ${journal}: that means nothing has been logged, not that nothing was wrong`,
+        : `no misses recorded yet in ${where}: that means nothing has been logged, not that nothing was wrong`,
     )
   }
 
   if (cmd === 'conflicts') {
     const ours = listCapabilities(brain, 'skill')
     const ourNames = new Set(ours.map((s) => s.name))
-    const brainRoots = []
-    for (const b of [brain, MM_HOME]) {
-      try { if (existsSync(b)) brainRoots.push(realpathSync(b)) } catch { /* unreadable */ }
-    }
-    const foreign = []
-    const seen = new Set()
-    for (const root of [join(dirname(brain), '.claude', 'skills'), join(homedir(), '.claude', 'skills')]) {
-      if (!existsSync(root)) continue
-      for (const e of readdirSync(root, { withFileTypes: true })) {
-        const file = join(root, e.name, 'SKILL.md')
-        if (!existsSync(file)) continue
-        let real = ''
-        try { real = realpathSync(file) } catch { continue }
-        if (brainRoots.some((b) => real.startsWith(b + '/'))) continue
-        const fm = frontmatter(readFileSync(file, 'utf8'))
-        const name = fm.name || e.name
-        if (seen.has(name)) continue
-        seen.add(name)
-        foreign.push({ name, description: fm.description || '', path: real, from: root })
-      }
-    }
+    const { foreign, shadowed } = discoverForeign(brain)
+    const all = [...ours, ...foreign]
+    const df = new Map()
+    for (const it of all) for (const w of new Set(words(it.description))) df.set(w, (df.get(w) || 0) + 1)
+    const common = (w) => (df.get(w) || 0) > Math.max(3, all.length * 0.2)
     const overlap = (a, b) => {
-      const A = new Set(words(a)), B = new Set(words(b))
-      if (!A.size || !B.size) return 0
+      const A = new Set(words(a).filter((w) => !common(w)))
+      const B = new Set(words(b).filter((w) => !common(w)))
+      if (A.size < 3 || B.size < 3) return 0
       let shared = 0
       for (const w of A) if (B.has(w)) shared++
+      if (shared < 3) return 0
       return shared / Math.min(A.size, B.size)
     }
     const collisions = []
@@ -254,12 +390,15 @@ if (READ_CMDS.includes(cmd)) {
       if (ourNames.has(f.name)) collisions.push({ kind: 'name', foreign: f.name, ours: f.name, path: f.path })
       const near = ours
         .map((o) => ({ name: o.name, score: overlap(o.description, f.description) }))
-        .filter((o) => o.score >= 0.25) // 0.29 is a genuine overlap (an 'optimize' pack vs `performance`); tuned against real descriptions, not a guess
+        .filter((o) => o.score >= 0.4) // raised from 0.25: at ~75 foreign skills that produced false pairs like automate/build
         .sort((a, b) => b.score - a.score)[0]
       if (near) collisions.push({ kind: 'overlap', foreign: f.name, ours: near.name, share: +near.score.toFixed(2), path: f.path })
     }
     emit(
-      { brain, foreign: foreign.map(({ name, from }) => ({ name, from })), collisions,
+      { brain,
+        foreign: foreign.map(({ name, source, pack, path }) => ({ name, source, pack, from: dirname(dirname(path)) })),
+        shadowed: shadowed.map(({ name, source, pack }) => ({ name, source, pack })),
+        collisions,
         note: 'Precedence: this project\'s own skills → installed packs → MasterMind defaults. On a rule conflict the stricter rule wins.' },
       foreign.length === 0
         ? 'no other skill packs installed: nothing to collide with'
@@ -268,6 +407,7 @@ if (READ_CMDS.includes(cmd)) {
             ...collisions.map((c) => c.kind === 'name'
               ? `name   ${c.foreign}: same name as ours (yours is used; ours is mastermind-${c.foreign})`
               : `overlap ${c.foreign} ≈ ${c.ours} (${Math.round(c.share * 100)}% shared triggers)`),
+            ...shadowed.map((s) => `hidden  ${s.name}: a higher-precedence skill of the same name wins`),
             '',
             'Precedence: your project\'s skills → installed packs → MasterMind defaults.',
             'On a rule conflict (committing, tests, scope) the stricter rule wins.',
@@ -276,12 +416,33 @@ if (READ_CMDS.includes(cmd)) {
   }
 
   const kind = cmd === 'agent' || cmd === 'agents' ? 'agent' : 'skill'
-  const items = listCapabilities(brain, kind)
+  // A skill the user installed is only reachable in Cursor and Codex if this table names it:
+  // those two have no native skill mechanism, so an index they cannot see does not exist.
+  const everySkill = () => {
+    const { foreign } = discoverForeign(brain)
+    const taken = new Set(foreign.map((f) => f.name))
+    const ours = listCapabilities(brain, 'skill').map((s) => {
+      if (!taken.has(s.name)) return { ...s, source: 'mastermind', pack: '' }
+      // The alias can be taken too. Keep stepping until the name is free, or ours disappears.
+      let name = `mastermind-${s.name}`
+      for (let n = 2; taken.has(name); n++) name = `mastermind-${s.name}-${n}`
+      taken.add(name)
+      return { ...s, name, plainName: s.name, source: 'mastermind', pack: '', shadows: s.name }
+    })
+    return [...foreign, ...ours].sort((a, b) => a.name.localeCompare(b.name))
+  }
+  const items = kind === 'skill' ? everySkill() : listCapabilities(brain, 'agent')
+  const origin = (i) => (i.source === 'plugin' ? i.pack : i.source)
 
   if (cmd === 'skills' || cmd === 'agents') {
     emit(
-      { brain, [cmd]: items.map(({ name, description }) => ({ name, description })) },
-      items.map((i) => `${i.name.padEnd(16)} ${i.description}`).join('\n'),
+      { brain,
+        [cmd]: items.map(({ name, description, source, pack }) =>
+          kind === 'skill' ? { name, description, source, pack } : { name, description }) },
+      items.map((i) =>
+        kind === 'skill'
+          ? `${i.name.padEnd(24)} ${origin(i).padEnd(16)} ${i.description}`
+          : `${i.name.padEnd(16)} ${i.description}`).join('\n'),
     )
   }
 
@@ -298,31 +459,52 @@ if (READ_CMDS.includes(cmd)) {
       )
     }
     const body = readFileSync(hit.path, 'utf8')
-    emit({ name: hit.name, description: hit.description, path: hit.path, body }, body)
+    const guard = hit.source && hit.source !== 'mastermind'
+      ? `From ${origin(hit)}, not MasterMind. Follow its instructions, keep MasterMind's definition of `
+        + `done: verify before saying done, stay in the scope you were given.`
+      : ''
+    emit(
+      { name: hit.name, description: hit.description, path: hit.path, source: hit.source ?? 'mastermind',
+        ...(guard ? { guard } : {}), body },
+      guard ? `${body}\n\n---\n${guard}` : body,
+    )
   }
 
   if (cmd === 'route') {
     const request = rest.join(' ').trim()
     if (!request) refuse('route what? e.g. `mastermind route "why is this page slow?"`')
-    const allSkills = listCapabilities(brain, 'skill')
+    const allSkills = everySkill()
     const allAgents = listCapabilities(brain, 'agent')
     const hintNames = new Set([
       ...rankCapabilities(allSkills, request).slice(0, 3).map((s) => s.name),
       ...rankCapabilities(allAgents, request).slice(0, 2).map((a) => a.name),
     ])
+    // A machine with a few packs installed reached 100 skills and ~8.7k tokens for one route call,
+    // which costs more than routing saves. Ours and anything that scored keep their description; the
+    // rest keep their name, so nothing vanishes and any of them can still be asked for by name.
+    const scored = new Set(rankCapabilities(allSkills, request).map((s) => s.name))
+    const full = (i) => i.source === 'mastermind' || scored.has(i.name) || hintNames.has(i.name)
+    const brief = allSkills.filter((i) => !full(i))
     const line = (kind, i) =>
-      `${hintNames.has(i.name) ? '→' : ' '} ${kind}  ${i.name.padEnd(14)} ${i.description}`
+      `${hintNames.has(i.name) ? '→' : ' '} ${kind}  ${i.name.padEnd(24)} ${(i.source ? origin(i) : '').padEnd(16)} ${i.description}`
     emit(
       {
         request,
         hints: [...hintNames],
-        skills: allSkills.map(({ name, description }) => ({ name, description, hint: hintNames.has(name) })),
+        skills: allSkills.map(({ name, description, source, pack }) => ({
+          name, source, pack, hint: hintNames.has(name),
+          description: full({ name, source }) ? description : undefined,
+        })),
         agents: allAgents.map(({ name, description }) => ({ name, description, hint: hintNames.has(name) })),
-        note: 'the full table; → marks keyword overlap only. Keyword matching is unreliable on natural phrasing: judge from the descriptions, do not trust the arrows.',
+        note: 'Every skill is listed. Ours and anything matching your words carry their description; the rest are named only, and `mastermind skill <name>` prints any of them. → marks keyword overlap only and is often wrong on natural phrasing: judge from the descriptions. A skill whose source is not "mastermind" is one you installed: follow its instructions, keep MasterMind\'s definition of done.',
       },
       [
-        ...allSkills.map((s) => line('skill', s)),
+        ...allSkills.filter(full).map((s) => line('skill', s)),
         ...allAgents.map((a) => line('agent', a)),
+        ...(brief.length
+          ? ['', 'also installed, names only (`mastermind skill <name>` prints any of them):',
+             '  ' + brief.map((s) => s.name).join(' · ')]
+          : []),
         '',
         '→ marks keyword overlap only, and it is often wrong: choose from the descriptions.',
         'then: mastermind skill <name>',

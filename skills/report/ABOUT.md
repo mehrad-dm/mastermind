@@ -43,7 +43,8 @@ turn it on. Neither of these is ever switched on quietly.
 
 A report is deliberately short and carries five things:
 
-**The verdict, up front**: ship, needs work, or redirect, with one line of reasoning. If you read
+**The verdict, up front**: done, done but not fully checked, not done, or wrong thing, with one line
+of reasoning and a line naming what was not checked. If you read
 nothing else, you know where things stand.
 
 **What changed**: the files touched, one line each, grouped so the shape of the change is visible at a

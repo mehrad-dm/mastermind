@@ -44,7 +44,7 @@ Run from the target repo root. The skill's files live in `assets/` next to this 
    - `mkdir -p .githooks && cp assets/pre-commit assets/pre-push .githooks/ && chmod +x .githooks/pre-commit .githooks/pre-push`
    - `git config core.hooksPath .githooks`
    - If the repo already has a `core.hooksPath` or a hook manager (Husky, etc.), **leave theirs in
-     place**, tell the user and offer to chain the guard into their existing pre-commit instead.
+     place**. Tell the user, and offer to chain the guard into their existing pre-commit instead.
 
 4. **Prove it works** (do this: a guard you haven't tested is a guard you don't have):
    - Stage a throwaway file containing a denylisted term and attempt a commit; confirm it's **blocked**,

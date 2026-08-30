@@ -579,6 +579,37 @@ Raw data: `evals/runs/v0.27-set2/`.
 
 ---
 
+## Run V6: 2026-08-21 · does the brain steer a **Codex** session? (`evals/codex-routing.mjs`)
+
+Every earlier claim about Codex rested on a file being in the right place, never on a session obeying
+it: `auto-invoke.mjs` drives `claude` and only `claude`. This installs into a scratch project, wires
+Codex alone, and asks `codex exec` to name the skill it would use for a natural prompt.
+
+| arm | n | result |
+| --- | --: | --- |
+| treatment: brain installed | 3 | **3/3** |
+| control: same prompts, no brain | 3 | **1/3** |
+
+The control is the point. `performance` is guessable from the words alone, so that case proves
+nothing; `debug` and `quarantine` only routed with the brain present. A run where the control matches
+everywhere fails the gate, because it would be measuring the model rather than MasterMind.
+
+**Honest reading.**
+- **It reports a control, and the control is noisy.** Each prompt also runs with no brain installed.
+  Three consecutive runs attributed 2, 2 and 1 of 3, because a bare model names common skills like
+  `performance` and `handoff` unaided. So `attributable to MasterMind: N/3` is printed every run and
+  read as a trend; only zero attribution fails, because that means every hit was coincidence.
+- **A one-word answer has a low ceiling as a causal test.** Gating on the attribution number would
+  fail on vocabulary overlap rather than on a regression. Raising n, or asking for something the bare
+  model cannot produce, is what would raise that ceiling.
+- **n=3 and one rep.** This says the path is not broken. It does not give a rate, and it is not
+  comparable to the 26/30 Claude figure.
+- **The first run of this harness reported 0/3, and it was wrong.** The async `execFile` returned an
+  empty buffer; run by hand, the same session answered `performance`. Logged in `journal.md`.
+- **Cursor has no routing eval yet**, but it is drivable: `cursor-agent` (installed under
+  `~/.local/bin`, off the default PATH) is what `scripts/verify-tools.sh` already uses to confirm
+  Cursor loads the brain. A routing equivalent is buildable and not yet built.
+
 ## Run V5: 2026-08-08 · auto-invoke: does the right skill actually fire? (`evals/auto-invoke.mjs`)
 
 Live headless sessions on the seeded orderdesk repo, one natural prompt per skill, phrased the way

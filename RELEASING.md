@@ -109,7 +109,7 @@ scripts/release.sh 0.31.0
 ```
 
 The version lives in **six** places across **two** repositories: `VERSION`, `cli/package.json`,
-both `.claude-plugin` manifests, the README badge, and the site's footer and homepage. Every
+both `.claude-plugin` manifests, the README badge, and the site's `src/site.config.ts`. Every
 release that drifted did so because one was updated by hand and another was not. The script moves
 all six, then greps for anything still carrying the old number and tells you about it.
 
@@ -118,13 +118,18 @@ It runs `preflight.sh` and stops if anything fails. It does not commit, tag, pus
 ### 3. Commit, tag, push
 
 ```
-git commit -am "release: v0.31.0"
-git -C ../mastermind-site commit -am "v0.31.0"
+# -a stages tracked files only, so a release that ADDS a file would tag without it.
+git add -A && git commit -m "release: v0.31.0"
+git -C ../mastermind-site add -A && git -C ../mastermind-site commit -m "v0.31.0"
 git tag -a v0.31.0 -m "v0.31.0: <the changelog's opening line>"
 git push
-git push origin v0.31.0        # this is what publishes
-git -C ../mastermind-site push # this is what deploys the site
+git -C ../mastermind-site push # the site goes FIRST: the tag gate checks out the pushed site
+git push origin v0.31.0        # this is what publishes, and it is the irreversible step
 ```
+
+**The site is pushed before the tag, and that order is load-bearing.** `publish.yml` checks out the
+published website and refuses to release if its version, skill counts, library pages or build
+disagree with this repo. Tagging first means the gate reads yesterday's site and fails.
 
 Pushing the tag is the only irreversible step, and now doubly so: the ruleset forbids moving it,
 so a tag on the wrong commit burns that version. `pre-push` refuses a `v*` tag unless its commit
