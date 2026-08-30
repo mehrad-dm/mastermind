@@ -4,7 +4,12 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const SITE = resolve(ROOT, '..', 'mastermind-site')
+// The only site-aware script that ignored MASTERMIND_SITE, so it resolved the site as a
+// sibling and could pass only on a machine laid out that way. CI checks the site out
+// elsewhere and names it in that variable, so this failed the first release that ran it.
+const SITE = process.env.MASTERMIND_SITE
+  ? resolve(process.env.MASTERMIND_SITE)
+  : resolve(ROOT, '..', 'mastermind-site')
 const OUT = join(SITE, 'src', 'data', 'evals.json')
 const SRC = join(ROOT, 'evals', 'RESULTS.md')
 const check = process.argv.includes('--check')
