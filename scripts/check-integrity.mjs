@@ -314,6 +314,15 @@ for (const manifest of ['.claude-plugin/marketplace.json', '.claude-plugin/plugi
     fail(`${manifest} ships ${unlisted.length} skill(s) it never names: ${unlisted.join(', ')}`)
 }
 
+// A script that hardcodes the site as a sibling passes on a developer's machine and fails
+// wherever the site is checked out elsewhere, which is every CI run. sync-evals did exactly
+// that and took a release down with it.
+for (const f of readdirSync(join(ROOT, 'scripts')).filter((f) => f.endsWith('.mjs'))) {
+  const text = readFileSync(join(ROOT, 'scripts', f), 'utf8')
+  if (text.includes('mastermind-site') && !text.includes('MASTERMIND_SITE'))
+    fail(`scripts/${f}: resolves the site as a sibling and ignores MASTERMIND_SITE, so it cannot run where CI puts it`)
+}
+
 const CANON = 'A markdown brain that gives your AI coding tools judgment and rigor'
 for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json', 'cli/package.json', 'cli/README.md']) {
   const file = join(ROOT, f)

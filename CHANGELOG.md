@@ -4,6 +4,19 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [0.32.1] · 2026-08-30
+
+### Fixed
+
+- 0.32.0 could not publish. The script that checks the website's eval numbers resolved the
+  site as a folder beside this repo and ignored the variable that says where it actually is,
+  so it worked on a machine laid out that way and failed everywhere else. The release gate
+  runs where the site is checked out under a different name, which is every release, so the
+  first run that reached it stopped there and nothing was published. Every other site-aware
+  script already read that variable; this one was written without it and nothing checked.
+- A script that hardcodes the site as a sibling now fails the integrity check, so the next
+  one written that way is caught before a release rather than by one.
+
 ## [0.32.0] · 2026-08-30
 
 ### Added
