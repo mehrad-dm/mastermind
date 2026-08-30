@@ -128,6 +128,16 @@ const NEW_NODES = [
       'Installs into a scratch project wired for Codex alone, then asks a live `codex exec` session to name the skill it would use. Before it, every Codex claim rested on a file being in the right place.',
   },
   {
+    id: 'cursorrouting',
+    label: 'Cursor routing eval',
+    kind: 'service',
+    sub: 'does the brain steer Cursor?',
+    group: 'Safety & honesty',
+    sourceRef: 'evals/cursor-routing.mjs',
+    detail:
+      'Installs into a scratch project wired for Cursor alone, then asks a live `cursor-agent` session to name the skill it would use. Attribution is reported, never gated: the agent reads the brain itself.',
+  },
+  {
     id: 'instructions',
     label: 'Instruction clarity',
     kind: 'service',
@@ -167,6 +177,7 @@ const NEW_EDGES = [
   { from: 'autoinvoke', to: 'install', kind: 'triggers', label: 'installs, then asks' },
   { from: 'secretguards', to: 'lab', kind: 'reads', label: 'never let it out' },
   { from: 'codexrouting', to: 'codex', kind: 'triggers', label: 'drives a live session' },
+  { from: 'cursorrouting', to: 'cursor', kind: 'triggers', label: 'drives a live session' },
   { from: 'instructions', to: 'moreskills', kind: 'reads', label: 'every skill body' },
   { from: 'install', to: 'projectstate', kind: 'writes', label: 'seeds, never overwrites' },
 ]
