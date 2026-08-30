@@ -414,6 +414,15 @@
         "sub": "prefs + brief, yours to edit",
         "sourceRef": "prefs.seed.md",
         "detail": "Seeded by the installer and never overwritten: prefs.md holds cycle-report and plan-first, brief.md holds what this project is, its own words, what breaks, and what cannot be undone."
+      },
+      {
+        "id": "cursorrouting",
+        "label": "Cursor routing eval",
+        "kind": "service",
+        "sub": "does the brain steer Cursor?",
+        "group": "Safety & honesty",
+        "sourceRef": "evals/cursor-routing.mjs",
+        "detail": "Installs into a scratch project wired for Cursor alone, then asks a live `cursor-agent` session to name the skill it would use. Attribution is reported, never gated: the agent reads the brain itself."
       }
     ],
     "edges": [
@@ -686,6 +695,12 @@
         "to": "projectstate",
         "kind": "writes",
         "label": "seeds, never overwrites"
+      },
+      {
+        "from": "cursorrouting",
+        "to": "cursor",
+        "kind": "triggers",
+        "label": "drives a live session"
       }
     ]
   }
