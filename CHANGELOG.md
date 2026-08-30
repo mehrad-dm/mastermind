@@ -36,13 +36,26 @@ history lives in git.
   them, and a skipped check blocks a release unless the skip is accepted on the record.
 - An instruction gate. Directives in the brain's own files are held to one action and a word
   count, and hedged wording fails, because an instruction nobody can follow exactly is a
-  suggestion wearing an imperative.
+  suggestion wearing an imperative. The rule comes from ASD-STE100, the controlled English
+  aviation writes repair manuals in, whose first rule is one instruction per sentence. The
+  standard is free to obtain and not free to redistribute, so nothing of its text ships here:
+  `engineering/core/clarity.md` and the gate are STE-informed, never STE-compliant.
 - Third-party skills the user installed elsewhere are now reachable through MasterMind on all
   three tools, without being mixed into ours. Where a name collides the foreign skill keeps the
   plain name and ours answers to `mastermind-<name>`, so a pack the user chose is never
   silently shadowed by us.
 - A private workspace that is never committed or published, and per-project `prefs.md` and
   `brief.md` seeded at install.
+- `build` now cuts work into thin vertical slices rather than horizontal layers. Left alone a
+  model builds the whole data layer, then the whole API, then the UI, which is faster to write
+  and hides every integration failure until the end. A slice crosses every layer and is visible
+  when it lands, because the rate of feedback is the ceiling on quality.
+- `qa` now asks what must NOT happen, not only what must: no request was sent, the tokens were
+  not cleared, no second write landed. A test that asserts only the visible message passes while
+  the damage happens behind it. It also covers driving a real browser when the thing under test
+  is a page.
+- A session with no field pack says so. The nudge is derived from the project's own state on
+  every session rather than from a marker file, which goes stale and then lies.
 - The reviewer now looks for the change that weakens what would have caught it: an assertion
   rewritten to match new behaviour, a test deleted or skipped, a threshold moved, a gate that
   passes for a new reason. Each has to be argued in the diff, and silence is the finding. It
