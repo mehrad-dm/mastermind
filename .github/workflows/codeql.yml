@@ -29,7 +29,7 @@ jobs:
               - evals/runs/**
               - evals/tasks/**
               - lab/**
-      - uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938  # v4.37.9
+      - uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd  # v4.38.1
 
   # CodeQL has no Bash analyzer, and Bash is where the risk actually lives here: the installer
   # resolves paths, follows symlinks and deletes files in someone else's repository. A green
