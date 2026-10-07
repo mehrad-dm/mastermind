@@ -1,6 +1,7 @@
 ---
 title: Analyze: catch the gaps while they cost a sentence
 blurb: A read-only check that a feature's spec, plan and task list agree with each other and with the project's rules, before any code exists.
+since: 0.33.0
 ---
 
 ## The problem this solves

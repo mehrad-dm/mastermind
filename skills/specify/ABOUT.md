@@ -1,6 +1,7 @@
 ---
 title: Specify: what to build and why, written before how
 blurb: A feature specification in plain language, with traceable requirements, so every later step can be checked against it.
+since: 0.33.0
 ---
 
 ## The problem this solves

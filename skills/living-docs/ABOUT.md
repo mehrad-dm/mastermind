@@ -1,6 +1,7 @@
 ---
 title: Living docs: product, business and tech, always current
 blurb: Three short documents that describe the project as it is today, kept true as features ship.
+since: 0.33.0
 ---
 
 ## The problem this solves

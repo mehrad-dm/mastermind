@@ -1,6 +1,7 @@
 ---
 title: Blueprint: the technical plan, checked against the rules first
 blurb: How a written spec becomes a plan with every decision explained, checked against the project's constitution before any code exists.
+since: 0.33.0
 ---
 
 ## The problem this solves

@@ -13,6 +13,8 @@ const CASES = [
   { prompt: 'I am stopping for today, set things up so tomorrow picks up cleanly', expected: ['handoff'] },
   { prompt: 'cancelling an order sometimes leaves the stock count wrong and I cannot see why', expected: ['debug'] },
   { prompt: 'there is a .env with live credentials in here and I do not want it reaching github', expected: ['quarantine'] },
+  { prompt: 'write the spec for team invitations before anyone plans or builds it', expected: ['specify'] },
+  { prompt: 'every task for the export feature is ticked, check the code really does what its spec promised', expected: ['converge'] },
 ]
 const SKIP = 2
 

@@ -36,6 +36,9 @@ history lives in git.
   got there.
 - A project overrides any template by placing its own copy in `specs/.templates/`.
 - `specs-dir` in `prefs.md`, for a project whose `specs/` folder already holds something else.
+- The site marks a new skill or agent **New** for 60 days after the release that added it. The
+  version comes from `since:` in its `ABOUT.md` and the date from this changelog, so nobody has to
+  remember to take the badge down.
 - Codex gets MasterMind's skills natively. The installer links every skill into `.agents/skills/`
   (and `~/.agents/skills/` with `--global`), which is where Codex discovers skills and where it can
   choose one by its description or by `$name`. Before this, Codex reached a skill only through

@@ -1,6 +1,7 @@
 ---
 title: Assess: should this be built at all?
 blurb: Evidence before investment. An idea ends in go, clarify or stop, with the reasons written down.
+since: 0.33.0
 ---
 
 ## The problem this solves

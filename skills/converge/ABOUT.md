@@ -1,6 +1,7 @@
 ---
 title: Converge: is it really done?
 blurb: Checking the finished code against everything the feature promised, and turning every gap into a task instead of a surprise.
+since: 0.33.0
 ---
 
 ## The problem this solves

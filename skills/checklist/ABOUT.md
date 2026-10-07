@@ -1,6 +1,7 @@
 ---
 title: Checklist: unit tests for your requirements
 blurb: Questions that test whether a spec says enough about one concern, such as security or accessibility, before anyone builds from it.
+since: 0.33.0
 ---
 
 ## The problem this solves

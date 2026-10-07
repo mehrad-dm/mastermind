@@ -1,6 +1,7 @@
 ---
 title: Breakdown: a task list where every story ships on its own
 blurb: Turning a spec and plan into small, traceable tasks, grouped so each user story is a working slice.
+since: 0.33.0
 ---
 
 ## The problem this solves

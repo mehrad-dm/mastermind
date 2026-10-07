@@ -31,6 +31,22 @@ const clean = (body) =>
     .replace(/~\/\.mastermind\//g, '')
     .trim()
 
+const NEW_DAYS = 60
+const changelog = readFileSync(join(REPO, 'CHANGELOG.md'), 'utf8')
+// "unreleased" keeps the badge on in a preview; a release date starts the 60-day window.
+const newUntil = (since) => {
+  if (!since) return ''
+  if (!/^\d+\.\d+\.\d+$/.test(since)) {
+    console.error(`✖ since: "${since}" is not a version`)
+    process.exit(1)
+  }
+  const m = changelog.match(new RegExp(`^## \\[${since.replace(/\./g, '\\.')}\\] · (\\d{4}-\\d{2}-\\d{2})`, 'm'))
+  if (!m) return 'unreleased'
+  const d = new Date(`${m[1]}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + NEW_DAYS)
+  return d.toISOString().slice(0, 10)
+}
+
 const items = []
 for (const d of readdirSync(join(REPO, 'skills'), { withFileTypes: true })) {
   if (!d.isDirectory()) continue
@@ -42,7 +58,7 @@ for (const d of readdirSync(join(REPO, 'skills'), { withFileTypes: true })) {
   const [meta, body] = fm(readFileSync(about, 'utf8'))
   const skillMeta = fm(readFileSync(join(REPO, 'skills', d.name, 'SKILL.md'), 'utf8'))[0]
   items.push({ kind: 'skill', name: d.name, title: meta.title ?? d.name, blurb: meta.blurb ?? '',
-               trigger: skillMeta.description ?? '', body: clean(body) })
+               trigger: skillMeta.description ?? '', body: clean(body), newUntil: newUntil(meta.since) })
 }
 for (const f of readdirSync(join(REPO, 'agents', 'about'))) {
   if (!f.endsWith('.md')) continue
@@ -50,7 +66,7 @@ for (const f of readdirSync(join(REPO, 'agents', 'about'))) {
   const name = f.replace(/\.md$/, '')
   const agentMeta = fm(readFileSync(join(REPO, 'agents', `${name}.md`), 'utf8'))[0]
   items.push({ kind: 'agent', name, title: meta.title ?? name, blurb: meta.blurb ?? '',
-               trigger: agentMeta.description ?? '', body: clean(body) })
+               trigger: agentMeta.description ?? '', body: clean(body), newUntil: newUntil(meta.since) })
 }
 items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
 
@@ -80,7 +96,7 @@ prevName: ${q(prev.name)}
 prevBlurb: ${q(short(prev.title))}
 nextName: ${q(next.name)}
 nextBlurb: ${q(short(next.title))}
----
+${it.newUntil ? `newUntil: ${q(it.newUntil)}\n` : ''}---
 
 ${it.body}
 `
@@ -88,6 +104,8 @@ ${it.body}
 
 let stale = 0
 const wanted = new Map(items.map((it, i) => [`${it.name}.md`, page(it, i, items)]))
+const NEW_JSON = join(SITE, 'src', 'data', 'new.json')
+const newJson = JSON.stringify(Object.fromEntries(items.filter((it) => it.newUntil).map((it) => [it.name, it.newUntil])), null, 2) + '\n'
 
 if (CHECK) {
   if (!existsSync(SITE)) {
@@ -101,6 +119,7 @@ if (CHECK) {
     if (!have.has(f) || readFileSync(join(OUT, f), 'utf8') !== want) stale++
   }
   for (const f of have) if (!wanted.has(f)) stale++
+  if (!existsSync(NEW_JSON) || readFileSync(NEW_JSON, 'utf8') !== newJson) stale++
   if (stale) {
     console.error(`✖ library pages stale (${stale}): run: node scripts/build-library.mjs`)
     process.exit(1)
@@ -117,6 +136,7 @@ if (!existsSync(SITE)) {
 if (existsSync(OUT)) rmSync(OUT, { recursive: true }) // prune renamed/removed skills
 mkdirSync(OUT, { recursive: true })
 for (const [f, content] of wanted) writeFileSync(join(OUT, f), content)
+writeFileSync(NEW_JSON, newJson)
 console.log(
   `✓ wrote ${items.length} library pages: ${items.filter((i) => i.kind === 'skill').length} skills, ${items.filter((i) => i.kind === 'agent').length} agents`,
 )

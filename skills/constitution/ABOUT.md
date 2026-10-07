@@ -1,6 +1,7 @@
 ---
 title: Constitution: the rules every feature is checked against
 blurb: A short, versioned list of what this project refuses to break, written so a reviewer can check every change against it.
+since: 0.33.0
 ---
 
 ## The problem this solves
