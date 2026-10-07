@@ -466,6 +466,7 @@ wire_cursor() {
     if mm_is_generated "$dst" && grep -q 'Prime directives' "$dst"; then ok ".cursor/rules/mastermind.mdc"
     elif [ -f "$dst" ]; then bad ".cursor rule is the old pointer-only shape: re-run install.sh"; ISSUES=$((ISSUES + 1))
     else bad ".cursor rule not set"; ISSUES=$((ISSUES + 1)); fi
+    wire_cursor_aliases
     wire_cursor_hook
     return
   fi
@@ -477,7 +478,39 @@ wire_cursor() {
   } > "$dst"
   ok ".cursor/rules/mastermind.mdc: full kernel inlined"
   wire_cursor_field
+  wire_cursor_aliases
   wire_cursor_hook
+}
+
+# Cursor drops any skill named exactly `build`, so it gets a renamed, generated copy it will list.
+MM_CURSOR_RESERVED="build"
+wire_cursor_aliases() {
+  local n src dst
+  for n in $MM_CURSOR_RESERVED; do
+    src="$BRAIN/skills/$n/SKILL.md"; dst="$PROJECT/.cursor/skills/mastermind-$n/SKILL.md"
+    [ -f "$src" ] || continue
+    if [ -L "$PROJECT/.cursor/skills" ] || [ -L "$(dirname "$dst")" ] || [ -L "$dst" ]; then
+      warn ".cursor/skills/mastermind-$n is a symlink: skipped, so nothing is written outside this project"
+      continue
+    fi
+    if [ "$MODE" = check ]; then
+      if mm_is_generated "$dst"; then ok ".cursor/skills/mastermind-$n (Cursor reserves the name '$n')"
+      else bad ".cursor/skills/mastermind-$n is missing: re-run install.sh"; ISSUES=$((ISSUES + 1)); fi
+      continue
+    fi
+    if [ -e "$dst" ] && ! mm_is_generated "$dst"; then
+      warn "left .cursor/skills/mastermind-$n alone: it is not the file we generated"
+      continue
+    fi
+    mkdir -p "$(dirname "$dst")"
+    awk -v n="$n" -v mark="<!-- $MM_GEN_MARK: do not edit. Refresh with: npx mastermind-brain -->" '
+      NR == 2 && $0 == "name: " n { print "name: mastermind-" n; next }
+      { print }
+      /^---$/ && ++fences == 2 { print mark }
+    ' "$src" > "$dst"
+    ok ".cursor/skills/mastermind-$n: Cursor reserves the name '$n'"
+  done
+  return 0
 }
 
 wire_cursor_field() {
@@ -847,6 +880,14 @@ if [ "$MODE" = uninstall ]; then
     if mm_wants cursor; then
     mm_remove_generated "$PROJECT/.cursor/rules/mastermind.mdc"       && n=$((n + 1))
     mm_remove_generated "$PROJECT/.cursor/rules/mastermind-field.mdc" && n=$((n + 1))
+    for _alias in $MM_CURSOR_RESERVED; do
+      _ad="$PROJECT/.cursor/skills/mastermind-$_alias"
+      if [ ! -L "$PROJECT/.cursor/skills" ] && [ ! -L "$_ad" ]; then
+        mm_remove_generated "$_ad/SKILL.md" && n=$((n + 1))
+        rmdir "$_ad" "$PROJECT/.cursor/skills" 2>/dev/null || true
+      fi
+    done
+    unset _alias _ad
     restore_backup "$PROJECT/.cursor/rules/mastermind.mdc"
     restore_backup "$PROJECT/.cursor/rules/mastermind-field.mdc"
     fi

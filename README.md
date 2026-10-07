@@ -305,10 +305,9 @@ Stated plainly, because a tool about not overclaiming shouldn't overclaim about 
   same base model on both sides. Trust the **delta** (both sides judged identically); treat absolutes as
   directional. Method and full results: [`evals/`](./evals/). Mechanism runs that don't clear that bar are
   marked in `evals/RESULTS.md` and are never quoted publicly.
-- **Cursor does not list a skill named `build`.** It drops any skill with that exact name, ours or not,
-  so `build` is missing from Cursor's own skill list while the other 32 appear once each. It still
-  routes: the kernel's menu sends the model to the skill's file, and a live Cursor session chose
-  `build` for a feature request. Only Cursor's skill autocomplete lacks it.
+- **Cursor does not list a skill named `build`.** It drops any skill with that exact name, ours or not.
+  So the installer also writes `.cursor/skills/mastermind-build`, a generated copy under a name Cursor
+  will list. Routing never depended on it: the kernel's menu already sends the model to the file.
 - **Cursor re-injection is unverified.** The `.cursor/rules/mastermind.mdc` rule works and is the
   load-bearing path. The `sessionStart` hook is wired to Cursor's published schema, but Cursor has open
   upstream bug reports where a hook's `additional_context` is accepted and never reaches the model: so
