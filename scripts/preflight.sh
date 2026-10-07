@@ -81,6 +81,17 @@ site_counts_agree() {
     echo "the library grid omits:$missing (its badge counts that array, so the page would undercount)"
     return 1
   fi
+  # llms.txt is what AI tools read about the site; it fell two releases behind before anyone looked.
+  local llms="$SITE/public/llms.txt"
+  [ -f "$llms" ] || { echo "public/llms.txt not found"; return 1; }
+  bad="$(grep -noE '[0-9]+ (skills|agents)' "$llms" | grep -vE ":${want_s} skills\$|:${want_a} agents\$" || true)"
+  [ -z "$bad" ] || { echo "llms.txt states a count the repo does not: $bad"; return 1; }
+  missing=""
+  for d in "$REPO"/skills/*/ "$REPO"/agents/*.md; do
+    d="$(basename "$d" .md)"
+    grep -qF "/library/$d)" "$llms" || missing="$missing $d"
+  done
+  [ -z "$missing" ] || { echo "llms.txt does not list:$missing"; return 1; }
   return 0
 }
 

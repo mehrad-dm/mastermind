@@ -69,6 +69,21 @@ else
   if [ -z "$CSP" ]; then skip "no CSP header served for /architecture"
   elif case "$CSP" in *"frame-src https://www.foglamp.dev"*) true ;; *) false ;; esac; then ok "the CSP allows the canonical embedded-map origin"
   else bad "the CSP does not allow https://www.foglamp.dev, so the embedded map is blocked"; fi
+  LLMS="$(curl -fsS "$SITE_URL/llms.txt" 2>/dev/null || true)"
+  case "$LLMS" in
+    *"Current release: v$V"*) ok "llms.txt names v$V" ;;
+    "") skip "llms.txt did not answer" ;;
+    *) bad "llms.txt does not name v$V" ;;
+  esac
+  SITE_DIR="${MASTERMIND_SITE:-$REPO/../mastermind-site}"
+  if [ -f "$SITE_DIR/public/og.png" ]; then
+    LIVE_OG="$(curl -fsS "$SITE_URL/og.png" 2>/dev/null | shasum -a 256 | cut -d' ' -f1)"
+    REPO_OG="$(git -C "$SITE_DIR" show origin/main:public/og.png 2>/dev/null | shasum -a 256 | cut -d' ' -f1)"
+    if [ "$LIVE_OG" = "$REPO_OG" ]; then ok "the live link card is the one on the site's main branch"
+    else bad "the live og.png differs from the site's main branch: the deploy has not caught up"; fi
+  else
+    skip "site checkout not found, so the link card was not compared"
+  fi
 fi
 
 # --- What the Claude Code marketplace serves ----------------------------------

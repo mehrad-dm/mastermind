@@ -123,6 +123,13 @@ both `.claude-plugin` manifests, the README badge, and the site's `src/site.conf
 release that drifted did so because one was updated by hand and another was not. The script moves
 all six, then greps for anything still carrying the old number and tells you about it.
 
+It also moves the version in the site's `public/llms.txt`, regenerates the library pages (which dates
+each New badge) and redraws the link card and banners with the site's committed generator, because
+those are the details a release kept missing: the link card carried an old version and `llms.txt`
+fell two releases behind before anyone looked. `preflight.sh` fails when `llms.txt` lists a different
+set of skills than the repo, and `verify-release.sh` checks the live `llms.txt` and that the live link
+card is the one on the site's main branch.
+
 It runs `preflight.sh` and stops if anything fails. It does not commit, tag, push or publish.
 
 ### 3. Commit, tag, push

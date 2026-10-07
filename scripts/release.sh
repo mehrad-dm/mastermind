@@ -59,9 +59,16 @@ edit "plugin manifest"    ".claude-plugin/plugin.json"       "s/$OLD/$NEW/g"
 edit "marketplace"        ".claude-plugin/marketplace.json"  "s/$OLD/$NEW/g"
 edit "README"             "README.md"                        "s/$OLD/$NEW/g"
 edit "site version"       "$SITE/src/site.config.ts"          "s/v$OLD/v$NEW/g"
+edit "llms.txt"           "$SITE/public/llms.txt"             "s/Current release: v[0-9.]*/Current release: v$NEW/"
 if [ "$DRY" = 0 ]; then
   MASTERMIND_SITE="$SITE" node "$REPO/scripts/build-library.mjs" >/dev/null || die "library pages could not be regenerated"
   ok "library pages (a release date starts each New badge's 60 days)"
+  # The committed generator, never a work-in-progress copy, draws the link card and the banners.
+  GEN="$SITE/scripts/.release-social.mjs"
+  git -C "$SITE" show HEAD:scripts/generate-social.mjs > "$GEN" || die "the site has no committed scripts/generate-social.mjs"
+  ( cd "$SITE" && node "$GEN" >/dev/null ) || { rm -f "$GEN"; die "the link card and banners could not be regenerated"; }
+  rm -f "$GEN"
+  ok "link card and banners carry v$NEW"
 fi
 
 # --- Nothing left behind ------------------------------------------------------
@@ -69,7 +76,7 @@ if [ "$DRY" = 0 ]; then
   STALE="$(grep -rl "\b$OLD\b" \
     --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=evals --exclude-dir=dist \
     --exclude=CHANGELOG.md --exclude=journal.md \
-    "$REPO"/{README.md,VERSION,cli,.claude-plugin} "$SITE/src" 2>/dev/null || true)"
+    "$REPO"/{README.md,VERSION,cli,.claude-plugin} "$SITE/src" "$SITE/public/llms.txt" 2>/dev/null || true)"
   if [ -n "$STALE" ]; then
     warn "these still mention $OLD; add them to this script if they are version locations:"
     printf '%s\n' "$STALE" | sed 's/^/      /'
