@@ -71,7 +71,7 @@ You'll see it engage in your terminal:
   every future project. Learn is reading for one job; levelup is remembering forever. They chain naturally:
 if something learned turns out to be broadly reusable, learn hands it to levelup.
 - **Testing a risky unknown by building something**: that's `prototype`. Learn answers questions the docs can
-  answer. Spike answers questions only running code can.
+  answer. `prototype` answers questions only running code can.
 - **Familiar territory.** If the stack is well-known and current, this step is skipped. It's a response to
   genuine uncertainty, not a ritual.
 

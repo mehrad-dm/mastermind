@@ -15,6 +15,8 @@ layer, a hooks package, an internal SDK.
 > *any* model. If you move from one AI tool to another, the new model still
 > understands your package immediately: the knowledge lives in the repo, not in one model's head.
 
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
+
 ## Ask first: always
 This writes files into the user's repo. **Confirm before doing anything:** *"I can generate AI-friendly
 usage docs for `<package>` so any model (and teammate) understands it correctly: one doc per public unit,

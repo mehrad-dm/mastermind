@@ -37,7 +37,8 @@ per story, on that story's diff, at its checkpoint. The rules:
   open, decide it and add one line under the task: `Ruling: <what> · <why> · <cost if wrong>`. List all
   of them in the final report. A product choice is never a ruling: it goes to the user.
 - **Set the spec's status to `building`** at the first task. After the last task, run `converge`, and
-  treat the feature as done only when it reports converged.
+  treat the feature as done only when it reports converged. At each story checkpoint, run `mastermind
+  next` and end with the step it names.
 
 ## The loop
 

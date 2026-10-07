@@ -58,7 +58,9 @@ git branch. Create a branch only when the user asks.
 
 **Where am I?** Run `mastermind next` (or `.mastermind/bin/mastermind next`): it reads `specs/` and
 prints the current feature, its state, and the skill that comes next, with the reason. Every spec-driven
-skill starts from its answer and ends by naming the next step it prints. The rules below are what it
+skill in the feature flow (`specify`, `interview`'s clarify pass, `blueprint`, `checklist`, `breakdown`,
+`analyze`, `build` from a task list, `converge`) ends by naming the next step it prints, and the kernel has the model ask it
+before choosing a step. The rules below are what it
 applies.
 
 **The current feature** is the one the user names. Otherwise it is the folder matching the current
@@ -119,7 +121,7 @@ resets it to `draft` or `clarified`, and every later step re-runs against the ne
 | Status | Set by | Means |
 | --- | --- | --- |
 | `draft` | `specify` | written, open questions may remain |
-| `clarified` | `specify` or `interview` | no `[NEEDS CLARIFICATION]` left |
+| `clarified` | `interview` | its scan is done and no `[NEEDS CLARIFICATION]` is left |
 | `planned` | `blueprint` | plan written, gate passed or violation accepted |
 | `tasked` | `breakdown` | task list written |
 | `building` | `build` | first task started |

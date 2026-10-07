@@ -42,7 +42,7 @@ The output is a **proposal**, never an action:
 
 ## First: get the real intent
 
-If the goal is ambiguous, **ask one or two sharp questions before rewriting**: the rewrite carries only
+If the goal is ambiguous, **ask one sharp question before rewriting**: the rewrite carries only
 requirements the user actually implied. You sharpen their intent; it stays theirs.
 
 ## The rewrite checklist (apply what fits: keep it lean)

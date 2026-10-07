@@ -1,5 +1,5 @@
 ---
-title: Lab: a private room for data that must never be published
+title: Quarantine: a private room for data that must never be published
 blurb: Sets up a local, never-committed workspace for confidential material, plus automatic guards that block it from reaching a shared repository.
 ---
 
@@ -14,7 +14,7 @@ until the day it doesn't, and the failure is permanent. Once confidential materi
 repository, it is in the history, on other people's machines, and possibly on a public site. You cannot
 take it back by deleting it.
 
-**Lab replaces care with structure.** It builds a room that data cannot accidentally walk out of.
+**Quarantine replaces care with structure.** It builds a room that data cannot accidentally walk out of.
 
 ## What goes wrong without it
 
@@ -40,7 +40,7 @@ control system treats it as invisible and will never include it in a save.
 names, colleagues' names, internal domains. That list itself is never published either.
 
 **The guards.** Two automatic checks are installed. The first runs every time you save work, and refuses
-to proceed if it sees a Lab file or any term from your list. The second runs when you send work to a
+to proceed if it sees a `lab/` file or any term from your list. The second runs when you send work to a
 shared server, and scans everything being sent: including older saves, and including cases where the
 first check was skipped. Two layers, because one can be bypassed.
 
@@ -69,12 +69,13 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **Storing passwords and API keys**: those belong in a secrets manager or environment configuration,
-  not in a folder. Lab is for confidential *material and context*, not credentials.
-- **Turning Lab material into reusable knowledge**: that's `levelup`, and it is a separate, deliberate
-  step. Lab only builds the container and locks the door; deciding what has been genericized enough to
+- **Storing passwords and API keys**: it keeps them out of git and refuses a commit or push that carries
+  one, but the keys themselves belong in a secrets manager or environment configuration, not in a folder.
+  `lab/` is for confidential *material and context*, not credentials.
+- **Turning `lab/` material into reusable knowledge**: that's `levelup`, and it is a separate, deliberate
+  step. Quarantine only builds the container and locks the door; deciding what has been genericized enough to
   leave is its own decision, made explicitly.
-- **A general security review of your code**: that's a review task. Lab protects against *you*
+- **A general security review of your code**: that's a review task. Quarantine protects against *you*
   publishing something by accident, not against an attacker.
 
 ## What you get

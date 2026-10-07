@@ -10,8 +10,8 @@ not a bug hunt (that's `code-reviewer`) and not surface tidying (that's `/simpli
 redesign toward the standard in `core/mindset.md` and `core/principles.md`.
 
 ## Load first
-Read `~/.mastermind/engineering/core/principles.md`, `~/.mastermind/engineering/core/mindset.md`, and
-the active field's `stack-defaults.md`.
+Read `~/.mastermind/engineering/core/principles.md`, `~/.mastermind/engineering/core/mindset.md`,
+`~/.mastermind/engineering/core/rigor.md`, and the active field's `stack-defaults.md`.
 
 ## Reference catalog (field-agnostic)
 You have no web tools: work from the vocabulary you already carry, not from a fetch. The canonical

@@ -44,7 +44,7 @@ Offer only when **every** gate holds:
 - **One per task, maximum.** If two fit, offer the one with the larger consequence and stay quiet about
   the other.
 - **Say the value, not the tool.** *"There's client data in this repo. I can quarantine it so it can't be
-  committed"* lands; *"invoke the lab skill"* is homework.
+  committed"* lands; *"invoke the quarantine skill"* is homework.
 
 Then continue with your own recommendation either way: an offer is a sentence they can ignore, never a
 question that blocks the work. **Silence is the default**: when it's a close call, skip it. A suggestion

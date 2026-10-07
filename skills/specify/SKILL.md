@@ -50,7 +50,8 @@ Write `checklists/requirements.md` in the feature folder and test the spec again
 - [ ] No more than three clarification markers remain
 
 Fix what fails and re-check, at most three rounds. Anything still failing is listed in the checklist's
-notes and in your report. Set the status line to `draft`, or `clarified` once no marker remains.
+notes and in your report. Set the status line to `draft`. Only `interview` sets `clarified`: a spec with
+no markers still gets its scan for the gaps nobody marked.
 
 ## Gotchas
 
@@ -67,6 +68,6 @@ notes and in your report. Set the status line to `draft`, or `clarified` once no
 ## Report
 
 The folder, the stories with priorities, the checklist result, any marker still open, and the next step:
-`interview` if markers remain, `blueprint` if none do.
+`interview`, which runs its clarification pass on every spec.
 
 Then run `mastermind next` and end with the step it names, so the user sees where the feature stands.

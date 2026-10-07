@@ -18,6 +18,8 @@ then distil (name-free, into a field pack).
 > incidental: and a file that judges a named person is a career-risk if it leaks. Group by contributor
 > only as a *source of signal*, phrased neutrally.
 
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
+
 ## Phase 1: Capture (private, stays in the quarantine)
 
 1. **Consent + Lab first.** Ask before scanning a real, possibly-private codebase (and which paths). All
@@ -64,5 +66,5 @@ correctness-with-citation → same, tagged for the `code-reviewer` audit. Fronte
 - **Let tooling own what tooling enforces**: if a lint rule/type/template guarantees it, strengthen that; keep only the "why."
 - **`code-reviewer` finds defects; this captures style.** Keep the layers separate.
 - **A named private colleague's style stays here, never in `persona`.** `persona` is for public
-  figures with a documented body of work. A real coworker's style is Mode-A material: quarantine-gated,
+  figures with a documented body of work. A real coworker's style is private material: quarantine-gated,
   and it never leaves.

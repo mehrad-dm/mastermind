@@ -13,7 +13,7 @@ less what writing it means. Anything it does next to "check" is happening inside
 produced the answer, which is why self-review so reliably comes back clean. It isn't lying to you. It's
 grading its intention instead of its work.
 
-**Doubt is the move that gets a second opinion the model can't quietly influence.**
+**Doubt is the move that gets a second look from a context that never saw the reasoning.** It is a fresh context, not a second model: the same model, without the belief it is meant to test.
 
 ## What goes wrong without it
 

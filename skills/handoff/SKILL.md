@@ -20,7 +20,7 @@ reset. Capture just enough to resume cold: high signal, low tokens.
 ## Rules
 Summarize and link, point to detail rather than pasting it. Never copy a secret, token, key or
 customer record into a handoff: name where it lives instead. Write it where the next session
-will look (`.mastermind/HANDOFF.md`, a scratch file, or the issue). Prune it when the work completes.
+will look: `.mastermind/HANDOFF.md`, or the issue when the team tracks work there. Prune it when the work completes.
 
 ## Output
 A tight `.mastermind/HANDOFF.md`: goal, state checklist, decisions, file map, gotchas, resume+verify steps.

@@ -398,6 +398,7 @@ if (READ_CMDS.includes(cmd)) {
     if (asked && !pick) { next = 'specify'; why = `no feature folder matches "${asked}"` }
     else if (!pick) { next = constitution ? 'specify' : 'constitution'; why = features.length ? 'every feature has converged' : 'no feature folder yet' }
     else if (pick.status === 'none') { next = 'specify'; why = 'the folder has no spec.md' }
+    else if (pick.status === 'blocked') { next = 'ask the user'; why = 'the spec is blocked on a decision only the user can make: read its Clarifications and the open task' }
     else if (pick.markers) { next = 'interview'; why = `${pick.markers} open question(s) in the spec` }
     else if (pick.status === 'draft') { next = 'interview'; why = 'the spec has not had its clarification pass' }
     else if (!pick.plan) { next = 'blueprint'; why = 'no plan.md yet' }
@@ -405,7 +406,7 @@ if (READ_CMDS.includes(cmd)) {
     else if (pick.tasksOpen && !pick.tasksDone) { next = 'build'; why = `${pick.tasksOpen} task(s), none started: run analyze first if it touches money, auth or data` }
     else if (pick.tasksOpen) { next = 'build'; why = `${pick.tasksOpen} task(s) still open` }
     else if (pick.status !== 'converged') { next = 'converge'; why = 'every task is ticked, and a ticked box is a claim, not evidence' }
-    else { next = 'living-docs'; why = 'converged: promote what outlives it, then the folder is history' }
+    else { next = 'specify'; why = `${pick.name} has converged and is history now: start the next feature, or name another one` }
     emit(
       { specs: dirName, constitution, feature: pick && (({ mtime, ...f }) => f)(pick), picked: how || null, next, why, features: features.map(({ mtime, ...f }) => f) },
       [

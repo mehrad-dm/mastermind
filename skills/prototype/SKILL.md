@@ -26,7 +26,7 @@ without an answer = the box is spent, whatever the clock says.
 
 **When it expires, stop. That's a result, not a failure.** Report: what you learned, what is still
 unknown, and one recommendation: *proceed* (answer is yes, build it properly) / *different approach*
-(this path is wrong, here's the next one) / *needs more investigation* (name what a second spike would
+(this path is wrong, here's the next one) / *needs more investigation* (name what a second prototype would
 target). Then discard the code: it stays throwaway and does not ship, same as a prototype that succeeded.
 
 **Extending the box is a decision, not drift.** Only extend when the attempts narrowed the question

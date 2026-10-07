@@ -59,16 +59,16 @@ of them by hand.
 | **converge** | check the built code against everything the feature promised; append the gaps | every box is ticked, or you ask "is it really done?" | *"check the code against the spec"* |
 | **route** | load only the files/skills a task actually needs | a task is non-trivial or you're unsure where to start | *"route this"* |
 | **learn** | get up to speed fast on an unfamiliar stack/API, verify assumptions | the tech is new, fast-moving, or you're guessing | *"learn how the Stripe API handles refunds"* |
-| **prototype** | build a throwaway spike to learn, then rebuild properly | the right approach is genuinely unknown | *"spike a quick prototype of this"* |
+| **prototype** | build a throwaway prototype to learn, then rebuild properly | the right approach is genuinely unknown | *"throw together a quick prototype of this"* |
 | **signature** | capture your team's real conventions as durable rules it follows | you ask it to match your codebase / keep correcting the same thing | *"make it match our patterns"* |
 | **persona** | write in the documented public style of a named engineer, cited | you ask for someone's style ("write like X") | *"write this like Kent C. Dodds"* |
 | **explain** | write AI-friendly usage docs beside an internal package | an internal package has little/no docs (asks first) | *"explain this package"* |
 | **prompt** | sharpen a vague prompt into a precise, AI-ready one | you ask to optimize/fix a prompt for an AI | *"improve this prompt"* |
-| **quarantine** | set up a private, gitignored quarantine for confidential data | before capturing project/client-specific notes | *"set up a lab here"* |
+| **quarantine** | set up a private, gitignored quarantine for confidential data | before capturing project/client-specific notes | *"keep this client's data private"* |
 | **levelup** | improve MasterMind's own knowledge (lessons, curriculum, new field) | after a correction/review, or to refresh standards | *"levelup: remember this"* |
-| **double-check** | interrogate a claim before handing it over: adversarial, reviewer never sees your conclusion | you're about to say "it works", or a review came back suspiciously clean | *"doubt this"* |
+| **double-check** | interrogate a claim before handing it over: adversarial, reviewer never sees your conclusion | you're about to say "it works", or a review came back suspiciously clean | *"are you sure? double-check it"* |
 | **deprecate** | remove/migrate/retire safely: expand → migrate → contract | deleting a feature, column, flag, or endpoint | *"can we delete this?"* |
-| **roadmap** | a durable decision map for multi-week work | work spanning many sessions; "why did we decide X?" | *"map this project"* |
+| **roadmap** | a durable decision map for multi-week work | work spanning many sessions; "why did we decide X?" | *"keep a roadmap for this project"* |
 | **lint** | check MasterMind's own files for bloat, repeated rules, contradictions | before a release, or the brain feels bloated | *"lint the brain"* |
 | **clarify** | re-pitch an answer that did not land, in plain words or as a picture | you say "I did not follow that", "simpler", "you lost me" | *"say that simply"* |
 | **deepen** | survey an area and rank where the design costs most, you pick one | "this is getting messy", "why is this so hard to change?" | *"where is this hurting?"* |
@@ -105,5 +105,5 @@ setup**, say *"init"* or just start working and it'll ask. Verify your install a
   *"plan first from now on"*.
 - **specs-dir**: where spec-driven documents live, `specs` unless that folder already holds something else.
 
-Both behave exactly as their implementations define them, `skills/build/SKILL.md` (plan-first gate) and
+The first two behave exactly as their implementations define them, `skills/build/SKILL.md` (plan-first gate) and
 `skills/report/SKILL.md` (report formats).

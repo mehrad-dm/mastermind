@@ -53,6 +53,8 @@ the field pack supplies the stack, rigor supplies the gate.
 
 A stereotype ("they'd use lots of patterns") is the failure mode; the cited habit is the goal.
 
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
+
 ## Gotchas
 - **Homage, not forgery**: borrow the cited habit, never put their name on the work or invent opinions for
   them. A cool signature that ships a bug still failed (rigor wins).

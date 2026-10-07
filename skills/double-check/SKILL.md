@@ -25,6 +25,7 @@ This applies it to a *claim*, not only to a diff.
    any reviewer defaults to grading your intent.
 
 3. **Doubt.** Dispatch a reviewer in a fresh context with **the artifact and the contract, nothing else**.
+   It is a fresh context, not a second model: say so, and use a second model where one is installed.
    Brief it adversarially:
 
    > Find what is wrong with this. Assume the author is overconfident. Do not validate and do not

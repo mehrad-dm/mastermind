@@ -12,6 +12,10 @@ user didn't sign up for. Work **step by step and clean**, one focused change at 
 worthwhile improvements beyond the ask, **note them briefly at the end as suggestions** and let the
 user choose, never fold them silently into the change. (Scope creep is on the refuse-list below.)
 
+**The user's own words are not yours to rewrite.** Their prompt, spec, ticket, docs or code comments
+change only when they ask for that change. Propose instead of applying, and name every requirement you
+added or cut.
+
 ## Before writing code (pre-flight)
 
 **Read `.mastermind/brief.md` first if it exists.** It is short by design and it holds what the code

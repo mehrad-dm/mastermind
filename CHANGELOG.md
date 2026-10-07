@@ -41,8 +41,8 @@ history lives in git.
 - `mastermind next` answers "where does this feature stand, and what comes next?" by reading `specs/`
   rather than leaving the model to infer it: the current feature, its status, open questions and tasks,
   and the next skill with the reason. Every spec-driven skill starts from it and ends by naming it, and
-  the session hook points a project with feature folders at it. Choosing the right step was the part of
-  the flow a model got wrong most often when it had to judge the state from prose.
+  the session hook points a project with feature folders at it. In the end-to-end trial where the
+  model chose its own skills, which step came next was the part it was least sure of.
 - The site marks a new skill or agent **New** for 60 days after the release that added it. The
   version comes from `since:` in its `ABOUT.md` and the date from this changelog, so nobody has to
   remember to take the badge down.
@@ -65,6 +65,25 @@ history lives in git.
 - Uninstall left every skill link in place when the project sat inside a folder named `agents`. It
   decided between a skill and an agent by searching the whole path, so the parent folder answered
   first. It now looks only at the folder the link is in.
+- The 0.29.1 notes said a rule, "the user's own words are not yours to rewrite", was stated once in
+  `rigor.md` and pointed to from seven skills. Only `prompt` ever changed. The rule is in `rigor.md` now
+  and `interview`, `signature`, `persona`, `explain`, `quarantine` and `deprecate` point to it.
+- `clarify` logged its misses in a shape `mastermind wrong-log` filters out, so they never showed. It
+  writes the log's own format now.
+- `roadmap` still called itself "Map" in its own title, and its article overstated `double-check` as a
+  second opinion; it is a fresh context, not a second model.
+- The `help` menu still taught retired names in its "call it by hand" examples ("spike", "set up a lab",
+  "doubt this", "map this project"), and `route` still said "invoke the lab skill". The `refactorer`
+  article said it writes characterisation tests unasked, which it stopped doing in 0.28.0, and the agent
+  now loads `rigor.md` as its own notes said it did. Titles and articles that still said "Perf", "Lab
+  Init" or "spike" use the current names, `quarantine`'s article no longer says credentials are not its
+  concern while its description fires on them, `prompt` asks one question where two sections disagreed,
+  and `handoff` names one place for its file. `double-check` says in its own steps that its reviewer is
+  a fresh context, not a second model, and the `architect` article explains its spec and constitution
+  input. `interview`'s clarify pass and `build` working from a task list now end with `mastermind next`
+  like the rest of the feature flow, which `spec-driven.md` now names skill by skill.
+- The Codex and Cursor routing evals read an account that ran out of quota mid-run as a routing
+  failure. Each call now checks its own error, so a usage or rate limit reports "could not run".
 - `--check` never looked at `.cursor/hooks.json`: the Cursor check returned before reaching it, so a
   missing or stale hook could not be reported. It runs now.
 - A skill link that failed to be created was still counted as linked, so an install could report every

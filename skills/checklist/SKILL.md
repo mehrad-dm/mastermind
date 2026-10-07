@@ -55,4 +55,5 @@ Quality dimensions: **Completeness** · **Clarity** · **Consistency** · **Meas
 ## Report
 
 The file path, the item count by dimension, the three gaps most likely to cause rework, and whether
-they need `interview` before `blueprint` proceeds.
+they need `interview` before planning or building continues. Layout and paths follow
+`~/.mastermind/engineering/core/spec-driven.md`. Then run `mastermind next` and end with the step it names.

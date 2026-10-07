@@ -9,6 +9,8 @@ Every other skill adds or fixes. This one deletes, migrates and retires: the hal
 the reward (a smaller system) arrives long after the risk, and where what breaks is whatever you
 couldn't see was still reading it.
 
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
+
 ## The shape: expand → migrate → contract
 
 Any removal that can't land in one atomic commit takes three phases, in this order, each shipped on its

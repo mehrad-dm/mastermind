@@ -37,6 +37,7 @@ as done here. Point to CI rather than copying it.>
 
 - This file outranks every spec, plan and task in `specs/`.
 - A change to it bumps the version below and adds an entry to the amendment block at the top.
-- MAJOR removes or redefines a principle. MINOR adds or widens one. PATCH changes no obligation.
+- MAJOR removes or redefines a principle so old work may break it. MINOR adds one, or changes one
+  without making old work non-compliant. PATCH changes no obligation.
 
 **Version** <0.1.0> · **Ratified** <YYYY-MM-DD> · **Last amended** <YYYY-MM-DD>

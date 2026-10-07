@@ -3,7 +3,7 @@ name: roadmap
 description: "Use when work spans weeks and the reasoning behind it is piling up: returning to a project after time away, \"why did we decide X?\", \"where did we land on this?\", \"what's still open?\", onboarding someone onto a long-running build, or a choice everyone remembers making and nobody can find. Not one session's state (that's `handoff`), not scoping one feature (that's `interview`)."
 ---
 
-# MasterMind: Map
+# MasterMind: Roadmap
 
 Long work loses its reasoning long before it loses its code. Six sessions in, the *why* behind a choice
 is gone, and the seventh session relitigates it, or silently undoes it. This is the one artifact that
@@ -62,6 +62,9 @@ question leaves "Open" only when something *outside the map* settled it: a measu
 user, code that now exists: and the entry that replaces it says which.
 
 ## When it gets written
+
+In a project that works from `specs/`, `converge` hands this map the decisions a converged feature
+leaves behind, one line each with a pointer to the frozen feature folder.
 
 An entry is earned at the same moment the journal line is: the verdict closing a non-trivial task
 (`~/.mastermind/engineering/core/rigor.md`). The journal records *what happened*; the map carries only

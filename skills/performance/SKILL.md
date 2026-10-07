@@ -3,7 +3,7 @@ name: performance
 description: "Use when something is slow, \"why is this slow\", \"optimize this\", \"make it faster\", jank, lag, a slow query, slow page load, slow render, slow build, high memory, a timeout. Not for correctness bugs; that's debug."
 ---
 
-# Perf: measure, find the real bottleneck, fix the biggest, verify
+# Performance: measure, find the real bottleneck, fix the biggest, verify
 
 Slowness has a **real, measurable cause**. The cardinal sin is optimizing by intuition. You'll spend
 effort on the wrong thing and maybe trade away correctness for nothing. Get data first.

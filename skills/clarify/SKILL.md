@@ -53,8 +53,9 @@ A second wall of text is the same failure again.
 
 Each time this fires you have found a place MasterMind writes badly, and that is worth more than the
 one repair. When the trigger was your own writing rather than a genuinely hard subject, add a line to the
-brain's own `.mastermind/journal.md`, the file `mastermind wrong-log` reads: what you said, what did
-not land, and the shorter form that worked.
+brain's own `.mastermind/journal.md`, the file `mastermind wrong-log` reads, in its format so the log
+shows it: `<date> · wrong · <what you said that did not land> · caught by the user not following ·
+<the shorter form that worked>`.
 
 ## Gotchas
 

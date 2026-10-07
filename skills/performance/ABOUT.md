@@ -1,5 +1,5 @@
 ---
-title: Perf: making the correct thing fast, with numbers to prove it
+title: Performance: making the correct thing fast, with numbers to prove it
 blurb: What MasterMind does when something is slow, and why "feels faster" is not a result.
 ---
 
@@ -13,7 +13,7 @@ The trap is that slowness *looks* diagnosable by reading. It isn't. Programs spe
 that surprise even the people who wrote them, and an AI reasoning from patterns will confidently optimize
 the part that was never the problem.
 
-**Perf is the discipline of not touching anything until you have a number.**
+**Performance work is the discipline of not touching anything until you have a number.**
 
 ## What goes wrong without it
 
@@ -72,9 +72,9 @@ You'll see it engage in your terminal:
   answer wrong*, `performance` assumes the answer is right and asks *why does it take so long*. Using the wrong
   one wastes the whole session: profiling a correctness bug tells you nothing, and hunting a root cause
   for slowness just produces theories.
-- **Proving a finished feature works end to end**: that's `qa`. Perf verifies a number moved; qa verifies
+- **Proving a finished feature works end to end**: that's `qa`. Performance verifies a number moved; qa verifies
   the behavior is correct.
-- **Tidying code that isn't slow**: restructuring for clarity is refactoring. Perf only justifies a change
+- **Tidying code that isn't slow**: restructuring for clarity is refactoring. Performance only justifies a change
   when a measurement backs it.
 
 ## What you get

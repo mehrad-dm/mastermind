@@ -9,6 +9,8 @@ A precise spec is cheaper than a wrong build. Time spent making the spec exact p
 watching the implementation (`~/.mastermind/engineering/core/product-sense.md`, `~/.mastermind/engineering/core/agent-loop.md`). This produces the *what*,
 not the code.
 
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
+
 ## First, say what you think they're asking for
 
 Lead with your reading of the ask and how sure you are: **a wrong guess gets corrected faster than a
@@ -106,7 +108,7 @@ Then ask, under these limits:
 
 Stop when the scan leaves no area partial or missing, the user says stop, or five questions are spent.
 A spec with no markers still gets the scan: its silent gaps are the point. Report the areas still
-partial, and set the spec's status to `clarified` when no marker remains. In this mode `spec.md` is the
+partial, and set the spec's status to `clarified` when no marker remains. Then run `mastermind next` and end with the step it names. In this mode `spec.md` is the
 scope contract: skip *Write the spec* and *Output* below, and write no second spec file.
 
 Outside clarify mode, close the interview by writing the scope contract below and getting one real confirmation. Everything
@@ -163,7 +165,7 @@ Decide everything technical yourself; surface only genuine product trade-offs to
 Keep it self-contained: a fresh session should be able to build from it alone.
 
 ## Interview vs. the `architect` agent
-Spec is the **what**; `architect` (`~/.mastermind/agents/architect.md`) is the **how**. Spec produces the
+Interview settles the **what**; `architect` (`~/.mastermind/agents/architect.md`) is the **how**. Interview produces the
 problem, scope, glossary, acceptance criteria, and edge cases; architect produces module/interface
 boundaries, the data model, key types, and the technical decisions behind them.
 
@@ -171,7 +173,7 @@ boundaries, the data model, key types, and the technical decisions behind them.
 - **Handoff:** feed the finished spec to `architect` as its input, it restates the problem from the spec's
   scope and acceptance criteria instead of re-deriving them. Non-trivial work usually wants both, in that
   order; a small, well-understood change needs neither.
-- Spec's "Interfaces & data" step stays at the level the spec needs (files touched, contracts the
+- The spec's "Interfaces & data" step stays at the level the spec needs (files touched, contracts the
   acceptance criteria depend on). Stop at the *what*; module design is architect's output, not spec's.
 
 ## Output
