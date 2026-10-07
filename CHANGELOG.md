@@ -4,6 +4,18 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [Unreleased]
+
+### Fixed
+
+- Cursor never listed `build` among its skills, because it drops any skill named exactly that, ours or
+  anyone's. The installer now also writes `.cursor/skills/mastermind-build`, a generated copy under a
+  name Cursor accepts; a renamed copy of `build` was listed in a live Cursor session. `--check` reports
+  it missing or out of date, uninstall removes it, a file of yours at that path is left alone, and a
+  symlinked `.cursor/skills`, or a file where its folder belongs, is skipped without stopping the rest
+  of the install. Routing to `build`
+  in Cursor already worked through the kernel's menu; this puts it in Cursor's own list too.
+
 ## [0.33.0] · 2026-10-07
 
 ### Added
