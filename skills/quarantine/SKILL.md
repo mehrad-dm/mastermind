@@ -1,9 +1,9 @@
 ---
 name: quarantine
-description: Use whenever secrets or confidential material must be kept out of git: API keys, tokens, credentials, a client's internal patterns, private project data, real names, proprietary code. Triggers: "these keys must never end up in a commit", "make sure this never gets pushed", "this is sensitive", "don't commit this", "set up the lab", or any request to guard against leaking secrets. Also when a `lab/` folder already exists but its guards are missing or broken. (The quarantine lives on disk as `lab/`: the name existing projects already have.)
+description: "Use whenever secrets or confidential material must be kept out of git: API keys, tokens, credentials, a client's internal patterns, private project data, real names, proprietary code. Triggers: \"these keys must never end up in a commit\", \"make sure this never gets pushed\", \"this is sensitive\", \"don't commit this\", \"set up the lab\", or any request to guard against leaking secrets. Also when a `lab/` folder already exists but its guards are missing or broken. (The quarantine lives on disk as `lab/`: the name existing projects already have.)"
 ---
 
-# Lab Init: a safe place for project data
+# Quarantine: a safe place for project data
 
 The Lab is where MasterMind keeps **raw, project-specific material**: codebase notes, captured
 patterns, `signature` profiles, anything with real names. It is **local and gitignored**; only the
@@ -12,6 +12,8 @@ material sitting in a publishable tree is how confidential data leaks. Make it s
 
 > **Golden rule: patterns leave the quarantine, identities never do.** Company/product/person/package names
 > stay in `lab/`. Only the general rule, stripped of every name, goes into a field pack.
+
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
 
 ## What it sets up
 

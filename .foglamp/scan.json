@@ -10,7 +10,7 @@
   "stats": {
     "agents": 4,
     "models": 1,
-    "tools": 24,
+    "tools": 33,
     "integrations": 4
   },
   "topModels": [
@@ -413,7 +413,7 @@
         "kind": "store",
         "sub": "prefs + brief, yours to edit",
         "sourceRef": "prefs.seed.md",
-        "detail": "Seeded by the installer and never overwritten: prefs.md holds cycle-report and plan-first, brief.md holds what this project is, its own words, what breaks, and what cannot be undone."
+        "detail": "Seeded by the installer and never overwritten: prefs.md holds cycle-report, plan-first and specs-dir, brief.md holds what this project is, its own words, what breaks, and what cannot be undone."
       },
       {
         "id": "cursorrouting",

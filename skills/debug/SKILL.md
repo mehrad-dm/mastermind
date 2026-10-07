@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Use when a bug isn't obvious, resists a quick fix, keeps coming back, or you're about to start guessing: "why is this broken", "this keeps happening", intermittent or flaky failures, a crash you can't explain, behaviour that makes no sense. Not for a typo or an obvious mistake.
+description: "Use when a bug isn't obvious, resists a quick fix, keeps coming back, or you're about to start guessing: \"why is this broken\", \"this keeps happening\", intermittent or flaky failures, a crash you can't explain, behaviour that makes no sense. Not for a typo or an obvious mistake."
 ---
 
 # MasterMind: Debug
@@ -73,6 +73,8 @@ coincidence, not a fix.
 5. **Fix the root cause, not the symptom** (`~/.mastermind/engineering/core/rigor.md`). Address why the bad state was possible,
    ideally make it unrepresentable (types, invariants, a reshaped data structure so the edge case
    disappears, `~/.mastermind/engineering/core/mindset.md`). Never suppress an error to green the check.
+   Before patching a function, search every caller of it. When several share the bug, fix it once,
+   where they all pass through, not at the one caller that reported it.
 
 6. **Verify + guard.** Confirm the red check now passes and nothing else broke (typecheck/lint/tests/
    build). **Add the guard that would have caught this**: a case in the project's suite if it has one;

@@ -35,6 +35,16 @@ const EXTRA = [
   { prompt: 'what can you actually do for me here?', expected: ['help'] },
   { prompt: 'I did not follow any of that, say it simply', expected: ['clarify'] },
   { prompt: 'this area keeps getting harder to change, where is the design costing us most?', expected: ['deepen'] },
+  { prompt: 'my cofounder wants a referral program, I am not convinced people would use it, can we figure out if it is worth the effort', expected: ['assess'] },
+  { prompt: 'two rules nobody here may ever break: card numbers never touch our database, and the app has to keep working without a connection. get that on record so every future change gets held to it', expected: ['constitution'] },
+  { prompt: 'new people keep asking who our customers are and how we charge them, and the answers live in my head. put it somewhere in the repo that stays accurate', expected: ['living-docs'] },
+  { prompt: 'we want customers to set up invoices that repeat every month. before any code, pin down exactly what it has to do and how we will know it works', expected: ['specify'] },
+  { prompt: 'the invitations requirements in specs/004-invitations are signed off. now work out how we will actually implement them in this codebase', expected: ['blueprint'] },
+  { prompt: 'turn the invitations design into an ordered list of small steps I can work through one at a time', expected: ['breakdown'] },
+  { prompt: 'before anyone writes code for invitations, make sure the requirements, the design and the step list do not contradict each other or leave something out', expected: ['analyze'] },
+  { prompt: 'blind users will sign up through the payments flow. before we plan it, tell me where the payments requirements leave their experience undefined', expected: ['checklist'] },
+  { prompt: 'the team says CSV export is finished. compare the code with specs/007-export and show me where it falls short', expected: ['converge'] },
+  { prompt: 'fix the typo in the footer copyright line', forbidden: ['specify', 'blueprint', 'breakdown', 'converge'] },
 ]
 const ONLY = process.env.ONLY
 const ALL = FULL ? [...CORE, ...EXTRA] : CORE
@@ -108,6 +118,20 @@ execFileSync('cp', ['-R', join(ROOT, 'evals', 'runs', 'v0.27-real', 'seed') + '/
 const fakeHome = join(work, '.home')
 mkdirSync(fakeHome, { recursive: true })
 execFileSync('bash', [join(ROOT, 'install.sh')], { cwd: work, stdio: 'ignore', env: { ...process.env, HOME: fakeHome } })
+
+// The spec-driven cases name feature folders, so a session can find what the user points at.
+const FEATURES = {
+  'specs/004-invitations/spec.md': '# Spec: team invitations\n\n**Status** clarified\n\n## User stories\n\n### US1: invite a teammate by email (P1)\n\n- **US1/AC1** When an owner sends an invite, the invitee receives an email with a link that expires in 7 days.\n\n## Requirements\n\n- **FR-001** Owners MUST be able to invite by email.\n- **FR-002** An invite MUST expire after 7 days.\n',
+  'specs/004-invitations/plan.md': '# Plan: team invitations\n\n## Design\n\nAn `invites` table, a POST /invites endpoint, an email job, and an accept route that checks expiry.\n',
+  'specs/005-payments/spec.md': '# Spec: card payments\n\n**Status** clarified\n\n## Requirements\n\n- **FR-001** Users MUST be able to pay for an order by card.\n- **FR-002** A receipt MUST be emailed after payment.\n',
+  'specs/007-export/spec.md': '# Spec: CSV export\n\n**Status** building\n\n## Requirements\n\n- **FR-001** Users MUST be able to export orders to CSV.\n- **FR-002** Exports MUST include only the current workspace.\n- **FR-003** Exports over 10,000 rows MUST be refused with a message.\n',
+  'specs/007-export/plan.md': '# Plan: CSV export\n\nAdd src/export.js with exportOrders(workspaceId) and a row limit check.\n',
+  'specs/007-export/tasks.md': '# Tasks: CSV export\n\n- [x] T001 Add exportOrders in src/export.js (FR-001)\n- [x] T002 Filter by workspace in src/export.js (FR-002)\n- [x] T003 Refuse exports over 10,000 rows in src/export.js (FR-003)\n',
+}
+for (const [rel, text] of Object.entries(FEATURES)) {
+  mkdirSync(join(work, dirname(rel)), { recursive: true })
+  writeFileSync(join(work, rel), text)
+}
 
 if (process.env.CROWDED) {
   for (const [name, description] of DECOYS) {

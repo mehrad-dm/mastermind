@@ -15,7 +15,7 @@ The catch is what usually happens next. Someone builds a rough thing to find out
 no tests, no error handling, hard-coded values still sitting in it. The experiment becomes the product by
 accident, and nobody ever decides to let that happen.
 
-**Spike separates the two: learn fast, then build properly.**
+**A prototype separates the two: learn fast, then build properly.**
 
 ## What goes wrong without it
 
@@ -41,7 +41,7 @@ invested in code that will be deleted is quality wasted. Speed is the entire poi
 thing you didn't think to ask about is usually where the real risk was hiding.
 
 **4. Delete it and build properly.** The real version gets the full treatment: design, tests, review,
-rigor. The spike does not ship. It stays in a scratch area, isolated so it can't drift into production
+rigor. The prototype does not ship. It stays in a scratch area, isolated so it can't drift into production
 by accident.
 
 It's time-boxed throughout. The deliverable is the *learning*, never the code.
@@ -67,9 +67,9 @@ You'll see it engage in your terminal:
 - **Building something real**: that's `build`, and confusing the two is the expensive mistake. `build`
   produces code intended to live: designed, tested, reviewed, maintained. `prototype` produces code intended
   to die, and its shortcuts are only safe *because* it dies. The moment a prototype ships, every one of those
-  shortcuts becomes debt you never chose to take on. If the path is already clear, skip the spike and
+  shortcuts becomes debt you never chose to take on. If the path is already clear, skip the prototype and
   build it properly the first time.
-- **The answer is in the documentation**: that's `learn`. Spikes are for questions only running code can
+- **The answer is in the documentation**: that's `learn`. Prototypes are for questions only running code can
   settle. Writing a prototype to discover something the docs state plainly is slower, not faster.
 - **Something is broken and you need to know why**: that's `debug`. A prototype explores an unknown future;
   debug investigates a known failure.

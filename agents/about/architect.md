@@ -44,6 +44,10 @@ how data flows and where it gets checked, and the types that make broken states 
 Last, it lists the edge cases the builder must handle, and surfaces the one or two genuine *product*
 trade-offs only you can settle, every technical call it makes itself.
 
+When a feature is built spec-first, the spec is its problem statement: it designs to the spec's
+requirement IDs, holds every decision to the project's constitution, and its design becomes the design
+section of that feature's plan.
+
 ## When it fires
 
 You don't summon it. Say something like this and MasterMind reaches for it:
@@ -62,9 +66,9 @@ You'll see it engage in your terminal:
 
 ## When it does *not* fire
 
-- **When the question is "what are we even building?"**: that's the `interview` skill. Spec pins down the
+- **When the question is "what are we even building?"**: that's the `interview` skill. It pins down the
   *requirement*: what counts as done, what's in scope, what the words mean. Architect assumes the
-  requirement is settled and decides the *technical shape* that satisfies it. Fuzzy ask, use spec; clear
+  requirement is settled and decides the *technical shape* that satisfies it. Fuzzy ask, use interview; clear
   ask with an unclear structure, use architect.
 - **A small, contained change.** Adding a field, fixing a label. Ceremony for a five-minute job is waste.
 - **When the real unknown is "will this approach even work?"**: that's a `prototype`: build a rough throwaway

@@ -1,6 +1,6 @@
 ---
 name: prompt
-description: Use ONLY when the user explicitly asks to improve a prompt aimed at an AI: "improve my prompt", "fix this prompt", "how should I ask for this", "make this prompt better". A prompt pasted to be answered or executed is a task, not a rewrite request: do that task instead. About prompts for an AI, not about optimizing code.
+description: "Use ONLY when the user explicitly asks to improve a prompt aimed at an AI: \"improve my prompt\", \"fix this prompt\", \"how should I ask for this\", \"make this prompt better\". A prompt pasted to be answered or executed is a task, not a rewrite request: do that task instead. About prompts for an AI, not about optimizing code."
 ---
 
 # MasterMind: Prompt
@@ -42,7 +42,7 @@ The output is a **proposal**, never an action:
 
 ## First: get the real intent
 
-If the goal is ambiguous, **ask one or two sharp questions before rewriting**: the rewrite carries only
+If the goal is ambiguous, **ask one sharp question before rewriting**: the rewrite carries only
 requirements the user actually implied. You sharpen their intent; it stays theirs.
 
 ## The rewrite checklist (apply what fits: keep it lean)

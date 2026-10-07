@@ -1,6 +1,6 @@
 ---
 name: clarify
-description: Use the moment the user signals your last answer did not land: "I did not follow that", "I don't understand", "say it simply", "simpler please", "more simply", "you lost me", "what does that mean", "too long", "explain again", "show me", a confused question repeating something you already answered. Re-pitch what you just said, in plain words or as a picture. Not for a new question, and not for documenting a package: that is explain.
+description: "Use the moment the user signals your last answer did not land: \"I did not follow that\", \"I don't understand\", \"say it simply\", \"simpler please\", \"more simply\", \"you lost me\", \"what does that mean\", \"too long\", \"explain again\", \"show me\", a confused question repeating something you already answered. Re-pitch what you just said, in plain words or as a picture. Not for a new question, and not for documenting a package: that is explain."
 ---
 
 # MasterMind: Clarify
@@ -39,7 +39,9 @@ sequence does, what the data looks like. Reach for the lightest form that carrie
 - a **table**: for a comparison or a set of options
 - a **diff**, and not only of code: mark a call tree, a file layout or a state machine with `+` and
   `-` to show a change against a shape the reader already holds
-- a **mermaid diagram**: state and sequence diagrams, only when the relationships genuinely need one
+- a **mermaid diagram**: state and sequence diagrams, only when the relationships genuinely need one.
+  Nine boxes at most; past that, draw an overview and a detail. Remove every box, arrow and label
+  whose removal loses nothing, and give emphasis to one or two elements, never four
 
 Plain text beats a rendered diagram: it works in every terminal and every tool, and it is faster to
 read. Reach for HTML only when the user asks for it.
@@ -51,8 +53,9 @@ A second wall of text is the same failure again.
 
 Each time this fires you have found a place MasterMind writes badly, and that is worth more than the
 one repair. When the trigger was your own writing rather than a genuinely hard subject, add a line to the
-brain's own `.mastermind/journal.md`, the file `mastermind wrong-log` reads: what you said, what did
-not land, and the shorter form that worked.
+brain's own `.mastermind/journal.md`, the file `mastermind wrong-log` reads, in its format so the log
+shows it: `<date> · wrong · <what you said that did not land> · caught by the user not following ·
+<the shorter form that worked>`.
 
 ## Gotchas
 

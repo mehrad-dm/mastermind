@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Use when the right approach is genuinely unknown and reality will teach faster than planning: a risky unvalidated assumption, an unfamiliar integration, "will this even work", "try something quick". The result is explicitly throwaway and does not ship.
+description: "Use when the right approach is genuinely unknown and reality will teach faster than planning: a risky unvalidated assumption, an unfamiliar integration, \"will this even work\", \"try something quick\". The result is explicitly throwaway and does not ship."
 ---
 
 # MasterMind: Prototype
@@ -26,7 +26,7 @@ without an answer = the box is spent, whatever the clock says.
 
 **When it expires, stop. That's a result, not a failure.** Report: what you learned, what is still
 unknown, and one recommendation: *proceed* (answer is yes, build it properly) / *different approach*
-(this path is wrong, here's the next one) / *needs more investigation* (name what a second spike would
+(this path is wrong, here's the next one) / *needs more investigation* (name what a second prototype would
 target). Then discard the code: it stays throwaway and does not ship, same as a prototype that succeeded.
 
 **Extending the box is a decision, not drift.** Only extend when the attempts narrowed the question
@@ -37,4 +37,5 @@ the *learning*, not the code.
 
 ## Output
 The answer to the question + the surprises, and a clear "now build it properly" recommendation (or a
-"don't build it, here's why").
+"don't build it, here's why"). When the prototype served a feature in `specs/`, record the question and
+the answer in that feature's `research.md`, so `blueprint` builds on it instead of re-asking it.

@@ -38,8 +38,8 @@ structure that the main thread may have just spent an hour building.
 
 **The promise: behavior is preserved, and the tests prove it.** Not "should be preserved." The existing
 tests must pass, unchanged, exactly as they did before. If the target area isn't covered by tests, the
-first move is to write characterisation tests: tests that pin down what the code currently does, correct
-or not, before touching anything. If there's no way to prove behavior is unchanged, it doesn't refactor.
+first move is to propose characterisation tests: tests that pin down what the code currently does, correct
+or not, before touching anything. A test suite is your call, so it asks before writing one. If there's no way to prove behavior is unchanged, it doesn't refactor.
 That's a refusal, not a caveat.
 
 The second rule follows from the first: **structure or behavior, never both at once.** If a real bug turns

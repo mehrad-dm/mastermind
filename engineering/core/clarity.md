@@ -36,6 +36,15 @@ error messages, commit messages, the announce line. Every rule above applies.
 sentence discipline and drop the vocabulary restriction. A person reading an explanation can ask a
 follow-up; a machine reading an instruction cannot.
 
+Three checks before plain prose goes out:
+
+- **First line and last line.** A reader who reads only those two knows what happened and what to do
+  next. In a reply to a question, the answer comes first and the reasoning after it.
+- **A hedge that carries real uncertainty stays.** Rule 6 is for directives. In a report, deleting an
+  honest "probably" manufactures confidence the evidence never had.
+- **A rewrite keeps every claim.** When you shorten or re-pitch text, list any fact, number, name or
+  caveat you added or dropped. A cleaner version that lost a caveat is a less honest one.
+
 ## What this is not
 
 Not a rule for how the user writes to you. They talk however they like and you work out the intent:

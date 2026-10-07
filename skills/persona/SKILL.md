@@ -1,6 +1,6 @@
 ---
 name: persona
-description: Use when the user wants code written in the documented public style of a named engineer they admire: "write this like Dan Abramov", "make it read like Kent C. Dodds", "in the style of that OSS author". For a public figure with a real body of work; a private colleague's style is `signature` (quarantine-gated). A lens on taste, never impersonation.
+description: "Use when the user wants code written in the documented public style of a named engineer they admire: \"write this like Dan Abramov\", \"make it read like Kent C. Dodds\", \"in the style of that OSS author\". For a public figure with a real body of work; a private colleague's style is `signature` (quarantine-gated). A lens on taste, never impersonation."
 ---
 
 # Persona: write in the documented style of a named engineer
@@ -52,6 +52,8 @@ the field pack supplies the stack, rigor supplies the gate.
   (rules from the user's actual codebase) or house style / `mentors.md`, and tell the user which.
 
 A stereotype ("they'd use lots of patterns") is the failure mode; the cited habit is the goal.
+
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
 
 ## Gotchas
 - **Homage, not forgery**: borrow the cited habit, never put their name on the work or invent opinions for

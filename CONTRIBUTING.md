@@ -231,7 +231,8 @@ Each of these was argued once and decided. Reopening one needs a new argument, n
   all with `--dangerously-bypass-hook-trust`. The binary explains it: a hook must be reviewed and
   **enabled** once in the TUI, and that flag bypasses trust, not enabled. An installer cannot do that
   for a user, so shipping the file would claim a parity that does not exist. Revisit when Codex can
-  enable a hook non-interactively.
+  enable a hook non-interactively. Re-tested on Codex 0.160.1 (2026-10-07): a repo-local SessionStart hook with
+  `--dangerously-bypass-hook-trust` left `codex exec` waiting for over an hour, so the decision holds.
 - **The project always wins.** On a skill-name collision the user's file is never displaced: ours
   installs as `mastermind-<name>` and both work. If theirs is later removed, ours reclaims the plain
   name and the alias is pruned.
@@ -242,6 +243,9 @@ Each of these was argued once and decided. Reopening one needs a new argument, n
   `<EXTREMELY-IMPORTANT>` shouting). Match effort to stakes.
 - **Adopt patterns, never Claude-only machinery.** Workflow APIs, `/loop`, worktrees and friends stay
   optional accelerators, never dependencies.
+- **A new skill or agent is marked New for 60 days.** Its `ABOUT.md` carries `since: <version>`, and
+  the site shows the badge from that release's changelog date for 60 days, then drops it on its own.
+  People revisit a tool's docs occasionally, so 30 days expired before most of them saw it.
 - **Site docs are generated, never hand-written**: `scripts/build-library.mjs` builds them from
   `skills/*/ABOUT.md`, so a page cannot claim something the skill doesn't say.
 - **Prose column stays 768px** on the site; navigation may span the full container. 🧠 stays a literal

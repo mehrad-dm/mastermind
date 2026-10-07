@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, realpathSync, rmSync, writeSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, dirname, parse as parsePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -18,7 +18,7 @@ const MM_HOME_EXPLICIT = !!process.env.MASTERMIND_HOME
 const MM_HOME = process.env.MASTERMIND_HOME || join(homedir(), '.mastermind')
 const PIN = process.env.MASTERMIND_REF || `v${VERSION}`
 
-const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route', 'wrong-log', 'conflicts']
+const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route', 'wrong-log', 'conflicts', 'next']
 const COMMANDS = [...READ_CMDS, 'check', 'update', 'uninstall', 'init']
 const argv = process.argv.slice(2)
 
@@ -32,6 +32,7 @@ if (argv.includes('--help') || argv.includes('-h')) {
   mastermind skills           list the skill routing table, ours and any pack you installed
   mastermind agents           list the agents
   mastermind conflicts        show where an installed pack overlaps ours
+  mastermind next [feature]   where a spec-driven feature stands, and the skill that comes next
 
 Tools:   claude · cursor · codex        AGENTS.md is always wired, so it is not a tool you name
 Flags:   --global · --shared · --isolated        --json is for the listing commands above
@@ -267,11 +268,13 @@ const skillRoots = (brain) => {
   return [
     ...(project ? [
       [join(project, '.claude', 'skills'), 'project'],
+      [join(project, '.agents', 'skills'), 'project'],
       [join(project, '.cursor', 'skills'), 'project'],
       [join(project, '.codex', 'skills'), 'project'],
     ] : []),
     [join(brain, 'local', 'skills'), 'local'],
     [join(home, '.claude', 'skills'), 'user'],
+    [join(home, '.agents', 'skills'), 'user'],
     [join(home, '.cursor', 'skills'), 'cursor'],
     [join(home, '.cursor', 'skills-cursor'), 'cursor'],
     [join(codexHome, 'skills'), 'codex'],
@@ -350,6 +353,69 @@ if (READ_CMDS.includes(cmd)) {
     process.exit(1)
   }
   if (!brain) refuse('no brain found: run `npx mastermind-brain` in this project first')
+  if (cmd === 'next') {
+    const proj = projectDir()
+    if (!proj) refuse('not inside a project')
+    let dirName = 'specs'
+    try {
+      const pref = readFileSync(join(proj, '.mastermind', 'prefs.md'), 'utf8').match(/^-?\s*`?specs-dir:\s*([^`\s]+)`?/m)
+      // The value comes from the repository: a path that leaves the project is ignored.
+      if (pref && !pref[1].startsWith('/') && !pref[1].split(/[\\/]/).includes('..')) dirName = pref[1]
+    } catch { /* no prefs: the default holds */ }
+    const specs = join(proj, dirName)
+    if (!existsSync(specs)) {
+      emit({ specs: null, next: null, why: 'no specs folder: this project does not work spec-first' },
+        `no ${dirName}/ here: this project does not work spec-first. Small changes go straight to build.`)
+    }
+    const read = (f) => { try { return readFileSync(f, 'utf8') } catch { return null } }
+    const features = readdirSync(specs, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && /^\d{3,}-[a-z0-9-]+$/.test(e.name))
+      .map((e) => {
+        const dir = join(specs, e.name)
+        const spec = read(join(dir, 'spec.md'))
+        const tasks = read(join(dir, 'tasks.md'))
+        const status = (spec?.match(/\*\*Status\*\*\s*([a-z]+)/) || [])[1] || (spec ? 'draft' : 'none')
+        let mtime = 0
+        for (const f of readdirSync(dir)) { try { mtime = Math.max(mtime, statSync(join(dir, f)).mtimeMs) } catch { /* gone */ } }
+        return {
+          name: e.name, status, mtime,
+          markers: spec ? (spec.match(/\[NEEDS CLARIFICATION/g) || []).length : 0,
+          plan: existsSync(join(dir, 'plan.md')),
+          tasksOpen: tasks ? (tasks.match(/^\s*- \[ \]/gm) || []).length : null,
+          tasksDone: tasks ? (tasks.match(/^\s*- \[[xX]\]/gm) || []).length : null,
+        }
+      })
+    const asked = argv.find((a) => !a.startsWith('-'))
+    let branch = ''
+    try { branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: proj, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch { /* not git */ }
+    const open = features.filter((f) => f.status !== 'converged').sort((a, b) => b.mtime - a.mtime)
+    const pick = (asked && features.find((f) => f.name === asked || f.name.endsWith(`-${asked}`)))
+      || features.find((f) => branch && (branch === f.name || branch.endsWith(`/${f.name}`)))
+      || open[0] || null
+    const how = !pick ? '' : asked ? 'named' : branch && pick.name !== open[0]?.name ? 'matches the branch' : 'most recently changed open feature'
+    const constitution = existsSync(join(specs, 'constitution.md'))
+    let next, why
+    if (asked && !pick) { next = 'specify'; why = `no feature folder matches "${asked}"` }
+    else if (!pick) { next = constitution ? 'specify' : 'constitution'; why = features.length ? 'every feature has converged' : 'no feature folder yet' }
+    else if (pick.status === 'none') { next = 'specify'; why = 'the folder has no spec.md' }
+    else if (pick.status === 'blocked') { next = 'ask the user'; why = 'the spec is blocked on a decision only the user can make: read its Clarifications and the open task' }
+    else if (pick.markers) { next = 'interview'; why = `${pick.markers} open question(s) in the spec` }
+    else if (pick.status === 'draft') { next = 'interview'; why = 'the spec has not had its clarification pass' }
+    else if (!pick.plan) { next = 'blueprint'; why = 'no plan.md yet' }
+    else if (pick.tasksOpen === null) { next = 'breakdown'; why = 'no tasks.md yet' }
+    else if (pick.tasksOpen && !pick.tasksDone) { next = 'build'; why = `${pick.tasksOpen} task(s), none started: run analyze first if it touches money, auth or data` }
+    else if (pick.tasksOpen) { next = 'build'; why = `${pick.tasksOpen} task(s) still open` }
+    else if (pick.status !== 'converged') { next = 'converge'; why = 'every task is ticked, and a ticked box is a claim, not evidence' }
+    else { next = 'specify'; why = `${pick.name} has converged and is history now: start the next feature, or name another one` }
+    emit(
+      { specs: dirName, constitution, feature: pick && (({ mtime, ...f }) => f)(pick), picked: how || null, next, why, features: features.map(({ mtime, ...f }) => f) },
+      [
+        pick ? `${dirName}/${pick.name} · ${pick.status}${pick.tasksOpen !== null ? ` · ${pick.tasksDone} done, ${pick.tasksOpen} open` : ''}${how ? ` (${how})` : ''}` : `${dirName}/ · ${features.length} feature(s)`,
+        `next: ${next}: ${why}`,
+        constitution ? '' : 'no constitution.md: rules every feature is checked against are not written down yet',
+      ].filter(Boolean).join('\n'),
+    )
+  }
   if (cmd === 'wrong-log') {
     const proj = projectDir()
     const seen = new Set()

@@ -154,7 +154,7 @@ const NEW_NODES = [
     sub: 'prefs + brief, yours to edit',
     sourceRef: 'prefs.seed.md',
     detail:
-      'Seeded by the installer and never overwritten: prefs.md holds cycle-report and plan-first, brief.md holds what this project is, its own words, what breaks, and what cannot be undone.',
+      'Seeded by the installer and never overwritten: prefs.md holds cycle-report, plan-first and specs-dir, brief.md holds what this project is, its own words, what breaks, and what cannot be undone.',
   },
 ]
 

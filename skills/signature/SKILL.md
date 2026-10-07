@@ -1,6 +1,6 @@
 ---
 name: signature
-description: Use when code should match a team's real code style and conventions the user keeps correcting the AI toward: "make it match our codebase", "follow our patterns", "you keep writing it wrong": or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`.
+description: "Use when code should match a team's real code style and conventions the user keeps correcting the AI toward: \"make it match our codebase\", \"follow our patterns\", \"you keep writing it wrong\": or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`."
 ---
 
 # Signature: capture a team's code style, turn it into rules the AI follows
@@ -17,6 +17,8 @@ then distil (name-free, into a field pack).
 > X by Y"), never rate a person ("so-and-so writes bad code"). The artifact is the pattern; the person is
 > incidental: and a file that judges a named person is a career-risk if it leaks. Group by contributor
 > only as a *source of signal*, phrased neutrally.
+
+Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
 
 ## Phase 1: Capture (private, stays in the quarantine)
 
@@ -64,5 +66,5 @@ correctness-with-citation → same, tagged for the `code-reviewer` audit. Fronte
 - **Let tooling own what tooling enforces**: if a lint rule/type/template guarantees it, strengthen that; keep only the "why."
 - **`code-reviewer` finds defects; this captures style.** Keep the layers separate.
 - **A named private colleague's style stays here, never in `persona`.** `persona` is for public
-  figures with a documented body of work. A real coworker's style is Mode-A material: quarantine-gated,
+  figures with a documented body of work. A real coworker's style is private material: quarantine-gated,
   and it never leaves.

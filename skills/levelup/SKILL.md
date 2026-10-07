@@ -1,6 +1,6 @@
 ---
 name: levelup
-description: Use after a correction or review finding worth remembering, when standards may have drifted from the live ecosystem, when switching MasterMind to a new domain or stack, or when the user says "remember this", "learn from that", "so you don't repeat it", "don't make that mistake again", "level up", "update your knowledge".
+description: "Use after a correction or review finding worth remembering, when standards may have drifted from the live ecosystem, when switching MasterMind to a new domain or stack, or when the user says \"remember this\", \"learn from that\", \"so you don't repeat it\", \"don't make that mistake again\", \"level up\", \"update your knowledge\"."
 ---
 
 # MasterMind: Level Up
@@ -46,6 +46,9 @@ is the evidence behind the rule; distil it forward and let the old entries age o
 3. If a lesson is a general default (not just a gotcha), **promote** it into `stack-defaults.md` at the
    right section. That's where it will actually change behavior.
 4. Keep it tight. A lesson that isn't load-bearing is noise; keep only what earns its place.
+5. **A mechanical lesson becomes a check, not a sentence.** When the mistake is detectable by a script,
+   lint rule, hook or test, propose that check to the user alongside the lesson line. A rule that
+   stays prose gets broken again; this repo's own history shows it every time.
 
 `capture` is the one mode that may run on a user's install and stay local; it writes only to that field's
 `lessons.md` and `stack-defaults.md`.

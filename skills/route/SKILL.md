@@ -1,6 +1,6 @@
 ---
 name: route
-description: Use at the start of a task that spans multiple files, touches unfamiliar areas of a codebase, or where it isn't obvious what to load or where to begin. Skips itself for a one-line change or an already-scoped task.
+description: "Use at the start of a task that spans multiple files, touches unfamiliar areas of a codebase, or where it isn't obvious what to load or where to begin. Skips itself for a one-line change or an already-scoped task."
 ---
 
 # MasterMind: Wayfinder
@@ -44,7 +44,7 @@ Offer only when **every** gate holds:
 - **One per task, maximum.** If two fit, offer the one with the larger consequence and stay quiet about
   the other.
 - **Say the value, not the tool.** *"There's client data in this repo. I can quarantine it so it can't be
-  committed"* lands; *"invoke the lab skill"* is homework.
+  committed"* lands; *"invoke the quarantine skill"* is homework.
 
 Then continue with your own recommendation either way: an offer is a sentence they can ignore, never a
 question that blocks the work. **Silence is the default**: when it's a close call, skip it. A suggestion

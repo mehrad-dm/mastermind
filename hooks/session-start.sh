@@ -27,6 +27,13 @@ if [ -f "$FIELD" ] && grep -qiE 'Current field:[[:space:]]*\*\*[[:space:]]*none|
   nudge="\n\nThis project has no field pack yet, so only the universal core is loaded. Before the first\nsubstantive task, tell the user in one line and offer to run the init skill, which detects the\nstack and builds the pack. If they decline, carry on and do not ask again this session."
 fi
 
+proj="${CLAUDE_PROJECT_DIR:-$PWD}"
+for d in "$proj"/specs/[0-9][0-9][0-9]-*/; do
+  [ -d "$d" ] || continue
+  nudge="$nudge\n\nThis project works spec-first: it has feature folders in specs/. Before choosing a spec-driven\nskill, run mastermind next (or .mastermind/bin/mastermind next) and follow the step it names."
+  break
+done
+
 payload="<mastermind-brain>\nYou are running as MasterMind. The kernel below is your operating\ncontract for this session: it governs how you decide, build, verify, and report.\nFollow it. Re-read it here rather than relying on memory of an earlier turn.\n\n$(esc "$kernel")\n$nudge\n</mastermind-brain>"
 
 if [ "$SHAPE" = auto ]; then

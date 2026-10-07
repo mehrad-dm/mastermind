@@ -37,6 +37,24 @@ after removal, is a router that lies. (Authoring discipline: `levelup/authoring.
 | [`route`](./route/SKILL.md) | …start a non-trivial task. Load only the pack files / docs / code it needs (via `ROUTER.md`); refuses to over-plan a small one. |
 | [`prompt`](./prompt/SKILL.md) | …want a request sharpened. Turn a vague ask into a tight, AI-ready prompt. |
 
+## Spec-driven: from idea to a feature that provably matches its spec
+Documents live in the project's `specs/` folder; the method, layout and IDs are in
+[`engineering/core/spec-driven.md`](../engineering/core/spec-driven.md). Small changes skip all of this.
+
+| Skill | What it does (auto-applies when you…) |
+| --- | --- |
+| [`assess`](./assess/SKILL.md) | …wonder whether an idea deserves building. Intake → research → define → shape → **go / clarify / stop**, with evidence. Works with no code. |
+| [`constitution`](./constitution/SKILL.md) | …set the rules every feature must obey. A short, versioned list of checkable `MUST`s, with every amendment recorded and rippled. |
+| [`living-docs`](./living-docs/SKILL.md) | …need the product, business or tech knowledge written down and kept current. Reads first, asks the gaps, marks what is unconfirmed. |
+| [`specify`](./specify/SKILL.md) | …start a feature spec-first. What and why, no technology: prioritized stories, traceable requirements, at most three open questions. |
+| [`blueprint`](./blueprint/SKILL.md) | …need the technical plan for a spec. Constitution gate, decisions with reasons, design from `architect`, contracts, a runnable quickstart. |
+| [`breakdown`](./breakdown/SKILL.md) | …need the task list. Grouped by user story so each ships alone, every task traced to a requirement. |
+| [`checklist`](./checklist/SKILL.md) | …want one concern's requirements tested (security, UX, API…). Questions about the spec's wording, never about the code. |
+| [`analyze`](./analyze/SKILL.md) | …want spec, plan and tasks checked against each other before coding. Six passes, fresh context, read-only. |
+| [`converge`](./converge/SKILL.md) | …built a feature and need to know it is really done. Code against intent, every ticked box re-checked, gaps appended as tasks. |
+
+`interview` resolves a spec's open questions before planning, and `build` works through `tasks.md`.
+
 ## Capture, improve, hand off
 | Skill | What it does (auto-applies when you…) |
 | --- | --- |

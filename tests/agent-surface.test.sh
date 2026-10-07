@@ -105,6 +105,32 @@ out=$( (cd "$WORK" && MASTERMIND_HOME="$WORK/clone-home" MASTERMIND_REPO="$SRC" 
         MASTERMIND_COMMIT=0000000000000000000000000000000000000000 "${CLI[@]}" check 2>&1) || true )
 case "$out" in *"this release pins 000000000000"*) ok "a moved tag is refused (commit pin)";; *) bad "commit pin not enforced: $(printf '%s' "$out" | tail -1)";; esac
 
+echo "next"
+NX="$WORK/next"; mkdir -p "$NX/.mastermind" "$NX/specs/001-tags"; (cd "$NX" && git init -q .)
+echo "0.0.0-test" > "$NX/.mastermind/VERSION"
+mkdir -p "$WORK/nxhome"
+nx() { (cd "$NX" && HOME="$WORK/nxhome" MASTERMIND_HOME="$NX/.mastermind" "${CLI[@]}" next "$@" --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["next"])'); }
+check "an empty feature folder needs a spec" "$(nx)" "specify"
+printf '**Status** draft\n- **FR-001** x [NEEDS CLARIFICATION: who?]\n' > "$NX/specs/001-tags/spec.md"
+check "an open question goes to interview" "$(nx)" "interview"
+printf '**Status** clarified\n' > "$NX/specs/001-tags/spec.md"; : > "$NX/specs/001-tags/plan.md"
+check "a plan with no tasks needs breakdown" "$(nx)" "breakdown"
+printf -- '- [x] T001 a\n- [X] T002 b\n' > "$NX/specs/001-tags/tasks.md"
+check "every box ticked is not done: converge" "$(nx)" "converge"
+printf -- '- `specs-dir: ../outside`: x\n' > "$NX/.mastermind/prefs.md"
+check "a specs-dir that leaves the project is ignored" "$(nx)" "converge"
+printf '**Status** blocked\n' > "$NX/specs/001-tags/spec.md"
+check "a blocked spec goes to the user, not to build" "$(nx)" "ask the user"
+printf '**Status** converged\n' > "$NX/specs/001-tags/spec.md"
+check "a converged feature is history: the next step is a new spec" "$(nx 001-tags)" "specify"
+rm -rf "$NX/specs"
+check "no specs folder means no spec-driven step" "$(nx)" "None"
+
+HK="$WORK/hook"; mkdir -p "$HK/specs/001-tags" "$WORK/hook-empty"
+hk() { (cd "$1" && env -u CLAUDE_PROJECT_DIR bash "$ROOT/hooks/session-start.sh" claude | python3 -c 'import json,sys; print("it has feature folders in specs/" in json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"])'); }
+check "the session hook points a spec-first project at mastermind next" "$(hk "$HK")" "True"
+check "and says nothing in a project without feature folders" "$(hk "$WORK/hook-empty")" "False"
+
 echo "conflicts"
 CONF="$WORK/conf"; mkdir -p "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/optimize"
 echo "0.0.0-test" > "$CONF/.mastermind/VERSION"
@@ -118,6 +144,13 @@ check "sees the foreign skill and the overlap it causes" "$out" "1|performance"
 ln -s "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/performance" 2>/dev/null
 out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["foreign"]))')
 check "our own linked skill is not counted as foreign" "$out" "1"
+
+mkdir -p "$CONF/.agents/skills/tagger"
+printf -- '---\nname: tagger\ndescription: Tag release notes by component.\n---\n' > "$CONF/.agents/skills/tagger/SKILL.md"
+ln -s "$CONF/.mastermind/skills/performance" "$CONF/.agents/skills/performance" 2>/dev/null
+out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; print(",".join(sorted(f["name"] for f in json.load(sys.stdin)["foreign"])))')
+check "a skill installed for Codex in .agents/skills is seen, ours there is not" "$out" "optimize,tagger"
+rm -rf "$CONF/.agents"
 
 # Two generic words in common is not an overlap: `code, changes` used to pair every review skill
 # with `build`, and noise in a conflict report is why people stop reading it.

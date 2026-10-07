@@ -579,6 +579,31 @@ Raw data: `evals/runs/v0.27-set2/`.
 
 ---
 
+## Run V7: 2026-10-07 · do the spec-driven skills route, in Claude Code and in Codex?
+
+Nine new skills, measured live before release. Claude Code: `evals/auto-invoke.mjs` with `ONLY=<case>`,
+Sonnet, one rep per case, in a scratch project seeded with three feature folders (`specs/004-invitations`,
+`005-payments`, `007-export`) so a prompt that names a feature has something to find. Codex:
+`evals/codex-routing.mjs` on Codex CLI 0.160.1, model `gpt-5.5` on a ChatGPT account.
+
+| arm | n | result |
+| --- | --: | --- |
+| Claude Code, first version of the cases | 10 | 10/10, **void**: the prompts reused the skills' own trigger words |
+| Claude Code, rewritten as people talk, no feature folders | 9 | 4/9: three sessions spent their turns looking for a spec that did not exist |
+| Claude Code, rewritten, feature folders seeded, held-out wording | 9 + 1 negative | **9/9**, and the one-line fix fired none of them |
+| Codex, treatment (brain installed) | 5 | **5/5** |
+| Codex, control (no brain) | 5 | 2/5 named the same skill |
+
+**Also checked live in Codex:** with `AGENTS.md` removed, a session listed all 33 MasterMind skills by
+name from `.agents/skills/`, so the native discovery path works on its own.
+
+**Honest reading.**
+- **One rep per case.** This says each path works, not how often. Variance is unmeasured.
+- **The description of `checklist` gained a trigger** after the second Claude run missed it. The case
+  that then passed was rewritten in different words and a different concern (accessibility, not the
+  fraud and failure wording of the miss), so it is held out from the change it tests.
+- **Cursor was not measured.** Its CLI login was stale on this machine, so its routing eval skipped.
+
 ## Run V6: 2026-08-21 · does the brain steer a **Codex** session? (`evals/codex-routing.mjs`)
 
 Every earlier claim about Codex rested on a file being in the right place, never on a session obeying

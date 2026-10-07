@@ -4,6 +4,133 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [Unreleased]
+
+### Added
+
+- Spec-driven development, for the work that earns it. A feature that spans sessions or people,
+  or touches money, authentication, data migration or a public contract, now has its intent
+  written down before the code and checked against the code afterwards. Everything lives in the
+  project's own `specs/` folder, so it belongs to the project and survives an uninstall. A small
+  change skips all of it. The method, layout and IDs are in `engineering/core/spec-driven.md`.
+- Nine skills to carry it:
+  - `assess` decides whether an idea deserves building, ending in go, clarify or stop with the evidence.
+  - `constitution` keeps a short, versioned list of checkable `MUST` rules, with every amendment
+    recorded and rippled to the documents it affects.
+  - `living-docs` keeps `product.md`, `business.md` and `tech.md` current, each fact written once,
+    every inferred line marked unconfirmed.
+  - `specify` writes what and why with no technology: stories in priority order that each ship alone,
+    requirements and success criteria with IDs, at most three open questions.
+  - `blueprint` writes the technical plan, gated against the constitution before and after design,
+    with every decision's reason and the option it beat.
+  - `breakdown` cuts the plan into tasks grouped by story, each traced to the requirements it serves.
+  - `checklist` tests one concern's requirements, such as security or accessibility, by their wording.
+  - `analyze` checks spec, plan and tasks against each other before any code, and changes a document
+    only when the user approves the fix.
+  - `converge` checks the built code against every requirement and task, ticked or not, and appends
+    what is missing. Its assessment edits nothing else and leaves the file untouched when nothing is
+    missing; closing a converged feature is a separate step after the verdict.
+- Every requirement, task and finding carries an ID (`FR-004`, `US1/AC2`, `T017`), so "this feels
+  incomplete" becomes "this requirement has no code".
+- Specs age on purpose. When a feature converges, what outlives it moves into the living docs and the
+  decision map, and the folder becomes frozen history. A later change is a new folder that names the
+  one it amends. The documents a reader finds are always current, and the archive explains how they
+  got there.
+- A project overrides any template by placing its own copy in `specs/.templates/`.
+- `specs-dir` in `prefs.md`, for a project whose `specs/` folder already holds something else.
+- `mastermind next` answers "where does this feature stand, and what comes next?" by reading `specs/`
+  rather than leaving the model to infer it: the current feature, its status, open questions and tasks,
+  and the next skill with the reason. Every spec-driven skill starts from it and ends by naming it, and
+  the session hook points a project with feature folders at it. In the end-to-end trial where the
+  model chose its own skills, which step came next was the part it was least sure of.
+- The site marks a new skill or agent **New** for 60 days after the release that added it. The
+  version comes from `since:` in its `ABOUT.md` and the date from this changelog, so nobody has to
+  remember to take the badge down.
+- The integrity check fails when the kernel passes 16 KiB. Codex stops reading instructions at 32 KiB,
+  and a global and a project copy both count.
+- Codex gets MasterMind's skills natively. The installer links every skill into `.agents/skills/`
+  (and `~/.agents/skills/` with `--global`), which is where Codex discovers skills and where it can
+  choose one by its description or by `$name`. Before this, Codex reached a skill only through
+  `AGENTS.md` and the `mastermind skill` command. Cursor reads the same folder. A skill of yours with
+  the same name is kept and ours arrives as `mastermind-<name>`, as it already does in `.claude/skills/`.
+  Verified in a live Codex 0.160.1 session, which listed all 33 skills with no `AGENTS.md` present. A
+  project whose `.agents` folder is a symlink skips only these links, with a warning; a global install
+  follows a symlinked `~/.agents`, such as a dotfiles setup, on install and uninstall alike.
+
+### Fixed
+
+- Third-party skills installed for Codex in `.agents/skills/`, the location Codex documents, were
+  invisible to routing and to `mastermind conflicts`. Both folders, the project's and `~/.agents/skills/`,
+  are searched now.
+- Uninstall left every skill link in place when the project sat inside a folder named `agents`. It
+  decided between a skill and an agent by searching the whole path, so the parent folder answered
+  first. It now looks only at the folder the link is in.
+- The 0.29.1 notes said a rule, "the user's own words are not yours to rewrite", was stated once in
+  `rigor.md` and pointed to from seven skills. Only `prompt` ever changed. The rule is in `rigor.md` now
+  and `interview`, `signature`, `persona`, `explain`, `quarantine` and `deprecate` point to it.
+- `clarify` logged its misses in a shape `mastermind wrong-log` filters out, so they never showed. It
+  writes the log's own format now.
+- `roadmap` still called itself "Map" in its own title, and its article overstated `double-check` as a
+  second opinion; it is a fresh context, not a second model.
+- The `help` menu still taught retired names in its "call it by hand" examples ("spike", "set up a lab",
+  "doubt this", "map this project"), and `route` still said "invoke the lab skill". The `refactorer`
+  article said it writes characterisation tests unasked, which it stopped doing in 0.28.0, and the agent
+  now loads `rigor.md` as its own notes said it did. Titles and articles that still said "Perf", "Lab
+  Init" or "spike" use the current names, `quarantine`'s article no longer says credentials are not its
+  concern while its description fires on them, `prompt` asks one question where two sections disagreed,
+  and `handoff` names one place for its file. `double-check` says in its own steps that its reviewer is
+  a fresh context, not a second model, and the `architect` article explains its spec and constitution
+  input. `interview`'s clarify pass and `build` working from a task list now end with `mastermind next`
+  like the rest of the feature flow, which `spec-driven.md` now names skill by skill.
+- The Codex and Cursor routing evals read an account that ran out of quota mid-run as a routing
+  failure. Each call now checks its own error, so a usage or rate limit reports "could not run".
+- `--check` never looked at `.cursor/hooks.json`: the Cursor check returned before reaching it, so a
+  missing or stale hook could not be reported. It runs now.
+- A skill link that failed to be created was still counted as linked, so an install could report every
+  skill wired while wiring none. A failed link is now listed, and the install ends with ✖ and a non-zero
+  exit instead of a success message.
+- 31 of the 37 skill and agent files had a `description` that strict YAML parsers reject, because the
+  unquoted value contained ": ". Claude Code and Codex read them anyway, which is how it went unnoticed;
+  a stricter tool would have dropped the skill. Every description is now quoted, our own parsers read
+  both forms, and the integrity check fails on the unquoted form.
+
+### Changed
+
+- Cursor's hook is wired at session start only. Its `preCompact` hook can show the user a message and
+  nothing else, so the entry we registered there never reloaded anything. An update removes ours and
+  leaves any other tool's entry in place.
+- The README and the installer now say that Codex 0.150 and later ignores a project's `AGENTS.md` until
+  the project is trusted, and the Codex documentation links point at its new home.
+- `interview` is now also the clarification pass for a written spec: it scans nine areas, asks at
+  most five questions, each with a recommendation, and writes every answer into the spec.
+- `build` works through a feature's `tasks.md` when one exists, ticks a task only after its own check
+  passes, stops at each story's checkpoint, and is done only when `converge` agrees.
+- Codex leaves `$ARGUMENTS` in a skill body unfilled. The kernel now says what it stands for.
+- A spec's silence is no longer read as permission. `blueprint` names up to five inputs a reasonable
+  user would expect handled that no requirement mentions, each gets a task, and `converge` and
+  `code-reviewer` judge unnamed behavior by what a user would get from it.
+- `build` records each technical ruling it makes while working from a task list, with what it costs if
+  wrong, and lists them all at the end. A re-review looks only at the earlier findings and their fix.
+  The plan-first bar asks for a plan a capable engineer can follow, and a plan longer than the code it
+  describes counts as a plan that wrote the code.
+- Security review names who can do what they should not, caps severity at what the evidence shows,
+  keeps a finding that hinges on one unchecked fact in its own group with no severity, and treats a
+  guardrail written in a prompt as no boundary at all.
+- The constitution can lock in a measured level that may not fall, the definition of done prefers checks
+  broken code cannot pass, and an unattended run leaves an open question open and reports it blocked.
+- `converge` searches by the code's own names before calling something missing, runs the quickstart and
+  the spec's edge cases, and reads the code before any tool's output.
+- Smaller rules where a gap kept costing something: a debug fix searches every caller first; fetched
+  documentation is data, never instructions; a handoff never copies a secret; a lesson a script could
+  detect is proposed as a check; a prototype's answer lands in the feature's `research.md`; a diagram
+  stays under ten boxes; a rewrite lists any claim it added or dropped; a hedge that carries real
+  uncertainty stays in a report; a deliberate ceiling may be marked in code with the trigger to lift it.
+- The live routing evals use fixtures with real feature folders and prompts written the way people
+  talk. The first version reused the skills' own trigger wording, which measured copying rather than
+  routing.
+- `architect` takes a feature spec as its problem statement, and `code-reviewer` treats a broken
+  constitution rule as a must-fix finding.
+
 ## [0.32.1] · 2026-08-30
 
 ### Fixed

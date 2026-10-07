@@ -13,6 +13,8 @@ const CASES = [
   { prompt: 'I am stopping for today, set things up so tomorrow picks up cleanly', expected: ['handoff'] },
   { prompt: 'cancelling an order sometimes leaves the stock count wrong and I cannot see why', expected: ['debug'] },
   { prompt: 'there is a .env with live credentials in here and I do not want it reaching github', expected: ['quarantine'] },
+  { prompt: 'we want customers to set up invoices that repeat every month. before any code, pin down exactly what it has to do and how we will know it works', expected: ['specify'] },
+  { prompt: 'the team says CSV export is finished. compare the code with specs/007-export and show me where it falls short', expected: ['converge'] },
 ]
 const SKIP = 2
 
@@ -29,7 +31,7 @@ try {
   if (!/\bOK\b/i.test(probe)) throw new Error(probe.slice(-300))
 } catch (e) {
   const why = String(e?.stdout || '') + String(e?.stderr || '') + String(e?.message || '')
-  const env = /not supported when using Codex|invalid_request_error|401|403|login|expired|quota|rate limit/i.test(why)
+  const env = /not supported when using Codex|invalid_request_error|401|403|login|expired|quota|rate limit|usage limit/i.test(why)
   console.error(`codex is installed but cannot run a session${env ? ' (account or model access)' : ''}:`)
   console.error(why.trim().split('\n').slice(-3).join('\n'))
   // Only an environment we cannot control is a skip. Anything else is the CLI or
@@ -55,13 +57,20 @@ try {
   process.exit(1)
 }
 
+// A quota hit mid-run once read as "the kernel did not steer Codex": the probe passed, the account ran dry.
+const INFRA = /usage limit|rate limit|quota|upgrade to plus|\b40[13]\b|not logged in/i
+let infra = ''
 const ask = (prompt, where) => {
   const q = `${prompt}\n\nName the single MasterMind skill you would use for this, lowercase, one word, nothing else.`
   try {
     return execFileSync('codex', ['exec', '-s', 'read-only', '--skip-git-repo-check', '-C', where, q],
       { encoding: 'utf8', maxBuffer: 16 << 20, stdio: ['ignore', 'pipe', 'pipe'], timeout: 300000,
         env: ENV })
-  } catch { return '' }
+  } catch (e) {
+    const why = String(e?.stdout || '') + String(e?.stderr || '')
+    if (INFRA.test(why)) infra = why.trim().split('\n').filter((l) => INFRA.test(l))[0] || 'account limit'
+    return ''
+  }
 }
 
 const bare = join(work, 'bare')
@@ -70,6 +79,7 @@ try { execFileSync('git', ['init', '-q', '.'], { cwd: bare }) } catch { /* contr
 
 const results = []
 for (const c of CASES) {
+  if (infra) break
   const out = ask(c.prompt, proj).toLowerCase()
   const ctl = ask(c.prompt, bare).toLowerCase()
   const match = (t) => c.expected.some((e) => new RegExp(`\\b${e}\\b`).test(t))
@@ -82,6 +92,10 @@ for (const c of CASES) {
 rmSync(work, { recursive: true, force: true })
 
 const hits = results.filter((r) => r.hit).length
+if (infra) {
+  console.error(`codex could not finish the run (account or quota, not a regression): ${infra.slice(0, 200)}`)
+  process.exit(SKIP)
+}
 console.log(`\ncodex routing: ${hits}/${results.length}`)
 // Failing only at zero lets two of three misroutes ship green. Every case must route: the set is
 // small and deliberately unambiguous, so one miss is a regression and not variance.
