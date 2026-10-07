@@ -482,32 +482,47 @@ wire_cursor() {
   wire_cursor_hook
 }
 
-# Cursor drops any skill named exactly `build`, so it gets a renamed, generated copy it will list.
+# Cursor drops any skill named exactly `build`, so it gets a renamed, generated copy.
 MM_CURSOR_RESERVED="build"
+mm_cursor_alias() {                 # $1 name, $2 source: the copy, or nothing when it cannot be renamed
+  awk -v n="$1" -v mark="<!-- $MM_GEN_MARK: do not edit. Refresh with: npx mastermind-brain -->" '
+    { sub(/\r$/, "") }
+    /^---$/ { fences++ }
+    fences == 1 && !renamed && $0 == "name: " n { print "name: mastermind-" n; renamed = 1; next }
+    { print }
+    /^---$/ && fences == 2 && !marked { print mark; marked = 1 }
+    END { if (!renamed || !marked) exit 1 }
+  ' "$2"
+}
 wire_cursor_aliases() {
-  local n src dst
+  local n src dst dir want
   for n in $MM_CURSOR_RESERVED; do
-    src="$BRAIN/skills/$n/SKILL.md"; dst="$PROJECT/.cursor/skills/mastermind-$n/SKILL.md"
+    src="$BRAIN/skills/$n/SKILL.md"; dir="$PROJECT/.cursor/skills/mastermind-$n"; dst="$dir/SKILL.md"
     [ -f "$src" ] || continue
-    if [ -L "$PROJECT/.cursor/skills" ] || [ -L "$(dirname "$dst")" ] || [ -L "$dst" ]; then
+    if [ -L "$PROJECT/.cursor/skills" ] || [ -L "$dir" ] || [ -L "$dst" ]; then
       warn ".cursor/skills/mastermind-$n is a symlink: skipped, so nothing is written outside this project"
       continue
     fi
-    if [ "$MODE" = check ]; then
-      if mm_is_generated "$dst"; then ok ".cursor/skills/mastermind-$n (Cursor reserves the name '$n')"
-      else bad ".cursor/skills/mastermind-$n is missing: re-run install.sh"; ISSUES=$((ISSUES + 1)); fi
+    if { [ -e "$PROJECT/.cursor/skills" ] && [ ! -d "$PROJECT/.cursor/skills" ]; } || { [ -e "$dir" ] && [ ! -d "$dir" ]; }; then
+      warn ".cursor/skills/mastermind-$n: a file is where a folder belongs, so the copy was skipped"
       continue
     fi
     if [ -e "$dst" ] && ! mm_is_generated "$dst"; then
-      warn "left .cursor/skills/mastermind-$n alone: it is not the file we generated"
+      warn "left .cursor/skills/mastermind-$n alone: it is yours, not the file we generated"
       continue
     fi
-    mkdir -p "$(dirname "$dst")"
-    awk -v n="$n" -v mark="<!-- $MM_GEN_MARK: do not edit. Refresh with: npx mastermind-brain -->" '
-      NR == 2 && $0 == "name: " n { print "name: mastermind-" n; next }
-      { print }
-      /^---$/ && ++fences == 2 { print mark }
-    ' "$src" > "$dst"
+    if ! want="$(mm_cursor_alias "$n" "$src")"; then
+      warn "skills/$n/SKILL.md has no name line to rename, so Cursor gets no copy"
+      continue
+    fi
+    if [ "$MODE" = check ]; then
+      if [ ! -f "$dst" ]; then bad ".cursor/skills/mastermind-$n is missing: re-run install.sh"; ISSUES=$((ISSUES + 1))
+      elif [ "$(cat "$dst")" != "$want" ]; then bad ".cursor/skills/mastermind-$n is out of date: re-run install.sh"; ISSUES=$((ISSUES + 1))
+      else ok ".cursor/skills/mastermind-$n (Cursor reserves the name '$n')"; fi
+      continue
+    fi
+    mkdir -p "$dir"
+    printf '%s\n' "$want" > "$dst"
     ok ".cursor/skills/mastermind-$n: Cursor reserves the name '$n'"
   done
   return 0
@@ -882,7 +897,7 @@ if [ "$MODE" = uninstall ]; then
     mm_remove_generated "$PROJECT/.cursor/rules/mastermind-field.mdc" && n=$((n + 1))
     for _alias in $MM_CURSOR_RESERVED; do
       _ad="$PROJECT/.cursor/skills/mastermind-$_alias"
-      if [ ! -L "$PROJECT/.cursor/skills" ] && [ ! -L "$_ad" ]; then
+      if [ ! -L "$PROJECT/.cursor/skills" ] && [ ! -L "$_ad" ] && [ ! -L "$_ad/SKILL.md" ]; then
         mm_remove_generated "$_ad/SKILL.md" && n=$((n + 1))
         rmdir "$_ad" "$PROJECT/.cursor/skills" 2>/dev/null || true
       fi

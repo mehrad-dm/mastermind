@@ -306,8 +306,8 @@ Stated plainly, because a tool about not overclaiming shouldn't overclaim about 
   directional. Method and full results: [`evals/`](./evals/). Mechanism runs that don't clear that bar are
   marked in `evals/RESULTS.md` and are never quoted publicly.
 - **Cursor does not list a skill named `build`.** It drops any skill with that exact name, ours or not.
-  So the installer also writes `.cursor/skills/mastermind-build`, a generated copy under a name Cursor
-  will list. Routing never depended on it: the kernel's menu already sends the model to the file.
+  So the installer also writes `.cursor/skills/mastermind-build`, a generated copy under another name;
+  a renamed copy of `build` was listed in a live Cursor session. Routing never depended on it: the kernel's menu already sends the model to the file.
 - **Cursor re-injection is unverified.** The `.cursor/rules/mastermind.mdc` rule works and is the
   load-bearing path. The `sessionStart` hook is wired to Cursor's published schema, but Cursor has open
   upstream bug reports where a hook's `additional_context` is accepted and never reaches the model: so
