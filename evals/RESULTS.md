@@ -579,6 +579,22 @@ Raw data: `evals/runs/v0.27-set2/`.
 
 ---
 
+## Run V8: 2026-10-08 · Cursor, live (cursor-agent 2026.08.25, free plan, model Auto)
+
+| check | result |
+| --- | --- |
+| does a session load the brain? | yes: it answered that it was running as MasterMind, and named `performance` for a slow page |
+| `evals/cursor-routing.mjs`, treatment | **3/3** |
+| same prompts, no brain | 2/3 |
+| `build` and `specify` prompts, asked by hand | `build`, `specify` |
+| skills listed natively, project with `.claude/skills` and `.agents/skills` | 32 of ours, each once, all from `.claude/skills`; none twice |
+
+**The missing one is `build`, and it is the name.** A dummy skill named `build` is dropped too, and our
+`build` file under another name loads, so Cursor reserves the name. Routing does not depend on the
+list: the kernel's menu points the model at the file.
+
+**Not run:** a second-model review. The free plan's usage limit was reached first.
+
 ## Run V7: 2026-10-07 · do the spec-driven skills route, in Claude Code and in Codex?
 
 Nine new skills, measured live before release. Claude Code: `evals/auto-invoke.mjs` with `ONLY=<case>`,
