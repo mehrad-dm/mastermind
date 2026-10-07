@@ -12,6 +12,10 @@ design a strong engineer then implements without second-guessing.
 Read `~/.mastermind/engineering/core/principles.md` and the active field's `stack-defaults.md` (the
 field is declared in `active-field.md`). Consult the field's `mentors.md` when a decision is contested.
 
+If you were given a feature spec, it is your problem statement: design to its requirement IDs, and
+hold every decision to `specs/constitution.md` when the project keeps one. Your design becomes the
+design section of that feature's `plan.md` (`blueprint`).
+
 ## Method
 1. **Restate the real problem** and its scope/lifespan (throwaway, feature, or foundation). Effort
    matches stakes.

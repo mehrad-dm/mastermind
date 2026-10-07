@@ -379,7 +379,9 @@ link_skill() {
     SKIPPED=$((SKIPPED + 1)); return 1
   fi
 
-  ln -sfn "$(mm_link_src "$src" "$target")" "$target"
+  if ! ln -sfn "$(mm_link_src "$src" "$target")" "$target"; then
+    bad "could not link $kind $name into $base"; ISSUES=$((ISSUES + 1)); return 1
+  fi
   if [ "$renamed" = 1 ]; then
     warn "you already have a $kind '$name': installed MasterMind's as 'mastermind-$name' (both work)"
     RENAMED=$((RENAMED + 1))
@@ -427,7 +429,33 @@ wire_codex_global() {
   return 0
 }
 
-# Cursor rule (its own file, always ours): needs alwaysApply frontmatter to load.
+# Codex discovers skills only in .agents/skills (repo) and ~/.agents/skills (user); Cursor reads them too.
+MM_AGENT_SKILLS_DONE=""
+wire_agent_skills() {
+  local base="$1" label="$2" s
+  [ "$MM_AGENT_SKILLS_DONE" = "$base" ] && return 0
+  MM_AGENT_SKILLS_DONE="$base"
+  printf '\nAgent skills (%s):\n' "$label"
+  if [ "$MODE" = check ] && [ ! -d "$base" ]; then
+    bad "$label not linked yet: re-run install.sh to add native skills for Codex"; ISSUES=$((ISSUES + 1))
+    return 0
+  fi
+  [ "$MODE" = check ] || mkdir -p "$base"
+  prune_dead_links "$base"
+  LINKED_SKILLS=0; RENAMED=0; SKIPPED=0
+  for s in "$BRAIN"/skills/*/; do
+    [ -d "$s" ] || continue
+    if link_skill "${s%/}" "$base" "$(basename "$s")" skill; then
+      [ "$MODE" = check ] || LINKED_SKILLS=$((LINKED_SKILLS + 1))
+    fi
+  done
+  if [ "$MODE" != check ]; then
+    ok "$LINKED_SKILLS skills linked"
+    if [ "$RENAMED" -gt 0 ]; then warn "$RENAMED name(s) clashed with your own: yours kept, ours added as mastermind-*"; fi
+  fi
+  return 0
+}
+
 wire_cursor() {
   local dst="$PROJECT/.cursor/rules/mastermind.mdc"
   if [ "$MODE" = check ]; then
@@ -636,11 +664,9 @@ remove_link() {
 mm_is_our_capability() {
   local p="$1" name kind rbrain got
   [ -L "$p" ] || return 1
-  case "$p" in
-    */agents/*) kind=agents ;;
-    */skills/*) kind=skills ;;
-    *) return 1 ;;
-  esac
+  # The parent folder decides: a project under a directory named `agents` matched */agents/* first.
+  kind="$(basename "$(dirname "$p")")"
+  case "$kind" in agents|skills) : ;; *) return 1 ;; esac
   name="$(basename "$p")"; name="${name#mastermind-}"
   rbrain="$(cd -P "$BRAIN" 2>/dev/null && pwd -P)" || return 1
   got="$(mm_realpath "$p")" || return 1
@@ -784,6 +810,20 @@ if [ "$MODE" = uninstall ]; then
   # AGENTS.md is what Codex reads, so either name owns it.
   if mm_remove_agents_wiring; then
     [ -n "$AGENTS_FILE" ] && { remove_link "$AGENTS_FILE" && n=$((n + 1)); }
+    _askills=""
+    if [ "$SCOPE" = project ]; then _askills="$PROJECT/.agents/skills"
+    elif mm_wants codex; then _askills="$HOME/.agents/skills"; fi
+    if [ -n "$_askills" ] && [ ! -L "$(dirname "$_askills")" ] && [ ! -L "$_askills" ]; then
+      shopt -s nullglob
+      for l in "$_askills"/*; do
+        mm_is_our_capability "$l" || continue
+        rm -f "$l"; ok "removed .agents/skills/$(basename "$l")"; n=$((n + 1))
+      done
+      shopt -u nullglob
+      rmdir "$_askills" 2>/dev/null || true
+      if [ "$SCOPE" = project ]; then rmdir "$PROJECT/.agents" 2>/dev/null || true; fi
+    fi
+    unset _askills
   fi
   mm_wants claude && restore_backup "$CLAUDE_DIR/CLAUDE.md"
   # AGENTS.md had no restore path at all, so a preserved original stayed preserved forever.
@@ -955,6 +995,7 @@ fi
 if [ "$SCOPE" = project ] && [ -n "${PROJECT:-}" ]; then
   for _t in "$PROJECT/.claude" "$PROJECT/.claude/skills" "$PROJECT/.claude/agents" \
             "$PROJECT/.cursor" "$PROJECT/.cursor/rules" "$PROJECT/.mastermind" \
+            "$PROJECT/.agents" "$PROJECT/.agents/skills" \
             "$PROJECT/.github/hooks" "$PROJECT/AGENTS.md" "$PROJECT/CLAUDE.md" \
             "$PROJECT/.claude/CLAUDE.md"; do
     mm_assert_contained "$_t"
@@ -1342,14 +1383,14 @@ for tool in ${TOOLS[@]+"${TOOLS[@]}"}; do
     agents|agents.md)
       printf '\nAGENTS.md:\n'
       if [ -z "$AGENTS_FILE" ]; then warn "AGENTS.md is per-project: run this inside a project"
-      else wire_brain_file "$AGENTS_FILE" "$BRAIN/AGENTS.md"; fi ;;
+      else wire_brain_file "$AGENTS_FILE" "$BRAIN/AGENTS.md"; wire_agent_skills "$PROJECT/.agents/skills" .agents/skills; fi ;;
     cursor)
       if [ "$SCOPE" = global ]; then printf '\nCursor:\n'; warn "Cursor rules are per-project: run this inside a project"
       else printf '\nCursor:\n'; wire_cursor; fi ;;
     codex)
       printf '\nCodex:\n'
-      if [ "$SCOPE" = global ]; then wire_codex_global
-      else wire_brain_file "$AGENTS_FILE" "$BRAIN/AGENTS.md"; fi ;;
+      if [ "$SCOPE" = global ]; then wire_codex_global; wire_agent_skills "$HOME/.agents/skills" "~/.agents/skills"
+      else wire_brain_file "$AGENTS_FILE" "$BRAIN/AGENTS.md"; wire_agent_skills "$PROJECT/.agents/skills" .agents/skills; fi ;;
     gemini|copilot)
       warn "$tool is no longer wired automatically: MasterMind is plain Markdown, so point it at $([ "$ISOLATED" = 1 ] && echo '.mastermind/CLAUDE.md' || echo '~/.mastermind/CLAUDE.md') and it works the same." ;;
     *) warn "skipping unknown tool: $tool";;

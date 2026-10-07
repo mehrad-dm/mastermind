@@ -4,6 +4,65 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [Unreleased]
+
+### Added
+
+- Spec-driven development, for the work that earns it. A feature that spans sessions or people,
+  or touches money, authentication, data migration or a public contract, now has its intent
+  written down before the code and checked against the code afterwards. Everything lives in the
+  project's own `specs/` folder, so it belongs to the project and survives an uninstall. A small
+  change skips all of it. The method, layout and IDs are in `engineering/core/spec-driven.md`.
+- Nine skills to carry it:
+  - `assess` decides whether an idea deserves building, ending in go, clarify or stop with the evidence.
+  - `constitution` keeps a short, versioned list of checkable `MUST` rules, with every amendment
+    recorded and rippled to the documents it affects.
+  - `living-docs` keeps `product.md`, `business.md` and `tech.md` current, each fact written once,
+    every inferred line marked unconfirmed.
+  - `specify` writes what and why with no technology: stories in priority order that each ship alone,
+    requirements and success criteria with IDs, at most three open questions.
+  - `blueprint` writes the technical plan, gated against the constitution before and after design,
+    with every decision's reason and the option it beat.
+  - `breakdown` cuts the plan into tasks grouped by story, each traced to the requirements it serves.
+  - `checklist` tests one concern's requirements, such as security or accessibility, by their wording.
+  - `analyze` checks spec, plan and tasks against each other before any code, read-only.
+  - `converge` checks the built code against every requirement and task, ticked or not, and appends
+    what is missing. It edits nothing else, and leaves the file untouched when nothing is missing.
+- Every requirement, task and finding carries an ID (`FR-004`, `US1/AC2`, `T017`), so "this feels
+  incomplete" becomes "this requirement has no code".
+- Specs age on purpose. When a feature converges, what outlives it moves into the living docs and the
+  decision map, and the folder becomes frozen history. A later change is a new folder that names the
+  one it amends. The documents a reader finds are always current, and the archive explains how they
+  got there.
+- A project overrides any template by placing its own copy in `specs/.templates/`.
+- `specs-dir` in `prefs.md`, for a project whose `specs/` folder already holds something else.
+- Codex gets MasterMind's skills natively. The installer links every skill into `.agents/skills/`
+  (and `~/.agents/skills/` with `--global`), which is where Codex discovers skills and where it can
+  choose one by its description or by `$name`. Before this, Codex reached a skill only through
+  `AGENTS.md` and the `mastermind skill` command. Cursor reads the same folder. A skill of yours with
+  the same name is kept and ours arrives as `mastermind-<name>`, as it already does in `.claude/skills/`.
+
+### Fixed
+
+- Third-party skills installed for Codex in `.agents/skills/`, the location Codex documents, were
+  invisible to routing and to `mastermind conflicts`. Both folders, the project's and `~/.agents/skills/`,
+  are searched now.
+- Uninstall left every skill link in place when the project sat inside a folder named `agents`. It
+  decided between a skill and an agent by searching the whole path, so the parent folder answered
+  first. It now looks only at the folder the link is in.
+- A skill link that failed to be created was still counted as linked, so an install could report every
+  skill wired while wiring none. A failed link is now reported and counted as an issue.
+
+### Changed
+
+- `interview` is now also the clarification pass for a written spec: it scans nine areas, asks at
+  most five questions, each with a recommendation, and writes every answer into the spec.
+- `build` works through a feature's `tasks.md` when one exists, ticks a task only after its own check
+  passes, stops at each story's checkpoint, and is done only when `converge` agrees.
+- Codex leaves `$ARGUMENTS` in a skill body unfilled. The kernel now says what it stands for.
+- `architect` takes a feature spec as its problem statement, and `code-reviewer` treats a broken
+  constitution rule as a must-fix finding.
+
 ## [0.32.1] · 2026-08-30
 
 ### Fixed

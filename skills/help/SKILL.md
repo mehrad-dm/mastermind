@@ -10,7 +10,7 @@ lead with the one thing that matters most, then the tables. Keep it scannable. H
 
 ```
 🧠  MasterMind: a genius-builder brain for your AI
-    24 skills · 4 agents · Claude Code · Cursor · Codex
+    33 skills · 4 agents · Claude Code · Cursor · Codex
 ```
 
 ## Lead with what fits *this* project
@@ -47,7 +47,16 @@ of them by hand.
 | **performance** | measure → find the real bottleneck → fix the biggest → verify | something's slow or janky ("why is this slow?") | *"why is this page so slow?"* |
 | **qa** | prove a change works by driving it for real (+ optional tests) | you finish something / ask to test it | *"qa this"* · *"write tests for it"* |
 | **report** | a shareable write-up of a cycle: changed files, decisions, verification, verdict (MD default, HTML on request) | you ask for a report; or end of build/qa if you turned it on (off by default) | *"give me a report of this"* · *"reports on"* |
-| **interview** | turn a fuzzy ask into a crisp, buildable spec | the request is ambiguous or spans many files | *"spec out the checkout flow first"* |
+| **interview** | turn a fuzzy ask into a crisp, buildable spec; resolve a written spec's open questions | the request is ambiguous, or a spec has open questions | *"interview me about the checkout flow first"* |
+| **assess** | decide whether an idea deserves building: go, clarify or stop, with evidence | an idea nobody has said yes to yet | *"is this worth building?"* |
+| **constitution** | write and version the rules every feature in this project must obey | you state a non-negotiable, or start spec-first work | *"these are our non-negotiables"* |
+| **living-docs** | keep the product, business and tech documents current, each fact written once | docs are missing or stale, or a feature just finished | *"write down how this product works"* |
+| **specify** | write a feature spec: what and why, prioritized stories, traceable requirements | a feature spans sessions, or touches money, auth or data | *"write the spec for invitations"* |
+| **blueprint** | turn a spec into a technical plan, checked against the constitution | a spec has no plan yet | *"plan this spec"* |
+| **breakdown** | cut the plan into tasks, grouped by user story so each ships alone | a plan has no task list yet | *"break this into tasks"* |
+| **checklist** | test one concern's requirements (security, UX, API) before building | a sensitive feature heads into planning | *"security checklist for this spec"* |
+| **analyze** | check spec, plan and tasks agree before any code, read-only | you're about to build from a task list | *"is this ready to build?"* |
+| **converge** | check the built code against everything the feature promised; append the gaps | every box is ticked, or you ask "is it really done?" | *"check the code against the spec"* |
 | **route** | load only the files/skills a task actually needs | a task is non-trivial or you're unsure where to start | *"route this"* |
 | **learn** | get up to speed fast on an unfamiliar stack/API, verify assumptions | the tech is new, fast-moving, or you're guessing | *"learn how the Stripe API handles refunds"* |
 | **prototype** | build a throwaway spike to learn, then rebuild properly | the right approach is genuinely unknown | *"spike a quick prototype of this"* |

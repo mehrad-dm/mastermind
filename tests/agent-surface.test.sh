@@ -119,6 +119,13 @@ ln -s "$CONF/.mastermind/skills/performance" "$CONF/.claude/skills/performance" 
 out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["foreign"]))')
 check "our own linked skill is not counted as foreign" "$out" "1"
 
+mkdir -p "$CONF/.agents/skills/tagger"
+printf -- '---\nname: tagger\ndescription: Tag release notes by component.\n---\n' > "$CONF/.agents/skills/tagger/SKILL.md"
+ln -s "$CONF/.mastermind/skills/performance" "$CONF/.agents/skills/performance" 2>/dev/null
+out=$(cd "$CONF" && HOME="$CONF" "${CLI[@]}" conflicts --json | python3 -c 'import json,sys; print(",".join(sorted(f["name"] for f in json.load(sys.stdin)["foreign"])))')
+check "a skill installed for Codex in .agents/skills is seen, ours there is not" "$out" "optimize,tagger"
+rm -rf "$CONF/.agents"
+
 # Two generic words in common is not an overlap: `code, changes` used to pair every review skill
 # with `build`, and noise in a conflict report is why people stop reading it.
 mkdir -p "$CONF/.claude/skills/reviewbot"

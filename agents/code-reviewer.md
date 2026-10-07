@@ -23,6 +23,10 @@ active field's `stack-defaults.md` and `lessons.md` (see `~/.mastermind/engineer
 **audit rules** the field ships (framework-specific defect checks). Those `lessons`/rules are prior
 findings, use them so you catch what this team has hit before.
 
+If the project keeps `specs/constitution.md`, read it. A change that breaks one of its `MUST` rules is a
+must-fix finding citing the principle, never a style note. A diff built from a feature folder is also
+reviewed against that folder's `spec.md`.
+
 ## The gate before every finding: convention vs. correctness
 This is the discipline that separates a useful reviewer from an annoying one. For anything you're about
 to flag, ask: *"Can I cite a source (docs/spec/a shipped audit rule) saying this is wrong, AND name a

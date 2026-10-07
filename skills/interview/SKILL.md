@@ -1,6 +1,6 @@
 ---
 name: interview
-description: Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session: and whenever the user wants to be interviewed about it: "interview me", "ask me what you need", "question me on this", "tear this PRD/spec/plan apart", "what would kill this?". Symptoms: "make it better", "add the thing", or disagreement about what's in scope. Skip for a clear one-line change.
+description: Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session: and whenever the user wants to be interviewed about it: "interview me", "ask me what you need", "question me on this", "tear this PRD/spec/plan apart", "what would kill this?", "resolve the open questions in the spec". Also when a spec in specs/ still carries [NEEDS CLARIFICATION] markers, or is about to be planned. Symptoms: "make it better", "add the thing", or disagreement about what's in scope. Skip for a clear one-line change.
 ---
 
 # MasterMind: Interview
@@ -77,7 +77,39 @@ bet real time or money on:
 This attacks a *document*, deciding what to build. Attacking a finished claim ("the bug is fixed") is
 `double-check`, after the work.
 
-Close the interview by writing the scope contract below and getting one real confirmation. Everything
+## Clarify a feature spec, before it is planned
+
+When the target is a `spec.md` in a feature folder (`~/.mastermind/engineering/core/spec-driven.md`),
+the questions come from a scan rather than from instinct. Mark each area clear, partial or missing:
+
+| Area | What a gap looks like |
+| --- | --- |
+| Scope and roles | no out-of-scope line, two kinds of user treated as one |
+| Data | an entity with no identity rule, no lifecycle, no volume |
+| Journeys and states | no empty, loading or error state; an unordered sequence |
+| Quality targets | "fast", "reliable", "secure" with no number or behavior |
+| Integrations | an outside service with no failure behavior |
+| Edge cases | concurrent edits, duplicates, limits, partial failure |
+| Constraints | a technical or legal limit implied and never stated |
+| Words | one concept with two names, against the brief's glossary |
+| Done | an acceptance criterion nobody could test |
+
+Then ask, under these limits:
+
+- **Five questions at most per session**, ranked by impact times uncertainty. Open `[NEEDS CLARIFICATION]`
+  markers come first.
+- **Each one answerable in a choice of two to five options, or in five words**, with your recommendation
+  first and one line on why it matters.
+- **Skip what would not change the build**: style preferences, and how to implement it (that is `blueprint`).
+- **Write each answer into the spec as it lands.** Add a dated line under **Clarifications**, then change
+  the requirement, story or edge case it affects, and remove the marker it resolves.
+
+Stop when the scan leaves no area partial or missing, the user says stop, or five questions are spent.
+A spec with no markers still gets the scan: its silent gaps are the point. Report the areas still
+partial, and set the spec's status to `clarified` when no marker remains. In this mode `spec.md` is the
+scope contract: skip *Write the spec* and *Output* below, and write no second spec file.
+
+Outside clarify mode, close the interview by writing the scope contract below and getting one real confirmation. Everything
 you noticed but were not asked for goes under **Suggested (not done)**: never folded into the build.
 
 ## Write the spec
@@ -145,3 +177,6 @@ boundaries, the data model, key types, and the technical decisions behind them.
 ## Output
 A short `SPEC.md` (or inline): problem, scope, interfaces, acceptance, edge cases, verification. Decisive,
 not a menu, the blueprint an implementer follows without second-guessing.
+
+When the work qualifies for the full flow in `spec-driven.md`, or the project keeps a `specs/` folder,
+hand the agreed scope to `specify` instead, so it lands in a numbered feature folder with traceable IDs.

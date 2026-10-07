@@ -11,6 +11,27 @@ pulling in the specialist agents and the field pack at each phase. Task: **$ARGU
 Scale effort to the task (`~/.mastermind/engineering/core/principles.md`): a trivial change skips straight to implement+verify;
 a foundation gets the full loop. Match the ceremony to what the task warrants.
 
+**Spec-first work.** When the task qualifies for the full flow in
+`~/.mastermind/engineering/core/spec-driven.md`, run its steps in place of steps 1 to 3: `specify`, then
+`interview` on the spec, `blueprint`, `breakdown`, and `analyze` when it touches money, auth or data.
+Then build from the task list below.
+
+## Building from a task list
+
+When the feature folder has a `tasks.md`, it is the plan. Steps 4 and 5 run per task. Step 6 runs once
+per story, on that story's diff, at its checkpoint. The rules:
+
+- **Work in order, phase by phase.** Tasks marked `[P]` may run together; everything else waits for the
+  task before it.
+- **Tick a box only after that task's own check passes**: the file exists, the command is green, the
+  behavior is observed. Never tick ahead.
+- **Stop at each story checkpoint.** Run the story's independent test and show the evidence before
+  starting the next story.
+- **A task that cannot be done as written** is reported, with the reason. Never improvise around it, and
+  never tick it.
+- **Set the spec's status to `building`** at the first task. After the last task, run `converge`, and
+  treat the feature as done only when it reports converged.
+
 ## The loop
 
 1. **Understand: and say how you read it.** Open with one line stating your interpretation, so a

@@ -119,6 +119,8 @@ always-on layer tiny is what keeps MasterMind sharp (a bloated core gets ignored
 - **`clarity.md`**: the register for anything you write. Read when someone didn't follow you, or when authoring an instruction.
 - **`product-sense.md`**: product & business literacy: scope the task, define the spec, and spot the
   product/business trade-offs to surface. Read when a task's scope or "why" isn't obvious.
+- **`spec-driven.md`**: when a feature goes spec-first. Where specs live, their IDs, the order, and how
+  documents age.
 
 ### Active field pack: what to know & which tools (swappable)
 
@@ -158,6 +160,9 @@ them**: **they still apply**: recognize the
 intent from the menu below, then **read that file under `~/.mastermind/skills/<name>/SKILL.md` or
 `~/.mastermind/agents/<name>.md` and follow it as a step-by-step procedure.**
 
+The installer links our skills into `.agents/skills/`, where Codex and Cursor discover skills natively.
+Codex leaves `$ARGUMENTS` unfilled: when it appears literally in a skill, it means the user's request.
+
 **Support is not parity.** Claude Code and Cursor re-inject this kernel each session and on compaction;
 **Codex reads `AGENTS.md` once at startup**, so there it fades as context fills: re-read it before a
 non-trivial task instead of trusting an earlier turn.
@@ -180,7 +185,10 @@ imply it was independent. The menu is inlined here so it works without the index
   `learn` (unfamiliar tech) · `prototype` (a risky unknown) · `signature` (capture a team's style) ·
   `persona` (write in a named engineer's style) · `explain` (document an internal package) · `prompt`
   (sharpen a prompt) · `quarantine` (quarantine private data) · `levelup` (improve MasterMind) · `lint` (check MasterMind's own files) · `clarify` (they did not follow the last answer) · `deepen` (where is the design hurting) · `double-check` (interrogate a claim before handoff) · `deprecate` (remove something safely) · `roadmap` (a multi-week decision map) · `handoff`
-  (survive a reset) · `help` (show the user the menu).
+  (survive a reset) · `help` (show the user the menu). Spec-driven, in order: `assess` (is the idea worth
+  building) · `constitution` (the project's rules) · `living-docs` (product, business, tech docs) ·
+  `specify` (write a feature spec) · `blueprint` (its technical plan) · `checklist` (test the spec's
+  wording) · `breakdown` (its task list) · `analyze` (do the docs agree) · `converge` (does the code match).
 - **agents** (isolated-context roles), `architect` (design) · `code-reviewer` (review a diff) ·
   `refactorer` (restructure) · `tech-scout` (adopt-vs-build).
 

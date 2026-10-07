@@ -267,11 +267,13 @@ const skillRoots = (brain) => {
   return [
     ...(project ? [
       [join(project, '.claude', 'skills'), 'project'],
+      [join(project, '.agents', 'skills'), 'project'],
       [join(project, '.cursor', 'skills'), 'project'],
       [join(project, '.codex', 'skills'), 'project'],
     ] : []),
     [join(brain, 'local', 'skills'), 'local'],
     [join(home, '.claude', 'skills'), 'user'],
+    [join(home, '.agents', 'skills'), 'user'],
     [join(home, '.cursor', 'skills'), 'cursor'],
     [join(home, '.cursor', 'skills-cursor'), 'cursor'],
     [join(codexHome, 'skills'), 'codex'],

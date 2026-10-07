@@ -67,7 +67,7 @@ engineering/
 ├── active-field.md           # which field is active + how leveling works
 ├── ROUTER.md                 # generated map: loads only the files a task needs
 ├── core/                     # UNIVERSAL: how to think & work (field-agnostic)
-│   ├── mindset · principles · rigor · agent-loop · product-sense
+│   ├── mindset · principles · rigor · agent-loop · product-sense · spec-driven
 └── fields/_template/         # FIELD SCAFFOLD: init builds your field from this
     ├── stack-defaults · mentors · curriculum · learning-sources · lessons
     └── audit-rules.md        # framework-specific defect checks (for code-reviewer)
@@ -95,7 +95,7 @@ the brain to the matching git tag: you always know exactly what ran, and you can
 
 
 MasterMind installs **per project by default**, and **each project gets its own copy of the brain** in
-`<project>/.mastermind/`: its own field, lessons and stack, **ready to commit** so your team shares it (the installer never commits for you: review the diff, then `git add .mastermind .claude .cursor AGENTS.md`). It wires
+`<project>/.mastermind/`: its own field, lessons and stack, **ready to commit** so your team shares it (the installer never commits for you: review the diff, then `git add .mastermind .claude .cursor .agents AGENTS.md`). It wires
 the current repo's `.claude/` (Claude Code) plus `AGENTS.md` / `.cursor/rules` for the
 tools you have: active only there. Prefer one shared brain for every project instead? add `--shared`.
 Want it everywhere at once? `--global`. You install **from** `~/.mastermind`; that clone is the source.
@@ -136,7 +136,7 @@ This registers the skills and agents as native commands (user-global). They read
 | --- | --- | --- |
 | **Claude Code** | project `.claude/`: native `skills/`, `agents/`, and the kernel `CLAUDE.md` | `npx mastermind-brain` |
 | **Cursor / Composer** | `.cursor/rules/mastermind.mdc`: `alwaysApply: true`, **kernel inlined**; plus `mastermind-field.mdc` carrying the active field's `stack-defaults` + `lessons` (generated; re-run `npx mastermind-brain` to refresh) | `npx mastermind-brain` |
-| **Codex** | project `AGENTS.md` → the brain. With `--global`, also `~/.codex/AGENTS.md`, but Codex may not merge global instructions into a project that has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705)), so per-project is the reliable path | `npx mastermind-brain` |
+| **Codex** | project `AGENTS.md` → the brain, plus every skill linked into `.agents/skills/`, where Codex discovers skills and can pick one by its description or by `$name`. With `--global`, also `~/.codex/AGENTS.md` and `~/.agents/skills/`, but Codex may not merge global instructions into a project that has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705)), so per-project is the reliable path | `npx mastermind-brain` |
 
 Those three are what MasterMind supports. The brain is plain Markdown with no tool-specific mechanisms
 inside, so another tool that reads an instruction file may well load it: but we don't wire it, test it,
@@ -213,6 +213,30 @@ Also auto-applied (and callable by name): `explain` (AI-friendly docs for an int
 (a private, gitignored space for sensitive data), `handoff`, and `levelup` (teach MasterMind something durable).
 Specialist **agents**: `architect`, `code-reviewer`, `refactorer`, `tech-scout`: handle deep,
 isolated-context work. Full index: [`skills/README.md`](skills/README.md).
+
+## Spec-driven, when the stakes call for it
+
+For a feature that spans sessions or people, or touches money, authentication or data, MasterMind
+writes the intent down before the code and checks the code against it afterwards. The documents live in
+your project's `specs/` folder, so they belong to the project, not to MasterMind.
+
+| Step | Skill | What lands in `specs/` |
+| --- | --- | --- |
+| Is it worth building? | `assess` | `ideas/<name>.md`: go, clarify or stop, with evidence |
+| The rules | `constitution` | `constitution.md`: versioned `MUST`s every feature is checked against |
+| What is true today | `living-docs` | `product.md` · `business.md` · `tech.md`, kept current |
+| What and why | `specify`, then `interview` | `NNN-feature/spec.md`: stories, requirements, success criteria |
+| How | `blueprint` | `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md` |
+| Is the spec complete? | `checklist` | `checklists/<concern>.md` |
+| The steps | `breakdown` | `tasks.md`, grouped so each user story ships alone |
+| Do the documents agree? | `analyze` | nothing: a read-only report |
+| Build it | `build` | ticks tasks only after each one's own check passes |
+| Is it really done? | `converge` | appends whatever the code still lacks to `tasks.md` |
+
+Every requirement, task and finding carries an ID, so "this feels incomplete" becomes "requirement
+FR-004 has no code". When a feature converges, what outlives it moves into the living docs and the
+folder becomes frozen history, so the documents you read are always current. A small change skips all
+of it. Details: [`engineering/core/spec-driven.md`](engineering/core/spec-driven.md).
 
 ## Checking on it
 

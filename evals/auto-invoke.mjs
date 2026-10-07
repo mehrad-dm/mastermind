@@ -35,6 +35,16 @@ const EXTRA = [
   { prompt: 'what can you actually do for me here?', expected: ['help'] },
   { prompt: 'I did not follow any of that, say it simply', expected: ['clarify'] },
   { prompt: 'this area keeps getting harder to change, where is the design costing us most?', expected: ['deepen'] },
+  { prompt: 'is a referral program worth building into the app? help me decide before we invest in it', expected: ['assess'] },
+  { prompt: 'write down our non-negotiables: we never store card numbers and every screen works offline', expected: ['constitution'] },
+  { prompt: 'nobody can say who this product is for or how it makes money, write it down as the source of truth', expected: ['living-docs'] },
+  { prompt: 'write the spec for team invitations before anyone plans or builds it', expected: ['specify'] },
+  { prompt: 'the team invitations spec is agreed, make the technical plan for it', expected: ['blueprint'] },
+  { prompt: 'the invitations plan is done, break it into tasks', expected: ['breakdown'] },
+  { prompt: 'check the invitations spec, plan and tasks agree with each other before we start coding', expected: ['analyze'] },
+  { prompt: 'make a security requirements checklist for the payments spec', expected: ['checklist'] },
+  { prompt: 'every task for the export feature is ticked, check the code really does what its spec promised', expected: ['converge'] },
+  { prompt: 'fix the typo in the footer copyright line', forbidden: ['specify', 'blueprint', 'breakdown', 'converge'] },
 ]
 const ONLY = process.env.ONLY
 const ALL = FULL ? [...CORE, ...EXTRA] : CORE

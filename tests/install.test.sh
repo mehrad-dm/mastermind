@@ -1177,6 +1177,62 @@ out="$(cd "$TMP/via-link" && HOME="$SANDBOX_HOME" "$INSTALL" --uninstall 2>&1)" 
 is "uninstall removed the links"  "$([ -e "$TMP/via-link/AGENTS.md" ] && echo left || echo gone)" "gone"
 case "$out" in *"removed 0 link"*) bad "uninstall claimed success while removing nothing";; *) ok "uninstall reported real removals";; esac
 
+echo "── .agents/skills: native skills for Codex (and Cursor)"
+P=$(proj agentskills); (cd "$P" && git init -q .)
+run "$P" agents >/dev/null
+is "every skill linked" "$(ls "$P/.agents/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+is "a linked skill resolves" "$([ -f "$P/.agents/skills/converge/SKILL.md" ] && echo yes)" "yes"
+run "$P" --check agents >/dev/null 2>&1; is "check passes once wired" "$?" "0"
+rm "$P/.agents/skills/build"
+out=$(run "$P" --check agents 2>&1); rc=$?
+is "a missing link fails the check" "$([ "$rc" -ne 0 ] && echo caught)" "caught"
+run "$P" agents >/dev/null
+is "a re-run repairs it" "$([ -L "$P/.agents/skills/build" ] && echo y)" "y"
+
+P=$(proj agentskills-theirs); (cd "$P" && git init -q .)
+mkdir -p "$P/.agents/skills/build" "$P/.agents/skills/team-rules"
+echo MINE > "$P/.agents/skills/build/SKILL.md"; echo OURS > "$P/.agents/skills/team-rules/SKILL.md"
+run "$P" agents >/dev/null
+is "their same-named skill untouched" "$(cat "$P/.agents/skills/build/SKILL.md")" "MINE"
+yes_ "ours arrives as mastermind-build" "$([ -L "$P/.agents/skills/mastermind-build" ] && echo y)"
+run "$P" --uninstall agents >/dev/null
+is "uninstall leaves their skills" "$(cat "$P/.agents/skills/build/SKILL.md" "$P/.agents/skills/team-rules/SKILL.md" | tr '\n' ' ')" "MINE OURS "
+is "uninstall removes every link of ours" "$(find "$P/.agents/skills" -type l | wc -l | tr -d ' ')" "0"
+
+P=$(proj agentskills-clean); (cd "$P" && git init -q .)
+run "$P" agents >/dev/null; run "$P" --uninstall agents >/dev/null
+is "an emptied .agents is removed" "$([ -e "$P/.agents" ] && echo left || echo gone)" "gone"
+
+for victimpath in .agents .agents/skills; do
+  V="$TMP_REAL/victims/$(printf '%s' "$victimpath" | tr '/.' '__')"; rm -rf "$V"; mkdir -p "$V"
+  P=$(proj "hostile-$(printf '%s' "$victimpath" | tr '/.' '__')")
+  mkdir -p "$P/$(dirname "$victimpath")"
+  ln -s "$V" "$P/$victimpath"
+  run "$P" agents >/dev/null 2>&1 || true
+  is "$victimpath cannot be redirected" "$(find "$V" -mindepth 1 2>/dev/null | wc -l | tr -d ' ')" "0"
+done
+
+P="$TMP_REAL/agents/nested"; rm -rf "$P"; mkdir -p "$P"; (cd "$P" && git init -q .)
+run "$P" agents claude >/dev/null; run "$P" --uninstall agents claude >/dev/null
+is "uninstall under a folder named agents removes .agents/skills links" "$(find "$P/.agents" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
+is "and .claude/skills links" "$(find "$P/.claude/skills" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+V="$TMP_REAL/victims/uninstall_agents"; rm -rf "$V"; mkdir -p "$V/skills"
+P=$(proj hostile-uninstall-agents); (cd "$P" && git init -q . && ln -s "$V" .agents)
+run "$P" --uninstall agents >/dev/null 2>&1 || true
+is "uninstall never removes a folder outside the project" "$([ -d "$V/skills" ] && echo kept)" "kept"
+
+P=$(proj agentskills-upgrade); (cd "$P" && git init -q .)
+run "$P" agents >/dev/null; rm -rf "$P/.agents"
+out=$(run "$P" --check agents 2>&1)
+is "a pre-upgrade install gets one clear line, not one per skill" "$(printf '%s' "$out" | grep -c 'not linked yet')|$(printf '%s' "$out" | grep -c 'is not linked to MasterMind')" "1|0"
+
+H="$TMP_REAL/codexhome"; rm -rf "$H"; mkdir -p "$H/.codex"; ln -sfn "$REPO" "$H/.mastermind"
+(cd "$H" && HOME="$H" "$INSTALL" --global codex >/dev/null 2>&1) || true
+is "global codex links ~/.agents/skills" "$(ls "$H/.agents/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+(cd "$H" && HOME="$H" "$INSTALL" --global --uninstall codex >/dev/null 2>&1) || true
+is "global codex uninstall removes them" "$(find "$H/.agents/skills" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
+
 if [ -s "$CANARY_LOG" ]; then
   while IFS= read -r line; do no "a run wrote OUTSIDE every fixture: $line"; done < "$CANARY_LOG"
 fi

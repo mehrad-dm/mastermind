@@ -59,6 +59,16 @@ One rule shapes all of it: every *technical* decision is made for you and writte
 genuine product or business trade-offs: the ones only you can own: come back as questions, one line
 each. A spec that hands you a menu has failed at its job.
 
+## Clarifying a written spec
+
+When a feature already has a written spec, interview becomes its clarification pass. Instead of asking
+whatever comes to mind, MasterMind scans the spec area by area: scope and roles, data, journeys and their
+empty and error states, quality targets, integrations, edge cases, constraints, the words used, and
+whether each acceptance criterion could be tested. Then it asks at most five questions, the open ones
+the spec marked first, each answerable with a letter or a few words and each carrying a recommendation.
+Every answer is written straight into the spec, dated, and the requirement it affects is updated, so the
+decision lives in the document and not in the chat.
+
 ## When it fires
 
 You don't type a command. Say any of these and MasterMind reaches for `interview`:
