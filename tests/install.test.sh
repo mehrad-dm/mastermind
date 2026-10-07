@@ -1038,7 +1038,17 @@ is "re-running install repairs it" "$(grep -c 'Prime directives' "$P/.cursor/rul
 
 echo "── cursor hooks.json"
 P=$(proj cursor); run "$P" cursor >/dev/null
-is "sessionStart + preCompact wired" "$(python3 -c "import json;d=json.load(open('$P/.cursor/hooks.json'));print(len(d['hooks']['sessionStart'])+len(d['hooks']['preCompact']))" 2>/dev/null)" "2"
+is "sessionStart wired, preCompact not (its output cannot carry context)" "$(python3 -c "import json;d=json.load(open('$P/.cursor/hooks.json'));print(len(d['hooks']['sessionStart']), 'preCompact' in d['hooks'])" 2>/dev/null)" "1 False"
+python3 - "$P/.cursor/hooks.json" "$(python3 -c "import json;print(json.load(open('$P/.cursor/hooks.json'))['hooks']['sessionStart'][0]['command'])")" <<'PY'
+import json, sys
+p, cmd = sys.argv[1], sys.argv[2]
+d = json.load(open(p)); d['hooks']['preCompact'] = [{'command': cmd}, {'command': 'their-tool.sh'}]
+json.dump(d, open(p, 'w'))
+PY
+out=$(run "$P" --check cursor 2>&1)
+is "check flags a leftover preCompact entry of ours" "$(printf '%s' "$out" | grep -c 'still has our preCompact entry')" "1"
+run "$P" cursor >/dev/null
+is "an update removes our old preCompact entry and keeps theirs" "$(python3 -c "import json;print([e['command'] for e in json.load(open('$P/.cursor/hooks.json'))['hooks']['preCompact']])")" "['their-tool.sh']"
 
 echo "── codex: per-project reads the repo's own AGENTS.md"
 P=$(proj codexproj); CH="$TMP/codexhome"; mkdir -p "$CH"
@@ -1221,6 +1231,42 @@ V="$TMP_REAL/victims/uninstall_agents"; rm -rf "$V"; mkdir -p "$V/skills"
 P=$(proj hostile-uninstall-agents); (cd "$P" && git init -q . && ln -s "$V" .agents)
 run "$P" --uninstall agents >/dev/null 2>&1 || true
 is "uninstall never removes a folder outside the project" "$([ -d "$V/skills" ] && echo kept)" "kept"
+
+P=$(proj agentskills-relative); (cd "$P" && git init -q .)
+run "$P" agents >/dev/null
+is "every .agents/skills link is relative, so the project can move" "$(find "$P/.agents/skills" -type l -exec readlink {} \; | grep -c '^/')" "0"
+mv "$P" "$P-moved"; P="$P-moved"
+is "and still resolves after the move" "$([ -f "$P/.agents/skills/specify/SKILL.md" ] && echo yes)" "yes"
+
+P=$(proj agentskills-aliases); (cd "$P" && git init -q .)
+run "$P" agents codex >/dev/null; run "$P" --uninstall codex >/dev/null
+is "removing codex keeps .agents/skills while agents remains" "$(ls "$P/.agents/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+run "$P" --uninstall agents >/dev/null
+is "removing the last of the two removes them" "$(find "$P/.agents" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+LINKDIR="$TMP_REAL/agentskills-real"; rm -rf "$LINKDIR"; mkdir -p "$LINKDIR"; ln -sfn "$LINKDIR" "$TMP_REAL/agentskills-via"
+(cd "$TMP_REAL/agentskills-via" && git init -q . && HOME="$SANDBOX_HOME" "$INSTALL" agents >/dev/null 2>&1) || true
+(cd "$TMP_REAL/agentskills-via" && HOME="$SANDBOX_HOME" "$INSTALL" --uninstall agents >/dev/null 2>&1) || true
+is "uninstall through a symlinked project path removes .agents/skills links" "$(find "$LINKDIR/.agents" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+P=$(proj agentskills-readonly); (cd "$P" && git init -q .)
+run "$P" agents >/dev/null; rm "$P/.agents/skills/build"; chmod 555 "$P/.agents/skills"
+out=$(run "$P" agents 2>&1); rc=$?; chmod 755 "$P/.agents/skills"
+is "a link that cannot be created fails the install" "$rc" "1"
+is "and says so instead of claiming success" "$(printf '%s' "$out" | grep -c 'could not be created')|$(printf '%s' "$out" | grep -c 'Active in THIS project')" "1|0"
+
+V="$TMP_REAL/victims/agents_outside"; rm -rf "$V"; mkdir -p "$V"
+P=$(proj agentskills-outside); (cd "$P" && git init -q . && ln -s "$V" .agents)
+run "$P" claude >/dev/null 2>&1; rc=$?
+is "a repo whose .agents points outside still installs Claude" "$rc" "0"
+out=$(run "$P" agents 2>&1)
+is "and skips only the native skill links, with a warning" "$(printf '%s' "$out" | grep -c 'is a symlink: skipped')|$(find "$V" -mindepth 1 | wc -l | tr -d ' ')" "1|0"
+
+H="$TMP_REAL/dotfileshome"; rm -rf "$H"; mkdir -p "$H/.codex" "$H/dotfiles/agents"; ln -sfn "$REPO" "$H/.mastermind"; ln -s "$H/dotfiles/agents" "$H/.agents"
+(cd "$H" && HOME="$H" "$INSTALL" --global codex >/dev/null 2>&1) || true
+is "global install writes through a dotfiles .agents" "$(ls "$H/dotfiles/agents/skills" 2>/dev/null | wc -l | tr -d ' ')" "$N_SKILLS"
+(cd "$H" && HOME="$H" "$INSTALL" --global --uninstall codex >/dev/null 2>&1) || true
+is "and global uninstall removes them through it too" "$(find "$H/dotfiles/agents/skills" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
 
 P=$(proj agentskills-upgrade); (cd "$P" && git init -q .)
 run "$P" agents >/dev/null; rm -rf "$P/.agents"

@@ -1,6 +1,6 @@
 ---
 name: help
-description: Use when the user asks what MasterMind can do or how to drive it: "help", "what can you do", "how do I use this", "what commands are there", "list your skills", "what are my options": or when they seem unsure how to get started.
+description: "Use when the user asks what MasterMind can do or how to drive it: \"help\", \"what can you do\", \"how do I use this\", \"what commands are there\", \"list your skills\", \"what are my options\": or when they seem unsure how to get started."
 ---
 
 # Help: what MasterMind can do, and how to use it
@@ -99,10 +99,11 @@ If MasterMind isn't set up for this project yet (no field pack for your stack), 
 setup**, say *"init"* or just start working and it'll ask. Verify your install anytime with
 `~/.mastermind/install.sh --check`.
 
-**Two optional preferences** (per project, both **off** by default, kept in `.mastermind/prefs.md`):
+**Optional preferences** (per project, kept in `.mastermind/prefs.md`; the first two are **off** by default):
 - **cycle report**: a written write-up at the end of a build/QA cycle. Turn on: *"reports on"*.
 - **plan-first**: on bigger tasks, MasterMind shows the plan and waits for your OK before editing. Turn on:
   *"plan first from now on"*.
+- **specs-dir**: where spec-driven documents live, `specs` unless that folder already holds something else.
 
 Both behave exactly as their implementations define them, `skills/build/SKILL.md` (plan-first gate) and
 `skills/report/SKILL.md` (report formats).

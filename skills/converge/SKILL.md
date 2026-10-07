@@ -1,6 +1,6 @@
 ---
 name: converge
-description: Use after building a feature from a task list, to find out whether the code actually does what its spec, plan and constitution say: "is this feature really done?", "check the code against the spec", "what's still missing?", "did we build everything we planned?", every box in tasks.md ticked, or before calling a spec-driven feature done. Not before code exists (that's `analyze`), not for a single claim (that's `double-check`), not for running the thing end to end (that's `qa`).
+description: "Use after building a feature from a task list, to find out whether the code actually does what its spec, plan and constitution say: \"is this feature really done?\", \"check the code against the spec\", \"what's still missing?\", \"did we build everything we planned?\", every box in tasks.md ticked, or before calling a spec-driven feature done. Not before code exists (that's `analyze`), not for a single claim (that's `double-check`), not for running the thing end to end (that's `qa`)."
 ---
 
 # MasterMind: Converge
@@ -30,7 +30,10 @@ Where no isolated context exists, run it yourself and label the result self-grad
 2. **List the intent.** One line per `FR-###`, `US#/AC#`, success criterion needing build work, plan
    decision that names a file or behavior, constitution `MUST`, and existing task.
 3. **Bound the search** to the paths `plan.md` and `tasks.md` name, plus a search for each requirement's
-   key terms. Do not wander past what the documents define.
+   key terms. Do not wander past what the documents define. Before marking anything `missing`, search
+   again with the code's own name for the concept, starting from the brief's glossary: a gap in wording
+   is not a gap in code. A code index, when the project has one, can suggest where to look. Evidence still
+   comes from reading the source, and absence from an index never proves `missing`.
 4. **Check every item against the code**, every task included, ticked or not. **A ticked box is a
    claim, not evidence.** Evidence is a file and line, a command's output, or a passing check from `quickstart.md`.
 5. **Run it, not only read it.** Run every step in `quickstart.md`, then the unhappy paths the spec's
@@ -66,11 +69,17 @@ docs and `.mastermind/MAP.md`, and treat the folder as frozen history from here.
 
 ## The loop
 
+After every round, run `mastermind next` and end with the step it names.
+
 `build` the appended tasks, then converge again. Three rounds without converging means the documents
 and the code disagree about something real. Stop and ask the user which one is wrong.
 
 ## Gotchas
 
+- **Read the code against the intent before reading any tool's output.** A linter or test report read
+  first decides what you look for.
+- **The spec's silence is not a pass.** Behavior the spec never names is graded by what a reasonable
+  user would get from it, and the cases `blueprint` listed as implied are checked like requirements.
 - **The pull to declare it done is strongest when every box is ticked.** That is exactly the case this
   exists for. Check the code behind each box.
 - **A finding without evidence is a guess.** Every row names the file and line, or the command and its
@@ -78,3 +87,8 @@ and the code disagree about something real. Stop and ask the user which one is w
 - **Never fix the code here.** Even a one-line gap becomes a task. Mixing assessment and repair is how a
   check ends up grading its own fix.
 - **Little or no code yet is not an error.** Every item is `missing`; append them all.
+- **A gap already open as a task is not appended again.** Name the existing task in the findings.
+- **Known debt is a note.** A constitution violation listed as known debt, in code this feature did not
+  change, is reported but never blocks converging.
+- **When the fix needs the user**, such as a constitution amendment or a money decision, append the task,
+  set the spec to `blocked` with the question, and stop. Nothing else may amend the constitution.

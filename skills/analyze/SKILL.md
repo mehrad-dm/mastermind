@@ -1,6 +1,6 @@
 ---
 name: analyze
-description: Use when a feature's spec, plan and task list all exist and need checking against each other before code is written: "check the spec and plan agree", "is this ready to build?", "find gaps before we start", "analyze the feature docs", or before building anything that touches money, auth or data from a task list. Not for checking code against intent after building (that's `converge`), not for analyzing code, performance or a bug.
+description: "Use when a feature's spec, plan and task list all exist and need checking against each other before code is written: \"check the spec and plan agree\", \"is this ready to build?\", \"find gaps before we start\", \"analyze the feature docs\", or before building anything that touches money, auth or data from a task list. Not for checking code against intent after building (that's `converge`), not for analyzing code, performance or a bug."
 ---
 
 # MasterMind: Analyze
@@ -66,3 +66,5 @@ tasks, coverage percentage, findings by severity. End with one verdict: **ready 
 Offer the concrete edits for the top findings and apply only the ones the user approves. After an
 approved edit to `spec.md` or `plan.md`, re-run `breakdown`'s coverage check so the tasks still match.
 A fix that changes behavior the user already had is a product decision: ask before applying it.
+
+Then run `mastermind next` and end with the step it names, so the user sees where the feature stands.

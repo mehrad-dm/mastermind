@@ -33,7 +33,7 @@ It refreshes **one field**: the one named in the argument, else the active field
    | Tool | Check | For |
    | --- | --- | --- |
    | Claude Code | [code.claude.com/docs](https://code.claude.com/docs) + changelog, [anthropic.com/engineering](https://www.anthropic.com/engineering), **Claude Devs** | skills, agents, hooks, MCP, model/effort, context management |
-   | Codex | [developers.openai.com/codex](https://developers.openai.com/codex), [platform.openai.com/docs](https://platform.openai.com/docs), [github.com/openai/codex](https://github.com/openai/codex) releases, [agents.md](https://agents.md) | AGENTS.md conventions, CLI surface, config + sandbox behavior |
+   | Codex | [learn.chatgpt.com/docs](https://learn.chatgpt.com/docs), [platform.openai.com/docs](https://platform.openai.com/docs), [github.com/openai/codex](https://github.com/openai/codex) releases, [agents.md](https://agents.md) | AGENTS.md conventions, CLI surface, config + sandbox behavior |
    | Cursor | [cursor.com/docs](https://cursor.com/docs), [cursor.com/changelog](https://cursor.com/changelog), [cursor.com/blog](https://cursor.com/blog) | rules format (`.mdc`, `alwaysApply`), context handling, agent mode |
 
    A change in any of the three can quietly break an install path: `AGENTS.md` semantics, the Cursor

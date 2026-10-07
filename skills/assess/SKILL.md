@@ -1,6 +1,6 @@
 ---
 name: assess
-description: Use when someone wants to know whether an idea deserves building before anyone builds it: "is this worth doing?", "should we build X?", "evaluate this idea", "would users actually want this?", "help me decide whether to invest in this", a product or business idea with no code yet, or a feature request nobody has said yes to. Not for scoping something already decided (that's `interview` or `specify`), not for adopt-vs-build on a library (that's `tech-scout`).
+description: "Use when someone wants to know whether an idea deserves building before anyone builds it: \"is this worth doing?\", \"should we build X?\", \"evaluate this idea\", \"would users actually want this?\", \"help me decide whether to invest in this\", a product or business idea with no code yet, or a feature request nobody has said yes to. Not for scoping something already decided (that's `interview` or `specify`), not for adopt-vs-build on a library (that's `tech-scout`)."
 ---
 
 # MasterMind: Assess
@@ -19,7 +19,8 @@ file instead of producing a new one.
 1. **Intake.** The idea in one sentence, who asked, and who it is for. Then the problem it removes, in
    that person's words. An idea with no named person and no named problem stops here as `clarify`.
 2. **Research.** What exists today: the workaround people use, the competitors, the prior attempt in
-   this codebase. Cite every claim with its source. Label each finding *observed*, *reported* or *assumed*.
+   this codebase. Search the code by the concept, not the request's wording, and read earlier verdicts in
+   `specs/ideas/`. An idea already built stops here with its path; one already stopped needs new evidence. Cite every claim with its source. Label each finding *observed*, *reported* or *assumed*.
 3. **Define.** The outcome that would mean it worked, as one to three measurable signals with a target
    and a deadline. Then the constraints: budget, legal, technical, the constitution if one exists.
 4. **Shape.** The smallest version that would test the outcome. What it leaves out. The two or three

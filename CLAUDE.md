@@ -154,16 +154,19 @@ skills; agents are isolated-context roles.)
 
 ## Across the supported tools
 
-MasterMind supports **Claude Code, Cursor and Codex**. In Claude Code the agents and skills are native
-(invoke them). Cursor and Codex have skill mechanisms of their own, but **ours are not native to
-them**: **they still apply**: recognize the
-intent from the menu below, then **read that file under `~/.mastermind/skills/<name>/SKILL.md` or
-`~/.mastermind/agents/<name>.md` and follow it as a step-by-step procedure.**
+MasterMind supports **Claude Code, Cursor and Codex**. Skills are native in all three: the installer
+links them into `.claude/skills/` and `.agents/skills/`, where each tool discovers them. **Agents are
+native only in Claude Code**: elsewhere, read `~/.mastermind/agents/<name>.md` and follow it as a
+procedure. A skill that is not listed in a session still applies: recognize the intent from the menu
+below, then read `~/.mastermind/skills/<name>/SKILL.md` and follow it. Codex and Cursor leave
+`$ARGUMENTS` unfilled: when it appears literally in a skill, it means the user's request.
 
-The installer links our skills into `.agents/skills/`, where Codex and Cursor discover skills natively.
-Codex leaves `$ARGUMENTS` unfilled: when it appears literally in a skill, it means the user's request.
+**Spec-driven work: ask, don't guess.** In a project with a `specs/` folder, run `mastermind next`
+before choosing a spec-driven skill. It reads the folder and names the feature, its state and the next
+skill. Follow it unless the user asked for something else.
 
-**Support is not parity.** Claude Code and Cursor re-inject this kernel each session and on compaction;
+**Support is not parity.** Claude Code re-injects this kernel each session and after compaction, and
+Cursor applies it as an always-on rule;
 **Codex reads `AGENTS.md` once at startup**, so there it fades as context fills: re-read it before a
 non-trivial task instead of trusting an earlier turn.
 

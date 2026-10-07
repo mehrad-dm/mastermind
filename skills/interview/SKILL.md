@@ -1,6 +1,6 @@
 ---
 name: interview
-description: Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session: and whenever the user wants to be interviewed about it: "interview me", "ask me what you need", "question me on this", "tear this PRD/spec/plan apart", "what would kill this?", "resolve the open questions in the spec". Also when a spec in specs/ still carries [NEEDS CLARIFICATION] markers, or is about to be planned. Symptoms: "make it better", "add the thing", or disagreement about what's in scope. Skip for a clear one-line change.
+description: "Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session: and whenever the user wants to be interviewed about it: \"interview me\", \"ask me what you need\", \"question me on this\", \"tear this PRD/spec/plan apart\", \"what would kill this?\", \"resolve the open questions in the spec\". Also when a spec in specs/ still carries [NEEDS CLARIFICATION] markers, or is about to be planned. Symptoms: \"make it better\", \"add the thing\", or disagreement about what's in scope. Skip for a clear one-line change."
 ---
 
 # MasterMind: Interview

@@ -56,6 +56,10 @@ pressure. *"Don't write bullet points"* is the failing form; *"write in flowing 
 Converting the first kind to positive framing weakens a real guard; leaving the second kind negative
 actively summons what it forbids.
 
+**A format rule must not force a claim the evidence lacks.** "Always state the cause, then the fix"
+makes a model invent a cause when the evidence does not identify one. Shape the output so "unknown" is
+a valid answer.
+
 **No nuance clauses, no exemption clauses.** *"Don't do X unless it matters"* reopens the negotiation the
 rule existed to close, and the exemption is the door every rationalization walks through. If a rule has a
 real exception, name that exception concretely, or drop the rule.

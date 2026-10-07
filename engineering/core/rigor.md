@@ -92,7 +92,9 @@ what you decided and why.
   the boundary.
 - **No lazy placeholders.** No `// TODO handle error`, no swallowed exceptions, no `console.log` left
   behind, no dead code, no commented-out blocks. If something is genuinely out of scope, say so
-  explicitly in the response: don't hide it in the code.
+  explicitly in the response: don't hide it in the code. One exception: a deliberate ceiling may be
+  marked where it lives, in one comment naming the limit and what would make it worth lifting
+  (`global lock: per-account locks once two accounts contend`). A ceiling with no trigger is a TODO.
 - **Small, single-purpose units.** Each function/component does one thing. If you can't describe it in
   one sentence without "and," split it.
 
@@ -121,13 +123,18 @@ it passes typecheck + lint (and the project's tests, if it has them) · its beha
 actually exercising it · it matches codebase conventions · it's readable by the next person ·
 nothing was left half-wired · and the "why" of any non-obvious decision is captured.
 
+**Prefer the check that broken code cannot pass.** A test the same change wrote can be made green by
+code that does not work; a type check, a contract test against a real dependency, or driving the real
+flow cannot. When the checks available are all ones the change could game, say so in the verdict.
+
 ## Converge: the completeness check
 
 "Report against evidence" above catches *dishonest*. Nothing catches *incomplete*: a report where every
 claim is true, every check really ran, and the whole covers only the part of the ask that got built.
 That is the most common failure in agent work, and no honesty gate has ever caught one.
 
-Before the verdict, **re-read the original ask (or spec) against the actual diff** and write down what
+For a feature built from `specs/`, the `converge` skill runs this check against the spec, plan, tasks
+and constitution. Everywhere else, do it by hand. Before the verdict, **re-read the original ask (or spec) against the actual diff** and write down what
 remains: what the ask names and the code does not do, not what you feel is left. Read the ask itself;
 your memory of it has already been edited to match what you built.
 

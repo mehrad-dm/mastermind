@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Use after finishing a feature or fix to confirm it actually works, when the user says "test this", "does it work", "verify this", "QA it", or before shipping something that has never been driven end-to-end. Also when the user asks for tests to be written or wants to work test-first.
+description: "Use after finishing a feature or fix to confirm it actually works, when the user says \"test this\", \"does it work\", \"verify this\", \"QA it\", or before shipping something that has never been driven end-to-end. Also when the user asks for tests to be written or wants to work test-first."
 ---
 
 # QA: prove it works (verify by default, tests on request)
@@ -83,6 +83,11 @@ Then Red → Green → Refactor:
 
 Test **behavior/contracts, not internals** (brittle implementation tests are worse than none). Test names
 read like the spec. Struggling to make a test pass cleanly? The design is probably wrong, listen to it.
+
+**Two checks for a test you wrote.** Name the specific break it catches, then make that break by hand
+and watch it fail. A test that still passes against the broken code tests nothing. And a test that only
+fails when the code changes, not when it breaks, such as one asserting exact copy or a snapshot of
+internals, is a change detector: it costs every future edit and catches nothing.
 
 **The two ways a green suite lies.** A *tautological* test recomputes the expected value the way the
 code does: `expect(add(a, b)).toBe(a + b)` passes whatever `add` does, so the expected value has to

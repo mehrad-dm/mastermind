@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Use when the right approach is genuinely unknown and reality will teach faster than planning: a risky unvalidated assumption, an unfamiliar integration, "will this even work", "try something quick". The result is explicitly throwaway and does not ship.
+description: "Use when the right approach is genuinely unknown and reality will teach faster than planning: a risky unvalidated assumption, an unfamiliar integration, \"will this even work\", \"try something quick\". The result is explicitly throwaway and does not ship."
 ---
 
 # MasterMind: Prototype
@@ -37,4 +37,5 @@ the *learning*, not the code.
 
 ## Output
 The answer to the question + the surprises, and a clear "now build it properly" recommendation (or a
-"don't build it, here's why").
+"don't build it, here's why"). When the prototype served a feature in `specs/`, record the question and
+the answer in that feature's `research.md`, so `blueprint` builds on it instead of re-asking it.

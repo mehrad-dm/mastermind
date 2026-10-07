@@ -1,6 +1,6 @@
 ---
 name: breakdown
-description: Use when a feature with a spec and a plan needs its ordered task list: "break this into tasks", "make the task list", "what are the steps to build this?", "generate tasks.md", a feature folder with plan.md and no tasks.md, or a task list made stale by a spec or plan change. Not for a feature with no plan (that's `blueprint`), not for one session's to-do list.
+description: "Use when a feature with a spec and a plan needs its ordered task list: \"break this into tasks\", \"make the task list\", \"what are the steps to build this?\", \"generate tasks.md\", a feature folder with plan.md and no tasks.md, or a task list made stale by a spec or plan change. Not for a feature with no plan (that's `blueprint`), not for one session's to-do list."
 ---
 
 # MasterMind: Breakdown
@@ -36,6 +36,10 @@ present, else [`template.md`](template.md).
 
 Delete a phase with no tasks. Never write a heading over "None".
 
+Refactoring the code needs before a story can land goes first, as its own tasks in Foundation. A change
+too wide for one slice, such as renaming a column every story reads, is sequenced expand, migrate,
+contract (`deprecate`), never forced into a story.
+
 Within a story: tests first when they are required, then data, then logic, then the surface, then the
 wiring that connects them.
 
@@ -63,3 +67,5 @@ wiring that connects them.
 The task count per phase, the parallel opportunities, the requirements with no task, and the next
 step: `analyze` before building a feature that touches money, auth or data, else `build`. Set the
 spec's status to `tasked`.
+
+Then run `mastermind next` and end with the step it names, so the user sees where the feature stands.

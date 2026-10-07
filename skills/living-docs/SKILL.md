@@ -1,6 +1,6 @@
 ---
 name: living-docs
-description: Use when the project's product, business or technical knowledge needs a home or has gone stale: "document what this product is", "write down how the business works", "where is the source of truth for X?", ""how is this codebase built?", "our docs are out of date", starting a new product, joining an existing codebase with no docs, or after a feature converges and what it taught must outlive it. Not usage docs for one internal package (that's `explain`), not the decision history (that's `roadmap`).
+description: "Use when the project's product, business or technical knowledge needs a home or has gone stale: \"document what this product is\", \"write down how the business works\", \"where is the source of truth for X?\", \"how is this codebase built?\", \"our docs are out of date\", starting a new product, joining an existing codebase with no docs, or after a feature converges and what it taught must outlive it. Not usage docs for one internal package (that's `explain`), not the decision history (that's `roadmap`)."
 ---
 
 # MasterMind: Living docs
@@ -35,6 +35,8 @@ Create a file only when it has content. A library has no `business.md`.
 - **After `converge` reports converged**, promote what the feature taught that outlives it: a new
   user journey into `product.md`, a new service into `tech.md`. Then update the footer date.
 - **When the code contradicts `tech.md`**, the code wins. Correct the doc in the same change.
+- **Activity is not staleness.** Many commits since the footer date are a reason to re-read the doc,
+  never proof it is wrong. Only a fact the code or the user contradicts makes it stale.
 - **When something contradicts `product.md` or `business.md`**, the document wins until the user says
   otherwise. Ask them which one is wrong.
 - **Rewrite in place.** These describe the present. The history of why lives in `.mastermind/MAP.md`

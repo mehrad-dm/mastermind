@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Use when work needs to survive losing context, before a /clear on a long task, when pausing something unfinished, when handing over to a teammate or the next session, when the context window is filling up on multi-day work, or when a long multi-step task starts re-covering ground it already finished. Not the project's decision history across weeks: that's `roadmap`.
+description: "Use when work needs to survive losing context, before a /clear on a long task, when pausing something unfinished, when handing over to a teammate or the next session, when the context window is filling up on multi-day work, or when a long multi-step task starts re-covering ground it already finished. Not the project's decision history across weeks: that's `roadmap`."
 ---
 
 # MasterMind: Handoff
@@ -18,7 +18,8 @@ reset. Capture just enough to resume cold: high signal, low tokens.
 6. **How to resume & verify**: the exact command(s)/check to pick up and confirm green.
 
 ## Rules
-Summarize and link, point to detail rather than pasting it. Write it where the next session
+Summarize and link, point to detail rather than pasting it. Never copy a secret, token, key or
+customer record into a handoff: name where it lives instead. Write it where the next session
 will look (`.mastermind/HANDOFF.md`, a scratch file, or the issue). Prune it when the work completes.
 
 ## Output

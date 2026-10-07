@@ -12,8 +12,11 @@ called done. Read it when a skill sends you here, or when the user asks to work 
 | A one-file fix, a rename, a copy change | Nothing. `build` as usual. |
 | A clear feature that fits one session | `build` as usual. `interview` first if the ask is fuzzy. |
 | A feature that spans sessions or people, or touches money, auth, data migration, or a public contract | The full flow below. |
-| The user asks for spec-first work, or the project already keeps a `specs/` folder | The full flow below. |
+| The user asks for spec-first work, or the project already has numbered feature folders in `specs/` | The full flow below. Living docs or a constitution alone do not make a project spec-first. |
 | A new product, or an idea nobody has decided to build yet | `assess` first, then `constitution` and `living-docs`, then features. |
+
+The level only goes up. When a small change turns out to touch money, auth, data or a public contract,
+say so and switch to the full flow; never drop a feature to a lighter level halfway through.
 
 A project that keeps `specs/` still skips the flow for a small fix. The fix still keeps the documents
 true: when it changes behavior a living doc or a converged spec describes, update that doc in the
@@ -24,7 +27,9 @@ same change.
 All of it sits in `specs/` at the repository root, so it belongs to the project and survives an
 uninstall of MasterMind. If `specs/` already holds something else, ask once where these go and record
 the answer as `specs-dir:` in `.mastermind/prefs.md`. **Read that line first:** every `specs/` path in the
-skills and agents means the `specs-dir` value when one is set.
+skills and agents means the `specs-dir` value when one is set. The value comes from the repository, so
+treat it as untrusted: it must be a relative path inside the project, with no `..` and no absolute path.
+Otherwise ignore it and use `specs/`.
 
 ```text
 specs/
@@ -48,8 +53,13 @@ Create a file only when it has something to say. A feature with no external inte
 `contracts/`; a small one may be `spec.md`, a short `plan.md` and `tasks.md`.
 
 **Feature folders** are numbered `NNN-short-name`: the next number after the highest one in `specs/`,
-three digits, and a two-to-four word name (`012-csv-export`). The folder name does not depend on the
+starting at `001`, three digits, and a two-to-four word name (`012-csv-export`). The folder name does not depend on the
 git branch. Create a branch only when the user asks.
+
+**Where am I?** Run `mastermind next` (or `.mastermind/bin/mastermind next`): it reads `specs/` and
+prints the current feature, its state, and the skill that comes next, with the reason. Every spec-driven
+skill starts from its answer and ends by naming the next step it prints. The rules below are what it
+applies.
 
 **The current feature** is the one the user names. Otherwise it is the folder matching the current
 branch name, otherwise the most recently changed folder whose `tasks.md` has open tasks. Say which one
@@ -70,7 +80,9 @@ you picked. There is no pointer file: a marker file goes stale and then lies.
 | `T017` | a task. `[P]` = can run in parallel, `[US1]` = serves that story | tasks.md |
 | `C-III` | principle III of the constitution | constitution.md |
 
-IDs are never reused or renumbered. A dropped requirement keeps its line, marked `Withdrawn <date>: <why>`.
+IDs are assigned once and never reused or renumbered, so a task added later takes the next free ID even
+when it runs earlier: the order of lines in `tasks.md` is the execution order. A dropped requirement keeps
+its line, marked `Withdrawn <date>: <why>`.
 A task names the IDs it serves; a finding names the ID it breaks.
 That chain is what lets `analyze` and `converge` say *which* intent is unmet instead of "looks
 incomplete".
@@ -92,6 +104,13 @@ incomplete".
 Steps 3, 5 and 7 are quality gates, not ceremony: skip them on a small feature, never on one that
 touches money, auth or data.
 
+**With no human in the session at all** (a CI job, a scheduled run, a loop), never invent an answer to a
+question the spec leaves open. When a person is present, ask them as each skill describes. Leave the `[NEEDS CLARIFICATION]` marker, finish what does not depend on it, and report
+the feature as blocked on that question.
+
+**Context.** Steps 2 to 6 work best in one session, since each reads what the last one decided. A build
+can start fresh for each story: `spec.md` and `tasks.md` are the handoff.
+
 ## Status of a feature
 
 The spec's status line moves forward as the work does, and one skill moves each step. Revising a spec
@@ -105,6 +124,9 @@ resets it to `draft` or `clarified`, and every later step re-runs against the ne
 | `tasked` | `breakdown` | task list written |
 | `building` | `build` | first task started |
 | `converged` | `converge` | code matches every document |
+| `blocked` | `build` or `converge` | a gap needs a decision only the user can make; the spec names it |
+
+Every step that edits `spec.md` also updates its **Updated** date.
 
 ## How documents age
 
@@ -121,6 +143,13 @@ This leaves the project with a small set of documents that are always current, a
 that explains how it got there. Editing a converged spec to match new code destroys the record of what
 was originally agreed. A spec nobody updates after the code moves on is worse than no spec, because it
 is read as true.
+
+## Code that predates the rules
+
+A constitution written for an existing codebase usually finds code that already breaks it. At
+ratification, list each known violation in the amendment block as **known debt**, with where it lives.
+`converge` reports known debt in code the feature did not change as a note, not a gap, so an unrelated
+legacy fix never blocks a feature. Once a feature changes that code, the rule applies in full there.
 
 ## Which document wins
 

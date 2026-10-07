@@ -1,6 +1,6 @@
 ---
 name: specify
-description: Use when a feature is going to be built spec-first and needs its specification written or revised: "write the spec for X", "spec this feature", "start a new feature: ...", "turn this idea into requirements", an assessed idea that got a go, or any feature that spans sessions or people, or touches money, auth, data migration or a public contract. Not for a small clear change (that's `build`), and not for questioning a fuzzy ask before anything is written (that's `interview`).
+description: "Use when a feature is going to be built spec-first and needs its specification written or revised: \"write the spec for X\", \"spec this feature\", \"start a new feature: ...\", \"turn this idea into requirements\", an assessed idea that got a go, or any feature that spans sessions or people, or touches money, auth, data migration or a public contract. Not for a small clear change (that's `build`), and not for questioning a fuzzy ask before anything is written (that's `interview`)."
 ---
 
 # MasterMind: Specify
@@ -12,7 +12,8 @@ Feature: **$ARGUMENTS**.
 ## Write it
 
 1. **Open the folder.** Pick the next number in `specs/` and a two-to-four word name: `specs/012-csv-export/`.
-   Revising an existing spec? Work in that folder instead.
+   Revising an existing spec? Work in that folder instead. Search `specs/` and the code for the concept
+   first: a feature that already exists is amended, never specified twice.
 2. **Start from the template.** `specs/.templates/spec.md` if present, else [`template.md`](template.md).
 3. **Read what bounds it.** `specs/constitution.md`, `specs/product.md`, the brief's glossary, and any
    earlier spec this one amends.
@@ -25,7 +26,7 @@ Feature: **$ARGUMENTS**.
    (`SC-001`), each measurable from the user's side with no technology named.
 7. **Fill the rest.** Key entities (no fields or types yet), edge cases, out of scope, and assumptions.
 8. **Name things once.** Add each new domain word to the glossary in `.mastermind/brief.md`, creating the
-   section if it is missing, and use those exact words in the spec.
+   file or the section if it is missing, and use those exact words in the spec.
 
 ## Gaps: guess well, mark the few that matter
 
@@ -67,3 +68,5 @@ notes and in your report. Set the status line to `draft`, or `clarified` once no
 
 The folder, the stories with priorities, the checklist result, any marker still open, and the next step:
 `interview` if markers remain, `blueprint` if none do.
+
+Then run `mastermind next` and end with the step it names, so the user sees where the feature stands.

@@ -59,6 +59,10 @@ edit "plugin manifest"    ".claude-plugin/plugin.json"       "s/$OLD/$NEW/g"
 edit "marketplace"        ".claude-plugin/marketplace.json"  "s/$OLD/$NEW/g"
 edit "README"             "README.md"                        "s/$OLD/$NEW/g"
 edit "site version"       "$SITE/src/site.config.ts"          "s/v$OLD/v$NEW/g"
+if [ "$DRY" = 0 ]; then
+  MASTERMIND_SITE="$SITE" node "$REPO/scripts/build-library.mjs" >/dev/null || die "library pages could not be regenerated"
+  ok "library pages (a release date starts each New badge's 60 days)"
+fi
 
 # --- Nothing left behind ------------------------------------------------------
 if [ "$DRY" = 0 ]; then

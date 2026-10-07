@@ -65,7 +65,7 @@ g=$'\033[0;32m'; y=$'\033[0;33m'; r=$'\033[0;31m'; x=$'\033[0m'
 ok()   { printf '  %s✓%s %s\n' "$g" "$x" "$*"; }
 warn() { printf '  %s⚠%s %s\n' "$y" "$x" "$*"; }
 bad()  { printf '  %s✖%s %s\n' "$r" "$x" "$*"; }
-ISSUES=0; LINKED_SKILLS=0; LINKED_AGENTS=0; PRUNED=0; RENAMED=0; SKIPPED=0; UNFINISHED=0
+ISSUES=0; LINK_FAILED=0; LINKED_SKILLS=0; LINKED_AGENTS=0; PRUNED=0; RENAMED=0; SKIPPED=0; UNFINISHED=0
 HINT='Follow ~/.mastermind/CLAUDE.md: the MasterMind brain (skills, agents, engineering rigor).'
 HINT_GLOBAL="$HINT"
 HINT_ISOLATED='Follow ./.mastermind/CLAUDE.md: the MasterMind brain for this project (skills, agents, engineering rigor).'
@@ -380,7 +380,7 @@ link_skill() {
   fi
 
   if ! ln -sfn "$(mm_link_src "$src" "$target")" "$target"; then
-    bad "could not link $kind $name into $base"; ISSUES=$((ISSUES + 1)); return 1
+    bad "could not link $kind $name into $base"; ISSUES=$((ISSUES + 1)); LINK_FAILED=$((LINK_FAILED + 1)); return 1
   fi
   if [ "$renamed" = 1 ]; then
     warn "you already have a $kind '$name': installed MasterMind's as 'mastermind-$name' (both work)"
@@ -436,6 +436,10 @@ wire_agent_skills() {
   [ "$MM_AGENT_SKILLS_DONE" = "$base" ] && return 0
   MM_AGENT_SKILLS_DONE="$base"
   printf '\nAgent skills (%s):\n' "$label"
+  if [ "$SCOPE" = project ] && { [ -L "$PROJECT/.agents" ] || [ -L "$base" ]; }; then
+    warn "$label is a symlink: skipped, so nothing is written outside this project. Codex still reads AGENTS.md"
+    return 0
+  fi
   if [ "$MODE" = check ] && [ ! -d "$base" ]; then
     bad "$label not linked yet: re-run install.sh to add native skills for Codex"; ISSUES=$((ISSUES + 1))
     return 0
@@ -462,6 +466,7 @@ wire_cursor() {
     if mm_is_generated "$dst" && grep -q 'Prime directives' "$dst"; then ok ".cursor/rules/mastermind.mdc"
     elif [ -f "$dst" ]; then bad ".cursor rule is the old pointer-only shape: re-run install.sh"; ISSUES=$((ISSUES + 1))
     else bad ".cursor rule not set"; ISSUES=$((ISSUES + 1)); fi
+    wire_cursor_hook
     return
   fi
   mkdir -p "$PROJECT/.cursor/rules"
@@ -530,6 +535,9 @@ wire_cursor_hook() {
   local dst="$PROJECT/.cursor/hooks.json"
   if [ "$MODE" = check ]; then
     if [ -f "$dst" ] && grep -q 'session-start.sh' "$dst"; then ok ".cursor/hooks.json (unverified upstream)"; fi
+    if [ -f "$dst" ] && command -v node >/dev/null 2>&1 && MM_DST="$dst" node -e 'const h=JSON.parse(require("fs").readFileSync(process.env.MM_DST,"utf8")).hooks||{};process.exit((h.preCompact||[]).some(e=>/session-start\.sh/.test(e&&e.command||""))?0:1)' 2>/dev/null; then
+      bad ".cursor/hooks.json still has our preCompact entry, which cannot reload anything: re-run install.sh"; ISSUES=$((ISSUES + 1))
+    fi
     return 0
   fi
   command -v node >/dev/null 2>&1 || return 0
@@ -543,16 +551,17 @@ wire_cursor_hook() {
     let s={version:1,hooks:{}};
     if (fs.existsSync(p)) { try { s=JSON.parse(fs.readFileSync(p,"utf8")||"{}"); } catch { process.exit(3); } }
     s.version ??= 1; s.hooks ||= {};
+    // preCompact output has no context field, so only sessionStart can reload the brain.
     for (const ev of ["sessionStart","preCompact"]) {
       const owns=(c)=>typeof c==="string" && ((mmHooks && c.startsWith(mmHooks)) || /(^|\/)\.mastermind\/hooks\/session-start\.sh$/.test(c.trim().split(/\s+/)[0].replace(/^"|"$/g,"")));
       const mine=(e)=>owns(e&&e.command)||(e&&e.command)===cmd;
       const keep=(s.hooks[ev]||[]).filter(e=>!mine(e));
-      keep.push({command: cmd});
-      s.hooks[ev]=keep;
+      if (ev==="sessionStart") keep.push({command: cmd});
+      if (keep.length) s.hooks[ev]=keep; else delete s.hooks[ev];
     }
     fs.writeFileSync(p, JSON.stringify(s,null,2)+"\n");
   ' 2>/dev/null \
-    && ok ".cursor/hooks.json: sessionStart + preCompact (unverified upstream)" \
+    && ok ".cursor/hooks.json: sessionStart (unverified upstream)" \
     || warn "left your .cursor/hooks.json alone (could not parse it)"
   return 0
 }
@@ -813,7 +822,8 @@ if [ "$MODE" = uninstall ]; then
     _askills=""
     if [ "$SCOPE" = project ]; then _askills="$PROJECT/.agents/skills"
     elif mm_wants codex; then _askills="$HOME/.agents/skills"; fi
-    if [ -n "$_askills" ] && [ ! -L "$(dirname "$_askills")" ] && [ ! -L "$_askills" ]; then
+    # A project's symlinked .agents was never written through; a global one (dotfiles) was.
+    if [ -n "$_askills" ] && { [ "$SCOPE" = global ] || { [ ! -L "$(dirname "$_askills")" ] && [ ! -L "$_askills" ]; }; }; then
       shopt -s nullglob
       for l in "$_askills"/*; do
         mm_is_our_capability "$l" || continue
@@ -995,7 +1005,6 @@ fi
 if [ "$SCOPE" = project ] && [ -n "${PROJECT:-}" ]; then
   for _t in "$PROJECT/.claude" "$PROJECT/.claude/skills" "$PROJECT/.claude/agents" \
             "$PROJECT/.cursor" "$PROJECT/.cursor/rules" "$PROJECT/.mastermind" \
-            "$PROJECT/.agents" "$PROJECT/.agents/skills" \
             "$PROJECT/.github/hooks" "$PROJECT/AGENTS.md" "$PROJECT/CLAUDE.md" \
             "$PROJECT/.claude/CLAUDE.md"; do
     mm_assert_contained "$_t"
@@ -1517,6 +1526,11 @@ if [ "$MODE" = check ]; then
   else printf '%s✖ %d issue(s). Re-run the installer to repair.%s\n' "$r" "$ISSUES" "$x"; exit 1; fi
 fi
 
+if [ "$LINK_FAILED" -gt 0 ]; then
+  printf '\n%s✖ %d link(s) could not be created, listed above. Fix the permissions and re-run.%s\n' "$r" "$LINK_FAILED" "$x"
+  exit 1
+fi
+
 if [ "$SCOPE" = project ]; then
   printf '\n%sActive in THIS project.%s  Add another: cd there && ~/.mastermind/install.sh   ·   Claude Code everywhere: --global\n' "$g" "$x"
   printf 'On another tool? It reads AGENTS.md, or point it at %s.\n' "$([ "$ISOLATED" = 1 ] && echo '.mastermind/CLAUDE.md' || echo '~/.mastermind/CLAUDE.md')"
@@ -1532,7 +1546,7 @@ for _t in ${TOOLS[@]+"${TOOLS[@]}"}; do
   case "$_t" in
     claude)       printf '  Claude Code   type /clear   (or open a new session)\n' ;;
     cursor)       printf '  Cursor        start a new chat\n' ;;
-    codex|agents) printf '  Codex         start a new session: it reads AGENTS.md at startup only\n' ;;
+    codex|agents) printf '  Codex         start a new session and trust the project when asked: it reads AGENTS.md at startup only\n' ;;
   esac
 done
 printf '  Any session you open from now on already has it.\n'

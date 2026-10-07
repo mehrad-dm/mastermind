@@ -231,7 +231,8 @@ Each of these was argued once and decided. Reopening one needs a new argument, n
   all with `--dangerously-bypass-hook-trust`. The binary explains it: a hook must be reviewed and
   **enabled** once in the TUI, and that flag bypasses trust, not enabled. An installer cannot do that
   for a user, so shipping the file would claim a parity that does not exist. Revisit when Codex can
-  enable a hook non-interactively.
+  enable a hook non-interactively. Re-tested on Codex 0.160.1 (2026-10-07): a repo-local SessionStart hook with
+  `--dangerously-bypass-hook-trust` left `codex exec` waiting for over an hour, so the decision holds.
 - **The project always wins.** On a skill-name collision the user's file is never displaced: ours
   installs as `mastermind-<name>` and both work. If theirs is later removed, ours reclaims the plain
   name and the alias is pruned.

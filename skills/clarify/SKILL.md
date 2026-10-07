@@ -1,6 +1,6 @@
 ---
 name: clarify
-description: Use the moment the user signals your last answer did not land: "I did not follow that", "I don't understand", "say it simply", "simpler please", "more simply", "you lost me", "what does that mean", "too long", "explain again", "show me", a confused question repeating something you already answered. Re-pitch what you just said, in plain words or as a picture. Not for a new question, and not for documenting a package: that is explain.
+description: "Use the moment the user signals your last answer did not land: \"I did not follow that\", \"I don't understand\", \"say it simply\", \"simpler please\", \"more simply\", \"you lost me\", \"what does that mean\", \"too long\", \"explain again\", \"show me\", a confused question repeating something you already answered. Re-pitch what you just said, in plain words or as a picture. Not for a new question, and not for documenting a package: that is explain."
 ---
 
 # MasterMind: Clarify
@@ -39,7 +39,9 @@ sequence does, what the data looks like. Reach for the lightest form that carrie
 - a **table**: for a comparison or a set of options
 - a **diff**, and not only of code: mark a call tree, a file layout or a state machine with `+` and
   `-` to show a change against a shape the reader already holds
-- a **mermaid diagram**: state and sequence diagrams, only when the relationships genuinely need one
+- a **mermaid diagram**: state and sequence diagrams, only when the relationships genuinely need one.
+  Nine boxes at most; past that, draw an overview and a detail. Remove every box, arrow and label
+  whose removal loses nothing, and give emphasis to one or two elements, never four
 
 Plain text beats a rendered diagram: it works in every terminal and every tool, and it is faster to
 read. Reach for HTML only when the user asks for it.

@@ -13,8 +13,8 @@ const CASES = [
   { prompt: 'I am stopping for today, set things up so tomorrow picks up cleanly', expected: ['handoff'] },
   { prompt: 'cancelling an order sometimes leaves the stock count wrong and I cannot see why', expected: ['debug'] },
   { prompt: 'there is a .env with live credentials in here and I do not want it reaching github', expected: ['quarantine'] },
-  { prompt: 'write the spec for team invitations before anyone plans or builds it', expected: ['specify'] },
-  { prompt: 'every task for the export feature is ticked, check the code really does what its spec promised', expected: ['converge'] },
+  { prompt: 'we want customers to set up invoices that repeat every month. before any code, pin down exactly what it has to do and how we will know it works', expected: ['specify'] },
+  { prompt: 'the team says CSV export is finished. compare the code with specs/007-export and show me where it falls short', expected: ['converge'] },
 ]
 const SKIP = 2
 

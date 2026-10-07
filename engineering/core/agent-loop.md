@@ -111,8 +111,9 @@ Protect it:
 - **Ask the index before you re-derive.** Some projects carry a code-intelligence layer that already
   answers what most exploration is looking for: the dependency graph, churn hotspots, ownership, test
   gaps, dead code, the decision behind a shape. Query it first and spend the context you saved on the
-  judgment. Repowise is one such tool at the time of writing, exposed over MCP so any of the three
-  supported tools can reach it. **Optional, always**: check whether one is present, use it if it is,
+  judgment. Repowise and graphify are two such tools at the time of writing; their benchmarks are
+  their own claims. An index suggests where to look; the source is still what you cite, and absence
+  from an index proves nothing, since dynamic calls and string routes escape it. **Optional, always**: check whether one is present, use it if it is,
   and work exactly as before when it is not.
 - **Keep the always-on layer light**: a bloated CLAUDE.md gets *ignored*; important rules get lost in
   noise. Push sometimes-relevant depth into on-demand docs/skills. (This is why MasterMind is built the

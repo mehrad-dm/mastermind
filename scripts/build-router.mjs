@@ -11,6 +11,7 @@ const OUT = path.join(ROOT, 'engineering', 'ROUTER.md')
 const tokens = (s) => Math.round(s.length / 4)
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 8)
 
+const unquote = (v) => { if (!/^"[\s\S]*"$/.test(v)) return v; try { return JSON.parse(v) } catch { return v } }
 function frontmatter(body) {
   const m = body.match(/^---\n([\s\S]*?)\n---/)
   if (!m) return {}
@@ -20,7 +21,7 @@ function frontmatter(body) {
     if (!kv) continue
     let [, k, v] = kv
     const arr = v.match(/^\[(.*)\]$/)
-    fm[k] = arr ? arr[1].split(',').map((x) => x.trim()).filter(Boolean) : v.trim()
+    fm[k] = arr ? arr[1].split(',').map((x) => x.trim()).filter(Boolean) : unquote(v.trim())
   }
   return fm
 }

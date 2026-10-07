@@ -11,13 +11,14 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 const readIfPresent = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), 'utf8') : null)
 
 // --- parse the simple `key: value` frontmatter block at the top of a file ----
+const unquote = (v) => { if (!/^"[\s\S]*"$/.test(v)) return v; try { return JSON.parse(v) } catch { return v } }
 function frontmatter(text) {
   const m = text.match(/^---\n([\s\S]*?)\n---/)
   if (!m) return null
   const fm = {}
   for (const line of m[1].split('\n')) {
     const km = line.match(/^([A-Za-z][\w-]*):\s?(.*)$/)
-    if (km) fm[km[1]] = km[2]
+    if (km) fm[km[1]] = unquote(km[2])
   }
   return fm
 }
@@ -336,6 +337,22 @@ for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json'
       fail(`${f}: still advertises ${dead}, supported tools are Claude Code, Cursor and Codex`)
   }
 }
+
+// An unquoted value holding ": " is not YAML. Claude Code and Codex read it anyway; a strict parser drops the skill.
+for (const rel of [...skillDirs.map((d) => `skills/${d}/SKILL.md`), ...readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`)]) {
+  const head = (readIfPresent(rel) ?? '').match(/^---\n([\s\S]*?)\n---/)?.[1] ?? ''
+  for (const line of head.split('\n')) {
+    const kv = line.match(/^([A-Za-z][\w-]*):\s(.*)$/)
+    if (kv && !/^["'>|]/.test(kv[2]) && /:\s|\s#/.test(kv[2]))
+      fail(`${rel}: \`${kv[1]}\` holds ": " or " #" unquoted, which strict YAML rejects: wrap the value in double quotes`)
+  }
+}
+
+// Codex stops reading instructions at 32 KiB, and a global plus a project copy of the kernel both count.
+const KERNEL_MAX = 16 * 1024
+const kernelBytes = Buffer.byteLength(readIfPresent('CLAUDE.md') ?? '')
+if (kernelBytes > KERNEL_MAX)
+  fail(`CLAUDE.md is ${kernelBytes} bytes, over ${KERNEL_MAX}: two copies would pass Codex's 32 KiB instruction limit and be cut off`)
 
 // --- report ------------------------------------------------------------------
 if (errors.length) {

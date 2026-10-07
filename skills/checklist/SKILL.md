@@ -1,6 +1,6 @@
 ---
 name: checklist
-description: Use when a feature's requirements need testing for one concern before planning or building: "make a security checklist for this spec", "are the UX requirements complete?", "review the API requirements", "what did the spec forget about accessibility?", "give me a requirements checklist for this feature", or a sensitive feature heading into `blueprint` or `build`. Not for testing code or QA steps (that's `qa`), not for checking documents against each other (that's `analyze`).
+description: "Use when a feature's requirements need testing for one concern before planning or building: \"make a security checklist for this spec\", \"are the UX requirements complete?\", \"review the API requirements\", \"what did the spec forget about accessibility?\", \"give me a requirements checklist for this feature\", \"does our spec cover abuse or partial failure?\", a spec that looks thin on one area such as security, access rules or error recovery, or a sensitive feature heading into `blueprint` or `build`. Not for testing code or QA steps (that's `qa`), not for checking documents against each other (that's `analyze`)."
 ---
 
 # MasterMind: Checklist
@@ -28,6 +28,9 @@ Tests the requirement (right):  Does the spec say what is shown when the logo fa
 - [ ] CHK008 Is "secure session" defined with an expiry and a revocation rule? [Clarity, FR-012]
 - [ ] CHK009 Does the spec say who may delete another user's export? [Gap, Coverage]
 ```
+
+When a model's output drives an action, the security list asks whether the spec limits that action in
+code. An instruction in a prompt is not a boundary.
 
 Quality dimensions: **Completeness** · **Clarity** · **Consistency** · **Measurability** · **Coverage**
 (edge, error, recovery, non-functional) · **Assumptions** · **Conflicts**.

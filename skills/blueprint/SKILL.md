@@ -1,6 +1,6 @@
 ---
 name: blueprint
-description: Use when a written feature spec needs its technical plan: "plan this spec", "how should we build this spec?", "make the technical plan for this feature", a spec in specs/ with no plan.md yet, or a plan that a spec or constitution change has made stale. Not for a feature with no spec (that's `specify`, or `build` for a small one), not for one design question outside any feature (that's the `architect` agent).
+description: "Use when a written feature spec needs its technical plan: \"plan this spec\", \"how should we build this spec?\", \"make the technical plan for this feature\", a spec in specs/ with no plan.md yet, or a plan that a spec or constitution change has made stale. Not for a feature with no spec (that's `specify`, or `build` for a small one), not for one design question outside any feature (that's the `architect` agent)."
 ---
 
 # MasterMind: Blueprint
@@ -31,16 +31,24 @@ Write `plan.md` from `specs/.templates/plan.md` if present, else [`template.md`]
    Where no isolated agent exists, follow `architect`'s method yourself and say so in the plan.
 4. **Write what the design implies**, each only when it has content:
    - `data-model.md`: entities with fields, validation rules taken from the spec, relationships, state changes.
-   - `contracts/`: every interface another system or user depends on, in the form the project already uses.
+   - `contracts/`: every interface another system or user depends on, in the form the project already
+     uses, or a plain table when it has none.
    - `quickstart.md`: the runnable steps that prove the feature works end to end, with expected output.
+     A short script is allowed when steps alone cannot drive it.
 5. **Name the real paths.** The structure section lists the actual directories and files to create or
    change in this repository. Never a generic layout.
-6. **Re-run the gate** against the finished design. Set the spec's status to `planned`.
+6. **Name what the spec implies but never says.** A reasonable user expects some inputs handled that no
+   requirement and no edge case names. List up to five of them, such as an empty name, a double submit or a
+   timezone at midnight. Add each to the plan's risks and give it a task in `breakdown`. A spec's
+   silence is not permission to crash.
+7. **Re-run the gate** against the finished design. Set the spec's status to `planned`.
 
 ## Gotchas
 
 - **The plan is not the code.** No function bodies, no full migrations, no test suites. Signatures and
-  shapes only; the code is `build`'s job.
+  shapes only; the code is `build`'s job. A plan longer than the spec it serves is a sign it wrote code.
+- **Failure is not cancellation.** In a state model, a failed attempt, a retry and a cancelled one are
+  different states, and every retry names the state it re-enters.
 - **Every decision traces to a requirement.** A dependency, service or layer nobody asked for goes in
   the complexity table with the simpler option it beat, or it goes.
 - **Match the repository.** A plan that introduces a second ORM, router or state library has to justify
@@ -52,3 +60,5 @@ Write `plan.md` from `specs/.templates/plan.md` if present, else [`template.md`]
 
 The files written, the decisions with one-line reasons, the gate result before and after design, any
 accepted violation, and the next step: `breakdown`, or `checklist` first for a sensitive feature.
+
+Then run `mastermind next` and end with the step it names, so the user sees where the feature stands.

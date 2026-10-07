@@ -78,7 +78,7 @@ lab/                          # your private, gitignored space for sensitive pro
 
 ## Install
 
-**First, you need an AI coding tool**: MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/claude-code), [Cursor](https://cursor.com), or [Codex](https://developers.openai.com/codex). Then, **from inside the project you want it in**:
+**First, you need an AI coding tool**: MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/claude-code), [Cursor](https://cursor.com), or [Codex](https://learn.chatgpt.com/docs). Then, **from inside the project you want it in**:
 
 ```bash
 # Per-project (default): wires MasterMind into THIS project, for every AI tool you have:
@@ -136,7 +136,7 @@ This registers the skills and agents as native commands (user-global). They read
 | --- | --- | --- |
 | **Claude Code** | project `.claude/`: native `skills/`, `agents/`, and the kernel `CLAUDE.md` | `npx mastermind-brain` |
 | **Cursor / Composer** | `.cursor/rules/mastermind.mdc`: `alwaysApply: true`, **kernel inlined**; plus `mastermind-field.mdc` carrying the active field's `stack-defaults` + `lessons` (generated; re-run `npx mastermind-brain` to refresh) | `npx mastermind-brain` |
-| **Codex** | project `AGENTS.md` → the brain, plus every skill linked into `.agents/skills/`, where Codex discovers skills and can pick one by its description or by `$name`. With `--global`, also `~/.codex/AGENTS.md` and `~/.agents/skills/`, but Codex may not merge global instructions into a project that has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705)), so per-project is the reliable path | `npx mastermind-brain` |
+| **Codex** | project `AGENTS.md` → the brain, plus every skill linked into `.agents/skills/`, where Codex discovers skills and can pick one by its description or by `$name`. With `--global`, also `~/.codex/AGENTS.md` and `~/.agents/skills/`, but Codex may not merge global instructions into a project that has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705)), so per-project is the reliable path. Codex 0.150 and later ignores a project's `AGENTS.md` until you trust the project, so say yes when it asks | `npx mastermind-brain` |
 
 Those three are what MasterMind supports. The brain is plain Markdown with no tool-specific mechanisms
 inside, so another tool that reads an instruction file may well load it: but we don't wire it, test it,
@@ -306,9 +306,10 @@ Stated plainly, because a tool about not overclaiming shouldn't overclaim about 
   directional. Method and full results: [`evals/`](./evals/). Mechanism runs that don't clear that bar are
   marked in `evals/RESULTS.md` and are never quoted publicly.
 - **Cursor re-injection is unverified.** The `.cursor/rules/mastermind.mdc` rule works and is the
-  load-bearing path. The `sessionStart`/`preCompact` hook is wired to Cursor's published schema, but
-  Cursor has open upstream bug reports where a hook's `additional_context` is accepted and never reaches
-  the model: so we wire it and say so, rather than claim it works. The installer prints
+  load-bearing path. The `sessionStart` hook is wired to Cursor's published schema, but Cursor has open
+  upstream bug reports where a hook's `additional_context` is accepted and never reaches the model: so
+  we wire it and say so, rather than claim it works. Nothing is wired at compaction, because Cursor's
+  `preCompact` hook can only show the user a message, not add context. The installer prints
   `(unverified upstream)` when it wires it.
 - **No field pack ships**: only the scaffold at `engineering/fields/_template/`. `init` builds the field
   for your project's real stack (a pack tuned to someone else's stack is worse than none). The template is

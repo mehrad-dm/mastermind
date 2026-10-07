@@ -1,6 +1,6 @@
 ---
 name: deepen
-description: Use when the user wants to know where the design is hurting, before choosing what to fix: "this is getting messy", "where should we clean up?", "what is the worst part of this codebase?", "why is this so hard to change?", "it takes five files to add one field". Surveys an area, ranks the candidates, and the user picks one. Not for a diff you just wrote: that is code-reviewer. Not for executing a chosen restructure: that is the refactorer agent.
+description: "Use when the user wants to know where the design is hurting, before choosing what to fix: \"this is getting messy\", \"where should we clean up?\", \"what is the worst part of this codebase?\", \"why is this so hard to change?\", \"it takes five files to add one field\". Surveys an area, ranks the candidates, and the user picks one. Not for a diff you just wrote: that is code-reviewer. Not for executing a chosen restructure: that is the refactorer agent."
 ---
 
 # MasterMind: Deepen

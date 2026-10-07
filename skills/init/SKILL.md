@@ -1,6 +1,6 @@
 ---
 name: init
-description: Use on the first substantive work in a project MasterMind isn't set up for yet, when the user says "init", "initialize", "set up MasterMind", "onboard", "get me ready", or when no field pack matches the project's detected stack.
+description: "Use on the first substantive work in a project MasterMind isn't set up for yet, when the user says \"init\", \"initialize\", \"set up MasterMind\", \"onboard\", \"get me ready\", or when no field pack matches the project's detected stack."
 ---
 
 # Initialize: get MasterMind ready for this project, fast

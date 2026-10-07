@@ -11,13 +11,14 @@ const SITE = process.env.MASTERMIND_SITE
 const OUT = join(SITE, 'src', 'pages', 'library')
 const CHECK = process.argv.includes('--check')
 
+const unquote = (v) => { if (!/^"[\s\S]*"$/.test(v)) return v; try { return JSON.parse(v) } catch { return v } }
 const fm = (src) => {
   const m = src.match(/^---\n([\s\S]*?)\n---\n?/)
   if (!m) return [{}, src]
   const meta = {}
   for (const line of m[1].split('\n')) {
     const i = line.indexOf(':')
-    if (i > 0) meta[line.slice(0, i).trim()] = line.slice(i + 1).trim()
+    if (i > 0) meta[line.slice(0, i).trim()] = unquote(line.slice(i + 1).trim())
   }
   return [meta, src.slice(m[0].length)]
 }
@@ -41,7 +42,14 @@ const newUntil = (since) => {
     process.exit(1)
   }
   const m = changelog.match(new RegExp(`^## \\[${since.replace(/\./g, '\\.')}\\] · (\\d{4}-\\d{2}-\\d{2})`, 'm'))
-  if (!m) return 'unreleased'
+  if (!m) {
+    const cmp = (a, b) => a.split('.').map(Number).reduce((r, n, i) => r || n - b.split('.').map(Number)[i], 0)
+    if (cmp(since, readFileSync(join(REPO, 'VERSION'), 'utf8').trim()) <= 0) {
+      console.error(`✖ since: ${since} is already released but CHANGELOG.md has no dated "## [${since}]" heading: a typo would keep the New badge forever`)
+      process.exit(1)
+    }
+    return 'unreleased'
+  }
   const d = new Date(`${m[1]}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() + NEW_DAYS)
   return d.toISOString().slice(0, 10)
