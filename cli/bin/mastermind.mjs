@@ -668,9 +668,13 @@ if (!existsSync(MM_HOME)) {
 }
 
 // ── 2. hand over to the engine ──────────────────────────────────────────────────
+// AGENTS.md (and .agents/skills) is always wired, so naming tools must not drop it. Uninstall is
+// the exception: removing one tool keeps what the others still read.
+const always = cmd !== 'uninstall' && !passthrough.includes('--global') && passthrough.some((a) => TOOLS.includes(a))
+  ? ['agents'] : []
 const engineArgs =
-  cmd === 'check' ? ['--check', ...passthrough]
+  cmd === 'check' ? ['--check', ...passthrough, ...always]
   : cmd === 'uninstall' ? ['--uninstall', ...passthrough]
-  : passthrough // init and update both end in a (re)install: that is the self-heal contract
+  : [...passthrough, ...always] // init and update both end in a (re)install: that is the self-heal contract
 
 process.exit(run('bash', [join(MM_HOME, 'install.sh'), ...engineArgs], { cwd: process.cwd() }))

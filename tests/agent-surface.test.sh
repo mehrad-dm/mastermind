@@ -321,6 +321,12 @@ PYEOF
     *) bad "upgrade left the brain at $now: $(printf '%s' "$out" | head -1)";; esac
   case "$out" in *"isolated brain"*) ok "and the project is wired after the upgrade";;
     *) bad "upgrade did not finish the install: $(printf '%s' "$out" | tail -1)";; esac
+  mkdir -p "$LIFE/named"
+  (cd "$LIFE/named" && git init -q . && env -u MASTERMIND_HOME HOME="$LIFE" node "$LIFECLI/bin/mastermind.mjs" claude cursor >/dev/null 2>&1)
+  check "naming tools still wires AGENTS.md and .agents/skills" \
+    "$([ -e "$LIFE/named/AGENTS.md" ] && [ -d "$LIFE/named/.agents/skills" ] && echo yes)" "yes"
+  (cd "$LIFE/named" && env -u MASTERMIND_HOME HOME="$LIFE" node "$LIFECLI/bin/mastermind.mjs" uninstall cursor >/dev/null 2>&1)
+  check "uninstalling one tool keeps AGENTS.md for the others" "$([ -e "$LIFE/named/AGENTS.md" ] && echo kept)" "kept"
 else
   ok "lifecycle test skipped (no previous tag yet)"
 fi
