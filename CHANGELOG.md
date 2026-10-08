@@ -4,7 +4,7 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
-## [Unreleased]
+## [0.33.1] · 2026-10-08
 
 ### Changed
 
