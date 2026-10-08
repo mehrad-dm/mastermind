@@ -6,6 +6,14 @@ history lives in git.
 
 ## [Unreleased]
 
+### Changed
+
+- A release now carries the details it kept missing. `release.sh` moves the version in the site's
+  `llms.txt` and redraws the link card and banners from the site's committed generator, preflight
+  fails when `llms.txt` lists a different set of skills than the repo, and `verify-release.sh` checks
+  the live `llms.txt` and that the live link card is the one on the site's main branch. 0.33.0 shipped
+  with a link card still saying 0.32.1 and an `llms.txt` two releases behind.
+
 ### Fixed
 
 - Cursor never listed `build` among its skills, because it drops any skill named exactly that, ours or
