@@ -187,7 +187,7 @@ jobs:
     # whole install, so the advice is backed by a run rather than an assumption.
     runs-on: windows-latest
     steps:
-      - uses: Vampire/setup-wsl@d1da7f2c0322a5ee4f24975344f67fc0f5baf364  # v7.0.0
+      - uses: Vampire/setup-wsl@4c48163d9f981914dd8caa0fc335fe19cca5bff4  # v7.2.0
         with:
           distribution: Ubuntu-24.04
           additional-packages: git curl ca-certificates
