@@ -54,6 +54,29 @@ is "all skills linked" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILL
 is "all agents linked" "$(ls "$P/.claude/agents" | wc -l | tr -d ' ')" "$N_AGENTS"
 yes_ "bootstrap registered" "$(grep -o session-start.sh "$P/.claude/settings.json" 2>/dev/null | head -1)"
 is "fires on compact" "$(python3 -c "import json;print('compact' in json.load(open('$P/.claude/settings.json'))['hooks']['SessionStart'][0]['matcher'])")" "True"
+HOOKCMD="$(python3 -c "import json;print(json.load(open('$P/.claude/settings.json'))['hooks']['SessionStart'][0]['hooks'][0]['command'])")"
+yes_ "hook command names the claude shape" "$(printf '%s' "$HOOKCMD" | grep -o ' claude$')"
+# Run the registered command the way Claude Code runs it: no plugin root, project dir set.
+is "the registered command emits the field Claude Code reads" \
+   "$(cd "$P" && env -u CLAUDE_PLUGIN_ROOT CLAUDE_PROJECT_DIR="$P" bash -c "$HOOKCMD" | python3 -c "import json,sys;print(list(json.load(sys.stdin))[0])" 2>/dev/null)" "hookSpecificOutput"
+is "check accepts the shaped hook" "$(run "$P" --check claude 2>&1 | grep -c 'without the claude shape')" "0"
+
+echo "── an install written before the shape argument is repaired, not duplicated"
+P=$(proj oldhook); run "$P" claude >/dev/null 2>&1
+python3 - "$P/.claude/settings.json" <<'PY'
+import json,sys
+p=sys.argv[1]; d=json.load(open(p))
+for e in d['hooks']['SessionStart']:
+    for h in e['hooks']:
+        h['command']=h['command'].replace(' claude','')
+json.dump(d,open(p,'w'),indent=2)
+PY
+is "check flags the old entry" "$(run "$P" --check claude 2>&1 | grep -c 'without the claude shape')" "1"
+is "the old hook itself still finds Claude Code by its project dir" \
+   "$(cd "$P" && env -u CLAUDE_PLUGIN_ROOT CLAUDE_PROJECT_DIR="$P" bash .mastermind/hooks/session-start.sh | python3 -c "import json,sys;print(list(json.load(sys.stdin))[0])" 2>/dev/null)" "hookSpecificOutput"
+run "$P" claude >/dev/null 2>&1
+is "re-install leaves one entry" "$(python3 -c "import json;d=json.load(open('$P/.claude/settings.json'));print(sum('session-start.sh' in json.dumps(e) for e in d['hooks']['SessionStart']))")" "1"
+yes_ "and that entry carries the shape" "$(grep -o 'session-start.sh\\" claude' "$P/.claude/settings.json" | head -1)"
 
 echo "── name collision: BOTH survive (never displace the project's own)"
 P=$(proj collide)
@@ -777,7 +800,12 @@ for pair in "cursor additional_context" "claude hookSpecificOutput" "sdk additio
   got=$("$REPO/hooks/session-start.sh" "$1" | python3 -c "import json,sys;print(list(json.load(sys.stdin))[0])" 2>/dev/null)
   is "shape '$1'" "$got" "$2"
 done
-yes_ "payload carries the kernel" "$("$REPO/hooks/session-start.sh" claude | grep -o 'Prime directives' | head -1)"
+yes_ "payload names the kernel file" "$("$REPO/hooks/session-start.sh" claude | grep -o 'CLAUDE.md in full' | head -1)"
+# Claude Code replaces hook context over 10,000 characters with a file path and a preview.
+for shape in claude cursor sdk; do
+  is "payload for '$shape' stays under the 10,000-character hook cap" \
+     "$(cd "$REPO" && mkdir -p "$TMP/specs-nudge/specs/001-x" && CLAUDE_PROJECT_DIR="$TMP/specs-nudge" "$REPO/hooks/session-start.sh" "$shape" | python3 -c "import json,sys;d=json.load(sys.stdin);v=d.get('hookSpecificOutput',d);print(len(v.get('additionalContext') or v.get('additional_context'))<10000)")" "True"
+done
 
 echo "── isolated: the project owns its brain, and keeps owning it"
 P=$(proj iso); run "$P" --isolated claude >/dev/null 2>&1

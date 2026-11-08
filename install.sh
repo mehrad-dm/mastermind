@@ -651,19 +651,24 @@ wire_bootstrap() {
   [ "$ISOLATED" = 1 ] && hook='$CLAUDE_PROJECT_DIR/.mastermind/hooks/session-start.sh'
 
   if [ "$MODE" = check ]; then
-    if [ -f "$settings" ] && grep -q 'session-start.sh' "$settings"; then ok "bootstrap hook"
-    else bad "bootstrap hook not registered (kernel will fade after a compaction)"; ISSUES=$((ISSUES + 1)); fi
+    if [ -f "$settings" ] && grep -qE 'session-start\.sh\\?" claude' "$settings"; then ok "bootstrap hook"
+    elif [ -f "$settings" ] && grep -q 'session-start.sh' "$settings"; then
+      bad "bootstrap hook registered without the claude shape: Claude Code ignores its output (re-run the installer)"; ISSUES=$((ISSUES + 1))
+    else bad "bootstrap hook not registered (no MasterMind framing or init nudge at session start)"; ISSUES=$((ISSUES + 1)); fi
     return 0
   fi
 
   if ! command -v node >/dev/null 2>&1; then
-    warn "node not found: skipped the bootstrap hook (brain won't survive a compaction)"
+    warn "node not found: skipped the bootstrap hook (no MasterMind framing at session start)"
     return 0
   fi
 
   MM_SETTINGS="$settings" MM_HOOK="$hook" MM_HOOKS_DIR="$BRAIN/hooks/" node -e '
     const fs = require("fs");
-    const p = process.env.MM_SETTINGS, cmd = JSON.stringify(process.env.MM_HOOK);
+    const p = process.env.MM_SETTINGS, hookPath = process.env.MM_HOOK;
+    // The shape argument is load-bearing: without it the hook cannot tell Claude Code from the
+    // SDK and emits a field Claude Code ignores.
+    const cmd = JSON.stringify(hookPath) + " claude";
     const mmHooks = process.env.MM_HOOKS_DIR;
     let s = {};
     if (fs.existsSync(p)) {
@@ -676,8 +681,9 @@ wire_bootstrap() {
     // Ownership is the command path, not a substring: another tool at
     // /their/tool/session-start.sh matched the old check and was deleted.
     const mine = (e) => (e?.hooks || []).some((h) => {
-      const c = typeof h?.command === "string" ? h.command.replace(/^"|"$/g, "") : "";
-      return c === cmd.replace(/^"|"$/g, "") || c.startsWith(mmHooks);
+      if (typeof h?.command !== "string") return false;
+      const first = h.command.trim().split(/\s+/)[0].replace(/^"|"$/g, "");
+      return first === hookPath || first.startsWith(mmHooks);
     });
     const clean = list.filter((e) => !mine(e));
     clean.push({
@@ -687,7 +693,7 @@ wire_bootstrap() {
     s.hooks.SessionStart = clean;
     fs.writeFileSync(p, JSON.stringify(s, null, 2) + "\n");
   ' 2>/dev/null \
-    && ok "bootstrap hook: kernel re-injected on startup + compaction" \
+    && ok "bootstrap hook: MasterMind framing on startup + compaction" \
     || warn "left your settings.json alone (could not parse it): bootstrap hook not registered"
   return 0
 }

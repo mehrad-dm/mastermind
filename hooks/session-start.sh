@@ -34,11 +34,15 @@ for d in "$proj"/specs/[0-9][0-9][0-9]-*/; do
   break
 done
 
-payload="<mastermind-brain>\nYou are running as MasterMind. The kernel below is your operating\ncontract for this session: it governs how you decide, build, verify, and report.\nFollow it. Re-read it here rather than relying on memory of an earlier turn.\n\n$(esc "$kernel")\n$nudge\n</mastermind-brain>"
+# The kernel itself is not sent: Claude Code caps hook context at 10,000 characters and replaces
+# anything longer with a file path and a 2,000-character preview, and it already loads the kernel
+# as the project's CLAUDE.md and re-injects it from disk after a compaction.
+payload="<mastermind-brain>\nYou are running as MasterMind. Your operating contract is the MasterMind kernel, loaded into\nthis session as the project's CLAUDE.md: it governs how you decide, build, verify, and report.\nFollow it. If your context holds no heading that reads MasterMind: global operating system, the\nkernel did not load: read $(esc "$KERNEL") in full before doing anything else.\n$nudge\n</mastermind-brain>"
 
 if [ "$SHAPE" = auto ]; then
   if   [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then SHAPE=cursor
-  elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -z "${COPILOT_CLI:-}" ]; then SHAPE=claude
+  elif [ -n "${COPILOT_CLI:-}" ]; then SHAPE=sdk
+  elif [ -n "${CLAUDE_PLUGIN_ROOT:-}${CLAUDE_PROJECT_DIR:-}" ]; then SHAPE=claude
   else SHAPE=sdk
   fi
 fi

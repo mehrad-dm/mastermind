@@ -4,6 +4,35 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
+## [Unreleased]
+
+### Fixed
+
+- The Claude Code session hook never reached the model in a project install. The installer registered
+  `session-start.sh` without its shape argument, the script then guessed `sdk` because only a plugin
+  sets `CLAUDE_PLUGIN_ROOT`, and the JSON it printed carries a top-level field Claude Code does not
+  read. The kernel still loaded through `.claude/CLAUDE.md`, so sessions were not brainless, but the
+  "you are running as MasterMind" framing, the offer to run `init` in a project with no field pack and
+  the `mastermind next` pointer in a spec-driven project were lost, and nothing was re-injected after a
+  compaction. In a live headless session the installed command produced "No, I am not MasterMind"; the
+  same command with the argument produced the full contract. The same defect was fixed for Cursor in
+  0.24 by passing `cursor`; the Claude side never got its argument.
+  The installer now writes `... session-start.sh" claude`, recognises its own entry by the command's
+  first token so an old entry is replaced rather than duplicated, and `--check` reports an entry
+  without the argument. The hook also treats `CLAUDE_PROJECT_DIR` as Claude Code when no argument is
+  given, so an older install starts working as soon as `update` refreshes the hook file. The suite
+  runs the registered command the way Claude Code runs it and asserts the field it reads.
+- The hook no longer carries the kernel. Claude Code has capped hook context at 10,000 characters
+  since 2.1.89 (March 2026): anything longer is written to a file and the model is handed a path and a
+  2,000-character preview, which is exactly what a persisted transcript on 2.1.236 showed. Since the
+  kernel already loads as the project's `CLAUDE.md` and Claude Code re-injects that from disk after a
+  compaction, the payload is now the framing, a pointer to the kernel file for a session that has no
+  kernel in context, and the two nudges: about 1,500 characters, the same for Cursor and the SDK. The
+  suite asserts every shape stays under the cap. A plugin-only install (no `npx mastermind-brain`)
+  has no `CLAUDE.md` and therefore relies on the pointer; it got a preview before, it gets a
+  pointer now, and the proper fix, shipping the kernel inside the plugin as a skill, is a separate
+  change.
+
 ## [0.33.2] · 2026-10-08
 
 ### Fixed

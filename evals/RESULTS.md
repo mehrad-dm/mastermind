@@ -579,6 +579,34 @@ Raw data: `evals/runs/v0.27-set2/`.
 
 ---
 
+## Run V9: 2026-11-07 · does the session hook reach Claude Code at all, and does Codex still obey?
+
+Prompted by a report that installed projects ignored the brain. Claude Code 2.1.236, Sonnet, headless
+`claude -p` in scratch projects, each answer checked against the persisted transcript rather than the
+model's own account. Codex: `evals/codex-routing.mjs` on Codex CLI 0.167.0, model `gpt-6-luna` on a
+ChatGPT free account (`gpt-5.5` retired from ChatGPT sign-in on 2026-10-14).
+
+| arm | n | result |
+| --- | --: | --- |
+| Claude Code, hook registered as the installer wrote it (no shape argument, no `CLAUDE.md`) | 1 | "No, I am not MasterMind": the JSON carried a field Claude Code does not read |
+| Claude Code, same hook with `claude` argument, 16 KB kernel in the payload, no `CLAUDE.md` | 2 | answered as MasterMind, but the transcript shows the injected context was "Output too large (15.4KB)" plus a 2,000-character preview; the model had read the saved file to answer |
+| Claude Code, `.claude/CLAUDE.md` symlink only, no hook | 1 | MasterMind, first and last headings correct: the native memory path carries the kernel |
+| Claude Code, fixed hook (709-character framing) + `.claude/CLAUDE.md` | 1 | MasterMind, last heading correct, injected context 529 characters, no truncation marker |
+| Claude Code, fixed hook alone, no `CLAUDE.md` (the plugin-only layout) | 1 | framing and init nudge injected (802 characters); the pointer to read the kernel file was **not** followed in a one-shot question |
+| Codex, treatment (brain installed, scratch project with no trust entry) | 5 | **5/5** |
+| Codex, control (no brain) | 5 | 0/5 named the same skill |
+
+**Honest reading.**
+- **The hook never delivered the kernel in a project install.** Two defects stacked: the missing shape
+  argument (all of 2026) and the 10,000-character cap (since Claude Code 2.1.89). Sessions still had
+  the brain through `.claude/CLAUDE.md`; what they lacked was the framing and the two nudges.
+- **A model's report of what it received is not a measurement.** The second row was first read as
+  "delivered whole"; the transcript said otherwise. Opening the transcript is now the rule for hook claims.
+- **Codex loaded `AGENTS.md` from an untrusted scratch directory** under `codex exec`, so the 0.150
+  trust change blocks only projects marked untrusted, at least in this setup. One rep per case.
+- **Cursor was not measured.** `cursor-agent status` said "Not logged in".
+- **Plugin-only installs are not fixed by this change**; the kernel must ship inside the plugin as a skill.
+
 ## Run V8: 2026-10-08 · Cursor, live (cursor-agent 2026.08.25, free plan, model Auto)
 
 | check | result |
