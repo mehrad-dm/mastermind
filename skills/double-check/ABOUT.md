@@ -63,8 +63,9 @@ work is clean. It proves the judge is broken, and the judge is the model.
 
 ## When it fires
 
-You don't type a command. Say any of these, or put MasterMind in a position where the next sentence out
-of it is a promise: and it reaches for `double-check`:
+You don't type a command. Say any of these, or let MasterMind reach a claim that running code cannot
+settle, such as a diagnosis or a design call, and it reaches for `double-check`. It does not run at the
+end of every build:
 
 > *"are you sure this actually works?"*
 > *"you told me this was fixed last time"*

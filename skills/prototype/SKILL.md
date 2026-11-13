@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: "Use when the right approach is genuinely unknown and reality will teach faster than planning: a risky unvalidated assumption, an unfamiliar integration, \"will this even work\", \"try something quick\". The result is explicitly throwaway and does not ship."
+description: "Use when the right approach is unknown and trying it will teach faster than planning: a risky assumption, an unfamiliar integration, a doubt that it can work at all. The result is throwaway and does not ship."
 ---
 
 # MasterMind: Prototype
@@ -21,8 +21,8 @@ design it twice). A prototype buys knowledge cheaply: the discipline is keeping 
 ## Rules
 **Time-box: 5 build-and-run attempts, roughly 30 minutes**: one question needs a handful of tries, not a
 day; proportionality over ceremony. An *attempt* is one edit → run → observe cycle against the named
-question; count them out loud as you go, so the box is observable and not a vibe. Attempt 5 finished
-without an answer = the box is spent, whatever the clock says.
+question; number each attempt in your updates, so the box is observable. Attempt 5 finished without an
+answer = the box is spent, whatever the clock says.
 
 **When it expires, stop. That's a result, not a failure.** Report: what you learned, what is still
 unknown, and one recommendation: *proceed* (answer is yes, build it properly) / *different approach*

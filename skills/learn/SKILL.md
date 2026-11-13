@@ -1,6 +1,6 @@
 ---
 name: learn
-description: "Use when a task depends on tech you don't actually know, an unfamiliar library, a fast-moving framework, a tricky API, an unfamiliar codebase: or whenever \"I think it works like…\" is load-bearing. Just-in-time and task-scoped; distinct from levelup, which updates the durable knowledge base."
+description: "Use when a task depends on tech you do not actually know: an unfamiliar library, framework, API or codebase, or a load-bearing guess about how something works. Scoped to the task. Not for updating the durable knowledge base (`levelup`)."
 ---
 
 # MasterMind: Learn
@@ -44,5 +44,6 @@ The costly bugs come from unchecked assumptions. Before committing code:
 ## Output & economy
 Return a tight working brief: the stack + versions, the few APIs/patterns the task needs, the gotchas
 (and the assumptions ledger: claim → verified/corrected/unknown → source · confidence),
-and links to the primary sources, not a tutorial. Delegate wide reading to a subagent to protect
-context. If you learned something durable and reusable, capture it via `levelup`.
+and links to the primary sources, not a tutorial. Read the few pages the task needs yourself; a
+subagent is worth its cost only when the reading spans many files and you need just the conclusion.
+If you learned something durable and reusable, capture it via `levelup`.

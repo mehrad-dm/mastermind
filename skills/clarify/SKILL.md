@@ -1,6 +1,6 @@
 ---
 name: clarify
-description: "Use the moment the user signals your last answer did not land: \"I did not follow that\", \"I don't understand\", \"say it simply\", \"simpler please\", \"more simply\", \"you lost me\", \"what does that mean\", \"too long\", \"explain again\", \"show me\", a confused question repeating something you already answered. Re-pitch what you just said, in plain words or as a picture. Not for a new question, and not for documenting a package: that is explain."
+description: "Use when the user signals your last answer did not land: they did not follow it, want it simpler or shorter, or repeat a question you already answered. Not for a new question, not for documenting a package (`explain`)."
 ---
 
 # MasterMind: Clarify
@@ -25,8 +25,8 @@ One of four things went wrong. The repair differs for each, so name it before yo
 
 ## Two forms. Pick, do not offer a menu
 
-**Words.** Lead with the point. Short sentences, active voice, one instruction each, no hedging. State
-what you would do and why, in the order they need it, not the order you discovered it.
+**Words.** Lead with the point. Plain words, active voice, full sentences, no term they do not hold.
+State what you would do and why, in the order they need it, not the order you discovered it.
 
 **A picture**, when the thing has a shape: how parts connect, what calls what, what changed, what a
 sequence does, what the data looks like. Reach for the lightest form that carries it:

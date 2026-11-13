@@ -1,6 +1,6 @@
 ---
 name: debug
-description: "Use when a bug isn't obvious, resists a quick fix, keeps coming back, or you're about to start guessing: \"why is this broken\", \"this keeps happening\", intermittent or flaky failures, a crash you can't explain, behaviour that makes no sense. Not for a typo or an obvious mistake."
+description: "Use when a bug's cause is unknown: it resists a quick fix, keeps coming back, is intermittent, or you are about to guess. Not for a typo or an obvious mistake, not for slowness (`performance`)."
 ---
 
 # MasterMind: Debug
@@ -10,6 +10,9 @@ actual cause. Bug: **$ARGUMENTS**. Grounded in `~/.mastermind/engineering/core/r
 
 The cardinal rule: **understand the mechanism before you change a line.** A fix you can't explain is a
 coincidence, not a fix.
+
+**When the user asked why, not for a fix,** run phases 1 to 4, report the mechanism, and stop. Phases
+5 and 6 run when they ask for the fix (kernel → Question or request).
 
 ## The six phases
 
@@ -86,5 +89,5 @@ coincidence, not a fix.
    buys the only proof that the regression can't come back unseen.
 
 ## After
-Run **`levelup`** (capture) to record the class of bug and its lesson in the active field's
-`lessons.md`, so MasterMind doesn't relearn it. Report: root cause, the fix, and the guard added.
+Report: root cause, the fix, and the guard added. When the bug taught a durable lesson about this
+stack, run **`levelup`** (capture) to record its class in the active field's `lessons.md`.

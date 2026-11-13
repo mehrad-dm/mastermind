@@ -1,6 +1,6 @@
 ---
 name: deprecate
-description: "Use when something has to be removed or retired, a feature, endpoint, table column, config key, feature flag, package or whole service; migrating consumers off an old API or version; code that looks dead but might not be. Symptoms: \"can we delete this?\", \"is anything still using this?\", \"we need everyone off v1\", \"kill the old one\". Not for restructuring that keeps the interface: that's the `refactorer` agent."
+description: "Use when something must be removed, retired or migrated away from: a feature, endpoint, column, config key, flag, package or service, or code that looks dead but might not be. Not for restructuring that keeps the interface (`refactorer`)."
 ---
 
 # MasterMind: Deprecate
@@ -8,8 +8,6 @@ description: "Use when something has to be removed or retired, a feature, endpoi
 Every other skill adds or fixes. This one deletes, migrates and retires: the half of engineering where
 the reward (a smaller system) arrives long after the risk, and where what breaks is whatever you
 couldn't see was still reading it.
-
-Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
 
 ## The shape: expand → migrate → contract
 
@@ -53,7 +51,7 @@ someone else's repo · *"the search came back empty"*: empty for that spelling, 
 on the old path, wait a real interval: one full business cycle, including the monthly job and the
 quarterly report, then delete against recorded evidence instead of against absence of evidence.
 
-## Advisory or compulsory: pick one out loud
+## Advisory or compulsory: pick one and say which
 
 A deprecation with no removal date is **advisory**, and advisory deprecations get ignored, correctly:
 nothing happens to anyone who skips them. A date makes it **compulsory**: and the date is a promise you
@@ -81,8 +79,9 @@ nobody dares delete it, nobody dares touch it, and every incident inside it open
 ## Deleting is a verified change like any other
 
 The check proving nothing broke *is* the work: `~/.mastermind/engineering/core/rigor.md` governs the
-verification, the evidence-backed report, and the "say first, then do" tier that already covers data
-migrations and deleting files that aren't yours. Two things belong to removal specifically:
+verification and the evidence-backed report. Its "say first, then do" tier covers a data migration.
+Deleting or overwriting what you did not create is on the kernel's **Ask before** list: ask, then
+delete. Two things belong to removal specifically:
 
 - **Keep the deletion its own commit.** Bundled with a refactor, the revert stops being one action.
 - **The old path is the rollback path.** Contract after the rollback window closes, not before.

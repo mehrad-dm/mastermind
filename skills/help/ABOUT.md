@@ -54,7 +54,7 @@ and the two optional per-project settings that are off unless you switch them on
 > *"how do I actually use this thing?"*
 > *"is there something in here for testing?"*
 
-It also fires when you seem stuck on where to begin. In your terminal:
+It runs only when you ask. In your terminal:
 
 ```
 🧠 MasterMind ▸ showing you what I can do and how to ask for it

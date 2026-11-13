@@ -1,6 +1,6 @@
 ---
 name: blueprint
-description: "Use when a written feature spec needs its technical plan: \"plan this spec\", \"how should we build this spec?\", \"make the technical plan for this feature\", a spec in specs/ with no plan.md yet, or a plan that a spec or constitution change has made stale. Not for a feature with no spec (that's `specify`, or `build` for a small one), not for one design question outside any feature (that's the `architect` agent)."
+description: "Use when a written feature spec needs its technical plan, or a spec change has made the plan stale. Not for a feature with no spec (`specify`), not for one design question outside a feature (the `architect` agent)."
 ---
 
 # MasterMind: Blueprint
@@ -26,9 +26,10 @@ Write `plan.md` from `specs/.templates/plan.md` if present, else [`template.md`]
 2. **Research the unknowns.** One entry in `research.md` per real decision: *chosen*, *why*, *rejected and
    why*. Read the primary source for anything version-sensitive (`learn`). Library choices with real
    adoption risk go to the `tech-scout` agent.
-3. **Design.** Dispatch the `architect` agent with the spec, the constitution and `tech.md`. Its output
-   becomes the plan's design section. Keep the boundaries, data model, contracts and the reason for each.
-   Where no isolated agent exists, follow `architect`'s method yourself and say so in the plan.
+3. **Design.** When the feature crosses a module boundary, the data model or a public API, dispatch
+   the `architect` agent with the spec, the constitution and `tech.md`. Its output becomes the plan's
+   design section. Keep the boundaries, data model, contracts and the reason for each. For a smaller
+   feature, or where no agent is wired, follow `architect`'s method yourself and say so in the plan.
 4. **Write what the design implies**, each only when it has content:
    - `data-model.md`: entities with fields, validation rules taken from the spec, relationships, state changes.
    - `contracts/`: every interface another system or user depends on, in the form the project already

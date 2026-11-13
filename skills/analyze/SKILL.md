@@ -1,6 +1,6 @@
 ---
 name: analyze
-description: "Use when a feature's spec, plan and task list all exist and need checking against each other before code is written: \"check the spec and plan agree\", \"is this ready to build?\", \"find gaps before we start\", \"analyze the feature docs\", or before building anything that touches money, auth or data from a task list. Not for checking code against intent after building (that's `converge`), not for analyzing code, performance or a bug."
+description: "Use before code is written, when a feature's spec, plan and task list all exist and must be checked against each other. Read-only. Not for one concern inside the spec (`checklist`), not for code against the documents after building (`converge`)."
 ---
 
 # MasterMind: Analyze
@@ -13,9 +13,10 @@ code exists, when a gap still costs a sentence instead of a rewrite. Layout and 
 
 ## Who runs it
 
-The context that wrote the documents already believes they agree. Dispatch a fresh-context subagent with
-the four files and this skill's six passes, and nothing about how they were written. Where no isolated
-context exists, run it yourself and label the report self-graded.
+The context that wrote the documents already believes they agree. Dispatch the `code-reviewer` agent
+with the four files and this skill's six passes, and nothing about how they were written. Never use a
+fork of this session: a fork inherits what this context believes. Where no agent is wired, run it
+yourself and label the report self-checked.
 
 ## The six passes
 

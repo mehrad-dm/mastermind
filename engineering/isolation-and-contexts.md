@@ -86,8 +86,8 @@ that's the models themselves, and no layer erases it.
 
 ## Known limits (honest)
 
-- Only the `frontend` field ships today, so per-app routing gives you **context** isolation now
-  (web vs api lessons); **field**-switching (frontend vs backend) needs a second pack authored.
+- No field pack ships, so per-app routing gives you **context** isolation (web vs api lessons) as soon
+  as one pack exists; **field**-switching (frontend vs backend) needs a second pack built.
 - Cursor's own monorepo rule over-loading and Cline's multi-root nesting gap are documented **tool**
   bugs we can't fix; the small-rule design mitigates the first.
 - Plain chat (no rules files) has no path mechanism: there, routing degrades to the model reading

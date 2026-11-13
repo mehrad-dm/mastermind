@@ -8,12 +8,12 @@ blurb: What MasterMind does when you ask for a feature, and why "it compiles" is
 You ask for a feature. The AI writes code. It looks right. You paste it in, and three days later you
 find out it breaks when the list is empty, or when the user is logged out, or when the network is slow.
 
-The code wasn't wrong because the model can't write code. It was wrong because writing code is one step
-of about seven, and everything either side of it got skipped. Nobody worked out what the feature
+The code wasn't wrong because the model can't write code. It was wrong because writing code is one part
+of the job, and everything either side of it got skipped. Nobody worked out what the feature
 actually had to do. Nobody read the surrounding code to match it. Nobody ran the thing and watched it
 behave. Nobody looked at the finished diff with fresh, hostile eyes.
 
-**Build is the discipline that puts the other six steps back.**
+**Build is the discipline that puts the other parts back.**
 
 ## What goes wrong without it
 
@@ -27,8 +27,8 @@ behave. Nobody looked at the finished diff with fresh, hostile eyes.
 
 ## How it actually works
 
-MasterMind runs a loop, and scales it to the size of the job: a one-line change skips most of this,
-a new foundation gets all of it.
+MasterMind works toward a set of outcomes, and scales them to the size of the job: a one-line change
+skips most of this, a new foundation gets all of it.
 
 **Understand.** Restate the real problem and the boundaries of it. Read the existing code and
 conventions first. Do the asked task and nothing more.
@@ -43,12 +43,16 @@ project already uses. Deviate only with a stated reason.
 error, one, many, offline, unauthorized, malformed. No placeholder code left behind.
 
 **Verify.** Drive the real thing. Typecheck, lint, build, run the project's existing tests, click the
-actual flow. Show what was run and what happened. If it can't be verified, it isn't done.
+actual flow. Show what was run and what happened. When a check cannot be run, MasterMind does the most
+rigorous one it can and reports the work as "Done, not fully checked", naming what was not run.
 
-**Review.** Look at the finished diff again with fresh eyes, hunting for correctness, security and
-accessibility problems. Fix the real ones, re-verify.
+**Review.** A change that touches more than one file, or touches authentication, money, a data
+migration, a public contract or something irreversible, goes to a separate reviewer in a fresh context,
+hunting for correctness, security and accessibility problems. The real ones are fixed and re-verified,
+in at most three rounds. A smaller change gets a self-check, and the closing line says "self-checked".
 
-**Report.** A few honest lines: what shipped, the evidence, and anything deliberately left undone.
+**Report.** The evidence first, then the verdict, what was not checked, and what was decided for you.
+Anything noticed along the way and left alone is listed as "Suggested (not done)".
 
 There's an optional gate you can switch on per project: **plan first**. With it on, MasterMind stops
 after the design and shows you the plan: goal, approach, exact files, steps: and waits for your
@@ -67,12 +71,12 @@ You'll see it engage in your terminal:
 
 ```
 🧠 MasterMind ▸ building this: will verify before handoff
-   └ build · understand → design → implement → verify → review
+   └ web pack · code-reviewer in a fresh context
 ```
 
 ## When it does *not* fire
 
-- **A genuine one-liner**: a copy change, a wrong color, a renamed variable. Seven phases for a
+- **A genuine one-liner**: a copy change, a wrong color, a renamed variable. The full treatment for a
   one-word fix is theatre, and MasterMind skips straight to doing it.
 - **When the ask isn't clear yet**: that's `interview`. The difference matters: `interview` decides *what* to
   build and stops there, producing a written blueprint and no code. `build` produces working, verified

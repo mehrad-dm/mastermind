@@ -15,23 +15,21 @@ the content. Each project builds the field for its *own* stack, and owns it.
 
 ## Get a field: say `init`
 
-On the first substantive work in a project, MasterMind:
+With no field pack, MasterMind tells you in one line and offers `init`. It does not run `init` unasked,
+and it carries on with your task on the universal core. The `init` skill owns the rule and the steps.
+Once you say yes, `init` reads the stack from the project and builds the pack from `_template/` with no
+questions. It is a **one-time** setup, reused for every task.
 
-1. **Detects the stack** from the project itself: `package.json`/deps, configs, file types,
-   existing conventions. Free, and usually enough; it won't interrogate.
-2. **Asks once, only if ambiguous**: *"What are we building, and on what stack?"* If the user isn't
-   technical, it picks a sensible stack and says why.
-3. **Builds the pack from `_template/`**: tuned to the real stack: its defaults, its actual
-   pitfalls, its review rules. A **one-time** setup, then reused for every task, never per task.
-
-## How to build a field
+## How to build a field by hand
 
 1. Create the pack at `engineering/fields/<name>/`. Two ways:
    - **Copy the template**: `cp -r engineering/fields/_template engineering/fields/<name>`, then fill
      in each file (the template has the shape + inline guidance).
-   - **Bootstrap it**: `levelup --bootstrap <name>` researches and generates it from the template.
+   - **Bootstrap it**: `levelup bootstrap <name>` researches and generates it from the template.
 2. Point the "Current field" line above at the new pack, and set **Level:** to 1.
-3. Regenerate the router from the source clone: `node scripts/build-router.mjs`.
+3. Regenerate the router from the brain you are installed into:
+   `node .mastermind/scripts/build-router.mjs` for a per-project brain. Under a shared or global brain,
+   run the same script from the brain in your home directory.
 4. The universal core (`engineering/core/*`) never changes between fields: it's field-agnostic.
 
 > **This is how "swappable" is real, not a claim.** Any user, on any supported tool, copies `_template/` to
@@ -45,26 +43,27 @@ it adds**; a pack that only accumulates is a bug. When the stack drifts, prune w
 and add what's missing (via `levelup`), or switch fields. The always-on core alone is a modest help;
 the domain pack is the difference: but only while it stays lean and relevant.
 
-## Onboarding: get ready cheaply
+## Loading a pack
 
-At the start of substantive work: detect the field from the project (free, usually enough); ask one
-short question only when it's genuinely ambiguous; then build or load the matching pack. Never build a
-pack silently, and never force a mismatched one. If `engineering/ROUTER.md` has routes, match the task
-to a node's `route_when` and load **only** that node's file(s): the router is a prebuilt index that
-only ever speeds things up; when it's missing or a `hash` no longer matches, ignore it and fall back
-to the field's `field.md` load-on-demand map.
+Never force a mismatched pack on a project. If `engineering/ROUTER.md` has routes, match the task to a
+node's `route_when` and load **only** that node's file(s). The router is a prebuilt index that only
+ever speeds things up. Each row's `hash` is the first eight hex characters of the file's SHA-256, and
+`node .mastermind/scripts/build-router.mjs --check` exits non-zero when any row is stale. When the
+router is missing or stale, ignore it and fall back to the field's `field.md` load-on-demand map.
 
 ## How MasterMind levels up (honest mechanics)
 
 An LLM's weights are fixed: "leveling up" means **editing this knowledge base**, which changes
 behavior durably across future sessions:
 
-1. **Capture**: every correction and every real `code-reviewer` finding becomes a one-line entry in
-   the active field's `lessons.md` (durable defaults go to `stack-defaults.md`). This compounds.
-2. **Refresh**: `levelup --refresh` re-runs the curriculum research so the field tracks the ecosystem.
+1. **Capture**: `levelup` records a correction or a real `code-reviewer` finding as a one-line entry in
+   the active field's `lessons.md` (durable defaults go to `stack-defaults.md`). It runs only when
+   there is a lesson to record, and it never bumps the level.
+2. **Refresh**: `levelup refresh` re-runs the curriculum research so the field tracks the ecosystem.
 3. **Adapt to the user**: where the assistant has a memory, per-user preferences accumulate there;
    field packs hold *domain* truth, memory holds *user* truth.
-4. **Mark the level**: bump the level above and log the change, so improvement is visible in git.
+4. **Mark the level**: `levelup refresh` and `levelup bootstrap <field>` bump the level above and log
+   the change, so improvement is visible in git.
 
 Fields belong to the project. An update to MasterMind never rewrites, refreshes, or retires a pack a
 project has built.

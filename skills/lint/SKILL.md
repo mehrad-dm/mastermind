@@ -1,15 +1,15 @@
 ---
 name: lint
-description: "Use to check MasterMind's own instruction files, the kernel, core, skills and agents: for bloat, repeated rules, and contradictions between layers. Fires before a release, after several skills changed, or when the brain feels bloated or self-contradictory. Reports findings with file:line; you approve every change. This lints MasterMind itself, never your project's code: for that, use refactorer."
+description: "Use when the user asks to check MasterMind's own instruction files for bloat, repeated rules and contradictions. Reports; the user approves every change. Never lints project code (`refactorer`)."
+disable-model-invocation: true
 ---
 
 # MasterMind: Lint
 
 Instruction text rots in a specific way: rules accumulate, the same principle gets restated in three
-layers, and prohibitions pile up long after the model outgrew needing them. Anthropic removed ~80% of
-Claude Code's system prompt with no measured loss, and named the mechanism of harm: accumulated
-guardrails produce *conflicting instructions*, so the model spends its reasoning reconciling them
-before it can act. This skill finds that drift in MasterMind itself.
+layers, and prohibitions pile up long after the model outgrew needing them. The mechanism of harm is
+that accumulated guardrails produce *conflicting instructions*, so the model spends its reasoning
+reconciling them before it can act. This skill finds that drift in MasterMind itself.
 
 **It reports. It never edits.** Every finding comes back as a proposal you approve or reject,
 see the guard at the bottom for why that constraint is not negotiable.

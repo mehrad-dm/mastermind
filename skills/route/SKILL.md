@@ -1,6 +1,6 @@
 ---
 name: route
-description: "Use at the start of a task that spans multiple files, touches unfamiliar areas of a codebase, or where it isn't obvious what to load or where to begin. Skips itself for a one-line change or an already-scoped task."
+description: "Use at the start of a task when it is not obvious which field-pack files, core docs or code areas to load, or the code area is unfamiliar. Chooses what to read; it does not scope or build. Skip when the files are already known."
 ---
 
 # MasterMind: Wayfinder
@@ -13,9 +13,8 @@ token economy (`~/.mastermind/engineering/active-field.md`): and it knows when *
 
 1. **Name the destination.** One line: what is this task actually producing? Scope before routing.
 2. **Right-size the map.** If it's a one-line diff, a typo, or obviously covered by what's already in
-   context: say *"no map needed, just do it"* and **exit.** Ceremony on a trivial task is waste (this is
-   the same instinct as `~/.mastermind/engineering/core/rigor.md`'s refuse-list and "keep the always-on
-   layer tiny").
+   context: say *"no map needed, just do it"* and **exit.** Ceremony on a trivial task is waste: effort
+   matches stakes (`~/.mastermind/engineering/core/principles.md`).
 3. **Detect the field**: `package.json`/configs/file types (usually free and decisive).
 4. **Build the load manifest: links only, no summaries.** Consult `~/.mastermind/engineering/ROUTER.md`
    and pick, by matching the task to each node's `route_when`:
@@ -74,7 +73,7 @@ another tier). Upgrading the execution seat to the planning seat doubles the bil
 
 - **A load manifest, not a ticket/issue system.** Wayfinder routes knowledge for one session; it is not a
   project tracker. Keep it to a load manifest.
-- **Over-routing is as bad as under-routing.** A three-file task needs no map: the right-size step is a
-  feature, not a formality.
+- **Over-routing is as bad as under-routing.** A task whose files are already known needs no map,
+  however many files it spans: the right-size step is a feature, not a formality.
 - **Points to the source.** The moment the manifest starts summarizing a doc's contents, it will drift
   and lie. Link to the file; let the reader load the source of truth.

@@ -1,6 +1,7 @@
 ---
 name: signature
-description: "Use when code should match a team's real code style and conventions the user keeps correcting the AI toward: \"make it match our codebase\", \"follow our patterns\", \"you keep writing it wrong\": or when repeated corrections should become durable rules. Private, quarantine-gated. For writing in a named public engineer's style, use `persona`."
+description: "Use when the user asks for code to match their team's real conventions, or for repeated corrections to become durable rules. Private and quarantine-gated. For a named public engineer's style, use `persona`."
+disable-model-invocation: true
 ---
 
 # Signature: capture a team's code style, turn it into rules the AI follows
@@ -17,8 +18,6 @@ then distil (name-free, into a field pack).
 > X by Y"), never rate a person ("so-and-so writes bad code"). The artifact is the pattern; the person is
 > incidental: and a file that judges a named person is a career-risk if it leaks. Group by contributor
 > only as a *source of signal*, phrased neutrally.
-
-Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
 
 ## Phase 1: Capture (private, stays in the quarantine)
 
@@ -57,7 +56,7 @@ expressed without an internal name, **it stays in the quarantine.** The guards a
 ## Output: propose, never apply
 Hand surviving rules to **`levelup`** as **proposed** pack edits (`category · kind · generic rule · why
 [+citation]`). Show the user the diff; **never auto-commit or push.** Convention → `lessons`/`stack-defaults`;
-correctness-with-citation → same, tagged for the `code-reviewer` audit. Frontend today; the gates apply to any field.
+correctness-with-citation → same, tagged for the `code-reviewer` audit. The gates apply to any field.
 
 ## Gotchas
 - **A convention is not a defect**: the commonest failure is "fixing" house style. When unsure, conform.

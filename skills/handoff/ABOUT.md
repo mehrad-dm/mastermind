@@ -56,7 +56,7 @@ describing a state that no longer exists is actively misleading.
 
 ## When it fires
 
-You don't type a command. Say something like:
+It runs only when you ask for it. Say something like:
 
 > *"I need to clear the context but I'm halfway through this"*
 > *"let's pause here and pick it up tomorrow"*

@@ -1,12 +1,13 @@
 ---
 name: handoff
-description: "Use when work needs to survive losing context, before a /clear on a long task, when pausing something unfinished, when handing over to a teammate or the next session, when the context window is filling up on multi-day work, or when a long multi-step task starts re-covering ground it already finished. Not the project's decision history across weeks: that's `roadmap`."
+description: "Use when the user asks for a handoff: work must survive a reset, a pause, or a move to a teammate or a new session. Not the decision history across weeks (`roadmap`)."
+disable-model-invocation: true
 ---
 
 # MasterMind: Handoff
 
-Context is the fundamental constraint (`~/.mastermind/engineering/core/agent-loop.md`); a long task shouldn't lose its thread to a
-reset. Capture just enough to resume cold: high signal, low tokens.
+A long task should not lose its thread to a reset. Capture just enough to resume cold: high signal,
+low tokens.
 
 ## Capture
 

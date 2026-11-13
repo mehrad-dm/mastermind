@@ -14,15 +14,10 @@ this project never chose. So MasterMind ships the **scaffold**, not the content.
 
 ## Get a field: say `init`
 
-On the first substantive work here, MasterMind will:
-
-1. **Detect the stack** from the project itself: `package.json`/deps, configs, file types, existing
-   conventions. Free, and usually enough; it won't interrogate you.
-2. **Ask once, only if ambiguous**: *"What are we building, and on what stack?"* If you're not
-   technical, it picks a sensible stack and says why.
-3. **Build the pack from `fields/_template/`**: tuned to the real stack: its defaults, its actual
-   pitfalls, its review rules. A **one-time** setup (a few minutes) that is then reused for every
-   task, never repeated per task.
+With no field pack, MasterMind tells you in one line and offers `init`. It does not run `init` unasked,
+and it carries on with your task on the universal core. Once you say yes, `init` reads the stack from
+the project itself and builds the pack from `fields/_template/` with no questions: its defaults, its
+actual pitfalls, its review rules. It is a **one-time** setup, reused for every task.
 
 You can also do it by hand:
 
@@ -31,7 +26,7 @@ cp -r engineering/fields/_template engineering/fields/<name>
 # fill in each file, then point "Current field" above at it
 ```
 
-Or bootstrap it: `levelup --bootstrap <name>` researches and generates the pack from the template.
+Or bootstrap it: `levelup bootstrap <name>` researches and generates the pack from the template.
 
 ## Keep it lean: that's where the lift comes from
 
@@ -42,10 +37,12 @@ full-stack work.
 
 ## Once you have one
 
-- **Capture**: corrections and real review findings become one-line entries in the pack's
-  `lessons.md` (durable defaults go to `stack-defaults.md`). This is the channel that compounds.
-- **Refresh**: `levelup --refresh` re-runs the curriculum research so the pack tracks the ecosystem.
-- **Mark the level**: bump the level above and log what changed, so improvement is visible in git.
+- **Capture**: `levelup` records a correction or a real review finding as a one-line entry in the
+  pack's `lessons.md` (durable defaults go to `stack-defaults.md`). It runs only when there is a lesson
+  to record, and it never bumps the level.
+- **Refresh**: `levelup refresh` re-runs the curriculum research so the pack tracks the ecosystem.
+- **Mark the level**: `levelup refresh` and `levelup bootstrap <field>` bump the level above and log
+  what changed, so improvement is visible in git.
 
 Fields belong to this project. An update to MasterMind never rewrites, refreshes, or retires a pack
 you have built here.

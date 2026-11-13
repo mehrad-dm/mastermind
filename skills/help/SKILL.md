@@ -1,6 +1,7 @@
 ---
 name: help
-description: "Use when the user asks what MasterMind can do or how to drive it: \"help\", \"what can you do\", \"how do I use this\", \"what commands are there\", \"list your skills\", \"what are my options\": or when they seem unsure how to get started."
+description: "Use when the user asks what MasterMind can do or how to drive it. Shows the menu of skills and agents."
+disable-model-invocation: true
 ---
 
 # Help: what MasterMind can do, and how to use it
@@ -33,20 +34,20 @@ still matters, because the point is that the user learns what they already own.
 
 MasterMind works by **recognizing intent**. Say what you want in plain language and it applies the right
 skill or agent itself, then shows a short note that it did (e.g. `🧠 MasterMind ▸ building this, will verify
-before handoff`, with `└ build · design → implement → verify` beneath it). The `/name` calls below are an **optional shortcut**: a way to *force* a specific skill, not
-something you need to memorize. Every skill is **Auto** (the model can invoke it); you can also call any
-of them by hand.
+before handoff`, with a `└` line of internals beneath it). The `/name` calls below are an **optional shortcut**: a way to *force* a specific skill, not
+something you need to memorize. Most skills apply on their own; six run only when you ask for them
+(`help`, `handoff`, `report`, `levelup`, `lint`, `signature`), and the table says which.
 
-## Skills: the workflows (all Auto-invocable)
+## Skills: the workflows
 
-| Skill | What it does | Fires automatically when… | Call it by hand |
+| Skill | What it does | Applies when… | Call it by hand |
 | --- | --- | --- | --- |
-| **init** | set MasterMind up for this project: detect the stack (or ask what you're building), load the field pack | your first real task in a project it isn't set up for | *"init"* · *"set up MasterMind"* |
-| **build** | design → implement → verify → review → capture, end to end | you ask to build/add/implement a non-trivial feature | *"build a search box for the header"* |
+| **init** | set MasterMind up for this project: read the stack and build its field pack, with no questions | you say "init", or say yes when it offers | *"init"* · *"set up MasterMind"* |
+| **build** | implement a change end to end: design, code, proof it works, a review when the change is big or risky | you ask to build, add or implement something | *"build a search box for the header"* |
 | **debug** | structured, evidence-first root-cause debugging | a bug is hard, weird, or keeps coming back | *"debug why the list doesn't refresh"* |
 | **performance** | measure → find the real bottleneck → fix the biggest → verify | something's slow or janky ("why is this slow?") | *"why is this page so slow?"* |
 | **qa** | prove a change works by driving it for real (+ optional tests) | you finish something / ask to test it | *"qa this"* · *"write tests for it"* |
-| **report** | a shareable write-up of a cycle: changed files, decisions, verification, verdict (MD default, HTML on request) | you ask for a report; or end of build/qa if you turned it on (off by default) | *"give me a report of this"* · *"reports on"* |
+| **report** | a shareable write-up of a cycle: changed files, decisions, verification, verdict (MD default, HTML on request) | only when you ask, or at the end of build/qa if you turned it on (off by default) | *"give me a report of this"* · *"reports on"* |
 | **interview** | turn a fuzzy ask into a crisp, buildable spec; resolve a written spec's open questions | the request is ambiguous, or a spec has open questions | *"interview me about the checkout flow first"* |
 | **assess** | decide whether an idea deserves building: go, clarify or stop, with evidence | an idea nobody has said yes to yet | *"is this worth building?"* |
 | **constitution** | write and version the rules every feature in this project must obey | you state a non-negotiable, or start spec-first work | *"these are our non-negotiables"* |
@@ -57,23 +58,23 @@ of them by hand.
 | **checklist** | test one concern's requirements (security, UX, API) before building | a sensitive feature heads into planning | *"security checklist for this spec"* |
 | **analyze** | check spec, plan and tasks agree before any code, read-only | you're about to build from a task list | *"is this ready to build?"* |
 | **converge** | check the built code against everything the feature promised; append the gaps | every box is ticked, or you ask "is it really done?" | *"check the code against the spec"* |
-| **route** | load only the files/skills a task actually needs | a task is non-trivial or you're unsure where to start | *"route this"* |
+| **route** | load only the files/skills a task actually needs | it is not obvious what to load, or the code area is unfamiliar | *"route this"* |
 | **learn** | get up to speed fast on an unfamiliar stack/API, verify assumptions | the tech is new, fast-moving, or you're guessing | *"learn how the Stripe API handles refunds"* |
 | **prototype** | build a throwaway prototype to learn, then rebuild properly | the right approach is genuinely unknown | *"throw together a quick prototype of this"* |
-| **signature** | capture your team's real conventions as durable rules it follows | you ask it to match your codebase / keep correcting the same thing | *"make it match our patterns"* |
+| **signature** | capture your team's real conventions as durable rules it follows | only when you ask it to match your codebase | *"make it match our patterns"* |
 | **persona** | write in the documented public style of a named engineer, cited | you ask for someone's style ("write like X") | *"write this like Kent C. Dodds"* |
 | **explain** | write AI-friendly usage docs beside an internal package | an internal package has little/no docs (asks first) | *"explain this package"* |
 | **prompt** | sharpen a vague prompt into a precise, AI-ready one | you ask to optimize/fix a prompt for an AI | *"improve this prompt"* |
 | **quarantine** | set up a private, gitignored quarantine for confidential data | before capturing project/client-specific notes | *"keep this client's data private"* |
-| **levelup** | improve MasterMind's own knowledge (lessons, curriculum, new field) | after a correction/review, or to refresh standards | *"levelup: remember this"* |
-| **double-check** | interrogate a claim before handing it over: adversarial, reviewer never sees your conclusion | you're about to say "it works", or a review came back suspiciously clean | *"are you sure? double-check it"* |
+| **levelup** | improve MasterMind's own knowledge (lessons, curriculum, new field) | only when you ask, or when a task produced a lesson worth keeping | *"levelup: remember this"* |
+| **double-check** | interrogate a claim that running code cannot settle: adversarial, reviewer never sees your conclusion | a diagnosis or design call is about to be handed over, or a review came back suspiciously clean | *"are you sure? double-check it"* |
 | **deprecate** | remove/migrate/retire safely: expand → migrate → contract | deleting a feature, column, flag, or endpoint | *"can we delete this?"* |
 | **roadmap** | a durable decision map for multi-week work | work spanning many sessions; "why did we decide X?" | *"keep a roadmap for this project"* |
-| **lint** | check MasterMind's own files for bloat, repeated rules, contradictions | before a release, or the brain feels bloated | *"lint the brain"* |
+| **lint** | check MasterMind's own files for bloat, repeated rules, contradictions | only when you ask | *"lint the brain"* |
 | **clarify** | re-pitch an answer that did not land, in plain words or as a picture | you say "I did not follow that", "simpler", "you lost me" | *"say that simply"* |
 | **deepen** | survey an area and rank where the design costs most, you pick one | "this is getting messy", "why is this so hard to change?" | *"where is this hurting?"* |
-| **handoff** | write a concise handoff so work survives a reset/teammate | before a long-task `/clear`, pausing, or handing off | *"write a handoff"* |
-| **help** | show this menu, what every skill/agent does and when it fires | you ask "what can you do?" / "help" / "how do I use this" | *"what can you do?"* |
+| **handoff** | write a concise handoff so work survives a reset/teammate | only when you ask | *"write a handoff"* |
+| **help** | show this menu, what every skill/agent does and when it applies | only when you ask | *"what can you do?"* |
 
 ## Agents: the deep expert roles (isolated context)
 
@@ -82,8 +83,8 @@ also summon one directly.
 
 | Agent | What it does | Used automatically when… | Call it by hand |
 | --- | --- | --- | --- |
-| **architect** | designs the solution before code (boundaries, data model, APIs) | a feature is non-trivial (inside `build`) | *"architect this feature"* |
-| **code-reviewer** | reviews a diff against the rigor gate; proposes fixes, never applies | after a change, before "done" | *"review this"* |
+| **architect** | designs the solution before code (boundaries, data model, APIs) | a decision crosses a module boundary, the data model or a public API | *"architect this feature"* |
+| **code-reviewer** | reviews a diff against the rigor gate; proposes fixes, never applies | a change touches more than one file, or auth, money, a data migration, a public contract or something irreversible | *"review this"* |
 | **refactorer** | restructures working code to a better design, behavior-preserving | you ask to clean up / restructure working code | *"refactor this component"* |
 | **tech-scout** | decides adopt-vs-build for a library/tool/pattern, with a verdict | choosing a dependency or approach | *"should we use Zustand or Redux here?"* |
 
@@ -95,9 +96,9 @@ the right one and tells you.
 
 ## Getting set up
 
-If MasterMind isn't set up for this project yet (no field pack for your stack), it will offer a **one-time
-setup**, say *"init"* or just start working and it'll ask. Verify your install anytime with
-`~/.mastermind/install.sh --check`.
+If MasterMind isn't set up for this project yet (no field pack for your stack), it says so in one line
+and offers a **one-time setup**. Say *"init"* to run it; until you do, it carries on with your task
+without the pack. Verify your install anytime with `npx mastermind-brain check`.
 
 **Optional preferences** (per project, kept in `.mastermind/prefs.md`; the first two are **off** by default):
 - **cycle report**: a written write-up at the end of a build/QA cycle. Turn on: *"reports on"*.

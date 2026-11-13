@@ -8,8 +8,10 @@ high bar for their real stack, from one command. MasterMind ships no field, only
 
 1. **Detect the user's actual stack: tailor to what *they* use, not a generic field.** Read the project:
    `package.json`/lockfile, configs, framework + versions, DB, test runner, folder shape (per
-   `core/agent-loop.md`). If there's no project or it's ambiguous, ask **one** question: *"What stack,
-   language, framework, database, key libraries?"* The pack must reflect their real tools.
+   `core/agent-loop.md`). With no project to read, take the stack from what the user has said. Ask
+   **one** question (*"What stack, language, framework, database, key libraries?"*) only when the user
+   ran `bootstrap` directly and named no stack. When `init` sent you here, ask nothing. The pack must
+   reflect their real tools.
 2. **Scaffold from the template.** `cp -r engineering/fields/_template engineering/fields/<field>`, then
    fill every file (the template carries the shape + inline guidance).
 3. **Research + write it to a high bar.** Do the verified sweep (best repos/courses/people/docs, each
@@ -22,6 +24,6 @@ high bar for their real stack, from one command. MasterMind ships no field, only
 5. **Keep the pack routable.** Every pack file except `field.md` needs `route_when` frontmatter, and the
    pack needs `field.md` + `audit-rules.md`, or the router skips it silently. Verify with
    `node .mastermind/scripts/check-integrity.mjs`, then regenerate with
-   `node .mastermind/scripts/build-router.mjs`. (Under `--shared`, run the same scripts from the
-   brain in your home directory. A bare `scripts/…` is the project's own directory and fails with
-   MODULE_NOT_FOUND.)
+   `node .mastermind/scripts/build-router.mjs`. (Under a shared or global brain, run the same scripts
+   from the brain in your home directory, and get a yes before the first write there: kernel → Ask
+   before. A bare `scripts/…` is the project's own directory and fails with MODULE_NOT_FOUND.)

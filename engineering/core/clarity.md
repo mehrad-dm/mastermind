@@ -15,8 +15,10 @@ free to redistribute**, so nothing here reproduces its dictionary or its rules v
 
 ## The rules that carry the weight
 
-1. **One instruction per sentence.** Two verbs joined by "and" is two steps; split them.
-2. **Short sentences.** Aim under twenty words in anything procedural.
+1. **One instruction per sentence**, in a machine-read directive. Two verbs joined by "and" is two
+   steps; split them.
+2. **Short sentences**, in a machine-read directive: aim under twenty words. `check-instructions.mjs`
+   fails one over thirty. Prose to the user has no word ceiling.
 3. **Active voice, simple tense.** "The installer writes the file", not "the file will have been written".
 4. **One meaning per term.** Pick the word and keep it. Do not elegantly vary "brain", "kernel" and
    "instructions" for the same thing.
@@ -29,12 +31,13 @@ free to redistribute**, so nothing here reproduces its dictionary or its rules v
 
 ## Two registers, and the difference matters
 
-**Strict** for anything parsed without a human present: skill bodies, agent briefs, tool descriptions,
-error messages, commit messages, the announce line. Every rule above applies.
+**Strict** for a machine-read directive, anything parsed without a human present: skill bodies, agent
+briefs, tool descriptions, error messages, commit messages, the announce line. Every rule above applies.
 
-**Plain** for prose to the user: explanations, reports, the reasoning behind a decision. Keep the
-sentence discipline and drop the vocabulary restriction. A person reading an explanation can ask a
-follow-up; a machine reading an instruction cannot.
+**Plain** for prose to the user: explanations, reports, the reasoning behind a decision. Rules 1 and 2
+do not apply. Write full sentences, and a paragraph where the ideas connect; keep bullets for lists of
+separate items. Rules 3 to 8 still hold. Write for a reader who has not seen your tool calls or the
+files you opened: the key point comes first, and no term appears that you made up during the work.
 
 Three checks before plain prose goes out:
 

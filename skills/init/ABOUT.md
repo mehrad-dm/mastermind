@@ -40,13 +40,15 @@ apply and fills the gaps rather than forcing a bad fit. If there's no knowledge 
 offers a one-time deeper setup and tells you plainly what it costs: a few minutes now, reused forever
 after.
 
-**If the folder is empty,** there's nothing to read, so it asks one open question: *what do you want to
-build?* You answer in your own words. Technical or not, both are fine. If you name a framework, it uses
-it. If you only describe the product, it chooses the stack itself, states the choice with a one-line
-reason, and proceeds. You are never handed a menu of technical options to pick from.
+**If the folder is empty,** there's nothing to read, so it works from what you have already said you
+want to build. If you named a framework, it uses it. If you only described the product, it chooses the
+stack itself, states the choice with a one-line reason, and proceeds. You are never handed a menu of
+technical options to pick from. If you have not said what you are building yet, it tells you so in one
+line and builds the pack when your first task names the product.
 
-**It never blocks your first result.** If you're eager to start, MasterMind begins the actual work and
-runs any slower setup in the background. Setup is not allowed to become the thing you're doing.
+**It never blocks your first result.** If you have a task waiting, MasterMind begins the actual work
+and builds the pack after your first working result. Setup is not allowed to become the thing you're
+doing.
 
 Both paths end with a short summary: detected stack, what loaded, next step: and then it goes straight
 into your real task without waiting.
@@ -58,7 +60,10 @@ into your real task without waiting.
 > *"I want to build a booking site, start from scratch"*
 > *"get me ready"*
 
-Or simply on your first real task in a project it hasn't seen. You'll see it in your terminal:
+It does not start on its own. On your first real task in a project it hasn't seen, MasterMind tells
+you in one line that there is no field pack, offers `init`, and carries on with the task. Under a
+shared or global install the offer also says the pack is written in your home directory. Once you say
+yes, you'll see it in your terminal:
 
 ```
 🧠 MasterMind ▸ setting up your project: will confirm what's wired
@@ -79,6 +84,6 @@ Or simply on your first real task in a project it hasn't seen. You'll see it in 
 A MasterMind that knows your framework and versions, matches your existing conventions instead of
 overwriting them, and loaded the right knowledge for both halves of a full-stack app.
 
-At the very end it makes one small, entirely skippable offer: two optional preferences: a written report
-at the end of each work cycle, and a plan-first mode that shows you the plan before editing anything.
-Both are **off unless you turn them on**, and ignoring the question leaves them off.
+It asks no closing questions. Two optional preferences exist: a written report at the end of each work
+cycle, and a plan-first mode that shows you the plan before editing anything. Both are **off unless
+you turn them on** by saying so, and the closing summary names them.

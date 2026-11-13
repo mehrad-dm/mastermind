@@ -1,6 +1,6 @@
 ---
 name: constitution
-description: "Use when a project needs rules every feature must obey, or those rules change: \"set up our principles\", \"write a constitution\", \"these are our non-negotiables\", \"from now on every feature must...\", \"we never allow X in this codebase\", \"amend the rules\", starting spec-first work on a project with no specs/constitution.md. Not for MasterMind's own engineering defaults, and not for one feature's requirements (that's `specify`)."
+description: "Use when a project needs rules every feature must obey, or those rules change: the user states a non-negotiable, or spec-first work starts with no constitution. Not for one feature's requirements (`specify`)."
 ---
 
 # MasterMind: Constitution

@@ -1,6 +1,7 @@
 ---
 name: levelup
-description: "Use after a correction or review finding worth remembering, when standards may have drifted from the live ecosystem, when switching MasterMind to a new domain or stack, or when the user says \"remember this\", \"learn from that\", \"so you don't repeat it\", \"don't make that mistake again\", \"level up\", \"update your knowledge\"."
+description: "Use when the user asks MasterMind to remember a lesson, refresh its standards or bootstrap a field pack, or when another skill sends you here with a durable lesson to record."
+disable-model-invocation: true
 ---
 
 # MasterMind: Level Up
@@ -14,11 +15,14 @@ field and its pack path (`engineering/fields/<field>/`).
 Take the mode from the argument; default to **capture**. **Do one mode per run**: they touch different
 files under different rules, and blending them is how a lesson lands in the wrong file.
 
-| Mode | Trigger | Read |
-| --- | --- | --- |
-| **`capture`** (default) | a correction, review finding, or bug worth remembering | below. It's the whole job |
-| **`refresh`** | standards may have drifted from the live ecosystem | `refresh.md` **before writing anything**: it carries the upstream-only write allowlist |
-| **`bootstrap <field>`** | a new domain or stack with no pack | `bootstrap.md` |
+| Mode | Written as | Trigger | Read |
+| --- | --- | --- | --- |
+| **capture** (default) | `levelup` | a correction, review finding, or bug worth remembering | below. It's the whole job |
+| **refresh** | `levelup refresh` | standards may have drifted from the live ecosystem | `refresh.md` **before writing anything**: it carries the upstream-only write allowlist |
+| **bootstrap** | `levelup bootstrap <field>` | a new domain or stack with no pack | `bootstrap.md` |
+
+**Capture runs only when there is a lesson to record.** A cycle that taught nothing durable writes
+nothing, and a skill that sends you here with no lesson is answered with "nothing to capture".
 
 Adding or rewriting a **skill or agent** is not a mode. It's a separate discipline: read `authoring.md`.
 
@@ -43,15 +47,17 @@ is the evidence behind the rule; distil it forward and let the old entries age o
    deduplicated. Skip one-off/project-specific noise; keep only what applies to *future* tasks.
 2. For each: append a one-line rule + bracketed "why" to
    `~/.mastermind/engineering/fields/<field>/lessons.md`. Deduplicate against existing lessons.
+   Under a shared or global brain that file is in the home directory, outside the project: name the
+   file and get a yes before the first write (kernel → Ask before).
 3. If a lesson is a general default (not just a gotcha), **promote** it into `stack-defaults.md` at the
    right section. That's where it will actually change behavior.
 4. Keep it tight. A lesson that isn't load-bearing is noise; keep only what earns its place.
 5. **A mechanical lesson becomes a check, not a sentence.** When the mistake is detectable by a script,
    lint rule, hook or test, propose that check to the user alongside the lesson line. A rule that
-   stays prose gets broken again; this repo's own history shows it every time.
+   stays prose gets broken again.
 
 `capture` is the one mode that may run on a user's install and stay local; it writes only to that field's
-`lessons.md` and `stack-defaults.md`.
+`lessons.md` and `stack-defaults.md`. It never bumps the level and never edits `active-field.md`.
 
 ## Guardrail: keep MasterMind lean (token economy)
 
@@ -65,11 +71,11 @@ heavier. On each change:
 - **Net-zero-or-lighter.** When you add, hunt for something stale to remove; retire superseded
   lessons/resources rather than stacking them. Signal density beats volume: a bloated brain gets ignored.
 
-## Always, after any mode
+## After a mode
 
-- **Bump the level** and log the change in `active-field.md` (increment the level number; add a dated
-  one-line changelog entry describing what leveled up).
+- **After `refresh` or `bootstrap`, bump the level** in `active-field.md`: increment the number and add
+  a dated one-line entry saying what leveled up. `capture` does not bump it.
 - **Show what changed**: list the files you actually wrote. For `refresh`, check that list against its
   write allowlist before claiming done.
-- Report to the user what was learned/changed in 2–3 lines. Improvement must be visible.
-- If `~/.mastermind/engineering/` is a git repo, the change is now diffable and reversible, mention it.
+- Report to the user what was learned or changed in two or three lines.
+- If `~/.mastermind/engineering/` is a git repo, the change is diffable and reversible: mention it.

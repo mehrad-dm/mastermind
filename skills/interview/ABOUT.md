@@ -76,7 +76,7 @@ You don't type a command. Say any of these and MasterMind reaches for `interview
 > *"the onboarding flow needs an overhaul"*
 > *"I want something like Stripe's dashboard but for our data"*
 > *"can you make search better"*
-> *"write this up so another session can pick it up"*
+> *"we keep disagreeing about what's in scope for the first version"*
 
 You'll see it engage in your terminal:
 

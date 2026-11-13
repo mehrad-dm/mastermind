@@ -101,14 +101,15 @@ incomplete".
 7. **analyze**: a read-only check that spec, plan and tasks agree. Before any code.
 8. **build**: execute the tasks in order, ticking each only after its own check passes.
 9. **converge**: compare the code with spec, plan, tasks and constitution. Append what is missing.
-   Repeat 8 and 9 until it reports converged, at most three rounds.
+   Repeat 8 and 9 until it reports converged, at most three rounds (`agent-loop.md` → stop conditions).
 
 Steps 3, 5 and 7 are quality gates, not ceremony: skip them on a small feature, never on one that
 touches money, auth or data.
 
 **With no human in the session at all** (a CI job, a scheduled run, a loop), never invent an answer to a
-question the spec leaves open. When a person is present, ask them as each skill describes. Leave the `[NEEDS CLARIFICATION]` marker, finish what does not depend on it, and report
-the feature as blocked on that question.
+question the spec leaves open. Leave the `[NEEDS CLARIFICATION]` marker, finish what does not depend on
+it, and report the feature as blocked on that question. When a person is present, ask them as each
+skill describes.
 
 **Context.** Steps 2 to 6 work best in one session, since each reads what the last one decided. A build
 can start fresh for each story: `spec.md` and `tasks.md` are the handoff.

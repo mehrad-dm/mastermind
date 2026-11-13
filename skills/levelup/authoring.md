@@ -14,10 +14,13 @@ keeps a large library lean and navigable (the lesson from the best skill kits).
 - **One job.** The mega-skill (commits + PRs + changelog + …) is the top mistake. Split it.
 - **Description = a routing rule**: specific enough that it activates at exactly the right moment, and
   not otherwise. **Unambiguous:** if a human can't say which skill applies, neither can the agent.
-- **Phrase `route_when` / the description as the *question the user would actually ask*, in their words**,
-  not a topic label. The router matches by meaning, so `"why is this slow?"` routes far better than
-  `"performance optimization"`. A knowledge file is only as findable as the question written on its front
-  (the KB lesson): lead with the real trigger, and freshen it in `refresh` when the way people ask shifts.
+- **A skill description names categories of intent, not a list of example phrases.** Descriptions ride
+  in every request, and a phrase list taxes that budget and generalizes worse than the category it
+  samples. Each is at most 300 characters; all of them together stay under 7,500. Name the neighbouring
+  skill a near-miss belongs to: "Not for X (`other-skill`)".
+- **Phrase a field file's `route_when` as the *question the user would actually ask***, not a topic
+  label. The router matches by meaning, so `"why is this slow?"` routes far better than
+  `"performance optimization"`.
 - **The description says WHEN, never WHAT.** State only the triggering conditions. **Never summarize the
   skill's own steps or workflow**: a description that describes the process becomes a shortcut the model
   takes *instead of* reading the skill, and the body turns into documentation it skips. (Measured: a
@@ -34,10 +37,11 @@ keeps a large library lean and navigable (the lesson from the best skill kits).
   the body names the companion and when to read it; the companion holds the detail, once.
 - **Don't duplicate an agent**: review, architecture, refactor, adopt-decisions are agents (isolated
   context). Skills are for inline workflows.
-- **Deterministic work → deterministic code** (`~/.mastermind/engineering/core/agent-loop.md`): script it,
-  don't narrate it.
-- Mark **user-invoked** (`disable-model-invocation: true`) vs model-invoked, and add the skill to
-  `skills/README.md` so the index stays honest.
+- **A deterministic step is a script, not a model call** (`~/.mastermind/engineering/core/principles.md`).
+- **Frontmatter is `name`, `description`, and for a user-invoked skill `disable-model-invocation: true`.**
+  Nothing else. The user-invoked skills are `help`, `handoff`, `report`, `levelup`, `lint` and
+  `signature`: they run when the user asks for them, or when another skill sends the model to their file.
+- Add the skill to `skills/README.md` so the index stays honest.
 
 ## Match the form to the failure
 
