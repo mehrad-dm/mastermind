@@ -94,6 +94,11 @@ there. Under-loading silently is the failure mode; a slightly wider load is chea
 If this file is missing or stale (a \`hash\` no longer matches its file), ignore it and fall back to the
 prose pointers in \`active-field.md\` / each field's \`field.md\`. The router only ever speeds things up.
 
+Each \`hash\` is the first 8 hex characters of the SHA-256 of the file at \`path\`. To test the whole
+file: \`node .mastermind/scripts/build-router.mjs --check\` in an installed project
+(\`node scripts/build-router.mjs --check\` in the MasterMind repository). Exit 1 means stale; the same
+command without \`--check\` rewrites it.
+
 ${section('field', 'Field-pack files')}
 ${section('skill', 'Skills')}`
 

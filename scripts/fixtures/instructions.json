@@ -1,0 +1,29 @@
+{
+  "fires": [
+    "- Perhaps run the tests, if you feel like it.",
+    "- Ideally you could maybe add a test.",
+    "- You may want to read the file first.",
+    "You may want to read the file first.",
+    "Perhaps run the tests.",
+    "- Run the tests if you feel like it.",
+    "- Maybe add a test for the edge case.",
+    "- Ideally, write the test before the fix.",
+    "- You could also run the linter.",
+    "- It could be worth checking the logs.",
+    "- You might want to restart the server.",
+    "- State the result. You could also add a note.",
+    "- You should probably run the tests.",
+    "- Try to keep the diff small."
+  ],
+  "clean": [
+    "- Run the tests.",
+    "- Report what could not be verified.",
+    "- Name the input that could break it.",
+    "- A check that could pass by failing is not a check.",
+    "- Ask when the request could mean two things.",
+    "This could be slow on a large repository.",
+    "- Read the file before you edit it.",
+    "- \"You could also run qa\" does not earn its line.",
+    "earns its line. \"You could also run qa\" does not."
+  ]
+}

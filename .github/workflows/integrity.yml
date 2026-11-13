@@ -9,6 +9,9 @@ on:
     branches: [master]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -17,15 +20,28 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 22
+      # First, so a gate that has stopped firing is seen before its green result is believed.
+      - run: node scripts/self-test.mjs
+      # Also holds the kernel to 200 lines and 9,500 characters, and skill descriptions to their budget.
       - run: node scripts/check-integrity.mjs
       - run: node scripts/build-router.mjs --check   # ROUTER.md must be regenerated when routed files change
+      - run: node scripts/lint-brain.mjs --strict
+      # A drifted version used to surface at the tag, where the tag can no longer be moved.
+      - run: node scripts/check-versions.mjs
+      - run: node scripts/check-claims.mjs
       # Repo only here; exit 2 is the site not being checked out, which the release gate covers.
       - run: node scripts/check-prose.mjs || [ "$?" = 2 ]
-      - run: node scripts/check-comments.mjs
+      - run: node scripts/check-comments.mjs || [ "$?" = 2 ]
       - run: node scripts/check-shell-patterns.mjs
       - run: node scripts/check-instructions.mjs --strict
       - run: node evals/agent-surface-cost.mjs --strict
       - run: node evals/agent-surface-routing.mjs
+      # Pinned like every action here. The validator runs offline and needs no login.
+      - run: npm install -g @anthropic-ai/claude-code@2.1.319 --registry=https://registry.npmjs.org
+      - name: plugin manifests pass Claude Code's own validator
+        env:
+          MM_REQUIRE_CLAUDE: 1
+        run: bash scripts/validate-plugin.sh
 
   # Runs on every pull request with no path filter, so it can be a REQUIRED check. The cross-OS
   # matrix is path-filtered and therefore cannot be required without deadlocking docs-only PRs,
@@ -34,8 +50,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0           # the release-to-release upgrade test needs the tags
+          fetch-tags: true
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 22
       - run: bash tests/install.test.sh
+      # Without tags the upgrade test used to skip itself and count as a pass.
       - run: bash tests/agent-surface.test.sh
+        env:
+          MM_REQUIRE_LIFECYCLE: 1
+
+  # A dead or moved third-party page is worth knowing about and must never block a merge.
+  links:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 22
+      - run: node scripts/check-links.mjs

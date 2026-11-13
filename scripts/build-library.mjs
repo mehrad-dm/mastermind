@@ -68,9 +68,9 @@ for (const d of readdirSync(join(REPO, 'skills'), { withFileTypes: true })) {
   items.push({ kind: 'skill', name: d.name, title: meta.title ?? d.name, blurb: meta.blurb ?? '',
                trigger: skillMeta.description ?? '', body: clean(body), newUntil: newUntil(meta.since) })
 }
-for (const f of readdirSync(join(REPO, 'agents', 'about'))) {
+for (const f of readdirSync(join(REPO, 'library', 'agents'))) {
   if (!f.endsWith('.md')) continue
-  const [meta, body] = fm(readFileSync(join(REPO, 'agents', 'about', f), 'utf8'))
+  const [meta, body] = fm(readFileSync(join(REPO, 'library', 'agents', f), 'utf8'))
   const name = f.replace(/\.md$/, '')
   const agentMeta = fm(readFileSync(join(REPO, 'agents', `${name}.md`), 'utf8'))[0]
   items.push({ kind: 'agent', name, title: meta.title ?? name, blurb: meta.blurb ?? '',

@@ -53,6 +53,7 @@ jobs:
             scripts/release.sh \
             scripts/verify-release.sh \
             scripts/verify-tools.sh \
+            scripts/validate-plugin.sh \
             scripts/prove-regression.sh \
             tests/install.test.sh \
             tests/agent-surface.test.sh \

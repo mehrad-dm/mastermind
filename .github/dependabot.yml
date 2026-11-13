@@ -7,6 +7,10 @@ updates:
     directory: /
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    # init and analyze refuse to run at different versions, so one PR must move both.
+    groups:
+      codeql-action:
+        patterns: ['github/codeql-action/*']
   - package-ecosystem: npm
     directory: /cli
     schedule: { interval: weekly }

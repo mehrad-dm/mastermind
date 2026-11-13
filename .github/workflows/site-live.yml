@@ -52,8 +52,9 @@ jobs:
             *) bad "the CSP does not allow https://www.foglamp.dev, so the embedded map is blocked" ;;
           esac
 
+          headers="$(curl -fsSI "$SITE/" | tr -d '\r')"
           for h in strict-transport-security x-content-type-options referrer-policy; do
-            curl -fsSI "$SITE/" | tr -d '\r' | grep -qi "^$h:" && note "$h present" || bad "$h missing"
+            grep -qi "^$h:" <<<"$headers" && note "$h present" || bad "$h missing"
           done
 
           # Every skill and agent we ship must have a page, or the library is lying about itself.

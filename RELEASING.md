@@ -47,6 +47,12 @@ it.
 `install.sh`, `cli/`, `bin/`, `tests/`, `hooks/` or `scripts/`, so you find breakage in seconds
 rather than in a CI queue. `MM_SKIP_TESTS=1 git push` overrides it and says so out loud.
 
+Dependabot opens its pull requests against the same checks. The two `github/codeql-action` steps
+are grouped in `.github/dependabot.yml`, because they refuse to run at different versions and a
+pull request that moves only one of them can never go green. `cross-os` is not a required check,
+so a Dependabot pull request that touches it can be merged while one platform is red: read that
+run before merging, because the release blocks on every platform.
+
 ## Tags are immutable once pushed
 
 `.github/tag-ruleset.json` stops any `v*` tag being moved or deleted, by anyone, with no bypass.
@@ -73,8 +79,11 @@ immutability. If the Release step ever fails, npm has the version and GitHub doe
 command fixes:
 
 ```
-gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <(sed -n '/^## \[X.Y.Z\]/,/^## \[/p' CHANGELOG.md) --verify-tag --latest
+gh release create vX.Y.Z --title "vX.Y.Z" --verify-tag --latest --notes-file <(
+  awk -v v="## [X.Y.Z]" 'index($0, v) == 1 { on = 1; next } on && /^## \[/ { exit } on' CHANGELOG.md)
 ```
+
+That prints the body of one section, the same way the publish job extracts it.
 
 The reverse order would leave an immutable Release for a version that never reached npm, which
 nothing can clean up.
@@ -111,17 +120,24 @@ GitHub Release is generated from it, and `release.sh` refuses to proceed without
 
 Say what broke and what it cost the user. Never name who found it or how the review was run.
 
-### 2. Move the version
+### 2. Move the version, on a branch
+
+`master` takes pull requests only, so the release commit is made on a branch like any other
+change. `release.sh` refuses to run on `master`.
 
 ```
-scripts/release.sh 0.31.0 --dry-run    # show what would change
-scripts/release.sh 0.31.0
+git checkout -b release/v0.34.0
+scripts/release.sh 0.34.0 --dry-run    # show what would change
+scripts/release.sh 0.34.0
 ```
 
-The version lives in **six** places across **two** repositories: `VERSION`, `cli/package.json`,
-both `.claude-plugin` manifests, the README badge, and the site's `src/site.config.ts`. Every
-release that drifted did so because one was updated by hand and another was not. The script moves
-all six, then greps for anything still carrying the old number and tells you about it.
+The version is written in several files across **two** repositories: `VERSION`,
+`cli/package.json`, `.claude-plugin/plugin.json`, every entry in `.claude-plugin/marketplace.json`,
+`mod/.claude-plugin/plugin.json` (the optional Mod ships at the brain's version), the README badge,
+and the site's `src/site.config.ts`. Every release that drifted did so because one was updated by
+hand and another was not. The script moves all of them, then greps for anything still carrying the
+old number and tells you about it. `scripts/check-versions.mjs` checks the ones in this repository
+on every pull request, so a drift is found before the tag and not by it.
 
 It also moves the version in the site's `public/llms.txt`, regenerates the library pages (which dates
 each New badge) and redraws the link card and banners with the site's committed generator, because
@@ -132,31 +148,67 @@ card is the one on the site's main branch.
 
 It runs `preflight.sh` and stops if anything fails. It does not commit, tag, push or publish.
 
-### 3. Commit, tag, push
+### 3. Pull request, merge, take the merge commit
 
 ```
-# -a stages tracked files only, so a release that ADDS a file would tag without it.
-git add -A && git commit -m "release: v0.31.0"
-git -C ../mastermind-site add -A && git -C ../mastermind-site commit -m "v0.31.0"
-git tag -a v0.31.0 -m "v0.31.0: <the changelog's opening line>"
-git push
-git -C ../mastermind-site push # the site goes FIRST: the tag gate checks out the pushed site
-git push origin v0.31.0        # this is what publishes, and it is the irreversible step
+# -a stages tracked files only, so a release that ADDS a file would ship without it.
+git add -A && git commit -m "release: v0.34.0"
+git -C ../mastermind-site add -A && git -C ../mastermind-site commit -m "v0.34.0"
+
+git push -u origin release/v0.34.0
+gh pr create --fill
+gh pr merge --squash --auto          # merges once check, suites, analyze and shellcheck pass
+
+git checkout master
+git fetch origin && git reset --hard origin/master    # the squash commit, exactly as GitHub made it
+
+git -C ../mastermind-site push       # the site goes FIRST: the gates check out the pushed site
 ```
 
-**The site is pushed before the tag, and that order is load-bearing.** `publish.yml` checks out the
-published website and refuses to release if its version, skill counts, library pages or build
+The squash merge makes a **new** commit on `master`. The commit on your branch is not the release:
+a tag on it is refused by `pre-push` and by the publish gate, because it is not on `master`.
+`git reset --hard origin/master` is used, not `git pull`, because a local `master` that ever held
+a commit of its own has diverged: `git pull --ff-only` then refuses, leaves you on the old commit,
+and the next `git tag` silently tags the wrong thing.
+
+**The site is pushed before the rehearsal and the tag, and that order is load-bearing.** Both gates
+check out the published website and refuse if its version, skill counts, library pages or build
 disagree with this repo. Tagging first means the gate reads yesterday's site and fails.
 
-Pushing the tag is the only irreversible step, and now doubly so: the ruleset forbids moving it,
+### 4. Rehearse the release on the merge commit, before the tag exists
+
+```
+gh workflow run pre-tag.yml --ref master
+sleep 5
+gh run watch "$(gh run list --workflow pre-tag.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
+```
+
+`pre-tag.yml` runs everything the publish gate runs, and the whole platform matrix (Linux on two
+Node versions, macOS, Alpine, WSL, the native-Windows refusal, the packed tarball), on the commit
+you are about to tag. It also runs the checks that need a download and so are kept out of the tag
+itself: the gates' own self-tests, the claims check, and Claude Code's plugin validator.
+
+This step exists because the publish workflow runs **after** the tag is pushed, and a pushed tag
+cannot be moved. Anything that first fails there burns the version: the only way forward is a new
+patch release. The matrix is not a required check on pull requests (it is path-filtered, and a
+required check that never runs blocks the merge forever), so a release commit can reach `master`
+with a platform red. Here is where that is caught while it is still free.
+
+Do not tag until this run is green. If it fails, fix it through another pull request and run it
+again on the new merge commit.
+
+### 5. Tag and push the tag
+
+```
+git tag -a v0.34.0 -m "v0.34.0: <the changelog's opening line>"
+git push origin v0.34.0        # this is what publishes, and it is the irreversible step
+```
+
+Pushing the tag is the only irreversible step, and doubly so: the ruleset forbids moving it,
 so a tag on the wrong commit burns that version. `pre-push` refuses a `v*` tag unless its commit
 is on `origin/master` and that commit's `VERSION` and `CHANGELOG.md` match the tag.
 
-That guard exists because a squash merge leaves a local `master` that has *diverged* rather than
-fast-forwarded whenever you committed to `master` before branching. `git pull --ff-only` then
-refuses, leaves you on the old commit, and the next `git tag` silently tags the wrong thing.
-
-### 4. What CI does with the tag
+### 6. What CI does with the tag
 
 `publish.yml` will not publish unless, on that exact commit:
 
@@ -164,7 +216,11 @@ refuses, leaves you on the old commit, and the next `git tag` silently tags the 
   tags, so without this a version bump that never saw a pull request or a required check could
   be tagged straight to npm
 - the tag matches `VERSION`
-- both suites, integrity, router, links, brain lint and the routing eval all pass
+- both suites (with the release-to-release upgrade test required, not skipped), integrity, the
+  version locations, router, brain lint, prose, comments, shell patterns, instruction clarity and
+  the routing check all pass. Link liveness is deliberately absent: a page on someone else's
+  server going down must not burn a version, so links are checked weekly (`freshness.yml`), on
+  pull requests as a job that cannot fail the run, and by `preflight.sh` before the release commit
 - the library pages match the skill and agent sources, when CI can read the site (see below)
 - the packed tarball contains exactly `README.md`, `bin/mastermind.mjs`, `package.json`
 - **every** platform passes: Linux on Node 18 and 22, macOS, Alpine, WSL, the native-Windows
@@ -200,7 +256,7 @@ It deliberately does not run on the release tag. The site is deployed from its o
 *after* the package tag is pushed, so running it then would test the previous deployment. The
 release checks the site with `verify-release.sh`, after the site push.
 
-### 5. Verify all three surfaces agree
+### 7. Verify all three surfaces agree
 
 ```
 scripts/verify-release.sh 0.31.0
@@ -229,7 +285,8 @@ release.
 deploys on push to its own repository; the repo does not deploy it.
 
 **`preflight` reports checks it could not run.** That is not the same as passing, and it says so.
-A missing site checkout or an absent Claude CLI both land here. Decide whether shipping without
+A missing site checkout, an absent Claude CLI, a link check with no network and a live eval whose
+account is out of quota all land here. Decide whether shipping without
 that evidence is acceptable, and if it is, set the documented override so the gap is on the record.
 
 **The gate says the site repository could not be read.** `MASTERMIND_SITE_KEY` is missing,

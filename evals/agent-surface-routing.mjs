@@ -4,8 +4,12 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const CLI = join(ROOT, 'cli', 'bin', 'mastermind.mjs')
+const CLI = process.env.MM_ROUTE_CLI || join(ROOT, 'cli', 'bin', 'mastermind.mjs')
+// A ranker that returns the same three names for every request scores under 20% here.
+const MIN_HINTED = Number(process.env.MIN_HINTED ?? 50)
 
+// This reads the routing table, not a model: a user-only skill (handoff, help, signature,
+// levelup) is still listed there, which is how a session finds it.
 const PARAPHRASE = [
   ['why is this page so slow when there are lots of orders?', 'performance'],
   ['this test keeps failing randomly and I cannot work out why', 'debug'],
@@ -19,7 +23,6 @@ const PARAPHRASE = [
   ['I am pausing this, make it survive the next session', 'handoff'],
   ['what can you do? show me the options', 'help'],
   ['I did not follow that, can you put it more simply?', 'clarify'],
-  ['it takes five files to add one field here, where should we clean up?', 'deepen'],
   ['improve this prompt before I send it to the model', 'prompt'],
   ['make it match our team conventions, you keep writing it wrong', 'signature'],
   ['I do not know if this approach will even work, try something quick', 'prototype'],
@@ -35,6 +38,7 @@ const ORGANIC = [
   ['our new hire cannot work out how the payments module is meant to be used', 'explain'],
   ['I might be wrong about what is causing this', 'double-check'],
   ['my laptop died and I lost the thread of what I was doing', 'handoff'],
+  ['adding one field to orders meant touching five files. what is wrong with how this part is built?', 'deepen'],
 ]
 
 const route = (q) => {
@@ -59,6 +63,20 @@ const pct = (n, of) => `${((n / of) * 100).toFixed(0)}%`
 const report = (label, r) =>
   console.log(`${label.padEnd(22)} n=${r.n}  in-table ${r.recall} (${pct(r.recall, r.n)})  hinted ${r.hinted} (${pct(r.hinted, r.n)})`)
 
+if (process.argv.includes('--self-test')) {
+  const stub = join(ROOT, 'scripts', 'fixtures', 'route-stub.mjs')
+  const exit = (mode) => {
+    try { execFileSync('node', [fileURLToPath(import.meta.url)], { env: { ...process.env, MM_ROUTE_CLI: stub, STUB_MODE: mode }, stdio: 'ignore' }); return 0 }
+    catch (e) { return e.status }
+  }
+  const wrong = [['constant', 'a ranker that ignores the request'], ['drop', 'a table missing a skill']]
+    .filter(([mode]) => exit(mode) !== 1).map(([, what]) => `did not fail on ${what}`)
+  if (wrong.length) { console.error('✖ routing self-test: ' + wrong.join('; ')); process.exit(1) }
+  console.log('✓ routing self-test: a constant ranker and an incomplete table each fail the gate.')
+  process.exit(0)
+}
+
+if (!Number.isFinite(MIN_HINTED)) { console.error(`MIN_HINTED is not a number: ${process.env.MIN_HINTED}`); process.exit(2) }
 const p = score(PARAPHRASE)
 const o = score(ORGANIC)
 report('paraphrased triggers', p)
@@ -68,11 +86,13 @@ if (missed.length) {
   console.log('\nabsent from the table (must never happen):')
   console.table(missed)
 }
+const floor = Math.ceil((MIN_HINTED / 100) * p.n)
 console.log(
   '\nin-table is the contract: the model always sees every option and judges from the'
   + '\ndescriptions. hinted is the keyword arrows only: weak on organic phrasing by'
-  + '\nmeasurement, which is why they mark and never filter. Paraphrased cases reuse the'
-  + '\ndescriptions\' own vocabulary and read high by construction.',
+  + '\nmeasurement, which is why they mark and never filter. Paraphrased cases share words'
+  + '\nwith the descriptions and read high by construction, so they gate the arrows: a'
+  + `\nranker that stopped reading the request falls under the floor of ${floor} of ${p.n}.`,
 )
-// The gate is the contract, not the hints: every request must still see every skill.
-process.exit(p.recall === p.n && o.recall === o.n ? 0 : 1)
+if (p.hinted < floor) console.error(`\n✖ only ${p.hinted} of ${p.n} paraphrased requests were hinted, under the floor of ${floor} (${MIN_HINTED}%).`)
+process.exit(p.recall === p.n && o.recall === o.n && p.hinted >= floor ? 0 : 1)

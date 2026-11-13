@@ -1,0 +1,273 @@
+{
+ "kernel": {
+  "fires": [
+   {
+    "name": "201 short lines",
+    "repeat": {
+     "line": "a line",
+     "times": 201
+    }
+   },
+   {
+    "name": "100 lines, 10,000 characters",
+    "repeat": {
+     "line": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+     "times": 100
+    }
+   },
+   {
+    "name": "one line of 9,501 characters",
+    "chars": 9501
+   }
+  ],
+  "clean": [
+   {
+    "name": "200 lines, 9,400 characters",
+    "repeat": {
+     "line": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+     "times": 200
+    }
+   },
+   {
+    "name": "exactly 9,500 characters",
+    "chars": 9500
+   }
+  ]
+ },
+ "descriptions": {
+  "fires": [
+   {
+    "name": "one description of 301 characters",
+    "many": {
+     "count": 1,
+     "chars": 301
+    }
+   },
+   {
+    "name": "26 descriptions of 290 characters total 7,540",
+    "many": {
+     "count": 26,
+     "chars": 290
+    }
+   },
+   {
+    "name": "name differs from its folder",
+    "skills": [
+     {
+      "dir": "build",
+      "text": "---\nname: builder\ndescription: Use when building.\n---\n\n# builder\n"
+     }
+    ]
+   },
+   {
+    "name": "no description",
+    "skills": [
+     {
+      "dir": "build",
+      "text": "---\nname: build\n---\n"
+     }
+    ]
+   },
+   {
+    "name": "folded description over the limit",
+    "skills": [
+     {
+      "dir": "build",
+      "text": "---\nname: build\ndescription: >\n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n---\n"
+     }
+    ]
+   }
+  ],
+  "clean": [
+   {
+    "name": "25 descriptions of 300 characters total 7,500",
+    "many": {
+     "count": 25,
+     "chars": 300
+    }
+   },
+   {
+    "name": "quoted description with a user-only key",
+    "skills": [
+     {
+      "dir": "help",
+      "text": "---\nname: help\ndescription: \"Use when: the user asks what this can do.\"\ndisable-model-invocation: true\n---\n"
+     }
+    ]
+   }
+  ]
+ },
+ "journal": {
+  "fires": [
+   {
+    "name": "capitalised marker",
+    "text": "2026-11-07 · Wrong · claimed X · caught by a test\n"
+   },
+   {
+    "name": "hyphens for separators",
+    "text": "2026-11-07 - wrong - claimed X - caught by a test\n"
+   },
+   {
+    "name": "bulleted entry",
+    "text": "- 2026-11-07 · wrong · claimed X · caught by a test\n"
+   },
+   {
+    "name": "middot bullet",
+    "text": "· 2026-11-07 · wrong · claimed X · caught by a test\n"
+   },
+   {
+    "name": "misspelt marker",
+    "text": "2026-11-07 · wrnog · claimed X · caught by a test\n"
+   },
+   {
+    "name": "marker with a colon",
+    "text": "2026-11-07 · wrong: claimed X · caught by a test\n"
+   },
+   {
+    "name": "impossible date",
+    "text": "2026-13-07 · shipped X · 12 assertions\n"
+   },
+   {
+    "name": "date with nothing after it",
+    "text": "2026-11-07 shipped X\n"
+   },
+   {
+    "name": "miss marker inside prose",
+    "text": "Entries carry · wrong · between separators.\n"
+   }
+  ],
+  "clean": [
+   {
+    "name": "a miss and an ordinary entry",
+    "text": "# Journal\n\nProse about the log, written on 2026-08-04 by hand.\n\n2026-11-07 · wrong · claimed X · caught by a test\n2026-11-07 · shipped X · ship: 12 assertions\n"
+   },
+   {
+    "name": "an ordinary entry that mentions the word",
+    "text": "2026-11-07 · fixed the wrong-log count · ship: 3 assertions\n"
+   }
+  ]
+ },
+ "marketplace": {
+  "fires": [
+   {
+    "name": "listing reworded so the list cannot be found",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A markdown brain. It ships build and debug, with the architect agent."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "architect"
+    ]
+   },
+   {
+    "name": "no entry for the plugin",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind-mod",
+       "description": "Skills: build + agents: architect."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "architect"
+    ]
+   },
+   {
+    "name": "a shipped skill is not named",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build + agents: architect. Experimental."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "architect"
+    ]
+   },
+   {
+    "name": "a named skill is not shipped",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build, perf + agents: architect. Experimental."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "architect"
+    ]
+   },
+   {
+    "name": "an agent is not named",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build, debug + agents: architect. Experimental."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "architect",
+     "refactorer"
+    ]
+   }
+  ],
+  "clean": [
+   {
+    "name": "every skill and agent named",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build, debug, double-check + agents: architect, code-reviewer. Experimental (v0.34.0)."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "double-check",
+     "architect",
+     "code-reviewer"
+    ]
+   }
+  ]
+ }
+}

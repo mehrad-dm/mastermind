@@ -26,6 +26,11 @@ fi
 OLD="$(cat VERSION)"
 [ "$NEW" = "$OLD" ] && die "already at $NEW"
 
+# master takes pull requests only, so a release commit made here could never be pushed.
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+[ "$BRANCH" = master ] &&
+  die "you are on master, which only takes pull requests: git checkout -b release/v$NEW, then run this again"
+
 printf '%s── releasing %s → %s%s%s\n' "$b" "$OLD" "$b" "$NEW" "$x"
 [ "$DRY" = 1 ] && warn "dry run: nothing will be written"
 
@@ -58,6 +63,24 @@ edit "cli/package.json"   "cli/package.json"                 "s/\"version\": \"$
 edit "plugin manifest"    ".claude-plugin/plugin.json"       "s/$OLD/$NEW/g"
 edit "marketplace"        ".claude-plugin/marketplace.json"  "s/$OLD/$NEW/g"
 edit "README"             "README.md"                        "s/$OLD/$NEW/g"
+# The Mod is a second plugin in the same marketplace and ships at the brain's version, whatever
+# its manifest said before.
+if [ -f mod/.claude-plugin/plugin.json ]; then
+  node -e '
+    const fs = require("fs")
+    const [version, dry] = process.argv.slice(1)
+    const modPath = "mod/.claude-plugin/plugin.json", listPath = ".claude-plugin/marketplace.json"
+    const mod = JSON.parse(fs.readFileSync(modPath, "utf8"))
+    const list = JSON.parse(fs.readFileSync(listPath, "utf8"))
+    const entry = (list.plugins || []).find((p) => p.name === mod.name)
+    if (!entry) { console.error(`the Mod (${mod.name}) has no entry in ${listPath}, so nobody could install it`); process.exit(1) }
+    const save = (path, value) => { if (dry !== "1") fs.writeFileSync(path, JSON.stringify(value, null, 2) + "\n") }
+    if (mod.version !== version) { mod.version = version; save(modPath, mod) }
+    if (entry.version !== version) { entry.version = version; save(listPath, list) }
+  ' "$NEW" "$DRY" || die "the Mod could not be moved to $NEW"
+  if [ "$DRY" = 1 ]; then say "would set the Mod manifest and its marketplace entry to $NEW"
+  else ok "Mod manifest and marketplace entry"; fi
+fi
 edit "site version"       "$SITE/src/site.config.ts"          "s/v$OLD/v$NEW/g"
 edit "llms.txt"           "$SITE/public/llms.txt"             "s/Current release: v[0-9.]*/Current release: v$NEW/"
 if [ "$DRY" = 0 ]; then
@@ -76,7 +99,7 @@ if [ "$DRY" = 0 ]; then
   STALE="$(grep -rl "\b$OLD\b" \
     --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=evals --exclude-dir=dist \
     --exclude=CHANGELOG.md --exclude=journal.md \
-    "$REPO"/{README.md,VERSION,cli,.claude-plugin} "$SITE/src" "$SITE/public/llms.txt" 2>/dev/null || true)"
+    "$REPO"/{README.md,VERSION,cli,.claude-plugin,mod/.claude-plugin} "$SITE/src" "$SITE/public/llms.txt" 2>/dev/null || true)"
   if [ -n "$STALE" ]; then
     warn "these still mention $OLD; add them to this script if they are version locations:"
     printf '%s\n' "$STALE" | sed 's/^/      /'
@@ -98,21 +121,24 @@ SUBJECT="$(awk -v v="[$NEW]" '
 # The bug this replaced was an empty result substituted away in silence, so an
 # empty one fails here rather than shipping a tag with no subject.
 [ -n "$SUBJECT" ] || die "CHANGELOG.md [$NEW] has no leading '- ' bullet to take a tag subject from"
-printf '\n%s── tagging%s\n' "$b" "$x"
-say "git add -A && git commit -m 'release: v$NEW'"
-say "git tag -a v$NEW"
+TAGMSG="v$NEW${SUBJECT:+: $SUBJECT}"
 cat <<NEXT
 
 ${b}Not done automatically, because each one leaves this machine:${x}
 
-  1. review the diff          git diff --stat HEAD
-  2. commit both repos        git add -A && git commit -m "release: v$NEW"
-                              git -C "$SITE" add -A && git -C "$SITE" commit -m "v$NEW"
-                              (-a stages tracked files only: an ADDED file would miss the tag)
-  3. tag                      git tag -a "v$NEW" -m "v$NEW${SUBJECT:+: $SUBJECT}"
-  4. push the code            git push
-  5. deploy the site FIRST    git -C "$SITE" push          ${y}# the tag gate reads the pushed site${x}
-  6. push the tag             git push origin "v$NEW"      ${y}# this publishes to npm${x}
-  7. verify all three agree   scripts/verify-release.sh $NEW
+   1. review the diff           git diff --stat HEAD
+   2. commit both repos         git add -A && git commit -m "release: v$NEW"
+                                git -C "$SITE" add -A && git -C "$SITE" commit -m "v$NEW"
+                                (-a stages tracked files only: an ADDED file would miss the release)
+   3. open the pull request     git push -u origin "$BRANCH" && gh pr create --fill
+   4. merge when checks pass    gh pr merge --squash --auto
+   5. take the merge commit     git checkout master && git fetch origin && git reset --hard origin/master
+   6. deploy the site FIRST     git -C "$SITE" push          ${y}# the gates read the pushed site${x}
+   7. rehearse the release      gh workflow run pre-tag.yml --ref master
+                                ${y}# the publish gate and every platform, on the commit you are about to tag;${x}
+                                ${y}# wait for it to pass (RELEASING.md, step 4) before the next line${x}
+   8. tag the merge commit      git tag -a "v$NEW" -m "$TAGMSG"
+   9. push the tag              git push origin "v$NEW"      ${y}# this publishes to npm and cannot be undone${x}
+  10. verify all three agree    scripts/verify-release.sh $NEW
 
 NEXT

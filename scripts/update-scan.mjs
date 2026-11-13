@@ -34,11 +34,11 @@ const NEW_NODES = [
     id: 'bootstrap',
     label: 'Bootstrap hook',
     kind: 'service',
-    sub: 're-injects on compaction',
+    sub: 'frames each session',
     group: 'Safety & honesty',
     sourceRef: 'hooks/session-start.sh',
     detail:
-      'Re-injects the kernel on startup, clear and compact, so it does not fade as context fills. Verified on Claude Code, wired for Cursor. Codex gets none: its hooks need enabling by hand in the TUI.',
+      "Adds a short framing note on startup, clear and compact, under Claude Code's 10,000-character hook cap. The kernel itself loads natively. Wired for Claude Code and Cursor; Codex gets none.",
   },
   {
     id: 'installtests',
@@ -135,7 +135,7 @@ const NEW_NODES = [
     group: 'Safety & honesty',
     sourceRef: 'evals/cursor-routing.mjs',
     detail:
-      'Installs into a scratch project wired for Cursor alone, then asks a live `cursor-agent` session to name the skill it would use. Attribution is reported, never gated: the agent reads the brain itself.',
+      'Installs into a scratch project wired for Cursor alone, then asks a live Cursor CLI session to name the skill it would use. Attribution is reported, never gated: the agent reads the brain itself.',
   },
   {
     id: 'instructions',
@@ -165,7 +165,7 @@ const NEW_EDGES = [
   { from: 'cursor', to: 'kernel', kind: 'reads' },
   { from: 'codex', to: 'kernel', kind: 'reads' },
   { from: 'install', to: 'bootstrap', kind: 'writes', label: 'registers the hook' },
-  { from: 'bootstrap', to: 'kernel', kind: 'writes', label: 're-injects the brain' },
+  { from: 'bootstrap', to: 'kernel', kind: 'reads', label: 'points at the kernel' },
   { from: 'installtests', to: 'install', kind: 'reads', label: 'verifies' },
   { from: 'library', to: 'kernel', kind: 'reads', label: 'a page per skill + agent' },
   { from: 'ci', to: 'installtests', kind: 'triggers' },

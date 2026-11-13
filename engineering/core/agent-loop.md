@@ -302,5 +302,5 @@ cost trade-off (a fan-out, a stronger model) in one line before you take it.
 - **Tool/interface design**: prefer natural formats; make the safe path the easy path (poka-yoke).
   Use CLI tools (`gh`, etc.): the most context-efficient way to touch external services.
 
-**Sources:** Anthropic, *Building Effective Agents* (anthropic.com/engineering/building-effective-agents)
+**Sources:** Anthropic, *Building Effective Agents* (anthropic.com/research/building-effective-agents)
 and *Claude Code best practices* (code.claude.com/docs/en/best-practices).

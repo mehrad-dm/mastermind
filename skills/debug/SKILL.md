@@ -74,7 +74,7 @@ coincidence, not a fix.
    *"it's still broken"* after a confident fix means the reproduction never covered the real case.
 
 5. **Fix the root cause, not the symptom** (`~/.mastermind/engineering/core/rigor.md`). Address why the bad state was possible,
-   ideally make it unrepresentable (types, invariants, a reshaped data structure so the edge case
+   and make it unrepresentable where the design allows (types, invariants, a reshaped data structure so the edge case
    disappears, `~/.mastermind/engineering/core/mindset.md`). Never suppress an error to green the check.
    Before patching a function, search every caller of it. When several share the bug, fix it once,
    where they all pass through, not at the one caller that reported it.

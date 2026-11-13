@@ -25,6 +25,9 @@ on:
   # tag, so publish could put a package on npm before any of them had executed for that commit.
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   linux:
     # Both ends of the supported range. package.json says Node >= 18, and a floor that is never
