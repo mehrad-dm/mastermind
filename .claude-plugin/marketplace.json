@@ -28,6 +28,24 @@
         "rigor",
         "router"
       ]
+    },
+    {
+      "name": "mastermind-mod",
+      "source": "./mod",
+      "description": "Optional Claude Code mod for MasterMind (Claude Code 2.1.287 or newer): asks before irreversible actions, shows the brain's status, and flags answers that claim completion without a verdict. Opt-in, because it runs code inside Claude Code; read mod/README.md first. Experimental (v0.33.2).",
+      "version": "0.33.2",
+      "author": {
+        "name": "mehrad-dm"
+      },
+      "homepage": "https://mastermind.mehrad.me",
+      "repository": "https://github.com/mehrad-dm/mastermind",
+      "license": "MIT",
+      "keywords": [
+        "mod",
+        "permissions",
+        "rigor",
+        "status"
+      ]
     }
   ]
 }

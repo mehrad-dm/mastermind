@@ -1,0 +1,43 @@
+{
+  "name": "mastermind-mod",
+  "description": "Optional Claude Code mod for MasterMind: asks before irreversible actions, shows the brain's status, and flags answers that claim completion without a verdict. Runs code inside Claude Code; read the README first.",
+  "version": "0.33.2",
+  "author": {
+    "name": "mehrad-dm"
+  },
+  "homepage": "https://mastermind.mehrad.me",
+  "repository": "https://github.com/mehrad-dm/mastermind",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "permissions",
+    "rigor",
+    "status"
+  ],
+  "userConfig": {
+    "hold": {
+      "type": "string",
+      "title": "Irreversible-action hold",
+      "description": "all, destructive-only or off. all asks before anything that cannot be undone or that leaves this machine. destructive-only skips plain push, publish and deploy. off disables the hold.",
+      "default": "all"
+    },
+    "headless": {
+      "type": "string",
+      "title": "Hold when nobody can be asked",
+      "description": "defer or deny. defer leaves the decision to your permission rules under claude -p and the SDK. deny refuses the command.",
+      "default": "defer"
+    },
+    "handoffAt": {
+      "type": "number",
+      "title": "Handoff hint at context percent",
+      "description": "Show one handoff hint when the context window is this full. 0 turns the hint off.",
+      "default": 70
+    },
+    "nudge": {
+      "type": "string",
+      "title": "Verdict and evidence notices",
+      "description": "on or off. on shows a one-line notice when an answer claims completion without a verdict, reports a check that never ran, or sends a review to a fork.",
+      "default": "on"
+    }
+  }
+}

@@ -49,3 +49,7 @@ evals/runs/*/raw-work/
 
 # Local Remotion video workspace and generated media.
 /video/
+
+# written by Claude Code when the mod folder is loaded interactively
+mod/tsconfig.json
+mod/.claude-plugin/types/
