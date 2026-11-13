@@ -6,10 +6,7 @@ SHAPE="${1:-auto}"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KERNEL="$REPO/CLAUDE.md"
 
-[ -f "$KERNEL" ] || exit 0
-
-kernel="$(cat "$KERNEL" 2>/dev/null)" || exit 0
-[ -n "$kernel" ] || exit 0
+[ -s "$KERNEL" ] || exit 0
 
 # JSON string escaping via parameter substitution: one C-level pass each, no subshells.
 esc() {

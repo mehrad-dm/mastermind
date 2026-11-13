@@ -18,16 +18,19 @@ history lives in git.
   same command with the argument produced the full contract. The same defect was fixed for Cursor in
   0.24 by passing `cursor`; the Claude side never got its argument.
   The installer now writes `... session-start.sh" claude`, recognises its own entry by the command's
-  first token so an old entry is replaced rather than duplicated, and `--check` reports an entry
+  quoted path, spaces included, so an old entry is replaced rather than duplicated, and `--check` reports an entry
   without the argument. The hook also treats `CLAUDE_PROJECT_DIR` as Claude Code when no argument is
   given, so an older install starts working as soon as `update` refreshes the hook file. The suite
   runs the registered command the way Claude Code runs it and asserts the field it reads.
+  A first version of this fix matched the entry by splitting the command on whitespace, which
+  duplicated the entry on every re-install when the brain's path held a space; the quoted path is now
+  read whole, with a test that installs three times into such a path.
 - The hook no longer carries the kernel. Claude Code has capped hook context at 10,000 characters
   since 2.1.89 (March 2026): anything longer is written to a file and the model is handed a path and a
   2,000-character preview, which is exactly what a persisted transcript on 2.1.236 showed. Since the
   kernel already loads as the project's `CLAUDE.md` and Claude Code re-injects that from disk after a
   compaction, the payload is now the framing, a pointer to the kernel file for a session that has no
-  kernel in context, and the two nudges: about 1,500 characters, the same for Cursor and the SDK. The
+  kernel in context, and the two nudges: under 1,000 characters, the same for Cursor and the SDK. The
   suite asserts every shape stays under the cap. A plugin-only install (no `npx mastermind-brain`)
   has no `CLAUDE.md` and therefore relies on the pointer; it got a preview before, it gets a
   pointer now, and the proper fix, shipping the kernel inside the plugin as a skill, is a separate

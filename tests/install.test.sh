@@ -78,6 +78,15 @@ run "$P" claude >/dev/null 2>&1
 is "re-install leaves one entry" "$(python3 -c "import json;d=json.load(open('$P/.claude/settings.json'));print(sum('session-start.sh' in json.dumps(e) for e in d['hooks']['SessionStart']))")" "1"
 yes_ "and that entry carries the shape" "$(grep -o 'session-start.sh\\" claude' "$P/.claude/settings.json" | head -1)"
 
+echo "── a brain path with a space still yields one hook entry"
+SPB="$TMP/sp ace"; mkdir -p "$SPB/home" "$SPB/proj"
+(cd "$REPO" && git archive HEAD 2>/dev/null | tar -x -C "$SPB" 2>/dev/null) ; mkdir -p "$SPB/my brain"
+cp -R "$REPO/." "$SPB/my brain/" 2>/dev/null; rm -rf "$SPB/my brain/.git"
+(cd "$SPB/my brain" && git init -q . && git add -A >/dev/null 2>&1 && git -c user.email=t@t -c user.name=t commit -qm x >/dev/null 2>&1)
+ln -s "$SPB/my brain" "$SPB/home/.mastermind"
+for _i in 1 2 3; do (cd "$SPB/proj" && HOME="$SPB/home" MM_NO_NETWORK=1 bash "$SPB/my brain/install.sh" --shared claude >/dev/null 2>&1); done
+is "three installs, one entry" "$(grep -c 'session-start.sh' "$SPB/proj/.claude/settings.json" 2>/dev/null)" "1"
+
 echo "── name collision: BOTH survive (never displace the project's own)"
 P=$(proj collide)
 mkdir -p "$P/.claude/skills/build" "$P/.claude/agents"

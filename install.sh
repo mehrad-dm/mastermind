@@ -682,7 +682,9 @@ wire_bootstrap() {
     // /their/tool/session-start.sh matched the old check and was deleted.
     const mine = (e) => (e?.hooks || []).some((h) => {
       if (typeof h?.command !== "string") return false;
-      const first = h.command.trim().split(/\s+/)[0].replace(/^"|"$/g, "");
+      // The path is quoted because it may hold spaces: take the quoted token whole.
+      const quoted = /^\s*"([^"]+)"/.exec(h.command);
+      const first = quoted ? quoted[1] : h.command.trim().split(/\s+/)[0];
       return first === hookPath || first.startsWith(mmHooks);
     });
     const clean = list.filter((e) => !mine(e));
