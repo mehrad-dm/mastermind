@@ -21,6 +21,8 @@ These are **greenfield defaults and tie-breakers, not a stack to force on anyone
 3. **Greenfield or silent → recommend, don't dictate**: best fit for *this* project's real requirements
    (scale, team, longevity, maintenance, performance) via `core/principles.md` and the `tech-scout` agent.
 4. **The defaults below are the tie-breaker when nothing else decides**: never a mandate.
+5. **Language direction and locale follow the project's real audience.** Where users read a
+   right-to-left language, right-to-left layout and localized text are a default, not an add-on.
 
 ## <Decision area, e.g. Language>
 - **Default:** <the opinionated pick>.
