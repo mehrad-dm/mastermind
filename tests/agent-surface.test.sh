@@ -2,8 +2,9 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLI=("node" "$ROOT/cli/bin/mastermind.mjs")
-pass=0; fail=0
+pass=0; fail=0; skipped=0
 ok()  { printf '  \033[0;32m✓\033[0m %s\n' "$1"; pass=$((pass+1)); }
+skip() { printf '  \033[0;33m-\033[0m skipped: %s\n' "$1"; skipped=$((skipped+1)); }
 bad() { printf '  \033[0;31m✗\033[0m %s\n' "$1"; fail=$((fail+1)); }
 check() { [ "$2" = "$3" ] && ok "$1" || bad "$1 (want '$3', got '$2')"; }
 
@@ -299,6 +300,304 @@ for bad_args in "--json" "--json --global" "check --json"; do
   esac
 done
 
+echo "status"
+J='import json,sys; d=json.load(sys.stdin.buffer)'
+ST="$WORK/status"; SI="$ST/iso"; SHOME="$ST/home"; SH="$SHOME/proj"
+mkdir -p "$SI/.mastermind/engineering" "$SI/specs/004-invitations" "$SI/sub" "$SHOME/.mastermind" "$SH"
+(cd "$SI" && git init -q .); (cd "$SH" && git init -q .)
+echo "9.8.7" > "$SI/.mastermind/VERSION"; echo "9.8.6" > "$SHOME/.mastermind/VERSION"
+printf '# MasterMind: global operating system\n\nkernel body\n' > "$SI/.mastermind/CLAUDE.md"
+printf '## Current field: **web**\n\n- **Level:** 2.\n' > "$SI/.mastermind/engineering/active-field.md"
+printf '2026-01-02 · wrong · first miss · caught by a test · fix\n2026-03-04 · wrong · second miss · caught by review · fix\n2026-03-05 · shipped a thing · ship\n' \
+  > "$SI/.mastermind/journal.md"
+printf '**Status** clarified\n' > "$SI/specs/004-invitations/spec.md"
+mmst() { (cd "$1" && shift && env -u MASTERMIND_HOME -u MM_STATE_DIR HOME="$SHOME" "${CLI[@]}" "$@"); }
+snap() { (cd "$1" && find . | sort && find . -type f -exec cksum {} + | sort); }
+
+before=$(snap "$ST")
+out=$(mmst "$SI/sub" status --json | python3 -c "$J; print(','.join(d))")
+check "status --json has the documented keys, in order" "$out" "version,brain,mode,kernel,field,misses,next"
+out=$(mmst "$SI/sub" status --json | python3 -c "$J; print(json.dumps([d['version'], d['brain'], d['mode'], d['kernel'], d['field']], sort_keys=True))")
+check "status reports version, brain, mode, kernel and field of an isolated project" "$out" \
+  "[\"9.8.7\", \"$SI/.mastermind\", \"isolated\", {\"chars\": 51, \"path\": \"$SI/.mastermind/CLAUDE.md\"}, {\"level\": 2, \"name\": \"web\"}]"
+out=$(mmst "$SI" status --json | python3 -c "$J; print(json.dumps([d['misses'], d['next']], sort_keys=True))")
+check "status reports the misses and the next spec step" "$out" \
+  '[{"count": 2, "last": {"date": "2026-03-04", "what": "second miss"}}, {"feature": "004-invitations", "reason": "no plan.md yet", "skill": "blueprint"}]'
+out=$(mmst "$SI" --json status | python3 -c "$J; print(d['mode'])" 2>/dev/null)
+check "a flag before status still reports" "$out" "isolated"
+check "plain status is four lines" "$(mmst "$SI" status | wc -l | tr -d ' ')" "4"
+check "status in an isolated project wrote nothing: listing and contents identical" "$([ "$(snap "$ST")" = "$before" ] && echo same)" "same"
+
+SKEY=$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:16])' "$SH")
+mkdir -p "$SHOME/.mastermind-state/projects"
+printf 'version=9.8.6\nscope=project\ntools=claude\nproject=%s\n' "$SH" > "$SHOME/.mastermind-state/projects/$SKEY"
+before=$(snap "$ST")
+out=$(mmst "$SH" status --json | python3 -c "$J; print(d['mode'] + '|' + d['brain'] + '|' + str(d['next']))")
+check "a shared brain is reported from a record with no mode key" "$out" "shared|$SHOME/.mastermind|None"
+mmst "$SH" status >/dev/null
+check "status under a shared brain wrote nothing either" "$([ "$(snap "$ST")" = "$before" ] && echo same)" "same"
+printf 'mode=isolated\n' >> "$SHOME/.mastermind-state/projects/$SKEY"
+check "the recorded mode wins over the inferred one" "$(mmst "$SH" status --json | python3 -c "$J; print(d['mode'])")" "isolated"
+mkdir -p "$SHOME/loose"
+check "a home brain with no project record reads as global" "$(mmst "$SHOME/loose" status --json | python3 -c "$J; print(d['mode'])")" "global"
+out=$(cd "$ROOT" && env -u MM_STATE_DIR HOME="$SHOME" MASTERMIND_HOME="$ROOT" "${CLI[@]}" status --json | python3 -c "$J; print(d['mode'] + '|' + d['version'])")
+check "the source clone reports itself as source" "$out" "source|$(cat "$ROOT/VERSION")"
+
+NOB="$WORK/status-nobrain"; mkdir -p "$NOB"
+before=$(snap "$NOB")
+for form in "status" "status --json" "--json status"; do
+  # shellcheck disable=SC2086
+  out=$(cd "$NOB" && HOME="$NOB" MASTERMIND_HOME="$NOB/absent" "${CLI[@]}" $form 2>&1); rc=$?
+  case "$rc:$out" in 1:*"no brain found"*) ok "\`$form\` with no brain says so and exits 1";; *) bad "\`$form\` with no brain: exit $rc: $out";; esac
+done
+check "and none of them wrote or installed anything" "$([ "$(snap "$NOB")" = "$before" ] && echo same)" "same"
+
+echo "one rule for the field and the feature folders"
+RULE="$WORK/rule"
+hookctx() { python3 -c 'import json,sys; d=json.load(sys.stdin.buffer); v=d.get("hookSpecificOutput",d); sys.stdout.buffer.write((v.get("additionalContext") or v.get("additional_context")).encode())'; }
+# "<no field>:<spec-first>" as the hook sees the project, then as the CLI does.
+agree() {
+  local p="$RULE/$1" h c
+  h=$(cd "$p" && env -u CLAUDE_PLUGIN_ROOT HOME="$RULE/home" CLAUDE_PROJECT_DIR="$p" bash "$ROOT/hooks/session-start.sh" claude | hookctx |
+      python3 -c 'import sys; c=sys.stdin.buffer.read().decode(); print(str("No field pack yet" in c) + ":" + str("works spec-first" in c))')
+  c=$( (cd "$p" && env -u MASTERMIND_HOME HOME="$RULE/home" "${CLI[@]}" status --json;
+        cd "$p" && env -u MASTERMIND_HOME HOME="$RULE/home" "${CLI[@]}" next --json) |
+      python3 -c 'import json,sys; dec=json.JSONDecoder(); s=sys.stdin.buffer.read().decode(); a,i=dec.raw_decode(s); b,_=dec.raw_decode(s[i:].lstrip()); print(str(a["field"]["name"] is None or a["field"]["level"]==0) + ":" + str(len(b.get("features") or [])>0))')
+  check "hook and CLI agree: $2" "$h|$c" "$3|$3"
+}
+rulefix() {
+  mkdir -p "$RULE/$1/.mastermind/engineering" "$RULE/home"; (cd "$RULE/$1" && git init -q .)
+  echo 0.0.0-test > "$RULE/$1/.mastermind/VERSION"
+  printf '## Current field: **none yet**\n\n- **Level:** 0.\n' > "$RULE/$1/.mastermind/engineering/active-field.md"
+}
+rulefix a; mkdir -p "$RULE/a/specs/001-Login Flow"
+agree a "specs/001-Login Flow is not a feature folder" "True:False"
+rulefix b; mkdir -p "$RULE/b/specs/1000-big"
+agree b "specs/1000-big is one" "True:True"
+rulefix c; mkdir -p "$RULE/c/docs/specs/001-a"; printf -- '- `specs-dir: docs/specs`: where specs live\n' > "$RULE/c/.mastermind/prefs.md"
+agree c "docs/specs/001-a under specs-dir: docs/specs is one" "True:True"
+rulefix d; printf '## Current field: **web**\n\n- **Level:** 2.\n' > "$RULE/d/.mastermind/engineering/active-field.md"
+agree d "a Level 2 field in the project is a field, whatever the hook's own brain says" "False:False"
+rulefix e
+agree e "no field" "True:False"
+rulefix g; printf '## Current field: web\n\n- **Level:** 2.\n' > "$RULE/g/.mastermind/engineering/active-field.md"
+agree g "a field heading written without the bold marks is still a field" "False:False"
+rulefix f; mkdir -p "$RULE/f/specs/001-x"; printf -- '- `specs-dir: ../outside`\n' > "$RULE/f/.mastermind/prefs.md"
+agree f "a specs-dir that leaves the project falls back to specs/" "True:True"
+
+echo "session hook: who speaks, and what it carries"
+HKS="$WORK/hooks"; HHOME="$HKS/home"; mkdir -p "$HHOME"
+# A kernel of exactly $2 characters, counted as the hook cap counts them, holding every kind of
+# character the JSON escaping has to survive.
+mkbrain() {
+  mkdir -p "$1/hooks" "$1/engineering"
+  cp "$ROOT/hooks/session-start.sh" "$1/hooks/"; cp "$ROOT/engineering/active-field.md" "$1/engineering/"
+  python3 - "$1/CLAUDE.md" "$2" <<'PYEOF'
+import sys
+n = int(sys.argv[2]); units = lambda t: len(t.encode('utf-16-le')) // 2
+s = '# MasterMind: global operating system\n\n'; i = 0
+while True:
+    i += 1
+    line = 'Rule %d: a "quoted" word, a back\\slash, a\ttab, a brain \U0001F9E0 and an arrow → here.\n' % i
+    if units(s + line) > n - 1: break
+    s += line
+s += 'x' * (n - 1 - units(s)) + '\n'
+assert units(s) == n
+open(sys.argv[1], 'w', encoding='utf-8').write(s)
+PYEOF
+}
+# The shipped kernel's size: 9,416 characters in 9,479 bytes.
+mkrealsize() {
+  mkbrain "$1" 5000
+  python3 - "$1/CLAUDE.md" <<'PYEOF'
+import sys
+s = '# MasterMind: global operating system\n\n' + 'A "rule" with a\ttab.\n' * 40 + '\u2192' * 31 + '\u00e9\n'
+s += 'x' * (9416 - 1 - len(s)) + '\n'
+assert len(s) == 9416 and len(s.encode('utf-8')) == 9479
+open(sys.argv[1], 'w', encoding='utf-8').write(s)
+PYEOF
+}
+runhook() { (cd "$2" && env -u CLAUDE_PLUGIN_ROOT HOME="${3:-$HHOME}" CLAUDE_PROJECT_DIR="$2" bash "$1/hooks/session-start.sh" claude); }
+# "<kernel carried whole>:<under the cap>" for the payload of brain $1 in project $2.
+carried() {
+  runhook "$1" "$2" "${3:-}" | hookctx > "$HKS/ctx.txt"
+  python3 -c 'import sys; k=open(sys.argv[1],encoding="utf-8").read(); c=open(sys.argv[2],encoding="utf-8").read(); print(str(k.rstrip("\n") in c) + ":" + str(0 < len(c.encode("utf-16-le"))//2 < 10000))' "$1/CLAUDE.md" "$HKS/ctx.txt"
+}
+has() { case "$(cat "$HKS/ctx.txt")" in *"$1"*) echo yes;; *) echo no;; esac; }
+LONG="$HKS/$(python3 -c 'print("p" * 250)')"
+mkbrain "$HKS/small" 5000; mkbrain "$HKS/large" 12000; mkbrain "$HKS/edge" 9480; mkbrain "$LONG" 9480; mkrealsize "$HKS/real"
+BARE="$HKS/bare"; mkdir -p "$BARE"
+
+check "a 5,000-character kernel is carried whole when no file in the session holds it" "$(carried "$HKS/small" "$BARE")" "True:True"
+check "and the payload names the brain root for ~/.mastermind paths" "$(has "Brain root: $HKS/small (a ~/.mastermind/... path in a skill means this folder).")" "yes"
+check "and the field offer says the pack lands in the home directory, since the brain is outside the project" \
+  "$(has "offer the init skill, do not run it unasked, and carry on with the task on the universal core")$(has "the pack will be written in the home directory")" "yesyes"
+check "and it does not claim the kernel is loaded from a file" "$(has "loads from")$(has "as the project's CLAUDE.md")" "nono"
+check "a 12,000-character kernel is not carried: the pointer stays, under the cap" "$(carried "$HKS/large" "$BARE")" "False:True"
+check "and the pointer says the kernel is not loaded, where to read it, and where the brain is" \
+  "$(has "it is NOT loaded")$(has "$HKS/large/CLAUDE.md in full")$(has "Brain root: $HKS/large ")" "yesyesyes"
+check "and it does not claim the kernel is loaded as the project's CLAUDE.md" "$(has "loads from")$(has "as the project's CLAUDE.md")" "nono"
+check "a kernel of the shipped size (9,416 characters, 9,479 bytes) is carried whole, under the cap" "$(carried "$HKS/real" "$BARE")" "True:True"
+check "with the field offer beside it" "$(has "No field pack yet")$(has "the pack will be written in the home directory")" "yesyes"
+SPECD="$HKS/specd"; mkdir -p "$SPECD/specs/001-a"
+check "and when both nudges cannot fit beside it, the kernel stays whole and the spec nudge goes first" \
+  "$(carried "$HKS/real" "$SPECD")$(has "No field pack yet")$(has "works spec-first")" "True:Trueyesno"
+check "a 9,480-character kernel is still carried whole, without the nudges that no longer fit" \
+  "$(carried "$HKS/edge" "$BARE")$(has "No field pack yet")" "True:Trueno"
+check "a kernel under 9,500 that cannot fit even alone falls back to the pointer" "$(carried "$LONG" "$BARE")" "False:True"
+check "and says it does not fit" "$(has "at 9480 characters it does not fit")" "yes"
+INPROJ="$HKS/inproj"; mkbrain "$INPROJ/.mastermind" 12000; cp "$INPROJ/.mastermind/CLAUDE.md" "$INPROJ/CLAUDE.md"
+runhook "$INPROJ/.mastermind" "$INPROJ" | hookctx > "$HKS/ctx.txt"
+check "a brain inside the project offers init without the home-directory note" "$(has "No field pack yet")$(has "home directory")" "yesno"
+
+for where in CLAUDE.md .claude/CLAUDE.md AGENTS.md; do
+  KP="$HKS/has-$(printf '%s' "$where" | tr '/.' '__')"; mkdir -p "$KP/.claude"
+  cp "$HKS/small/CLAUDE.md" "$KP/$where"
+  check "a kernel in the project's $where is not sent again" "$(carried "$HKS/small" "$KP")$(has "loads from $KP/$where")" "False:Trueyes"
+done
+UHOME="$HKS/userhome"; mkdir -p "$UHOME/.claude"; cp "$HKS/small/CLAUDE.md" "$UHOME/.claude/CLAUDE.md"
+check "a kernel in the user-level CLAUDE.md is not sent again" "$(carried "$HKS/small" "$BARE" "$UHOME")$(has "loads from $UHOME/.claude/CLAUDE.md")" "False:Trueyes"
+IMP="$HKS/imports"; mkdir -p "$IMP/.claude"; printf '# Mine\n\n@.mastermind/CLAUDE.md\n' > "$IMP/.claude/CLAUDE.md"
+check "a CLAUDE.md that imports the kernel counts as holding it" "$(carried "$HKS/small" "$IMP")" "False:True"
+
+OWNED="$HKS/owned"; mkdir -p "$OWNED/.mastermind/hooks"; cp "$ROOT/hooks/session-start.sh" "$OWNED/.mastermind/hooks/"
+check "a global or plugin copy prints nothing in a project that has its own install" "$(runhook "$HKS/small" "$OWNED" | wc -c | tr -d ' ')" "0"
+runhook "$HKS/small" "$OWNED" >/dev/null; check "and exits clean while silent" "$?" "0"
+LINKED="$HKS/linked"; mkdir -p "$LINKED"; ln -s "$HKS/small" "$LINKED/.mastermind"
+check "the project's own hook, reached through a link, still speaks" "$(runhook "$LINKED/.mastermind" "$LINKED" | hookctx | grep -c 'You are running as MasterMind')" "1"
+
+CTL="$HKS/ctl"$'\001'"x"$'\033'"y\"q\\b"; mkdir -p "$CTL"; cp -R "$HKS/small/." "$CTL/"
+for shape in claude cursor sdk; do
+  out=$( (cd "$BARE" && env -u CLAUDE_PLUGIN_ROOT HOME="$HHOME" CLAUDE_PROJECT_DIR="$BARE" bash "$CTL/hooks/session-start.sh" "$shape") | hookctx 2>/dev/null |
+    python3 -c 'import sys; print(sys.argv[1] in sys.stdin.buffer.read().decode())' "Brain root: $CTL (")
+  check "a brain path with control characters still yields valid JSON for '$shape'" "$out" "True"
+done
+out=$(cd "$CTL" && env -u CLAUDE_PLUGIN_ROOT HOME="$HHOME" CLAUDE_PROJECT_DIR="$CTL" bash "$HKS/large/hooks/session-start.sh" claude | hookctx 2>/dev/null |
+  python3 -c 'import sys; print(sys.argv[1] in sys.stdin.buffer.read().decode())' "loads from $CTL/CLAUDE.md")
+check "and so does a project path with control characters" "$out" "True"
+
+check "the plugin registers the hook for resume too" \
+  "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hooks"]["SessionStart"][0]["matcher"])' "$ROOT/hooks/hooks.json")" "startup|resume|clear|compact"
+PCMD=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hooks"]["SessionStart"][0]["hooks"][0]["command"])' "$ROOT/hooks/hooks.json")
+out=$(cd "$BARE" && HOME="$HHOME" CLAUDE_PLUGIN_ROOT="$ROOT" CLAUDE_PROJECT_DIR="$BARE" bash -c "$PCMD" | python3 -c 'import json,sys; print(json.load(sys.stdin.buffer)["hookSpecificOutput"]["hookEventName"])' 2>/dev/null)
+check "the plugin's registered command runs and answers in the Claude Code shape" "$out" "SessionStart"
+
+echo "cli: one meaning per spelling"
+ENG="$WORK/engine"; EH="$ENG/home"; EP="$EH/proj"; mkdir -p "$ENG/brain" "$EP"; (cd "$EP" && git init -q .)
+printf '#!/usr/bin/env bash\nprintf "ARGS:%%s\\n" "$*"\n' > "$ENG/brain/install.sh"
+eng() { (cd "$EP" && env -u MM_STATE_DIR -u MASTERMIND_COMMIT -u MASTERMIND_REF HOME="$EH" MASTERMIND_HOME="$ENG/brain" "${CLI[@]}" "$@" 2>&1); }
+check "\`--uninstall cursor\` reaches the engine as \`uninstall cursor\` does" "$(eng --uninstall cursor)" "$(eng uninstall cursor)"
+check "and that is an uninstall of one tool, keeping what the others read" "$(eng --uninstall cursor)" "ARGS:--uninstall cursor"
+check "\`--check claude\` reaches the engine as \`check claude\` does" "$(eng --check claude)" "$(eng check claude)"
+for combo in "update --uninstall" "uninstall --check" "--check --uninstall" "skills --uninstall" "init --check"; do
+  # shellcheck disable=SC2086
+  out=$(eng $combo); rc=$?
+  case "$rc:$out" in 2:*ARGS:*) bad "\`$combo\` reached the engine";; 2:*) ok "\`$combo\` is refused before the engine runs";; *) bad "\`$combo\` exited $rc: $out";; esac
+done
+check "\`--uninstall agents\` reaches the engine as \`uninstall agents\` does" "$(eng --uninstall agents)|$(eng uninstall agents)" "ARGS:--uninstall agents|ARGS:--uninstall agents"
+check "\`init agents\` accepts agents as a tool name" "$(eng init agents)" "ARGS:agents"
+check "naming a tool still adds agents once" "$(eng claude agents)|$(eng claude)" "ARGS:claude agents|ARGS:claude agents"
+
+EKEY=$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:16])' "$EP")
+mkdir -p "$EH/.mastermind-state/projects"
+printf 'version=0.0.0\nscope=project\ntools=claude\nproject=%s\n' "$EP" > "$EH/.mastermind-state/projects/$EKEY"
+check "update with a record that has no mode passes none" "$(eng update | tail -1)" "ARGS:"
+printf 'mode=shared\n' >> "$EH/.mastermind-state/projects/$EKEY"
+check "update repairs a shared install as shared" "$(eng update | tail -1)" "ARGS:--shared"
+check "an explicit mode flag wins over the record" "$(eng update --isolated | tail -1)" "ARGS:--isolated"
+check "a plain install is left to the engine's own reading of the record" "$(eng | tail -1)" "ARGS:"
+
+out=$(cd "$PROJ" && HOME="$PROJ" "${CLI[@]}" route "--watch mode is broken" --json 2>/dev/null | python3 -c "$J; print(d['request'])" 2>/dev/null)
+check "a request that starts with a dash is still the request" "$out" "--watch mode is broken"
+out=$(cd "$PROJ" && HOME="$PROJ" "${CLI[@]}" route explain -h --json 2>/dev/null | python3 -c "$J; print(d['request'])" 2>/dev/null)
+check "\`route explain -h\` routes the words instead of printing help" "$out" "explain -h"
+out=$(cd "$PROJ" && HOME="$PROJ" "${CLI[@]}" --json route slow page | python3 -c "$J; print(d['request'])" 2>/dev/null)
+check "a flag before route is still a flag" "$out" "slow page"
+
+GEN="$WORK/generated"; mkdir -p "$GEN/.mastermind/skills/build" "$GEN/.cursor/skills/mastermind-build" "$GEN/.cursor/skills/mastermind-notes"
+echo "0.0.0-test" > "$GEN/.mastermind/VERSION"
+skill build "Use to implement a feature end to end." "$GEN/.mastermind/skills/build"
+printf -- '---\nname: mastermind-build\ndescription: Use to implement a feature end to end.\n---\n<!-- Generated by ~/.mastermind/install.sh: do not edit. Refresh with: npx mastermind-brain -->\n\nbody of build\n' \
+  > "$GEN/.cursor/skills/mastermind-build/SKILL.md"
+skill mastermind-notes "The user's own skill that happens to share the prefix." "$GEN/.cursor/skills/mastermind-notes"
+(cd "$GEN" && git init -q .); mkdir -p "$GEN/home"
+out=$(cd "$GEN" && HOME="$GEN/home" "${CLI[@]}" conflicts --json | python3 -c "$J; print(','.join(f['name'] for f in d['foreign']) + '|' + str(len(d['collisions'])))")
+check "the generated Cursor copy of build is not a foreign skill or a conflict" "$out" "mastermind-notes|0"
+mkdir -p "$GEN/.claude/skills/broken"
+printf -- '---\nname: broken\ndescription: "x \\UFFFFFFFF y"\n---\n' > "$GEN/.claude/skills/broken/SKILL.md"
+(cd "$GEN" && HOME="$GEN/home" "${CLI[@]}" skills >/dev/null 2>&1); check "a skill with an unreadable escape is skipped, not a crash" "$?" "0"
+out=$(cd "$GEN" && HOME="$GEN/home" "${CLI[@]}" skills --json | python3 -c "$J; print(','.join(s['name'] + ':' + s['source'] for s in d['skills']))")
+check "and the skills table lists build once, as ours" "$out" "build:mastermind,mastermind-notes:project"
+
+echo "pin sync leaves a working clone alone"
+gitq() { git -c user.email=t@t -c user.name=t -c core.hooksPath=/dev/null "$@"; }
+# A brain whose release commit is tagged v9.9.9, with one commit before it.
+mkpinned() {
+  mkdir -p "$1/.mastermind" "$1/proj"; (cd "$1/proj" && git init -q .)
+  ( cd "$1/.mastermind" && git init -q . && printf '#!/usr/bin/env bash\necho engine ran\n' > install.sh && echo 1 > a \
+    && git add -A && gitq commit -qm before && echo 2 > a && gitq commit -qam release && git tag v9.9.9 ) >/dev/null 2>&1
+}
+pinrun() { (cd "$1/proj" && HOME="$1" MASTERMIND_HOME="$1/.mastermind" MASTERMIND_REF=v9.9.9 \
+  MASTERMIND_COMMIT="$(git -C "$1/.mastermind" rev-parse 'v9.9.9^{commit}')" "${CLI[@]}" 2>&1); }
+onbranch() { git -C "$1/.mastermind" symbolic-ref -q HEAD >/dev/null 2>&1 && echo branch || echo detached; }
+
+AHEAD="$WORK/pin-ahead"; mkpinned "$AHEAD"
+(cd "$AHEAD/.mastermind" && echo 3 > a && gitq commit -qam "local work") >/dev/null 2>&1
+want=$(git -C "$AHEAD/.mastermind" rev-parse HEAD)
+out=$(pinrun "$AHEAD")
+check "a clone ahead of the pin on a branch is neither moved nor detached" "$(onbranch "$AHEAD"):$(git -C "$AHEAD/.mastermind" rev-parse HEAD)" "branch:$want"
+case "$out" in *"engine ran"*) bad "the engine ran on a brain the release cannot vouch for";;
+  *"was left alone"*"switch --detach v9.9.9"*) ok "and the refusal names the command to run";; *) bad "no usable refusal: $out";; esac
+
+BEHIND="$WORK/pin-behind"; mkpinned "$BEHIND"
+(cd "$BEHIND/.mastermind" && git reset -q --hard HEAD~1) >/dev/null 2>&1
+out=$(pinrun "$BEHIND")
+check "a clone behind the pin on a branch fast-forwards and stays on its branch" \
+  "$(onbranch "$BEHIND"):$(git -C "$BEHIND/.mastermind" rev-parse HEAD)" "branch:$(git -C "$BEHIND/.mastermind" rev-parse 'v9.9.9^{commit}')"
+case "$out" in *"engine ran"*) ok "and the install goes ahead";; *) bad "fast-forward did not finish the install: $out";; esac
+
+LOOSE="$WORK/pin-loose"; mkpinned "$LOOSE"
+(cd "$LOOSE/.mastermind" && echo 3 > a && gitq commit -qam "local work" && git checkout -q --detach) >/dev/null 2>&1
+want=$(git -C "$LOOSE/.mastermind" rev-parse HEAD)
+out=$(pinrun "$LOOSE")
+check "a detached commit that is not a release is not thrown away" "$(git -C "$LOOSE/.mastermind" rev-parse HEAD)" "$want"
+
+echo "git hooks"
+GH="$WORK/githooks"; mkdir -p "$GH/scripts"; ZERO=0000000000000000000000000000000000000000
+printf 'process.exit(Number(process.env.PROSE_RC || 0))\n' > "$GH/scripts/check-prose.mjs"
+for s in check-comments check-shell-patterns check-instructions; do printf 'process.exit(0)\n' > "$GH/scripts/$s.mjs"; done
+( cd "$GH" && git init -q . && git add -A && gitq commit -qm stubs && echo note > notes.txt && git add -A && gitq commit -qm notes ) >/dev/null 2>&1
+GSHA=$(git -C "$GH" rev-parse HEAD)
+# $1 hook file, $2 the ref line git would feed it; the rest is the environment.
+push() { local hook="$1" line="$2"; shift 2; (cd "$GH" && printf '%s\n' "$line" | env -u ALLOW_SENSITIVE -u MM_SKIP_TESTS "$@" bash "$hook" origin "$GH" 2>&1); }
+LIVE="$ROOT/.githooks/pre-push"; SHIPPED="$ROOT/skills/quarantine/assets/pre-push"
+
+out=$(push "$LIVE" "refs/heads/main $GSHA refs/tags/v9.9.9 $ZERO" MM_SKIP_TESTS=1); rc=$?
+case "$rc:$out" in 1:*"BLOCKED"*"v9.9.9"*) ok "a branch pushed to a remote tag ref meets the tag guard";; *) bad "remote tag ref not guarded: exit $rc: $out";; esac
+out=$(push "$LIVE" "refs/heads/main $GSHA refs/tags/v9.9.9 $ZERO" MM_SKIP_TESTS=1 ALLOW_SENSITIVE=1); rc=$?
+check "and the bypass does not lift the tag guard" "$rc" "1"
+out=$(push "$LIVE" "refs/tags/v9.9.9 $GSHA refs/heads/topic $ZERO" MM_SKIP_TESTS=1); rc=$?
+check "a local tag pushed to a branch name is not a release tag" "$rc" "0"
+
+out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" ALLOW_SENSITIVE=1 PROSE_RC=1); rc=$?
+case "$rc:$out" in 1:*"em dashes would be pushed"*) ok "ALLOW_SENSITIVE=1 does not skip the prose gate";; *) bad "prose gate skipped: exit $rc: $out";; esac
+out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" ALLOW_SENSITIVE=1); rc=$?
+case "$rc:$out" in 0:*"BYPASSED"*"suite not needed"*) ok "nor the step that decides whether the suites run";; *) bad "suites step skipped: exit $rc: $out";; esac
+case "$out" in *"push guard: clean"*) bad "a bypassed scan was reported as clean";; *) ok "and a bypassed scan is not reported as clean";; esac
+out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" MM_SKIP_TESTS=1 PROSE_RC=2); rc=$?
+case "$rc:$out" in 0:*"✓ no em dashes"*) bad "an unchecked site was reported as clean";; 0:*"NOT checked"*) ok "check-prose exit 2 is reported as not checked";; *) bad "exit 2 handling: exit $rc: $out";; esac
+
+( cd "$GH" && printf 'key = %s%s\n' "AKIA" "ABCDEFGHIJKLMNOP" > leak.txt && git add -A && gitq commit -qm leak ) >/dev/null 2>&1
+LSHA=$(git -C "$GH" rev-parse HEAD)
+for hook in "$LIVE" "$SHIPPED"; do
+  label=$([ "$hook" = "$LIVE" ] && echo "repo hook" || echo "shipped hook")
+  out=$(push "$hook" "refs/heads/main $LSHA refs/heads/main $GSHA" MM_SKIP_TESTS=1); rc=$?
+  case "$rc:$out" in 1:*"credentials"*) ok "$label: a credential is blocked";; *) bad "$label: credential not blocked: exit $rc";; esac
+  out=$(push "$hook" "refs/heads/main $LSHA refs/heads/main $GSHA" MM_SKIP_TESTS=1 ALLOW_SENSITIVE=1); rc=$?
+  case "$rc:$out" in 0:*"scan BYPASSED"*) ok "$label: ALLOW_SENSITIVE=1 skips that scan and says so";; *) bad "$label: bypass: exit $rc: $out";; esac
+done
+
+echo "release lifecycle"
 PREV_TAG=$(git -C "$ROOT" tag --list 'v*' --sort=-v:refname | sed -n 2p)
 if [ -n "$PREV_TAG" ]; then
   LIFE="$WORK/lifecycle"; mkdir -p "$LIFE/proj"
@@ -328,7 +627,32 @@ PYEOF
   (cd "$LIFE/named" && env -u MASTERMIND_HOME HOME="$LIFE" node "$LIFECLI/bin/mastermind.mjs" uninstall cursor >/dev/null 2>&1)
   check "uninstalling one tool keeps AGENTS.md for the others" "$([ -e "$LIFE/named/AGENTS.md" ] && echo kept)" "kept"
 else
-  ok "lifecycle test skipped (no previous tag yet)"
+  skip "release-to-release upgrade: this checkout has fewer than two release tags"
+fi
+
+LATEST_TAG=$(git -C "$ROOT" tag --list 'v*' --sort=-v:refname | sed -n 1p)
+if [ -n "$LATEST_TAG" ]; then
+  UP="$WORK/uptree"; mkdir -p "$UP/proj"
+  git clone -q "$ROOT" "$UP/.mastermind" 2>/dev/null
+  git -C "$UP/.mastermind" checkout -q "$LATEST_TAG" 2>/dev/null
+  uprun() { (cd "$UP/proj" && env -u MM_STATE_DIR -u MASTERMIND_HOME -u MASTERMIND_COMMIT -u MASTERMIND_REF -u CLAUDE_PLUGIN_ROOT HOME="$UP" MM_NO_NETWORK=1 "$@"); }
+  (cd "$UP/proj" && git init -q .)
+  uprun bash "$UP/.mastermind/install.sh" claude cursor >/dev/null 2>&1
+  check "the latest release installs ($LATEST_TAG)" "$(cat "$UP/proj/.mastermind/VERSION" 2>/dev/null)" "${LATEST_TAG#v}"
+  # The home brain moves on to the working tree, as an update would move it to the next release.
+  mv "$UP/.mastermind" "$UP/released"; ln -s "$ROOT" "$UP/.mastermind"
+  out=$(uprun "${CLI[@]}" claude cursor 2>&1); rc=$?
+  check "the working tree installs over $LATEST_TAG" "$rc" "0"
+  check "and the project now runs the working tree's hook" \
+    "$(cmp -s "$UP/proj/.mastermind/hooks/session-start.sh" "$ROOT/hooks/session-start.sh" && echo same)" "same"
+  out=$(uprun "${CLI[@]}" check 2>&1); rc=$?
+  check "and check finds the upgraded project healthy" "$rc:$(printf '%s' "$out" | grep -c '✖')" "0:0"
+  out=$(uprun "${CLI[@]}" status --json | python3 -c "$J; print(d['mode'] + '|' + d['version'])")
+  check "and status reads the upgraded brain" "$out" "isolated|$(cat "$ROOT/VERSION")"
+  out=$(uprun env CLAUDE_PROJECT_DIR="$UP/proj" bash "$UP/proj/.mastermind/hooks/session-start.sh" claude | hookctx | grep -c 'You are running as MasterMind')
+  check "and its session hook answers" "$out" "1"
+else
+  skip "upgrade from the latest release to the working tree: this checkout has no release tag"
 fi
 
 BROKE="$WORK/brokenidx"; mkdir -p "$BROKE/proj"
@@ -338,5 +662,10 @@ out=$(cd "$BROKE/proj" && git init -q . && env -u MASTERMIND_HOME HOME="$BROKE" 
 case "$out" in *"cannot read the working tree"*) ok "an unreadable index refuses, it does not pass as clean";;
   *) bad "broken index accepted: $out";; esac
 
-printf '\n%s passed, %s failed\n' "$pass" "$fail"
-[ "$fail" -eq 0 ]
+printf '\n%s passed, %s failed, %s skipped\n' "$pass" "$fail" "$skipped"
+[ "$fail" -eq 0 ] || exit 1
+if [ "$skipped" -gt 0 ] && [ "${MM_REQUIRE_LIFECYCLE:-0}" = "1" ]; then
+  printf 'MM_REQUIRE_LIFECYCLE=1: a skipped lifecycle test fails this run. Fetch the release tags (git fetch --tags) and run it again.\n'
+  exit 1
+fi
+exit 0
