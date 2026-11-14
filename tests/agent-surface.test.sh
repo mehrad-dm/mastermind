@@ -128,7 +128,7 @@ rm -rf "$NX/specs"
 check "no specs folder means no spec-driven step" "$(nx)" "None"
 
 HK="$WORK/hook"; mkdir -p "$HK/specs/001-tags" "$WORK/hook-empty"
-hk() { (cd "$1" && env -u CLAUDE_PROJECT_DIR bash "$ROOT/hooks/session-start.sh" claude | python3 -c 'import json,sys; print("it has feature folders in specs/" in json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"])'); }
+hk() { (cd "$1" && env -u CLAUDE_PLUGIN_ROOT HOME="$WORK/hook-home" CLAUDE_PROJECT_DIR="$1" bash "$ROOT/hooks/session-start.sh" claude | python3 -c 'import json,sys; print("has feature folders in specs/" in json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"])'); }
 check "the session hook points a spec-first project at mastermind next" "$(hk "$HK")" "True"
 check "and says nothing in a project without feature folders" "$(hk "$WORK/hook-empty")" "False"
 
@@ -355,15 +355,21 @@ check "and none of them wrote or installed anything" "$([ "$(snap "$NOB")" = "$b
 echo "one rule for the field and the feature folders"
 RULE="$WORK/rule"
 hookctx() { python3 -c 'import json,sys; d=json.load(sys.stdin.buffer); v=d.get("hookSpecificOutput",d); sys.stdout.buffer.write((v.get("additionalContext") or v.get("additional_context")).encode())'; }
-# "<no field>:<spec-first>" as the hook sees the project, then as the CLI does.
+# "<no field>:<spec-first>" as the hook sees the project, then as the CLI does. The hook is asked
+# twice: with no kernel on disk it carries the kernel and states each fact in a short line, and
+# with the kernel in the project's CLAUDE.md it spells each nudge out.
+said() {                            # $1 project, $2 the field wording, $3 the spec wording
+  (cd "$1" && env -u CLAUDE_PLUGIN_ROOT HOME="$RULE/home" CLAUDE_PROJECT_DIR="$1" bash "$ROOT/hooks/session-start.sh" claude | hookctx |
+    python3 -c 'import sys; c=sys.stdin.buffer.read().decode(); print(str(sys.argv[1] in c) + ":" + str(sys.argv[2] in c))' "$2" "$3")
+}
 agree() {
-  local p="$RULE/$1" h c
-  h=$(cd "$p" && env -u CLAUDE_PLUGIN_ROOT HOME="$RULE/home" CLAUDE_PROJECT_DIR="$p" bash "$ROOT/hooks/session-start.sh" claude | hookctx |
-      python3 -c 'import sys; c=sys.stdin.buffer.read().decode(); print(str("No field pack yet" in c) + ":" + str("works spec-first" in c))')
+  local p="$RULE/$1" carried ondisk c
+  rm -f "$p/CLAUDE.md"; carried=$(said "$p" "State: no field pack" "State: this project has feature folders in")
+  cp "$ROOT/CLAUDE.md" "$p/CLAUDE.md"; ondisk=$(said "$p" "No field pack yet" "works spec-first"); rm -f "$p/CLAUDE.md"
   c=$( (cd "$p" && env -u MASTERMIND_HOME HOME="$RULE/home" "${CLI[@]}" status --json;
         cd "$p" && env -u MASTERMIND_HOME HOME="$RULE/home" "${CLI[@]}" next --json) |
       python3 -c 'import json,sys; dec=json.JSONDecoder(); s=sys.stdin.buffer.read().decode(); a,i=dec.raw_decode(s); b,_=dec.raw_decode(s[i:].lstrip()); print(str(a["field"]["name"] is None or a["field"]["level"]==0) + ":" + str(len(b.get("features") or [])>0))')
-  check "hook and CLI agree: $2" "$h|$c" "$3|$3"
+  check "hook (kernel carried, kernel on disk) and CLI agree: $2" "$carried|$ondisk|$c" "$3|$3|$3"
 }
 rulefix() {
   mkdir -p "$RULE/$1/.mastermind/engineering" "$RULE/home"; (cd "$RULE/$1" && git init -q .)
@@ -406,17 +412,8 @@ assert units(s) == n
 open(sys.argv[1], 'w', encoding='utf-8').write(s)
 PYEOF
 }
-# The shipped kernel's size: 9,416 characters in 9,479 bytes.
-mkrealsize() {
-  mkbrain "$1" 5000
-  python3 - "$1/CLAUDE.md" <<'PYEOF'
-import sys
-s = '# MasterMind: global operating system\n\n' + 'A "rule" with a\ttab.\n' * 40 + '\u2192' * 31 + '\u00e9\n'
-s += 'x' * (9416 - 1 - len(s)) + '\n'
-assert len(s) == 9416 and len(s.encode('utf-8')) == 9479
-open(sys.argv[1], 'w', encoding='utf-8').write(s)
-PYEOF
-}
+# A brain whose kernel is the shipped one, byte for byte.
+mkreal() { mkbrain "$1" 5000; cp "$ROOT/CLAUDE.md" "$1/CLAUDE.md"; }
 runhook() { (cd "$2" && env -u CLAUDE_PLUGIN_ROOT HOME="${3:-$HHOME}" CLAUDE_PROJECT_DIR="$2" bash "$1/hooks/session-start.sh" claude); }
 # "<kernel carried whole>:<under the cap>" for the payload of brain $1 in project $2.
 carried() {
@@ -425,27 +422,37 @@ carried() {
 }
 has() { case "$(cat "$HKS/ctx.txt")" in *"$1"*) echo yes;; *) echo no;; esac; }
 LONG="$HKS/$(python3 -c 'print("p" * 250)')"
-mkbrain "$HKS/small" 5000; mkbrain "$HKS/large" 12000; mkbrain "$HKS/edge" 9480; mkbrain "$LONG" 9480; mkrealsize "$HKS/real"
+mkbrain "$HKS/small" 5000; mkbrain "$HKS/large" 12000; mkbrain "$HKS/edge" 9480; mkbrain "$LONG" 9480; mkbrain "$HKS/over" 9501; mkreal "$HKS/real"
+# A brain path of exactly 160 characters, the longest the full payload is promised to fit beside.
+P160="$HKS/$(python3 -c 'import sys; print("q" * (160 - len(sys.argv[1]) - 1))' "$HKS")"; mkreal "$P160"
 BARE="$HKS/bare"; mkdir -p "$BARE"
 
 check "a 5,000-character kernel is carried whole when no file in the session holds it" "$(carried "$HKS/small" "$BARE")" "True:True"
 check "and the payload names the brain root for ~/.mastermind paths" "$(has "Brain root: $HKS/small (a ~/.mastermind/... path in a skill means this folder).")" "yes"
-check "and the field offer says the pack lands in the home directory, since the brain is outside the project" \
-  "$(has "offer the init skill, do not run it unasked, and carry on with the task on the universal core")$(has "the pack will be written in the home directory")" "yesyes"
+check "and it states that there is no field pack and that one lands in the home directory, since the brain is outside the project" \
+  "$(has "State: no field pack; the brain is shared, so a pack is written in the home directory.")$(has "offer the init skill")" "yesno"
 check "and it does not claim the kernel is loaded from a file" "$(has "loads from")$(has "as the project's CLAUDE.md")" "nono"
 check "a 12,000-character kernel is not carried: the pointer stays, under the cap" "$(carried "$HKS/large" "$BARE")" "False:True"
 check "and the pointer says the kernel is not loaded, where to read it, and where the brain is" \
   "$(has "it is NOT loaded")$(has "$HKS/large/CLAUDE.md in full")$(has "Brain root: $HKS/large ")" "yesyesyes"
 check "and it does not claim the kernel is loaded as the project's CLAUDE.md" "$(has "loads from")$(has "as the project's CLAUDE.md")" "nono"
-check "a kernel of the shipped size (9,416 characters, 9,479 bytes) is carried whole, under the cap" "$(carried "$HKS/real" "$BARE")" "True:True"
-check "with the field offer beside it" "$(has "No field pack yet")$(has "the pack will be written in the home directory")" "yesyes"
 SPECD="$HKS/specd"; mkdir -p "$SPECD/specs/001-a"
-check "and when both nudges cannot fit beside it, the kernel stays whole and the spec nudge goes first" \
-  "$(carried "$HKS/real" "$SPECD")$(has "No field pack yet")$(has "works spec-first")" "True:Trueyesno"
-check "a 9,480-character kernel is still carried whole, without the nudges that no longer fit" \
-  "$(carried "$HKS/edge" "$BARE")$(has "No field pack yet")" "True:Trueno"
-check "a kernel under 9,500 that cannot fit even alone falls back to the pointer" "$(carried "$LONG" "$BARE")" "False:True"
-check "and says it does not fit" "$(has "at 9480 characters it does not fit")" "yes"
+check "the shipped kernel is carried whole, under the cap, in a spec-first project with no field" "$(carried "$HKS/real" "$SPECD")" "True:True"
+check "with both state lines and the brain root beside it" \
+  "$(has "State: no field pack; the brain is shared")$(has "State: this project has feature folders in specs/.")$(has "Brain root: $HKS/real ")" "yesyesyes"
+check "and the same holds for a brain path of 160 characters" \
+  "${#P160}:$(carried "$P160" "$SPECD")$(has "State: no field pack; the brain is shared")$(has "State: this project has feature folders in specs/.")$(has "Brain root: $P160 ")" "160:True:Trueyesyesyes"
+check "the pointer keeps the full sentences" \
+  "$(carried "$HKS/large" "$SPECD")$(has "No field pack yet: tell the user in one line")$(has "Run mastermind next before choosing a spec-driven skill")$(has "State:")" "False:Trueyesyesno"
+check "a 9,480-character kernel is still carried whole, with its state lines" \
+  "$(carried "$HKS/edge" "$SPECD")$(has "State: no field pack")$(has "State: this project has feature folders")" "True:Trueyesyes"
+check "when the brain path is too long to fit, the brain-root line goes and both state lines stay" \
+  "$(carried "$LONG" "$SPECD")$(has "State: no field pack")$(has "State: this project has feature folders")$(has "Brain root:")" "True:Trueyesyesno"
+DEEP="$HKS/deep"; DSPEC="$(python3 -c 'print("s" * 200 + "/" + "t" * 100)')"; mkdir -p "$DEEP/$DSPEC/001-a" "$DEEP/.mastermind"
+printf -- '- `specs-dir: %s`\n' "$DSPEC" > "$DEEP/.mastermind/prefs.md"
+check "and only a state line too long to fit is dropped, the spec one first" \
+  "$(carried "$LONG" "$DEEP")$(has "State: no field pack")$(has "State: this project has feature folders")" "True:Trueyesno"
+check "a kernel over 9,500 characters is not carried: the pointer says so" "$(carried "$HKS/over" "$BARE")$(has "at 9501 characters it does not fit")" "False:Trueyes"
 INPROJ="$HKS/inproj"; mkbrain "$INPROJ/.mastermind" 12000; cp "$INPROJ/.mastermind/CLAUDE.md" "$INPROJ/CLAUDE.md"
 runhook "$INPROJ/.mastermind" "$INPROJ" | hookctx > "$HKS/ctx.txt"
 check "a brain inside the project offers init without the home-directory note" "$(has "No field pack yet")$(has "home directory")" "yesno"
@@ -481,6 +488,50 @@ check "the plugin registers the hook for resume too" \
 PCMD=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hooks"]["SessionStart"][0]["hooks"][0]["command"])' "$ROOT/hooks/hooks.json")
 out=$(cd "$BARE" && HOME="$HHOME" CLAUDE_PLUGIN_ROOT="$ROOT" CLAUDE_PROJECT_DIR="$BARE" bash -c "$PCMD" | python3 -c 'import json,sys; print(json.load(sys.stdin.buffer)["hookSpecificOutput"]["hookEventName"])' 2>/dev/null)
 check "the plugin's registered command runs and answers in the Claude Code shape" "$out" "SessionStart"
+
+# Codex: started in the session's directory with no project variable, capped near 2,500 tokens.
+codexhook() { (cd "$2" && env -u CLAUDE_PLUGIN_ROOT -u CLAUDE_PROJECT_DIR -u CODEX_HOME HOME="${3:-$HHOME}" bash "$1/hooks/session-start.sh" codex); }
+# "<first key>:<event>:<kernel carried whole>:<under 9,000 characters>" for brain $1 in directory $2.
+codexsays() {
+  codexhook "$1" "$2" "${3:-}" > "$HKS/codex.json"
+  python3 - "$1/CLAUDE.md" "$HKS/codex.json" "$HKS/ctx.txt" <<'PYEOF' 2>/dev/null
+import json, sys
+k = open(sys.argv[1], encoding='utf-8').read()
+d = json.load(open(sys.argv[2], encoding='utf-8')); v = d['hookSpecificOutput']; c = v['additionalContext']
+open(sys.argv[3], 'w', encoding='utf-8').write(c)
+print(list(d)[0] + ':' + v['hookEventName'] + ':' + str(k.rstrip('\n') in c) + ':' + str(0 < len(c.encode('utf-16-le')) // 2 < 9000))
+PYEOF
+}
+CXA="$HKS/codex-agents"; mkdir -p "$CXA"; cp "$HKS/small/CLAUDE.md" "$CXA/AGENTS.md"
+check "codex: with the kernel in AGENTS.md the payload is the short framing, in the shape Codex reads" \
+  "$(codexsays "$HKS/small" "$CXA")" "hookSpecificOutput:SessionStart:False:True"
+check "and it names the file and says to re-read it after a compaction" \
+  "$(has "from $CXA/AGENTS.md when this session started")$(has "Codex does not read that file again after a compaction")$(has "read $CXA/AGENTS.md in full")" "yesyesyes"
+CXB="$HKS/codex-block"; mkdir -p "$CXB"
+{ printf '# Team rules\n\n<!-- MASTERMIND:KERNEL:START -->\n<!-- note -->\n'; cat "$HKS/small/CLAUDE.md"; printf '<!-- MASTERMIND:KERNEL:END -->\n'; } > "$CXB/AGENTS.md"
+check "codex: a kernel inlined in the user's own AGENTS.md counts as held" "$(codexsays "$HKS/small" "$CXB")" "hookSpecificOutput:SessionStart:False:True"
+check "codex: with no kernel anywhere, one that fits is carried whole under the cap" "$(codexsays "$HKS/small" "$BARE")$(has "State: no field pack")" "hookSpecificOutput:SessionStart:True:Trueyes"
+check "codex: the shipped kernel does not fit under 9,000, so the pointer says where to read it" \
+  "$(codexsays "$HKS/real" "$BARE")$(has "it is NOT loaded")$(has "capped at about 9,000 (2,500 tokens)")$(has "$HKS/real/CLAUDE.md in full")" "hookSpecificOutput:SessionStart:False:Trueyesyesyes"
+CXC="$HKS/codex-claudeonly"; mkdir -p "$CXC"; cp "$HKS/small/CLAUDE.md" "$CXC/CLAUDE.md"
+check "codex: a kernel only in CLAUDE.md is not one Codex read" "$(codexsays "$HKS/small" "$CXC")" "hookSpecificOutput:SessionStart:True:True"
+CXO="$HKS/codex-override"; mkdir -p "$CXO"; cp "$HKS/small/CLAUDE.md" "$CXO/AGENTS.md"; printf '# Override\n' > "$CXO/AGENTS.override.md"
+check "codex: an AGENTS.override.md without the kernel hides the AGENTS.md beside it" "$(codexsays "$HKS/small" "$CXO")" "hookSpecificOutput:SessionStart:True:True"
+CXH="$HKS/codex-home"; mkdir -p "$CXH/.codex"; cp "$HKS/small/CLAUDE.md" "$CXH/.codex/AGENTS.md"
+check "codex: a kernel in the user-level AGENTS.md counts as held" "$(codexsays "$HKS/small" "$BARE" "$CXH")$(has "from $CXH/.codex/AGENTS.md")" "hookSpecificOutput:SessionStart:False:Trueyes"
+CXL="$HKS/$(python3 -c 'print("c" * 250)')"; mkdir -p "$CXL"; cp "$HKS/small/CLAUDE.md" "$CXL/AGENTS.md"
+check "codex: a long project path stays under the cap" "$(codexsays "$HKS/small" "$CXL")" "hookSpecificOutput:SessionStart:False:True"
+CXK="$HKS/$(python3 -c 'print("k" * 250)')"; mkbrain "$CXK" 8400
+check "codex: a long brain path costs the brain-root line, not the kernel or the state line" \
+  "$(codexsays "$CXK" "$BARE")$(has "State: no field pack")$(has "Brain root:")" "hookSpecificOutput:SessionStart:True:Trueyesno"
+CXI="$HKS/codex-iso"; mkbrain "$CXI/.mastermind" 5000; mkdir -p "$CXI/src/deep"; cp "$CXI/.mastermind/CLAUDE.md" "$CXI/AGENTS.md"
+: > "$CXI/.mastermind/.manifest"
+check "codex: started below the root, a project's own hook still finds the project's AGENTS.md" \
+  "$(codexsays "$CXI/.mastermind" "$CXI/src/deep")$(has "from $CXI/AGENTS.md")" "hookSpecificOutput:SessionStart:False:Trueyes"
+CXS="$HKS/tools/.mastermind"; mkbrain "$CXS" 5000
+check "codex: a shared clone that merely sits in a folder named .mastermind still looks in the session's project" \
+  "$(codexsays "$CXS" "$CXA")$(has "from $CXA/AGENTS.md")" "hookSpecificOutput:SessionStart:False:Trueyes"
+check "codex: a global copy prints nothing in a project that has its own install" "$(codexhook "$HKS/small" "$OWNED" | wc -c | tr -d ' ')" "0"
 
 echo "cli: one meaning per spelling"
 ENG="$WORK/engine"; EH="$ENG/home"; EP="$EH/proj"; mkdir -p "$ENG/brain" "$EP"; (cd "$EP" && git init -q .)

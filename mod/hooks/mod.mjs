@@ -101,7 +101,7 @@ export function register(on, options) {
       if (cfg.handoffAt > 0 && percent < cfg.handoffAt) hinted = false
       if (cfg.handoffAt > 0 && percent >= cfg.handoffAt && !hinted) {
         hinted = true
-        $.ui.toast('context ' + percent + '% full: run /handoff to save the state of this work before it compacts', { timeoutMs: 12000 })
+        $.ui.toast('context ' + percent + '% full: say handoff, or run /handoff, to save the state of this work before it compacts', { timeoutMs: 12000 })
       }
     }
     paint($)

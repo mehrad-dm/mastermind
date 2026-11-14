@@ -149,6 +149,6 @@ export function statusLine(facts, cfg, agents) {
   }
   if (agents.length) parts.push(agents.length + (agents.length === 1 ? ' agent' : ' agents') + ' (' + [...new Set(agents)].join(', ') + ')')
   if (typeof facts.percent === 'number')
-    parts.push('context ' + facts.percent + '%' + (cfg.handoffAt > 0 && facts.percent >= cfg.handoffAt ? ': run /handoff' : ''))
+    parts.push('context ' + facts.percent + '%' + (cfg.handoffAt > 0 && facts.percent >= cfg.handoffAt ? ': say handoff' : ''))
   return parts.join(' · ')
 }

@@ -115,10 +115,9 @@ means the user's request.
 - **Claude Code** re-reads the project's `CLAUDE.md` from disk after compaction, its own behaviour.
   Where that file only points here, re-read this kernel then. The four agents are wired as subagents.
   Its built-in Explore and Plan agents do not load it.
-- **Cursor** sends this kernel as an always-on rule. It supports subagents (`.cursor/agents/`);
-  MasterMind does not wire them today.
-- **Codex** reads `AGENTS.md` at session start. It supports hooks; MasterMind wires none today, so
-  re-read `AGENTS.md` before a non-trivial task late in a long session.
+- **Cursor** sends this kernel as an always-on rule. The four agents are wired as subagents.
+- **Codex** reads `AGENTS.md`, which carries this kernel, at session start only. Once the user
+  approves the session hook (`/hooks`), it says after a compaction to re-read `AGENTS.md`: do so.
 
 Where an agent is not wired, read `~/.mastermind/agents/<name>.md` and run it as a procedure in a
 separate session, given only the diff and the requirement. Where that is impossible, say "self-checked".

@@ -15,7 +15,11 @@ const HERE = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null }
 const ROOT = arg('--root') ? resolve(arg('--root')) : HERE
 const FAST = process.argv.includes('--fast')
+const ONLY = arg('--only') ? arg('--only').split(',') : null
 const HOOK_CAP = 10000
+// Codex cuts hook context at roughly 2,500 tokens and gives no character figure.
+const CODEX_HOOK_CAP = 9000
+const KERNEL_BLOCK = /<!-- MASTERMIND:KERNEL:START -->\n[^\n]*\n([\s\S]*?)\n<!-- MASTERMIND:KERNEL:END -->\n/
 
 const read = (rel) => (existsSync(join(ROOT, rel)) ? readFileSync(join(ROOT, rel), 'utf8') : '')
 const names = (dir, pred) => readdirSync(join(ROOT, dir), { withFileTypes: true }).filter(pred).map((e) => e.name)
@@ -80,6 +84,34 @@ function escapeProbe() {
     const r = sh('bash', [join(ROOT, 'install.sh'), ...args], { cwd: proj })
     return { mode: args.join(' '), code: r.code, escaped: existsSync(join(outside, 'prefs.md')) }
   })
+}
+
+// The Codex shape, in a project whose AGENTS.md holds the kernel and in one with no kernel at all.
+function codexPayloads() {
+  const hook = join(ROOT, 'hooks', 'session-start.sh')
+  const held = emptyDir('codex-held'), bare = emptyDir('codex-bare')
+  writeFileSync(join(held, 'AGENTS.md'), read('CLAUDE.md'))
+  return [['kernel in AGENTS.md', held], ['no kernel on disk', bare]].map(([name, cwd]) => {
+    const r = sh('bash', [hook, 'codex'], { cwd })
+    let text = null
+    try {
+      const o = JSON.parse(r.stdout).hookSpecificOutput
+      if (o.hookEventName === 'SessionStart') text = o.additionalContext ?? null
+    } catch { /* reported below as not the shape Codex reads */ }
+    return { name, code: r.code, text }
+  })
+}
+
+// A project with an AGENTS.md of its own: install, then uninstall.
+function ownAgentsFile() {
+  const proj = emptyDir('own-agents-proj')
+  const file = join(proj, 'AGENTS.md'), theirs = '# Team rules\r\nNEVER FORCE PUSH'
+  sh('git', ['init', '-q', '.'], { cwd: proj })
+  writeFileSync(file, theirs)
+  const inst = sh('bash', [join(ROOT, 'install.sh'), 'codex'], { cwd: proj })
+  const wired = readFileSync(file, 'utf8')
+  const un = sh('bash', [join(ROOT, 'install.sh'), '--uninstall'], { cwd: proj })
+  return { theirs, wired, after: existsSync(file) ? readFileSync(file, 'utf8') : null, code: inst.code, uncode: un.code }
 }
 
 const DOCS = ['README.md', 'CLAUDE.md', 'SECURITY.md']
@@ -293,6 +325,60 @@ const ROWS = [
     },
   },
   {
+    id: 'codex-hook-wired', file: ['README.md', 'CLAUDE.md'], claim: /session hook|`SessionStart` entry in `\.codex\/hooks\.json`/, must: true, slow: true,
+    test: () => {
+      const { proj, code, out } = install()
+      if (code !== 0) return `a plain install exited ${code}: ${out.trim().split('\n').slice(-1)[0]}`
+      const file = join(proj, '.codex', 'hooks.json')
+      if (!existsSync(file)) return 'no .codex/hooks.json after an install'
+      const ours = (JSON.parse(readFileSync(file, 'utf8')).hooks?.SessionStart ?? [])
+        .filter((e) => (e.hooks ?? []).some((h) => /session-start\.sh" codex$/.test(h.command ?? '')))
+      if (!ours.length) return '.codex/hooks.json has no SessionStart entry that runs the hook in the codex shape'
+      const missing = ['startup', 'resume', 'clear', 'compact', 'fork'].filter((src) => !ours.some((e) => new RegExp(e.matcher).test(src)))
+      if (missing.length) return `the Codex hook's matcher does not cover ${missing.join(', ')}`
+      return existsSync(join(home, '.codex', 'config.toml')) ? 'the install wrote ~/.codex/config.toml' : null
+    },
+  },
+  {
+    id: 'codex-hook-under-cap', file: ['README.md', 'CLAUDE.md'], claim: /session hook|`SessionStart` entry in `\.codex\/hooks\.json`/, must: true,
+    test: () => {
+      for (const p of codexPayloads()) {
+        if (p.text === null) return `the codex hook output (${p.name}) is not the SessionStart shape Codex reads (exit ${p.code})`
+        if ([...p.text].length >= CODEX_HOOK_CAP) return `the codex hook payload (${p.name}) is ${[...p.text].length} characters; the limit used for Codex is ${CODEX_HOOK_CAP}`
+      }
+      return null
+    },
+  },
+  {
+    id: 'cursor-subagents-wired', file: ['README.md', 'CLAUDE.md'], claim: /agents are wired as subagents|agents as subagents in `\.cursor\/agents\/`/, must: true, slow: true,
+    test: () => {
+      const { proj } = install()
+      for (const a of agents()) {
+        const f = join(proj, '.cursor', 'agents', `${a}.md`)
+        if (!existsSync(f)) return `no .cursor/agents/${a}.md after an install`
+        const fm = (readFileSync(f, 'utf8').match(/^---\n([\s\S]*?)\n---\n/) ?? [])[1] ?? ''
+        const keys = fm.split('\n').map((l) => l.split(':')[0])
+        const extra = keys.filter((k) => !['name', 'description', 'model', 'readonly'].includes(k))
+        if (extra.length) return `.cursor/agents/${a}.md carries frontmatter Cursor does not document: ${extra.join(', ')}`
+        if (!/^model: inherit$/m.test(fm)) return `.cursor/agents/${a}.md does not inherit the model`
+        const readonly = /^readonly: true$/m.test(fm)
+        if (readonly !== ['code-reviewer', 'tech-scout'].includes(a)) return `.cursor/agents/${a}.md is ${readonly ? '' : 'not '}read-only`
+      }
+      return null
+    },
+  },
+  {
+    id: 'agents-md-kernel-block', file: 'README.md', claim: /kernel in a marked block/, must: true, slow: true,
+    test: () => {
+      const r = ownAgentsFile()
+      if (r.code !== 0) return `an install beside an AGENTS.md of the user's own exited ${r.code}`
+      if (!r.wired.startsWith(r.theirs)) return 'the install changed the bytes of an existing AGENTS.md'
+      const block = r.wired.match(KERNEL_BLOCK)
+      if (!block || !block[1].startsWith('# MasterMind: global operating system')) return 'an existing AGENTS.md did not get the kernel in a marked block'
+      return r.after === r.theirs ? null : 'uninstall did not return an existing AGENTS.md to the bytes it had'
+    },
+  },
+  {
     id: 'writes-stay-inside', file: 'SECURITY.md', claim: /never followed/, must: true, slow: true,
     test: () => {
       for (const r of escapeProbe()) {
@@ -308,6 +394,7 @@ function run() {
   const failed = [], skipped = [], idle = []
   let held = 0
   for (const row of ROWS) {
+    if (ONLY && !ONLY.includes(row.id)) continue
     if (FAST && row.slow) { skipped.push(`${row.id}: skipped by --fast`); continue }
     const files = [].concat(row.file)
     const stated = files.map((f) => [f, read(f)]).filter(([, t]) => row.claim.test(t))
@@ -330,7 +417,7 @@ function run() {
 
 function selfTest() {
   const copy = join(scratch, 'mutated')
-  cpSync(HERE, copy, { recursive: true, filter: (src) => !/\/(\.git|node_modules|evals|\.claude|private|lab)(\/|$)/.test(src.slice(HERE.length)) })
+  cpSync(HERE, copy, { recursive: true, verbatimSymlinks: true, filter: (src) => !/\/(\.git|node_modules|evals|\.claude|private|lab)(\/|$)/.test(src.slice(HERE.length)) })
   const edit = (rel, fn) => writeFileSync(join(copy, rel), fn(readFileSync(join(copy, rel), 'utf8')))
   edit('README.md', (t) => `${t}\nIt ships 999 skills and 99 agents.\n`)
   edit('cli/package.json', (t) => { const p = JSON.parse(t); p.dependencies = { leftpad: '1.0.0' }; p.engines.node = '>=20'; return JSON.stringify(p) })
@@ -344,10 +431,20 @@ function selfTest() {
   edit('.github/workflows/pre-tag.yml', (t) => t.replace(/^ {6}- run: node scripts\/build-router\.mjs --check\n/m, ''))
   const r = spawnSync('node', [join(HERE, 'scripts', 'check-claims.mjs'), '--root', copy, '--fast', '--json'], { encoding: 'utf8' })
   const got = new Set(JSON.parse(r.stdout).failed.map((f) => f.id))
+  // The rows that install into a sandbox are skipped by --fast, so they get a brain of their own.
+  const wired = ['codex-hook-wired', 'cursor-subagents-wired', 'agents-md-kernel-block']
+  const second = join(scratch, 'mutated-install')
+  cpSync(HERE, second, { recursive: true, verbatimSymlinks: true, filter: (src) => !/\/(\.git|node_modules|evals|\.claude|private|lab)(\/|$)/.test(src.slice(HERE.length)) })
+  const mutate = (fn) => writeFileSync(join(second, 'install.sh'), fn(readFileSync(join(second, 'install.sh'), 'utf8')))
+  mutate((t) => t.split('wire_codex_hook; wire_agent_skills').join('wire_agent_skills'))
+  mutate((t) => t.replace('print "model: inherit"', 'print "model: fast"'))
+  mutate((t) => t.replace('mm_strip_block "$t" exact "$MM_KSTART" "$MM_KEND" || return 0', 'return 0'))
+  const r2 = spawnSync('node', [join(HERE, 'scripts', 'check-claims.mjs'), '--root', second, '--only', wired.join(','), '--json'], { encoding: 'utf8' })
+  for (const f of JSON.parse(r2.stdout).failed) got.add(f.id)
   const want = ['skill-count', 'agent-count', 'cli-no-dependencies', 'node-floor', 'hook-events', 'hook-under-cap',
-    'actions-pinned', 'npm-pinned', 'directive-cap', 'plugin-install-command', 'pre-tag-mirrors-gate']
+    'actions-pinned', 'npm-pinned', 'directive-cap', 'plugin-install-command', 'pre-tag-mirrors-gate', 'codex-hook-under-cap', ...wired]
   const silent = want.filter((id) => !got.has(id))
-  if (silent.length || r.status !== 1) {
+  if (silent.length || r.status !== 1 || r2.status !== 1) {
     console.error(`✖ claims self-test: planted a false statement and the row stayed quiet: ${silent.join(', ') || 'exit ' + r.status}`)
     process.exit(1)
   }

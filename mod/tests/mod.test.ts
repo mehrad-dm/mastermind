@@ -182,7 +182,7 @@ test('handoff hint: one toast when context crosses the threshold, re-armed when 
   await at(72)
   await at(75)
   await at(90)
-  expect(seen.toasts).toEqual(['context 72% full: run /handoff to save the state of this work before it compacts'])
+  expect(seen.toasts).toEqual(['context 72% full: say handoff, or run /handoff, to save the state of this work before it compacts'])
   await at(40)
   await at(71)
   expect(seen.toasts.length).toBe(2)
@@ -200,7 +200,7 @@ test('handoff hint: a lower threshold fires sooner', { options: { handoffAt: 30 
   await $.session.measure({ context: { window: 200000, tokens: 70000, percent: 35 }, rateLimits: [], changed: ['context'] })
   expect(seen.toasts.length).toBe(1)
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  expect(await band($, ui, /context 35%/)).toContain('context 35%: run /handoff')
+  expect(await band($, ui, /context 35%/)).toContain('context 35%: say handoff')
   await ui.unmount()
 })
 

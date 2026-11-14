@@ -20,7 +20,8 @@ The check is the same each time. A destination that is a symlink the installer d
 itself, or whose fully resolved path
 leaves the project (or your home directory, for `--global`), is refused with a message naming the
 path and a non-zero exit. It is never followed, and a path that cannot be resolved is refused, not
-guessed at. It will only restore a backup pointer of the exact shape it writes itself. If you find a
+guessed at. The same check covers the per-tool files: `.codex/hooks.json`, `.cursor/agents/` and
+the kernel block in an `AGENTS.md` of your own. It will only restore a backup pointer of the exact shape it writes itself. If you find a
 write or a delete that escapes this, that is a vulnerability, and the reporting instructions below
 apply.
 

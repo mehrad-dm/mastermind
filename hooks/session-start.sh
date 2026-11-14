@@ -12,6 +12,16 @@ HEADING='MasterMind: global operating system'
 [ -s "$KERNEL" ] || exit 0
 
 proj="${CLAUDE_PROJECT_DIR:-$PWD}"
+# Codex starts a hook in the session's directory, which can be below the project root.
+if [ "$SHAPE" = codex ]; then
+  # A project's own brain carries the manifest of what was copied into it; a clone does not.
+  if [ "${REPO##*/}" = .mastermind ] && [ ! -L "$REPO" ] && [ -f "$REPO/.manifest" ]; then proj="${REPO%/*}"
+  else proj="$(git rev-parse --show-toplevel 2>/dev/null)"; [ -n "$proj" ] || proj="$PWD"; fi
+fi
+# Claude Code cuts hook context over 10,000 characters to a preview. Codex cuts at roughly
+# 2,500 tokens and gives no character figure, so 9,000 characters is the limit used for it.
+cap=10000; cap_words='10,000'
+if [ "$SHAPE" = codex ]; then cap=9000; cap_words='about 9,000 (2,500 tokens)'; fi
 
 # A project with its own install speaks for itself: a global or plugin copy stays silent there.
 own="$proj/.mastermind/hooks/session-start.sh"
@@ -57,13 +67,19 @@ if first_match "$FIELD" "$FIELD_NAME_RE"; then
 fi
 if first_match "$FIELD" "$FIELD_LEVEL_RE"; then level=$((10#$MATCH)); elif [ -n "$name" ]; then level=1; else level=0; fi
 
-field_nudge=""
+# Each nudge has a short form that states only the fact, for a payload that carries the kernel:
+# the kernel already says what to do about it.
+field_nudge=""; field_state=""
 if [ -z "$name" ] || [ "$level" -eq 0 ]; then
   field_nudge="\nNo field pack yet: tell the user in one line and offer the init skill, do not run it unasked, and carry on with the task on the universal core."
-  case "$REPO/" in "$proj"/*) ;; *) field_nudge="$field_nudge This brain is shared or global: say in that offer that the pack will be written in the home directory." ;; esac
+  field_state="\nState: no field pack here."
+  case "$REPO/" in "$proj"/*) ;; *)
+    field_nudge="$field_nudge This brain is shared or global: say in that offer that the pack will be written in the home directory."
+    field_state="\nState: no field pack; the brain is shared, so a pack is written in the home directory." ;;
+  esac
 fi
 
-spec_nudge=""
+spec_nudge=""; spec_state=""
 specs_dir=specs
 if first_match "$proj/.mastermind/prefs.md" "$SPECS_DIR_RE"; then
   case "$MATCH" in /*) ;; *) case "/${MATCH//\\//}/" in */../*) ;; *) specs_dir="$MATCH" ;; esac ;; esac
@@ -71,27 +87,43 @@ fi
 for d in "$proj/$specs_dir"/[0-9][0-9][0-9]*-*; do
   [ -d "$d" ] && [ ! -L "$d" ] && [[ ${d##*/} =~ $FEATURE_RE ]] || continue
   spec_nudge="\nThis project works spec-first: it has feature folders in $(esc "$specs_dir")/. Run mastermind next before choosing a spec-driven skill."
+  spec_state="\nState: this project has feature folders in $(esc "$specs_dir")/."
   break
 done
 nudge="$field_nudge$spec_nudge"
 
 # The file this session loads the kernel from natively, if any.
-loaded="$(grep -lsE "^# $HEADING|^@.*\.mastermind/CLAUDE\.md" \
-  "$proj/CLAUDE.md" "$proj/.claude/CLAUDE.md" "$proj/AGENTS.md" "${HOME:-/nonexistent}/.claude/CLAUDE.md" 2>/dev/null || true)"
-loaded="${loaded%%$'\n'*}"
+if [ "$SHAPE" = codex ]; then
+  # Codex reads one file per directory, an override first, and has no import syntax.
+  loaded=""
+  for dir in "$proj" "${CODEX_HOME:-${HOME:-/nonexistent}/.codex}"; do
+    for f in "$dir/AGENTS.override.md" "$dir/AGENTS.md"; do
+      [ -s "$f" ] || continue
+      if [ -z "$loaded" ] && grep -qsE "^# $HEADING" "$f"; then loaded="$f"; fi
+      break
+    done
+  done
+else
+  loaded="$(grep -lsE "^# $HEADING|^@.*\.mastermind/CLAUDE\.md" \
+    "$proj/CLAUDE.md" "$proj/.claude/CLAUDE.md" "$proj/AGENTS.md" "${HOME:-/nonexistent}/.claude/CLAUDE.md" 2>/dev/null || true)"
+  loaded="${loaded%%$'\n'*}"
+fi
 
-if [ -n "$loaded" ]; then
+if [ -n "$loaded" ] && [ "$SHAPE" = codex ]; then
+  payload="<mastermind-brain>\nYou are running as MasterMind. Your operating contract is the MasterMind kernel, which Codex read\nfrom $(esc "$loaded") when this session started: it governs how you decide, build, verify, and report.\nFollow it. Codex does not read that file again after a compaction: if your context holds no heading\nthat reads $HEADING, read $(esc "$loaded") in full before doing anything else.$nudge\n</mastermind-brain>"
+elif [ -n "$loaded" ]; then
   payload="<mastermind-brain>\nYou are running as MasterMind. Your operating contract is the MasterMind kernel, which this session\nloads from $(esc "$loaded"): it governs how you decide, build, verify, and report.\nFollow it. If your context holds no heading that reads $HEADING, the\nkernel did not load: read $(esc "$KERNEL") in full before doing anything else.$nudge\n</mastermind-brain>"
 else
   tilde='~'
   root="Brain root: $(esc "$REPO") (a $tilde/.mastermind/... path in a skill means this folder)."
-  head="<mastermind-brain>\nYou are running as MasterMind. No CLAUDE.md or AGENTS.md here holds the kernel, so it is carried whole below: follow it.\n$root"
+  intro="<mastermind-brain>\nYou are running as MasterMind. No CLAUDE.md or AGENTS.md here holds the kernel, so it is carried whole below: follow it."
+  brief="<mastermind-brain>\nYou are running as MasterMind. Your kernel is carried whole below: follow it."
   tail="</mastermind-brain>"
-  # Claude Code cuts hook context over 10,000 characters to a preview, counting an astral
-  # character as two. The cheap count runs first so a kernel far over never pays for the loop.
+  # The cap counts an astral character as two. The cheap count runs first so a kernel far over
+  # never pays for the loop.
   body=""; clean=1; payload=""
   units=$(( $(tr -d '\200-\277' < "$KERNEL" | wc -c) ))
-  if [ "$units" -le 9500 ]; then
+  if [ "$units" -le $((cap - 500)) ]; then
     units=0
     while IFS= read -r line || [ -n "$line" ]; do
       lead="${line//[$'\200'-$'\277']/}"; wide="${line//[!$'\360'-$'\367']/}"
@@ -100,16 +132,18 @@ else
       line="${line//\\/\\\\}"; line="${line//\"/\\\"}"; line="${line//$'\r'/\\r}"; line="${line//$'\t'/\\t}"
       body="$body$line\\n"
     done < "$KERNEL"
-    # The kernel is never cut: a nudge that does not fit beside it is dropped, the spec one first.
-    if [ "$clean" = 1 ] && [ "$units" -le 9500 ]; then
-      for extra in "$nudge" "$field_nudge" ""; do
-        [ $((units + ${#head} + ${#extra} + 4 + ${#tail})) -lt 10000 ] || continue
-        payload="$head$extra\n\n$body$tail"; break
+    # The kernel is never cut. What gives way beside it, in order: the framing shortens, the
+    # brain-root line goes, and only then a state line, the spec one first.
+    if [ "$clean" = 1 ] && [ "$units" -le $((cap - 500)) ]; then
+      for head in "$intro\n$root$field_state$spec_state" "$brief\n$root$field_state$spec_state" \
+                  "$brief$field_state$spec_state" "$brief$field_state" "$brief"; do
+        [ $((units + ${#head} + 4 + ${#tail})) -lt "$cap" ] || continue
+        payload="$head\n\n$body$tail"; break
       done
     fi
   fi
   if [ -z "$payload" ]; then
-    payload="<mastermind-brain>\nYou are running as MasterMind. The MasterMind kernel is your operating contract, and it is NOT loaded:\nno CLAUDE.md or AGENTS.md in this session holds it, and at $units characters it does not fit in this\nmessage, which is capped at 10,000. Read $(esc "$KERNEL") in full before doing anything else, then follow it.\n$root$nudge\n</mastermind-brain>"
+    payload="<mastermind-brain>\nYou are running as MasterMind. The MasterMind kernel is your operating contract, and it is NOT loaded:\nno CLAUDE.md or AGENTS.md in this session holds it, and at $units characters it does not fit in this\nmessage, which is capped at $cap_words. Read $(esc "$KERNEL") in full before doing anything else, then follow it.\n$root$nudge\n</mastermind-brain>"
   fi
 fi
 
@@ -124,7 +158,7 @@ fi
 # printf (not a heredoc): bash 5.3+ can hang on heredocs in hook contexts.
 case "$SHAPE" in
   cursor) printf '{\n  "additional_context": "%s"\n}\n' "$payload" ;;
-  claude) printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$payload" ;;
+  claude|codex) printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$payload" ;;
   *)      printf '{\n  "additionalContext": "%s"\n}\n' "$payload" ;;
 esac
 
