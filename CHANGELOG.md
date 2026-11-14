@@ -34,7 +34,7 @@ history lives in git.
   yet: say init to build one", in every tool, and work carries on. Install never builds a pack; init,
   in your AI tool's chat, does.
 - Skill descriptions lead with the words people actually say. Measured live in Claude Code on 29
-  plain-language prompts, two runs each, the right skill fired 79% of the time, against 76% for
+  plain-language prompts, two runs each, the right skill fired 83% of the time, against 76% for
   0.33.2 on the same prompts. A shorter version of these descriptions had dropped it to 60%, which is
   why the phrasings stayed.
 - `help`, `handoff`, `report`, `levelup`, `lint` and `signature` run only when you ask, and say so in

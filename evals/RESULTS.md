@@ -590,7 +590,8 @@ against two trees: the 0.33.2 tag and the 0.34 working tree. Two reps each. Grou
 | 0.33.2 | 44/58 (76%)* | 23 · 23 (with the leaked `help` case) |
 | 0.34, descriptions cut to bare intent, six skills hidden from the model | 35/58 (60%) | 16 · 19 |
 | 0.34, user phrasings restored, nothing hidden | 37/58 (64%) | 18 · 19 |
-| 0.34, plus "apply skills automatically" as its own kernel rule | **46/58 (79%)** | **23 · 23** |
+| 0.34, plus "apply skills automatically" as its own kernel rule | 46/58 (79%) | 23 · 23 |
+| 0.34, that rule says "before any other tool call (in Claude Code, the Skill tool)" | **48/58 (83%)** | **24 · 24** |
 
 \* 0.33.2 scored 46/58 with the old `help` prompt, which repeated three words of `help`'s description
 ("what can you"). The new three-word check refused that prompt; reworded, 0.33.2 scores 0/2 on it, so
@@ -601,11 +602,12 @@ its fair score is 44/58.
   say, and `disable-model-invocation` hid `help` and `signature` from the model (2/2 to 0/2 on a plain
   request). Restoring the phrasings alone recovered little; making "recognise the intent and load the
   skill" a headline rule in the kernel again recovered the rest.
-- **0.34 is level with 0.33.2, not clearly better.** +2 hits on 58 is inside the run-to-run spread. It
-  gained `debug` (0/2 to 2/2) and `double-check` (0/2 to 1/2), and lost one hit each on `qa` and
-  `checklist`.
-- **Still never fire, in both trees:** `build`, `clarify`, `help` (with an honest prompt), `prototype`,
-  `learn`. The model handles those asks inline instead of loading the skill.
+- **0.34 is level with or slightly ahead of 0.33.2.** +4 hits on 58 is near the run-to-run spread.
+  Saying the skill loads before any other tool call is what made `build` and `qa` fire: watched in a
+  session, the model had been announcing and doing the work under the kernel's rules without loading
+  the skill. On the 9 core prompts the release gate runs, that line took 6/9 to 17/18 over two reps.
+- **Still never fire:** `clarify`, `help` (with an honest prompt), `prototype`, `learn`; `double-check`
+  fired 1 of 4 across the last two runs. The model handles those asks inline.
 - **The keyword hints** in `mastermind route` (the arrows Cursor and Codex see) went 15/17 to 11/17
   with the short descriptions and back to 14/17 with the phrasings restored.
 - **Cursor and Codex on the final 0.34 tree, two reps:** `cursor-routing.mjs` (cursor-agent, model Auto)
