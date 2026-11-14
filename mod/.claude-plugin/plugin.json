@@ -1,7 +1,7 @@
 {
   "name": "mastermind-mod",
   "description": "Optional Claude Code mod for MasterMind: asks before irreversible actions, shows the brain's status, and flags answers that claim completion without a verdict. Runs code inside Claude Code; read the README first.",
-  "version": "0.33.2",
+  "version": "0.34.0",
   "author": {
     "name": "mehrad-dm"
   },
