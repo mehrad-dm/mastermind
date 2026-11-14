@@ -169,7 +169,7 @@ never counted as a pass, and never as a routing miss.
 
 | Script | Live? | What it measures | Fails when |
 | --- | --- | --- | --- |
-| `agent-surface-routing.mjs` | no | every skill reaches the routing table for every request, and how often the keyword arrows land | a skill is missing from the table, or fewer than `MIN_HINTED` percent (default 50) of the paraphrased requests are hinted |
+| `agent-surface-routing.mjs` | no | every skill reaches the routing table for every request, and how often the keyword arrows land | a skill on disk is missing from the table, a request has more than three skills hinted, or fewer than `MIN_HINTED` percent (default 50) of the paraphrased requests are hinted |
 | `agent-surface-cost.mjs --strict` | no | characters spent routing through the CLI against inlining every skill | the saving falls under `MIN_SAVING` percent (default 65) |
 | `auto-invoke.mjs` | Claude Code | which skill a session invokes from a plain request, on a seeded repository | fewer than three in four sessions invoke the expected skill |
 | `codex-routing.mjs` | Codex | which skill a `codex exec` session names, with the brain and in a bare project | a case does not route with the brain |
@@ -201,5 +201,14 @@ and never gated: these skill names are guessable, so a bare session often names 
 
 The prompts are written the way a user would speak and must not borrow a phrase from the
 description of the skill they target: a prompt that reuses its target's own words measures string
-matching. `classify.mjs` holds the rules for telling a failed session from a routing miss, and
-`node evals/classify.mjs --self-test` runs them against recorded output without a model.
+matching. `node evals/auto-invoke.mjs --self-test` holds that line: it fails when a prompt shares
+three words in a row with its target's description, and starts no session. The paraphrased set in
+`agent-surface-routing.mjs` is the one deliberate exception, said so in that file.
+
+`classify.mjs` holds the rules for telling a failed session from a routing miss, and
+`node evals/classify.mjs --self-test` runs them against recorded output without a model. A Claude
+Code session is an observation only when it exited 0 and wrote a `result` record (one that ran out
+of turns exits 1 after writing it, and still counts). Any other exit, a signal, empty output or
+text that is not stream-json is "could not run", so a negative case can never pass on a session
+that produced nothing. A Codex or Cursor call that exits 0 with an account message or nothing at
+all is "could not run" too, never a miss.

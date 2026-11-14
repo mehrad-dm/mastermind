@@ -52,12 +52,19 @@ for m in $manifests; do
     continue
   fi
   loose=0; "$CLAUDE" plugin validate "$m" >/dev/null 2>&1 || loose=1
-  left="$(grep '❯' <<<"$out" | grep -vE "$ACCEPTED" || true)"
-  if [ "$loose" = 0 ] && [ -z "$left" ]; then
+  findings="$(grep '❯' <<<"$out" || true)"
+  left="$(grep -vE "$ACCEPTED" <<<"$findings" || true)"
+  # A strict failure that names no finding has not been explained, so it is not accepted.
+  if [ "$loose" = 0 ] && [ -n "$findings" ] && [ -z "$left" ]; then
     printf '✓ %s is valid (claude %s, --strict; accepted: the kernel file at the plugin root)\n' "$m" "$VERSION"
   else
     printf '✖ %s fails validation (claude %s, --strict):\n' "$m" "$VERSION"
-    grep -E '❯|✘|Validating' <<<"$out" | grep -vE "$ACCEPTED" | sed "s#$REPO/##; s/^/    /" | sed -n '1,24p'
+    if [ -n "$findings" ]; then
+      grep -E '❯|✘|Validating' <<<"$out" | grep -vE "$ACCEPTED" | sed "s#$REPO/##; s/^/    /" | sed -n '1,24p'
+    else
+      printf '    the strict run failed and named no finding:\n'
+      sed "s#$REPO/##; s/^/    /" <<<"$out" | sed -n '1,12p'
+    fi
     fail=1
   fi
 done

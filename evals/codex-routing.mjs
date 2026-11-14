@@ -6,7 +6,7 @@ import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { cliFailure, codexModel, codexTrust, tally, verdict } from './classify.mjs'
+import { cliAnswer, cliFailure, codexModel, codexTrust, tally, verdict } from './classify.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // These ask a session to NAME a skill from the kernel's menu. That is the route a user-only skill
@@ -38,8 +38,8 @@ console.log(MODEL ? `model: ${MODEL}${process.env.MM_CODEX_MODEL ? ' (MM_CODEX_M
 
 // The CLI resolves its login from the real home, so the measured calls keep it. Only install.sh
 // gets a scratch HOME, because that is the part that could write into the real one.
-const exec = (prompt, where) =>
-  codex(['exec', '-s', 'read-only', '--skip-git-repo-check', '--ephemeral', ...WITH_MODEL, ...codexTrust(where), '-C', where, prompt])
+const exec = (prompt, where) => cliAnswer(
+  codex(['exec', '-s', 'read-only', '--skip-git-repo-check', '--ephemeral', ...WITH_MODEL, ...codexTrust(where), '-C', where, prompt]))
 
 const work = mkdtempSync(join(tmpdir(), 'mm-codex-'))
 process.on('exit', () => rmSync(work, { recursive: true, force: true }))

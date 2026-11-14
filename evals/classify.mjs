@@ -22,15 +22,19 @@ const reason = (text) => {
 }
 
 // Claude Code reports a failed call as records in its stream-json on stdout. Only those records
-// and stderr are read, never what the model wrote.
+// and stderr are read, never what the model wrote. A run is an observation only when it exited 0
+// and wrote a `result` record; the one exception is a session that ran out of turns, which exits 1
+// after writing that record.
 export function claudeInfra({ out = '', err = null, stderr = '' }) {
   if (err?.killed) return 'timed out'
   let records = 0
+  let result = null
   for (const line of out.split('\n')) {
     let j
     try { j = JSON.parse(line) } catch { continue }
     if (!j || typeof j !== 'object') continue
     records++
+    if (j.type === 'result') result = j
     if (j.type === 'result' && j.is_error && j.subtype !== 'error_max_turns') return reason(j.result ?? j.subtype ?? '')
     if (j.type === 'rate_limit_event' && j.rate_limit_info?.status === 'rejected') return 'rate limit'
     if (j.type === 'assistant' && (j.error || j.message?.model === '<synthetic>')) {
@@ -40,7 +44,12 @@ export function claudeInfra({ out = '', err = null, stderr = '' }) {
   }
   if (ACCOUNT.test(stderr)) return reason(stderr)
   if (!records && ACCOUNT.test(out)) return reason(out)
-  if (err && !records) return `claude exited ${err.code ?? '?'}`
+  const outOfTurns = result?.subtype === 'error_max_turns' && err?.code === 1 && !err.signal
+  if (err && !outOfTurns) {
+    const why = String(stderr).trim() ? `: ${reason(stderr)}` : ''
+    return `claude exited ${err.signal ?? err.code ?? '?'}${why}`
+  }
+  if (!result) return records ? 'no result record' : out.trim() ? 'stdout is not stream-json' : 'no output'
   return null
 }
 
@@ -76,6 +85,15 @@ export function hit(c, got, userOnly) {
   return !!(got && c.expected.map((e) => (userOnly.has(e) ? `menu:${e}` : e)).includes(got))
 }
 
+// One live session judged: a run that could not run is never a hit, so a negative case cannot
+// pass on a session that produced nothing.
+export function outcome(c, run, known, userOnly) {
+  const infra = claudeInfra(run)
+  if (infra) return { got: null, infra, hit: false }
+  const got = observed(run.out ?? '', known, userOnly)
+  return { got, infra: null, hit: hit(c, got, userOnly) }
+}
+
 // A Codex or Cursor call that threw. stdout is the model's answer, so it only counts when the
 // process failed without printing one.
 export function cliFailure({ stdout = '', stderr = '', message = '', killed = false, code = null, signal = null }) {
@@ -84,6 +102,15 @@ export function cliFailure({ stdout = '', stderr = '', message = '', killed = fa
   if (ACCOUNT.test(logs)) return { kind: 'account', why: reason(logs) }
   if (ACCOUNT.test(stdout)) return { kind: 'account', why: reason(stdout) }
   return { kind: 'could not run', why: reason(stderr || message || stdout) }
+}
+
+// What a Codex or Cursor call printed when it exited 0. An account message or nothing at all is
+// not an answer, so it is thrown as the failure it is instead of being scored as a routing miss.
+export function cliAnswer(stdout) {
+  const text = String(stdout ?? '')
+  if (!text.trim()) throw Object.assign(new Error('the CLI exited 0 and printed nothing'), { stdout: text })
+  if (ACCOUNT.test(text)) throw Object.assign(new Error('the CLI exited 0 with an account message'), { stdout: text })
+  return text
 }
 
 // MM_CODEX_MODEL wins; otherwise the first model the catalog lists for this account.
@@ -124,6 +151,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   for (const c of fx.claude) {
     const got = claudeInfra({ out: c.stdout.join('\n'), stderr: c.stderr ?? '', err: c.err ?? null })
     if ((got !== null) !== c.infra) wrong.push(`claude: ${c.name}: wanted ${c.infra ? 'an infrastructure failure' : 'a routing observation'}, got ${JSON.stringify(got)}`)
+    const quiet = outcome({ neverAutoFires: true }, { out: c.stdout.join('\n'), stderr: c.stderr ?? '', err: c.err ?? null }, fx.known, new Set())
+    if (c.infra && quiet.hit) wrong.push(`claude: ${c.name}: a negative case passed on a session that could not run`)
+  }
+  for (const c of fx.answer) {
+    let got = 'answer'
+    try { cliAnswer(c.stdout) } catch (e) { got = cliFailure(e).kind }
+    if (got !== c.kind) wrong.push(`answer: ${c.name}: wanted ${c.kind}, got ${got}`)
   }
   for (const c of fx.cli) {
     const got = cliFailure(c.error).kind
@@ -145,5 +179,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   if (!same(codexTrust('/tmp/a b'), ['-c', 'projects={ "/tmp/a b" = { trust_level = "trusted" } }'])) wrong.push('trust: the override is not valid TOML')
   if (wrong.length) { console.error('✖ eval classifiers:\n  ' + wrong.join('\n  ')); process.exit(1) }
-  console.log(`✓ eval classifiers: ${fx.claude.length} Claude Code outputs, ${fx.cli.length} CLI failures, ${fx.model.length} model picks, ${fx.verdict.length} verdicts, ${fx.observed.length} session readings.`)
+  const bad = fx.claude.filter((c) => c.infra).length + fx.cli.length + fx.answer.filter((c) => c.kind !== 'answer').length
+  const good = fx.claude.length + fx.cli.length + fx.answer.length + fx.model.length + fx.verdict.length + fx.observed.length - bad
+  console.log(`✓ eval classifiers: ${bad} bad inputs fire, ${good} good inputs stay clean (${fx.claude.length} Claude Code outputs, ${fx.cli.length} CLI failures, ${fx.answer.length} exit-0 answers, ${fx.model.length} model picks, ${fx.verdict.length} verdicts, ${fx.observed.length} session readings).`)
 }

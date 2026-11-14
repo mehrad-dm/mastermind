@@ -29,6 +29,9 @@ function frontmatter(text) {
       const parts = []
       while (i + 1 < lines.length && /^(\s+\S|\s*$)/.test(lines[i + 1])) parts.push(lines[++i].trim())
       value = parts.join(' ').trim()
+    } else if (value.trim()) {
+      // A plain or quoted scalar may continue on indented lines, which YAML folds into one value.
+      while (i + 1 < lines.length && /^\s+\S/.test(lines[i + 1])) value = `${value.trimEnd()} ${lines[++i].trim()}`
     }
     fm[km[1]] = unquote(value)
   }
@@ -44,6 +47,35 @@ function kernelBudget(text) {
   if (lines <= KERNEL_MAX_LINES && chars <= KERNEL_MAX_CHARS) return []
   return [`CLAUDE.md is ${lines} lines and ${chars} characters; the kernel budget is ${KERNEL_MAX_LINES} lines and `
     + `${KERNEL_MAX_CHARS} characters, and both must hold`]
+}
+
+// The skills a user types by name. A model that fires one of these on its own has taken a decision
+// that belongs to the user, and a skill that loses the flag starts competing for every request.
+const USER_ONLY = ['handoff', 'help', 'levelup', 'lint', 'report', 'signature']
+function userOnlyErrors(skills) {
+  const flagged = skills.filter(({ fm }) => String(fm['disable-model-invocation'] ?? '').trim() === 'true').map(({ dir }) => dir)
+  const out = []
+  for (const dir of USER_ONLY.filter((d) => !flagged.includes(d)))
+    out.push(`skills/${dir}/SKILL.md: user-only, but has no \`disable-model-invocation: true\`, so a model can fire it unasked`)
+  for (const dir of flagged.filter((d) => !USER_ONLY.includes(d)))
+    out.push(`skills/${dir}/SKILL.md: \`disable-model-invocation: true\` hides it from the model, but it is not one of the user-only skills (${USER_ONLY.join(', ')})`)
+  return out
+}
+
+function frontmatterKeyErrors(rel, fm) {
+  return Object.keys(fm).filter((k) => !ALLOWED_FM_KEYS.has(k)).map((k) => `${rel}: unexpected frontmatter key "${k}"`)
+}
+
+// An unquoted value holding ": " is not YAML. Claude Code and Codex read it anyway; a strict parser drops the skill.
+function unquotedColonErrors(rel, text) {
+  const head = (text ?? '').match(/^---\n([\s\S]*?)\n---/)?.[1] ?? ''
+  const out = []
+  for (const line of head.split('\n')) {
+    const kv = line.match(/^([A-Za-z][\w-]*):\s(.*)$/)
+    if (kv && !/^["'>|]/.test(kv[2]) && /:\s|\s#/.test(kv[2]))
+      out.push(`${rel}: \`${kv[1]}\` holds ": " or " #" unquoted, which strict YAML rejects: wrap the value in double quotes`)
+  }
+  return out
 }
 
 const DESC_MAX = 300
@@ -73,6 +105,9 @@ const distance = (a, b) => {
   return d[a.length][b.length]
 }
 
+// Outcome words one or two letters away from "wrong" that an entry legitimately opens with.
+const REAL_WORDS = new Set(['wrote', 'write', 'writ', 'prong', 'wring', 'wrung', 'won', 'song', 'long', 'strong', 'along', 'among', 'wrongs'])
+
 // `mastermind wrong-log` reads only lines of the exact entry shape, so a mistyped miss vanishes from it.
 function journalErrors(text) {
   const out = []
@@ -84,14 +119,18 @@ function journalErrors(text) {
     const m = line.match(ENTRY)
     const shown = line.slice(0, 60)
     if (!m) { out.push(`${at}: a dated line that is not an entry (want "YYYY-MM-DD · what · outcome"): "${shown}"`); continue }
-    if (+m[2] < 1 || +m[2] > 12 || +m[3] < 1 || +m[3] > 31) out.push(`${at}: "${m[1]}-${m[2]}-${m[3]}" is not a date`)
+    const day = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+    if (day.getUTCFullYear() !== +m[1] || day.getUTCMonth() !== +m[2] - 1 || day.getUTCDate() !== +m[3])
+      out.push(`${at}: "${m[1]}-${m[2]}-${m[3]}" is not a date`)
     const fields = m[4].split(/\s*·\s*/).filter(Boolean)
     if (fields.length < 2) out.push(`${at}: an entry needs at least "what · outcome" after the date: "${shown}"`)
     const marker = (fields[0] ?? '').toLowerCase().replace(/[^a-z]/g, '')
     const exact = /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(line)
-    const meant = /^wrong\b/i.test(fields[0] ?? '') || (marker.length <= 7 && distance(marker, 'wrong') <= 2)
+    const meant = /^wrong\b/i.test(fields[0] ?? '') || (marker.length <= 7 && !REAL_WORDS.has(marker) && distance(marker, 'wrong') <= 2)
     if (meant && !exact)
       out.push(`${at}: looks like a miss but is not marked exactly "· wrong ·", so wrong-log cannot see it: "${shown}"`)
+    if (exact && !fields.slice(2).some((f) => /^caught by\s+\S/i.test(f)))
+      out.push(`${at}: a miss with no "caught by <catcher>" field, so nobody can calibrate trust from it: "${shown}"`)
   }
   const lines = text.split('\n')
   const entries = lines.filter((l) => /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(l.trim()))
@@ -131,12 +170,17 @@ if (process.argv.includes('--self-test')) {
       : c.skills.map((s) => ({ dir: s.dir, fm: frontmatter(s.text) ?? {} }))).errors,
     journal: (c) => journalErrors(c.text),
     marketplace: (c) => marketplaceErrors(c.manifest, new Set(c.known)),
+    userOnly: (c) => userOnlyErrors(c.skills.map((s) => ({ dir: s.dir, fm: frontmatter(s.text) ?? {} }))),
+    frontmatterKeys: (c) => frontmatterKeyErrors('fixture', frontmatter(c.text) ?? {}),
+    unquotedColon: (c) => unquotedColonErrors('fixture', c.text),
   }
   const wrong = []
   let fired = 0, clean = 0
   for (const [gate, cases] of Object.entries(fx)) {
-    for (const c of cases.fires) { fired++; if (!run[gate](c).length) wrong.push(`${gate} did not fire: ${c.name}`) }
-    for (const c of cases.clean) { clean++; const e = run[gate](c); if (e.length) wrong.push(`${gate} fired on clean input: ${c.name}: ${e[0]}`) }
+    if (!run[gate]) { wrong.push(`${gate}: fixtures for a rule this script does not have`); continue }
+    if (!cases.fires?.length) wrong.push(`${gate}: no bad input, so nothing shows the rule can fire`)
+    for (const c of cases.fires ?? []) { fired++; if (!run[gate](c).length) wrong.push(`${gate} did not fire: ${c.name}`) }
+    for (const c of cases.clean ?? []) { clean++; const e = run[gate](c); if (e.length) wrong.push(`${gate} fired on clean input: ${c.name}: ${e[0]}`) }
   }
   if (wrong.length) { console.error('✖ integrity self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
   console.log(`✓ integrity self-test: ${fired} bad inputs fire, ${clean} good inputs stay clean.`)
@@ -161,13 +205,12 @@ for (const dir of skillDirs) {
     fail(`${rel}: missing/malformed frontmatter`)
     continue
   }
-  for (const k of Object.keys(fm)) {
-    if (!ALLOWED_FM_KEYS.has(k)) fail(`${rel}: unexpected frontmatter key "${k}"`)
-  }
+  frontmatterKeyErrors(rel, fm).forEach(fail)
   parsedSkills.push({ dir, fm })
 }
 const descriptions = descriptionBudget(parsedSkills)
 descriptions.errors.forEach(fail)
+userOnlyErrors(parsedSkills).forEach(fail)
 
 const skillsReadme = readIfPresent('skills/README.md') ?? ''
 const listedSkills = new Set(
@@ -436,15 +479,8 @@ for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json'
   }
 }
 
-// An unquoted value holding ": " is not YAML. Claude Code and Codex read it anyway; a strict parser drops the skill.
-for (const rel of [...skillDirs.map((d) => `skills/${d}/SKILL.md`), ...readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`)]) {
-  const head = (readIfPresent(rel) ?? '').match(/^---\n([\s\S]*?)\n---/)?.[1] ?? ''
-  for (const line of head.split('\n')) {
-    const kv = line.match(/^([A-Za-z][\w-]*):\s(.*)$/)
-    if (kv && !/^["'>|]/.test(kv[2]) && /:\s|\s#/.test(kv[2]))
-      fail(`${rel}: \`${kv[1]}\` holds ": " or " #" unquoted, which strict YAML rejects: wrap the value in double quotes`)
-  }
-}
+for (const rel of [...skillDirs.map((d) => `skills/${d}/SKILL.md`), ...readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`)])
+  unquotedColonErrors(rel, readIfPresent(rel)).forEach(fail)
 
 const kernel = readIfPresent('CLAUDE.md')
 if (kernel === null) fail('CLAUDE.md is missing: there is no kernel to load')

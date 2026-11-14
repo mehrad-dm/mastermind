@@ -113,20 +113,39 @@ there, it is decoration: rewrite it until it fails, or delete it.
 
 ## Cutting a release
 
-### 1. Write the changelog entry first
+Every step below is in the order it runs. Each one that leaves this machine waits for the one
+before it to be **finished**, not started: a merge that has only been requested, or a rehearsal
+that has only been queued, is not a result. `release.sh` prints the same steps, with this
+release's version and paths filled in, when it finishes.
+
+### 1. Branch both repositories from an up-to-date main line
+
+```
+git fetch origin && git checkout -b release/v0.34.0 origin/master
+git -C "$MASTERMIND_SITE" fetch origin && git -C "$MASTERMIND_SITE" checkout -b release/v0.34.0 origin/main
+```
+
+`master` takes pull requests only, so the release commit is made on a branch like any other
+change, and `release.sh` refuses to run on `master`. The site gets a branch too: nothing reaches its
+`main`, which deploys, until the rehearsal in step 6 is green.
+
+### 2. Write the changelog entry, and commit it on the branch
 
 `CHANGELOG.md` needs a `## [X.Y.Z]` section before anything else runs. It is not paperwork: the
 GitHub Release is generated from it, and `release.sh` refuses to proceed without it.
 
 Say what broke and what it cost the user. Never name who found it or how the review was run.
 
-### 2. Move the version, on a branch
+```
+git add CHANGELOG.md && git commit -m "changelog: v0.34.0"
+```
 
-`master` takes pull requests only, so the release commit is made on a branch like any other
-change. `release.sh` refuses to run on `master`.
+It is committed first because `release.sh` refuses a dirty working tree: everything it then
+changes is its own, so its diff can be read and, if it stops, undone exactly.
+
+### 3. Move the version
 
 ```
-git checkout -b release/v0.34.0
 scripts/release.sh 0.34.0 --dry-run    # show what would change
 scripts/release.sh 0.34.0
 ```
@@ -150,37 +169,67 @@ card is the one on the site's main branch.
 
 It runs `preflight.sh` and stops if anything fails. It does not commit, tag, push or publish.
 
-### 3. Pull request, merge, take the merge commit
+#### When `release.sh` stops part way
+
+A run that stops after its first edit (a failed regeneration, a red preflight, a closed terminal)
+leaves both trees half moved, and says so. Fix the cause, then either finish it:
+
+```
+scripts/release.sh 0.34.0 --resume
+```
+
+`--resume` accepts a dirty tree only when every changed path is one the script writes (the version
+files and `architecture.json` here, `src/` and `public/` in the site); anything else is someone's
+work, and it refuses. Edits already made are kept, everything else is made again, and preflight runs
+again. Or undo it and start over:
+
+```
+git checkout -- .
+git -C "$MASTERMIND_SITE" checkout -- .
+git -C "$MASTERMIND_SITE" status --short    # a new library page is untracked: delete it by name
+```
+
+Both are safe only because step 2 left nothing else uncommitted.
+
+### 4. Pull request, and wait until it is merged
 
 ```
 # -a stages tracked files only, so a release that ADDS a file would ship without it.
 git add -A && git commit -m "release: v0.34.0"
-git -C ../mastermind-site add -A && git -C ../mastermind-site commit -m "v0.34.0"
+git -C "$MASTERMIND_SITE" add -A && git -C "$MASTERMIND_SITE" commit -m "v0.34.0"
 
 git push -u origin release/v0.34.0
 gh pr create --fill
-gh pr merge --squash --auto          # merges once check, suites, analyze and shellcheck pass
+PR="$(gh pr view --json number --jq .number)"
+gh pr merge "$PR" --squash --auto    # merges once check, suites, analyze and shellcheck pass
+gh pr checks "$PR" --watch
+while s="$(gh pr view "$PR" --json state --jq .state)" && [ "$s" = OPEN ]; do sleep 15; done
+gh pr view "$PR" --json state,mergeCommit    # must say MERGED; CLOSED means stop here
+```
 
-git checkout master
-git fetch origin && git reset --hard origin/master    # the squash commit, exactly as GitHub made it
+`--auto` only asks GitHub to merge later, and the checks going green is not the merge either: the
+merge lands some seconds after them, or never, if a required check is missing. Everything below
+reads `master`, so nothing below runs until the state is `MERGED`.
 
-git -C ../mastermind-site push       # the site goes FIRST: the gates check out the pushed site
+### 5. Take the merge commit
+
+```
+git fetch origin && git checkout master && git reset --hard origin/master
+test "$(git rev-parse HEAD)" = "$(gh pr view "$PR" --json mergeCommit --jq .mergeCommit.oid)"
 ```
 
 The squash merge makes a **new** commit on `master`. The commit on your branch is not the release:
 a tag on it is refused by `pre-push` and by the publish gate, because it is not on `master`.
 `git reset --hard origin/master` is used, not `git pull`, because a local `master` that ever held
 a commit of its own has diverged: `git pull --ff-only` then refuses, leaves you on the old commit,
-and the next `git tag` silently tags the wrong thing.
+and the next `git tag` silently tags the wrong thing. The `test` line fails loudly if the commit you
+are on is not the one GitHub merged.
 
-**The site is pushed before the rehearsal and the tag, and that order is load-bearing.** Both gates
-check out the published website and refuse if its version, skill counts, library pages or build
-disagree with this repo. Tagging first means the gate reads yesterday's site and fails.
-
-### 4. Rehearse the release on the merge commit, before the tag exists
+### 6. Rehearse the release on the merge commit, before the site or the tag moves
 
 ```
-gh workflow run pre-tag.yml --ref master
+git -C "$MASTERMIND_SITE" push -u origin release/v0.34.0    # a branch: the live site does not change
+gh workflow run pre-tag.yml --ref master -f site-ref=release/v0.34.0
 sleep 5
 gh run watch "$(gh run list --workflow pre-tag.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
 ```
@@ -191,27 +240,38 @@ you are about to tag. It also runs the checks that need a download and so are ke
 itself: the gates' own self-tests, the claims check, the architecture data check (it runs a real
 install), and Claude Code's plugin validator.
 
+It reads the site from the branch named by `site-ref`, so it checks the site this release will
+deploy without deploying it. The site deploys on a push to `main` only; with the hosting's default
+Git integration a branch push builds a preview at most.
+
 This step exists because the publish workflow runs **after** the tag is pushed, and a pushed tag
 cannot be moved. Anything that first fails there burns the version: the only way forward is a new
 patch release. The matrix is not a required check on pull requests (it is path-filtered, and a
 required check that never runs blocks the merge forever), so a release commit can reach `master`
-with a platform red. Here is where that is caught while it is still free.
+with a platform red. Here is where that is caught while it is still free, and before the live site
+claims a version that does not exist yet.
 
-Do not tag until this run is green. If it fails, fix it through another pull request and run it
-again on the new merge commit.
+Do not go on until this run is green. If it fails, fix it through another pull request and start
+again at step 4.
 
-### 5. Tag and push the tag
+### 7. Deploy the site, then tag the merge commit and push the tag
 
 ```
-git tag -a v0.34.0 -m "v0.34.0: <the changelog's opening line>"
+git -C "$MASTERMIND_SITE" push origin release/v0.34.0:main    # only after step 6 is green
+git tag -a v0.34.0 -m "v0.34.0: <the changelog's opening line>" "$(git rev-parse HEAD)"
 git push origin v0.34.0        # this is what publishes, and it is the irreversible step
 ```
+
+The site goes before the tag, and that order is load-bearing: the publish gate checks out the
+site's `main` and refuses if its version, skill counts, library pages or build disagree with this
+repo. A push to `main` that is not a fast-forward is refused, which means the site moved since
+step 1: rebase the site branch, and rehearse again.
 
 Pushing the tag is the only irreversible step, and doubly so: the ruleset forbids moving it,
 so a tag on the wrong commit burns that version. `pre-push` refuses a `v*` tag unless its commit
 is on `origin/master` and that commit's `VERSION` and `CHANGELOG.md` match the tag.
 
-### 6. What CI does with the tag
+### 8. What CI does with the tag
 
 `publish.yml` will not publish unless, on that exact commit:
 
@@ -223,7 +283,9 @@ is on `origin/master` and that commit's `VERSION` and `CHANGELOG.md` match the t
   version locations, router, brain lint, prose, comments, shell patterns, instruction clarity and
   the routing check all pass. Link liveness is deliberately absent: a page on someone else's
   server going down must not burn a version, so links are checked weekly (`freshness.yml`), on
-  pull requests as a job that cannot fail the run, and by `preflight.sh` before the release commit
+  pull requests as a job that cannot fail the run, and by `preflight.sh` before the release commit.
+  Links to files in this repository are different: `check-links.mjs --local` needs no network, and
+  a broken one fails the pull request's `check` job
 - the library pages match the skill and agent sources, when CI can read the site (see below)
 - the packed tarball contains exactly `README.md`, `bin/mastermind.mjs`, `package.json`
 - **every** platform passes: Linux on Node 18 and 22, macOS, Alpine, WSL, the native-Windows
@@ -259,7 +321,7 @@ It deliberately does not run on the release tag. The site is deployed from its o
 *after* the package tag is pushed, so running it then would test the previous deployment. The
 release checks the site with `verify-release.sh`, after the site push.
 
-### 7. Verify all three surfaces agree
+### 9. Verify all three surfaces agree
 
 ```
 scripts/verify-release.sh 0.31.0

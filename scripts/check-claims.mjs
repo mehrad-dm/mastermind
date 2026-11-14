@@ -109,8 +109,45 @@ function ownAgentsFile() {
   return { theirs, wired, after: existsSync(file) ? readFileSync(file, 'utf8') : null, code: inst.code, uncode: un.code }
 }
 
-const DOCS = ['README.md', 'CLAUDE.md', 'SECURITY.md']
+const DOCS = ['README.md', 'CLAUDE.md', 'SECURITY.md', 'CONTRIBUTING.md', 'RELEASING.md']
 const SITE_MAP = 'https://mastermind.mehrad.me/architecture'
+
+// The steps of one job, read as YAML lists are written here: a `- ` item at the step indent and its
+// keys below it. Commented lines are not steps. A step that cannot fail does not gate anything.
+function steps(yaml, job) {
+  const lines = yaml.split('\n').filter((l) => !/^\s*#/.test(l))
+  const start = lines.findIndex((l) => l === `  ${job}:`)
+  if (start < 0) return []
+  const out = []
+  let cur = null
+  for (const line of lines.slice(start + 1)) {
+    if (/^ {0,3}\S/.test(line)) break
+    const item = line.match(/^ {6}- (.*)$/)
+    if (item) { cur = { lines: [item[1]] }; out.push(cur); continue }
+    if (cur && /^ {8,}\S|^\s*$/.test(line)) cur.lines.push(line.replace(/^ {8}/, ''))
+    else if (/^ {4}\S/.test(line)) cur = null
+  }
+  return out.map((st) => {
+    const text = st.lines.map((l) => l.replace(/\s+#.*$/, '').trimEnd()).filter(Boolean).join('\n')
+    const name = text.match(/^name: (.+)$/m)?.[1] ?? null
+    const run = text.match(/^run: (?![|>])(.+)$/m)?.[1]
+      ?? text.match(/^run: [|>][+-]?\n((?: {2}.*\n?)+)/m)?.[1].replace(/^ {2}/gm, '').trim() ?? null
+    const soft = /^continue-on-error: true$/m.test(text) || /\|\|\s*true\s*$/m.test(run ?? '')
+    return { id: name ? `name: ${name}` : run ? `run: ${run}` : null, text, run, soft }
+  }).filter((st) => st.id)
+}
+
+// Every gating step of publish.yml's gate, missing or softened in pre-tag.yml's.
+function unmirrored(publish, preTag) {
+  const theirs = steps(preTag, 'gate')
+  return steps(publish, 'gate')
+    .filter((st) => !st.soft && (st.id.startsWith('name: ') || /^(?:node|bash) /.test(st.run ?? '')))
+    .filter((st) => !/the tagged commit is on master|refuse to release/.test(st.id))
+    .filter((st) => !theirs.some((t) => t.id === st.id && t.text === st.text && !t.soft))
+    .map((st) => st.id)
+}
+
+const pinnedSha = (ref) => ref.startsWith('./') || (/@[0-9a-f]{40}$/.test(ref) && !/@0{40}$/.test(ref))
 
 const ROWS = [
   {
@@ -252,12 +289,11 @@ const ROWS = [
   {
     id: 'pre-tag-mirrors-gate', file: 'RELEASING.md', claim: /`pre-tag\.yml` runs everything the publish gate runs/, must: true,
     test: () => {
-      const gate = read('.github/workflows/publish.yml').split(/^  cross-os:/m)[0]
       const pre = read('.github/workflows/pre-tag.yml')
-      const missing = [...gate.matchAll(/^ {6}- (?:run: (?:node|bash) .+|name: .+)$/gm)].map((m) => m[0].trim())
-        .filter((l) => !/the tagged commit is on master|refuse to release/.test(l) && !pre.includes(l))
-      if (missing.length) return `pre-tag.yml does not run a step the publish gate runs: ${missing[0]}`
-      return /uses: \.\/\.github\/workflows\/cross-os\.yml/.test(pre) ? null : 'pre-tag.yml does not run the platform matrix'
+      if (!steps(read('.github/workflows/publish.yml'), 'gate').length) return 'publish.yml has no gate job with steps to compare'
+      const missing = unmirrored(read('.github/workflows/publish.yml'), pre)
+      if (missing.length) return `pre-tag.yml does not run, or cannot fail on, a step the publish gate runs: ${missing[0]}`
+      return /^ {4}uses: \.\/\.github\/workflows\/cross-os\.yml/m.test(pre) ? null : 'pre-tag.yml does not run the platform matrix'
     },
   },
   {
@@ -269,7 +305,7 @@ const ROWS = [
     test: () => {
       for (const [name, y] of workflows())
         for (const m of y.matchAll(/^\s*(?:-\s+)?uses:\s*(\S+)/gm))
-          if (!m[1].startsWith('./') && !/@[0-9a-f]{40}$/.test(m[1])) return `${name} uses ${m[1]}, which is not a full commit SHA`
+          if (!pinnedSha(m[1])) return `${name} uses ${m[1]}, which is not a full commit SHA`
       return null
     },
   },
@@ -409,7 +445,34 @@ function run() {
   return { failed, skipped, idle, held }
 }
 
+const UNIT = {
+  pub: 'jobs:\n  gate:\n    steps:\n      - run: node a.mjs\n      - name: the b check\n        run: |\n          node b.mjs\n          node c.mjs\n  cross-os:\n    uses: ./x.yml\n',
+  fires: [
+    ['a step commented out', 'jobs:\n  gate:\n    steps:\n      # - run: node a.mjs\n      - name: the b check\n        run: |\n          node b.mjs\n          node c.mjs\n'],
+    ['a step that ends in || true', 'jobs:\n  gate:\n    steps:\n      - run: node a.mjs || true\n      - name: the b check\n        run: |\n          node b.mjs\n          node c.mjs\n'],
+    ['a step with continue-on-error', 'jobs:\n  gate:\n    steps:\n      - run: node a.mjs\n        continue-on-error: true\n      - name: the b check\n        run: |\n          node b.mjs\n          node c.mjs\n'],
+    ['a named step whose body lost a command', 'jobs:\n  gate:\n    steps:\n      - run: node a.mjs\n      - name: the b check\n        run: |\n          node b.mjs\n'],
+    ['the step text only in a comment', 'jobs:\n  gate:\n    steps:\n      # - run: node a.mjs\n      #   name: the b check\n'],
+  ],
+  clean: [
+    ['the same steps', 'jobs:\n  gate:\n    steps:\n      - run: node a.mjs\n      - name: the b check\n        run: |\n          node b.mjs\n          node c.mjs\n'],
+    ['the same steps among extra ones, with comments', 'jobs:\n  gate:\n    steps:\n      - run: node z.mjs\n      # why a runs\n      - run: node a.mjs   # note\n      - name: the b check\n        run: |\n          node b.mjs\n          node c.mjs\n      - run: node y.mjs || true\n'],
+  ],
+  shas: { fires: ['actions/checkout@' + '0'.repeat(40), 'actions/checkout@v4', 'actions/checkout@3d3c42e'], clean: ['actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', './.github/workflows/cross-os.yml'] },
+}
+
+function unitTest() {
+  const wrong = []
+  for (const [name, pre] of UNIT.fires) if (!unmirrored(UNIT.pub, pre).length) wrong.push(`pre-tag-mirrors-gate did not fire: ${name}`)
+  for (const [name, pre] of UNIT.clean) if (unmirrored(UNIT.pub, pre).length) wrong.push(`pre-tag-mirrors-gate fired on clean input: ${name}: ${unmirrored(UNIT.pub, pre)[0]}`)
+  for (const ref of UNIT.shas.fires) if (pinnedSha(ref)) wrong.push(`actions-pinned accepted ${ref}`)
+  for (const ref of UNIT.shas.clean) if (!pinnedSha(ref)) wrong.push(`actions-pinned refused ${ref}`)
+  return { wrong, fires: UNIT.fires.length + UNIT.shas.fires.length, clean: UNIT.clean.length + UNIT.shas.clean.length }
+}
+
 function selfTest() {
+  const unit = unitTest()
+  if (unit.wrong.length) { console.error('✖ claims self-test:\n  ' + unit.wrong.join('\n  ')); process.exit(1) }
   const copy = join(scratch, 'mutated')
   cpSync(HERE, copy, { recursive: true, verbatimSymlinks: true, filter: (src) => !/\/(\.git|node_modules|evals|\.claude|private|lab)(\/|$)/.test(src.slice(HERE.length)) })
   const edit = (rel, fn) => writeFileSync(join(copy, rel), fn(readFileSync(join(copy, rel), 'utf8')))
@@ -441,7 +504,7 @@ function selfTest() {
     console.error(`✖ claims self-test: planted a false statement and the row stayed quiet: ${silent.join(', ') || 'exit ' + r.status}`)
     process.exit(1)
   }
-  console.log(`✓ claims self-test: ${want.length} planted false statements each fail their row.`)
+  console.log(`✓ claims self-test: ${want.length + unit.fires} bad inputs fire, ${unit.clean} good inputs stay clean (${want.length} planted false statements each fail their row).`)
 }
 
 if (process.argv.includes('--self-test')) selfTest()

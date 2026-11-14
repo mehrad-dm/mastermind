@@ -17,7 +17,18 @@
     { "name": "flag after a quoted pattern holding a pipe", "file": "a.sh", "text": "set -uo pipefail\nfoo | grep 'a|b' -q\n" },
     { "name": "workflow run block under set pipefail", "file": ".github/workflows/x.yml", "text": "jobs:\n  a:\n    steps:\n      - name: probe\n        run: |\n          set -euo pipefail\n          curl -fsSI \"$SITE/\" | tr -d '\\r' | grep -qi \"^$h:\" && echo ok\n" },
     { "name": "workflow step pinned to shell: bash", "file": ".github/workflows/x.yml", "text": "jobs:\n  a:\n    steps:\n      - name: probe\n        shell: bash\n        run: foo | grep -q bar\n" },
-    { "name": "workflow dash-run block", "file": ".github/workflows/x.yml", "text": "jobs:\n  a:\n    steps:\n      - run: |\n          set -o pipefail\n          foo | grep -q bar\n" }
+    { "name": "workflow dash-run block", "file": ".github/workflows/x.yml", "text": "jobs:\n  a:\n    steps:\n      - run: |\n          set -o pipefail\n          foo | grep -q bar\n" },
+    { "name": "grep -m1", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep -m1 bar\n" },
+    { "name": "grep -m 1", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep -m 1 bar\n" },
+    { "name": "grep --max-count=1", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep --max-count=1 bar\n" },
+    { "name": "grep -l", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep -l bar\n" },
+    { "name": "grep -L", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep -L bar\n" },
+    { "name": "grep --files-with-matches", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep --files-with-matches bar\n" },
+    { "name": "absolute-path grep -q", "file": "a.sh", "text": "set -euo pipefail\nfoo | /usr/bin/grep -q bar\n" },
+    { "name": "/bin/grep -q", "file": "a.sh", "text": "set -euo pipefail\nfoo | /bin/grep -q bar\n" },
+    { "name": "rg -q", "file": "a.sh", "text": "set -euo pipefail\nfoo | rg -q bar\n" },
+    { "name": "rg --quiet", "file": "a.sh", "text": "set -euo pipefail\nfoo | rg --quiet bar\n" },
+    { "name": "rg -l", "file": "a.sh", "text": "set -euo pipefail\nfoo | rg -l bar\n" }
   ],
   "clean": [
     { "name": "no pipefail in the file", "file": "a.sh", "text": "set -eu\nfoo | grep -q bar\n" },
@@ -28,6 +39,10 @@
     { "name": "q only inside the quoted pattern", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep -c '-q'\n" },
     { "name": "head is left alone", "file": "a.sh", "text": "set -euo pipefail\nfoo | head -1\n" },
     { "name": "workflow block without pipefail", "file": ".github/workflows/x.yml", "text": "jobs:\n  a:\n    steps:\n      - run: |\n          set -e\n          foo | grep -q bar\n" },
-    { "name": "pipefail in a different run block", "file": ".github/workflows/x.yml", "text": "jobs:\n  a:\n    steps:\n      - run: |\n          set -euo pipefail\n          echo hi\n      - run: foo | grep -q bar\n" }
+    { "name": "pipefail in a different run block", "file": ".github/workflows/x.yml", "text": "jobs:\n  a:\n    steps:\n      - run: |\n          set -euo pipefail\n          echo hi\n      - run: foo | grep -q bar\n" },
+    { "name": "grep -c reads everything", "file": "a.sh", "text": "set -euo pipefail\nfoo | grep -c bar\n" },
+    { "name": "rg without an early flag", "file": "a.sh", "text": "set -euo pipefail\nfoo | rg bar | sort\n" },
+    { "name": "grep -m on a file, not a pipe", "file": "a.sh", "text": "set -euo pipefail\ngrep -m1 bar file\n" },
+    { "name": "a word ending in rg is not rg", "file": "a.sh", "text": "set -euo pipefail\nfoo | xorg -q\n" }
   ]
 }

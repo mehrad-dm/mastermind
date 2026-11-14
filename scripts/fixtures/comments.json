@@ -24,6 +24,16 @@
       "name": "/* */ in css",
       "file": "a.css",
       "text": ".a1 { color: red }\n.a2 { color: red }\n.a3 { color: red }\n.a4 { color: red }\n.a5 { color: red }\n.a6 { color: red }\n.a7 { color: red }\n.a8 { color: red }\n/*\n   reason 1\n   reason 2\n   reason 3\n   reason 4\n   reason 5\n   reason 6\n*/\n.b { color: blue }\n"
+    },
+    {
+      "name": "six # lines in an extension-less bash script",
+      "file": "bin/mastermind",
+      "text": "#!/usr/bin/env bash\nx1=1\nx2=2\nx3=3\nx4=4\nx5=5\nx6=6\nx7=7\nx8=8\n# reason 1\n# reason 2\n# reason 3\n# reason 4\n# reason 5\n# reason 6\ny=1\n"
+    },
+    {
+      "name": "six # lines in a hook run by sh",
+      "file": ".githooks/pre-push",
+      "text": "#!/bin/sh\nx1=1\nx2=2\nx3=3\nx4=4\nx5=5\nx6=6\nx7=7\nx8=8\n# reason 1\n# reason 2\n# reason 3\n# reason 4\n# reason 5\n# reason 6\ny=1\n"
     }
   ],
   "clean": [
@@ -51,6 +61,16 @@
       "name": "glob string holding /*",
       "file": "a.mjs",
       "text": "const g1 = 'src/**/*.ts'\nconst g2 = 'src/**/*.ts'\nconst g3 = 'src/**/*.ts'\nconst g4 = 'src/**/*.ts'\nconst g5 = 'src/**/*.ts'\nconst g6 = 'src/**/*.ts'\nconst g7 = 'src/**/*.ts'\nconst g8 = 'src/**/*.ts'\nconst g9 = 'src/**/*.ts'\nconst g10 = 'src/**/*.ts'\nconst g11 = 'src/**/*.ts'\nconst g12 = 'src/**/*.ts'\n"
+    },
+    {
+      "name": "an extension-less file with no shebang",
+      "file": "LICENSE",
+      "text": "x1=1\nx2=2\nx3=3\nx4=4\nx5=5\nx6=6\nx7=7\nx8=8\n# reason 1\n# reason 2\n# reason 3\n# reason 4\n# reason 5\n# reason 6\ny=1\n"
+    },
+    {
+      "name": "an extension-less python script",
+      "file": "bin/tool",
+      "text": "#!/usr/bin/env python3\nx1=1\nx2=2\nx3=3\nx4=4\nx5=5\nx6=6\nx7=7\nx8=8\n# reason 1\n# reason 2\n# reason 3\n# reason 4\n# reason 5\n# reason 6\ny=1\n"
     }
   ]
 }

@@ -17,7 +17,7 @@ const HEDGE = new RegExp([
   '\\b(?:might|may) want to\\b', '\\btry to\\b', '\\bwhere possible\\b', '\\bif possible\\b', '\\bas appropriate\\b',
   '\\bconsider (?:doing|using|adding)\\b', '\\bit may be worth\\b',
   '\\bperhaps\\b', '\\bideally\\b', '\\bmaybe\\b', '\\bif you (?:feel like|want to|like)\\b',
-  '\\byou could\\b', '\\bcould (?:perhaps|possibly|maybe|also|consider|try)\\b', '\\bit could be (?:worth|useful|helpful|good|a good idea)\\b',
+  '\\byou could\\b(?!\\s+not\\b)', '\\bcould (?:perhaps|possibly|maybe|also|consider|try)\\b', '\\bit could be (?:worth|useful|helpful|good|a good idea)\\b',
 ].join('|'), 'i')
 // A line that addresses the reader with a soft modal is an instruction, bullet or not.
 const SOFT = /\byou (?:may|might|could) (?:want|wish|like|also|consider|try)\b|^\s*(?:perhaps|ideally|maybe)\b/i
@@ -31,6 +31,10 @@ for (const d of readdirSync(join(ROOT, 'skills'), { withFileTypes: true })) {
 for (const f of readdirSync(join(ROOT, 'agents'))) {
   if (f.endsWith('.md')) targets.push(`agents/${f}`)
 }
+// The kernel and the core docs are instructions too, and the kernel is read on every request.
+if (existsSync(join(ROOT, 'CLAUDE.md'))) targets.push('CLAUDE.md')
+for (const f of existsSync(join(ROOT, 'engineering', 'core')) ? readdirSync(join(ROOT, 'engineering', 'core')) : [])
+  if (f.endsWith('.md')) targets.push(`engineering/core/${f}`)
 
 const words = (s) => s.trim().split(/\s+/).filter(Boolean).length
 
@@ -45,7 +49,7 @@ function inspect(rel, text, findings) {
   const lines = text.split('\n')
   let fenced = false
   // Frontmatter is skipped on purpose: check-integrity holds a `description` to its own budget.
-  let fm = 0
+  let fm = /^---\s*$/.test(lines[0] ?? '') ? 0 : 2
   lines.forEach((line, i) => {
     if (/^---\s*$/.test(line) && fm < 2) { fm++; return }
     if (fm < 2) return
@@ -94,16 +98,23 @@ function inspect(rel, text, findings) {
 }
 
 if (process.argv.includes('--self-test')) {
-  const { fires, clean } = JSON.parse(readFileSync(FIXTURES, 'utf8'))
-  const hedged = (line) => {
+  const { fires, clean, long } = JSON.parse(readFileSync(FIXTURES, 'utf8'))
+  const found = (kind) => (text) => {
     const f = []
-    inspect('fixture', `---\nname: x\n---\n\n${line}\n`, f)
-    return f.some((x) => x.kind === 'hedge')
+    inspect('fixture', `---\nname: x\n---\n\n${text}\n`, f)
+    return f.some((x) => x.kind === kind)
   }
-  const wrong = [...fires.filter((l) => !hedged(l)).map((l) => `did not fire: ${l}`),
-    ...clean.filter((l) => hedged(l)).map((l) => `fired on clean input: ${l}`)]
+  const sets = [['hedge', fires, clean], ['long', long.fires, long.clean]]
+  const wrong = sets.flatMap(([kind, bad, good]) => [
+    ...(bad.length ? [] : [`${kind}: no bad input, so nothing shows the rule can fire`]),
+    ...bad.filter((l) => !found(kind)(l)).map((l) => `${kind} did not fire: ${l.slice(0, 60)}`),
+    ...good.filter((l) => found(kind)(l)).map((l) => `${kind} fired on clean input: ${l.slice(0, 60)}`),
+  ])
+  const nofm = []
+  inspect('fixture', '# A kernel with no frontmatter\n\n- Perhaps run the tests.\n', nofm)
+  if (!nofm.some((x) => x.kind === 'hedge')) wrong.push('a file with no frontmatter was not read')
   if (wrong.length) { console.error('✖ instructions self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
-  console.log(`✓ instructions self-test: ${fires.length} hedged directives fire, ${clean.length} plain ones stay clean.`)
+  console.log(`✓ instructions self-test: ${fires.length + long.fires.length + 1} bad inputs fire, ${clean.length + long.clean.length} good inputs stay clean (hedged and over-long directives, a file with no frontmatter).`)
   process.exit(0)
 }
 

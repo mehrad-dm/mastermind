@@ -36,6 +36,8 @@ jobs:
       - run: node scripts/check-comments.mjs || [ "$?" = 2 ]
       - run: node scripts/check-shell-patterns.mjs
       - run: node scripts/check-instructions.mjs --strict
+      # File links only, no network: a broken one fails here. External liveness is the links job below.
+      - run: node scripts/check-links.mjs --local
       - run: node evals/agent-surface-cost.mjs --strict
       - run: node evals/agent-surface-routing.mjs
       # Pinned like every action here. The validator runs offline and needs no login.
@@ -44,6 +46,9 @@ jobs:
         env:
           MM_REQUIRE_CLAUDE: 1
         run: bash scripts/validate-plugin.sh
+      # Exit 2 means no claude of 2.1.287 or later could read the Mod: not checked, which is not a failure.
+      - name: the Mod stays inside its contract and the marketplace lists it from ./mod
+        run: bash mod/tests/validate.sh || [ "$?" = 2 ]
 
   # Runs on every pull request with no path filter, so it can be a REQUIRED check. The cross-OS
   # matrix is path-filtered and therefore cannot be required without deadlocking docs-only PRs,

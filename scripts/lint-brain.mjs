@@ -1,9 +1,44 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null }
+const ROOT = arg('--root') ? resolve(arg('--root')) : join(dirname(fileURLToPath(import.meta.url)), '..')
+
+// Brains planted with one structural defect each must fail --strict; the clean brain must pass.
+if (process.argv.includes('--self-test')) {
+  const box = mkdtempSync(join(tmpdir(), 'mm-lint-'))
+  const said = 'Verify the change against the requirement before you report it as done.'
+  const brain = (name, files) => {
+    const dir = join(box, name)
+    const all = {
+      'CLAUDE.md': '# Kernel\n\nRead `skills/build/SKILL.md` when you build.\n',
+      'engineering/core/rigor.md': '# Rigor\n\nSee ~/.mastermind/engineering/core/rigor.md for depth.\n',
+      'skills/build/SKILL.md': '---\nname: build\ndescription: "x"\n---\n\n# Build\n\nShip it.\n',
+      'agents/architect.md': '# Architect\n\nDesign first.\n',
+      ...files,
+    }
+    for (const [rel, text] of Object.entries(all)) { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text) }
+    return spawnSync('node', [fileURLToPath(import.meta.url), '--root', dir, '--strict'], { encoding: 'utf8' }).status
+  }
+  const fires = [
+    ['a ~/.mastermind path that does not exist', { 'CLAUDE.md': '# Kernel\n\nRead ~/.mastermind/engineering/core/missing.md first.\n' }],
+    ['a skill reference with no skill behind it', { 'agents/architect.md': '# Architect\n\nHand off to `skills/nope/SKILL.md`.\n' }],
+    ['one sentence stated in three layers', { 'CLAUDE.md': `# Kernel\n\n${said}\n`, 'engineering/core/rigor.md': `# Rigor\n\n${said}\n`,
+      'skills/build/SKILL.md': `---\nname: build\ndescription: "x"\n---\n\n${said}\n` }],
+  ]
+  const wrong = [
+    ...fires.filter(([, f], i) => brain(`bad${i}`, f) !== 1).map(([name]) => `did not fire: ${name}`),
+    ...(brain('clean', {}) === 0 ? [] : ['fired on a clean brain']),
+  ]
+  rmSync(box, { recursive: true, force: true })
+  if (wrong.length) { console.error('✖ lint-brain self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
+  console.log(`✓ lint-brain self-test: ${fires.length} bad inputs fire, 1 good input stays clean.`)
+  process.exit(0)
+}
 const STRICT = process.argv.includes('--strict')
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 const rel = (p) => relative(ROOT, p)

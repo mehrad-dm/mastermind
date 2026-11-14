@@ -67,8 +67,8 @@ everyone agreed with it.
 - **Never name who found a defect**, or that a review or audit happened, in anything public:
   commits, the changelog, code comments, the website. Say what broke and what it cost.
 
-- **A directive states one thing, and states it.** Bullets and numbered steps in a skill body or an
-  agent brief are instructions parsed by a reader who cannot ask a follow-up. Two verbs joined by
+- **A directive states one thing, and states it.** Bullets and numbered steps in a skill body, an agent
+  brief, the kernel or a core doc are instructions parsed by a reader who cannot ask a follow-up. Two verbs joined by
   "and" is two steps. "Should probably", "try to", "where possible", "perhaps", "ideally", "maybe"
   and "you may want to" reopen the decision the rule existed to close. `scripts/check-instructions.mjs`
   **fails** a directive over 30 words or one that hedges, and **reports** the ones carrying more than
@@ -94,8 +94,14 @@ watched fail is not known to work. Before wiring one into `preflight.sh` or CI:
 
 Then keep both inputs. The bad input that made the check fire and a good one that keeps it quiet
 go in `scripts/fixtures/`, and the check gets a `--self-test` mode that runs them.
-`node scripts/self-test.mjs` runs every gate's self-test, in `preflight.sh` and on every pull
-request, so a check that has stopped firing is noticed the day it stops and not the day it was
+`node scripts/self-test.mjs` runs the self-tests of the gates that have one, in `preflight.sh` and
+on every pull request: `check-shell-patterns`, `check-comments`, `check-instructions`,
+`check-integrity`, `check-links`, `check-versions`, `check-claims`, `check-prose`, `lint-brain`,
+`build-router`, `build-architecture`, `validate-plugin.sh` (against a stub `claude`), and the
+evals `agent-surface-routing`, `auto-invoke` (its prompts only, no session) and `classify`. Each
+must print how many bad inputs fired, and a count of zero fails. `agent-surface-cost` has no
+self-test yet; `codex-routing` and `cursor-routing` only run live, and the rules they apply are
+`classify`'s. A check that has stopped firing is noticed the day it stops and not the day it was
 needed. Several gates here passed for months on input they were written to reject, because the
 proof that they fired was run once by hand and never again.
 
@@ -292,8 +298,8 @@ Each of these cost real debugging time at least once. They're here so nobody red
   occurrence deliberately; `evals/` records history and must keep its original versions.
 - **Never bulk-fix spelling from a partial word list.** A pass that declared "0 remaining" had left
   `memorise`, `licence`, `colour`, and `analyse` untouched.
-- **Don't restate a count: derive or assert it.** Hardcoded totals ("17 skills") drift the moment one
-  is added. `check-integrity.mjs` now fails on the ones we ship; keep it that way.
+- **Don't restate a count: derive or assert it.** Hardcoded totals (a skill count typed into prose) drift the
+  moment one is added. `check-claims.mjs` fails on the ones we ship; keep it that way.
 - **Always use `git -C <path>`.** A `cd` mistake once tagged and released on the *site* repo instead of
   this one.
 

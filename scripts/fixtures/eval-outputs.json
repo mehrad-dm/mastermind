@@ -109,6 +109,75 @@
    "err": {
     "code": 1
    }
+  },
+  {
+   "name": "exit 1 after the init record: socket hang up",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}"
+   ],
+   "stderr": "Error: socket hang up",
+   "err": {
+    "code": 1
+   }
+  },
+  {
+   "name": "connection reset after a skill fired",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}"
+   ],
+   "stderr": "Error: read ECONNRESET",
+   "err": {
+    "code": 1
+   }
+  },
+  {
+   "name": "killed by SIGKILL, not by the timeout",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}"
+   ],
+   "err": {
+    "code": null,
+    "signal": "SIGKILL",
+    "killed": false
+   }
+  },
+  {
+   "name": "exit 0 with empty stdout",
+   "infra": true,
+   "stdout": []
+  },
+  {
+   "name": "exit 0 with crash text instead of stream-json",
+   "infra": true,
+   "stdout": [
+    "TypeError: Cannot read properties of undefined (reading 'content')",
+    "    at main (cli.js:12:5)"
+   ]
+  },
+  {
+   "name": "exit 0 with records but no result record",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}"
+   ]
+  },
+  {
+   "name": "a result record and a non-zero exit",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "err": {
+    "code": 1
+   }
   }
  ],
  "cli": [
@@ -195,6 +264,38 @@
    "error": {
     "stderr": "error: unexpected argument '--mode' found"
    }
+  }
+ ],
+ "answer": [
+  {
+   "name": "a skill name",
+   "kind": "answer",
+   "stdout": "handoff\n"
+  },
+  {
+   "name": "an answer that names a login skill",
+   "kind": "answer",
+   "stdout": "debug: the login form loses its session\n"
+  },
+  {
+   "name": "exit 0 with nothing printed",
+   "kind": "could not run",
+   "stdout": ""
+  },
+  {
+   "name": "exit 0 with only whitespace",
+   "kind": "could not run",
+   "stdout": "\n  \n"
+  },
+  {
+   "name": "exit 0 with a usage limit on stdout",
+   "kind": "account",
+   "stdout": "You have hit your usage limit. Upgrade to Plus to continue."
+  },
+  {
+   "name": "exit 0 with a login prompt on stdout",
+   "kind": "account",
+   "stdout": "Not logged in. Please run agent login."
   }
  ],
  "model": [

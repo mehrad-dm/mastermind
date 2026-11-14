@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync, readdirSync, readFileSync, writeFileSyn
 import { tmpdir } from 'node:os'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { claudeInfra, observed, hit as isHitFor } from './classify.mjs'
+import { outcome, hit as isHitFor } from './classify.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const FULL = !!process.env.FULL
@@ -30,14 +30,14 @@ const CORE = [
 ]
 const EXTRA = [
   { prompt: 'I have no idea if streaming uploads will even work with our setup, find out fast', expected: ['prototype', 'learn'] },
-  { prompt: 'three new hires got our internal auth package wrong this month. give them something to read so that stops happening', expected: ['explain'] },
+  { prompt: 'three new hires misused our auth library this month. write something they can read so it stops happening', expected: ['explain'] },
   { prompt: 'I am stopping here today, set things up so we can resume cleanly tomorrow', expected: ['handoff'] },
   { prompt: 'you keep formatting things differently from the rest of our code, learn our way', expected: ['signature'] },
   { prompt: 'we always use 2-space indent in this repo, you used tabs, keep that in mind from now on', expected: ['levelup', 'signature'] },
   { prompt: 'I am about to paste this into another AI and I doubt it will get what I mean, fix it up first: summarize customer feedback by theme', expected: ['prompt'] },
   { prompt: 'summarize the customer feedback in this repo by theme and list the top 3 complaints', forbidden: ['prompt'] },
   { prompt: 'what can you actually do for me here?', expected: ['help'] },
-  { prompt: 'that last answer went straight over my head. give it to me again as if I were new to all this', expected: ['clarify'] },
+  { prompt: 'I lost you halfway through that. say it again like I am new to all this', expected: ['clarify'] },
   { prompt: 'every small change in the orders code turns into a week of work. something about how it is put together is fighting us, show me what', expected: ['deepen'] },
   { prompt: 'my cofounder wants a referral program, I am not convinced people would use it, can we figure out if it is worth the effort', expected: ['assess'] },
   { prompt: 'two rules nobody here may ever break: card numbers never touch our database, and the app has to keep working without a connection. get that on record so every future change gets held to it', expected: ['constitution'] },
@@ -75,9 +75,38 @@ const USER_ONLY = new Set(KNOWN.filter((k) => {
   const head = readFileSync(join(ROOT, 'skills', k, 'SKILL.md'), 'utf8').match(/^---\n([\s\S]*?)\n---/)?.[1] ?? ''
   return /^disable-model-invocation:\s*true\s*$/m.test(head)
 }))
-if (USER_ONLY.size) console.log(`user-only skills (reached through the menu, never fired): ${[...USER_ONLY].join(', ')}`)
 
-const announced = (raw) => observed(raw, KNOWN, USER_ONLY)
+// A prompt that repeats its target's description measures string matching, not routing.
+const grams = (t) => {
+  const w = String(t).toLowerCase().match(/[a-z0-9]+/g) ?? []
+  return new Set(w.slice(2).map((_, i) => w.slice(i, i + 3).join(' ')))
+}
+const describe = (name) => readFileSync(join(ROOT, 'skills', name, 'SKILL.md'), 'utf8').match(/^description:\s*(.*)$/m)?.[1] ?? ''
+function echoes(cases, desc = describe) {
+  const out = []
+  for (const c of cases) for (const target of c.expected ?? []) {
+    if (!KNOWN.includes(target)) continue
+    const said = grams(desc(target))
+    const shared = [...grams(c.prompt)].filter((g) => said.has(g))
+    if (shared.length) out.push(`"${c.prompt.slice(0, 50)}" repeats ${target}'s description: "${shared[0]}"`)
+  }
+  return out
+}
+
+if (process.argv.includes('--self-test')) {
+  const planted = [
+    { prompt: 'write me usage docs, people or AI sessions keep using it wrong', expected: ['explain'] },
+    { prompt: 'you lost me: want it simpler or shorter', expected: ['clarify'] },
+  ]
+  const wrong = [
+    ...planted.filter((c) => !echoes([c]).length).map((c) => `did not fire on a prompt that copies its description: ${c.prompt}`),
+    ...echoes([...CORE, ...EXTRA]),
+  ]
+  if (wrong.length) { console.error('✖ auto-invoke self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
+  console.log(`✓ auto-invoke self-test: ${planted.length} bad inputs fire, ${CORE.length + EXTRA.length} good inputs stay clean (no prompt shares three words in a row with its target's description).`)
+  process.exit(0)
+}
+if (USER_ONLY.size) console.log(`user-only skills (reached through the menu, never fired): ${[...USER_ONLY].join(', ')}`)
 
 const sh = (args, opts) => new Promise((res) => {
   execFile('claude', args, { maxBuffer: 32 * 1024 * 1024, timeout: Number(process.env.TIMEOUT_MS || 600000), ...opts }, (err, stdout, stderr) =>
@@ -148,29 +177,30 @@ const runBatch = async (batch) => {
          '--output-format', 'stream-json', '--verbose'],
         { cwd: work, env: SESSION_ENV },
       )
-      const got = announced(r.out)
-      out.push({ ...job, got, infra: got ? null : claudeInfra(r) })
+      out.push({ ...job, ...outcome(job, r, KNOWN, USER_ONLY) })
     }
   }))
   return out
 }
 
+// A retry carries the whole case, so a negative case keeps the flag that makes it negative.
+const retry = ({ got, infra, hit, ...c }) => c
 const jobs = []
 for (const c of CASES) for (let r = 0; r < REPS; r++) jobs.push({ ...c, r })
 let results = await runBatch(jobs)
 
 if (!FULL) {
-  const missed = results.filter((r) => !r.infra && !isHit(r, r.got))
+  const missed = results.filter((r) => !r.infra && !r.hit)
   if (missed.length) {
-    const second = await runBatch(missed.map(({ prompt, expected, forbidden }) => ({ prompt, expected, forbidden, r: 1 })))
-    results = results.map((r) => second.find((x) => x.prompt === r.prompt && isHit(x, x.got)) || r)
+    const second = await runBatch(missed.map((r) => ({ ...retry(r), r: 1 })))
+    results = results.map((r) => second.find((x) => x.prompt === r.prompt && x.hit) || r)
   }
 }
 
 const decoyNames = new Set(DECOYS.map(([n]) => n))
 let broken = results.filter((r) => r.infra)
 if (broken.length) {
-  const retried = await runBatch(broken.map(({ prompt, expected, forbidden }) => ({ prompt, expected, forbidden, r: 9 })))
+  const retried = await runBatch(broken.map((r) => ({ ...retry(r), r: 9 })))
   results = results.map((r) => {
     if (!r.infra) return r
     const again = retried.find((x) => x.prompt === r.prompt)

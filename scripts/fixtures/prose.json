@@ -1,0 +1,76 @@
+{
+ "fires": [
+  {
+   "name": "the character in a README",
+   "file": "README.md",
+   "text": "MasterMind {EM} a brain.\n"
+  },
+  {
+   "name": "the JSON escape in a manifest",
+   "file": ".claude-plugin/plugin.json",
+   "text": "{ \"description\": \"a brain {ESC} for tools\" }\n"
+  },
+  {
+   "name": "the HTML entity in a page",
+   "file": "docs/page.md",
+   "text": "<p>one {ENT} two</p>\n"
+  },
+  {
+   "name": "inside a fenced code block",
+   "file": "skills/x/SKILL.md",
+   "text": "```\necho \"a {EM} b\"\n```\n"
+  },
+  {
+   "name": "in the clean list of a gate fixture",
+   "file": "scripts/fixtures/x.json",
+   "text": "{\n \"fires\": [\n  { \"text\": \"plain\" }\n ],\n \"clean\": [\n  { \"text\": \"a {EM} b\" }\n ]\n}\n"
+  },
+  {
+   "name": "in a fixture file that is not JSON",
+   "file": "scripts/fixtures/stub.mjs",
+   "text": "const fires = [\"a {EM} b\"]\n"
+  },
+  {
+   "name": "in a JSON file nested below scripts/fixtures/",
+   "file": "scripts/fixtures/deep/x.json",
+   "text": "{\n \"fires\": [\n  { \"text\": \"a {EM} b\" }\n ]\n}\n"
+  },
+  {
+   "name": "after the fires list closes, on the same file",
+   "file": "scripts/fixtures/x.json",
+   "text": "{\n \"fires\": [\n  { \"text\": \"a {ESC} b\" }\n ],\n \"note\": \"c {ESC} d\"\n}\n"
+  },
+  {
+   "name": "a JSON file elsewhere with a fires key",
+   "file": "evals2/x.json",
+   "text": "{\n \"fires\": [\n  { \"text\": \"a {EM} b\" }\n ]\n}\n"
+  }
+ ],
+ "clean": [
+  {
+   "name": "plain prose",
+   "file": "README.md",
+   "text": "MasterMind: a brain, for tools.\n"
+  },
+  {
+   "name": "a bad input inside a gate fixture's fires list",
+   "file": "scripts/fixtures/x.json",
+   "text": "{\n \"fires\": [\n  { \"text\": \"a {ESC} b\" },\n  { \"text\": \"c {EM} d\" }\n ],\n \"clean\": []\n}\n"
+  },
+  {
+   "name": "a bracket inside a string does not end the fires list early",
+   "file": "scripts/fixtures/x.json",
+   "text": "{\n \"fires\": [\n  { \"text\": \"] a [ \\\" ]\" },\n  { \"text\": \"c {EM} d\" }\n ]\n}\n"
+  },
+  {
+   "name": "the pre-0.31.3 pointer text in install.sh",
+   "file": "install.sh",
+   "text": "HINT_LEGACY_GLOBAL=\"old {EM} text\"\n"
+  },
+  {
+   "name": "recorded eval output",
+   "file": "evals/runs/x.md",
+   "text": "the model said {EM} this\n"
+  }
+ ]
+}

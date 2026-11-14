@@ -6,7 +6,7 @@ import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { tmpdir, homedir } from 'node:os'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { cliFailure, tally, verdict } from './classify.mjs'
+import { cliAnswer, cliFailure, tally, verdict } from './classify.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // The first three cases of the Codex eval, so the two tools stay comparable. They ask a session
@@ -31,9 +31,9 @@ if (!CLI) { console.error('no Cursor CLI found (looked for cursor-agent and agen
 
 // The CLI resolves its login from the real home, so the measured calls keep it. Only install.sh
 // gets a scratch HOME, because that is the part that could write into the real one.
-const run = (prompt, cwd) =>
+const run = (prompt, cwd) => cliAnswer(
   execFileSync(CLI, ['-p', '--output-format', 'text', '--mode', 'ask', '--trust', prompt],
-    { encoding: 'utf8', maxBuffer: 16 << 20, stdio: ['ignore', 'pipe', 'pipe'], timeout: 300000, cwd })
+    { encoding: 'utf8', maxBuffer: 16 << 20, stdio: ['ignore', 'pipe', 'pipe'], timeout: 300000, cwd }))
 
 const work = mkdtempSync(join(tmpdir(), 'mm-cursor-'))
 process.on('exit', () => rmSync(work, { recursive: true, force: true }))

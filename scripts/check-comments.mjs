@@ -3,7 +3,7 @@
 // Comments are rare, short, and explain WHY. "Meaningful" is not machine-checkable, but length
 // is, and length is where the rule actually breaks.
 
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, statSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -25,10 +25,14 @@ const SHEBANG = /^#!/
 const SLASH_STAR = /\.(mjs|js|ts|astro|css)$/i
 const FIXTURES = join(REPO, 'scripts', 'fixtures', 'comments.json')
 
+// A script with no extension (bin/mastermind, .githooks/pre-push) is code when its shebang says so.
+const SHELL_SHEBANG = /^#!\s*(?:\/usr\/bin\/env\s+)?(?:\/\S*\/)?(?:ba|z|da|k)?sh\b/
+const isCode = (file, head) => CODE.test(file) || (!/\.[^/]+$/.test(file) && SHELL_SHEBANG.test(head))
+
 const tracked = (root) =>
   execFileSync('git', ['-C', root, 'ls-files', '-z', '--cached', '--others', '--exclude-standard'], { encoding: 'utf8', maxBuffer: 64 << 20 })
     .split('\0')
-    .filter((f) => f && CODE.test(f) && !SKIP.test(f))
+    .filter((f) => f && !SKIP.test(f) && (CODE.test(f) || !/\.[^/]+$/.test(f)))
 
 function measure(file, text, label = '') {
   const long = []
@@ -84,8 +88,10 @@ function scan(root, label) {
   const dense = []
   for (const file of tracked(root)) {
     const path = join(root, file)
-    if (!existsSync(path)) continue
-    const r = measure(file, readFileSync(path, 'utf8'), label)
+    if (!existsSync(path) || !statSync(path).isFile()) continue
+    const text = readFileSync(path, 'utf8')
+    if (!isCode(file, text.slice(0, 120))) continue
+    const r = measure(file, text, label)
     long.push(...r.long)
     dense.push(...r.dense)
   }
@@ -94,9 +100,10 @@ function scan(root, label) {
 
 if (process.argv.includes('--self-test')) {
   const { fires, clean } = JSON.parse(readFileSync(FIXTURES, 'utf8'))
+  const long = (c) => isCode(c.file, c.text) && measure(c.file, c.text).long.length > 0
   const wrong = [
-    ...fires.filter((c) => measure(c.file, c.text).long.length === 0).map((c) => `did not fire: ${c.name}`),
-    ...clean.filter((c) => measure(c.file, c.text).long.length > 0).map((c) => `fired on clean input: ${c.name}`),
+    ...fires.filter((c) => !long(c)).map((c) => `did not fire: ${c.name}`),
+    ...clean.filter((c) => long(c)).map((c) => `fired on clean input: ${c.name}`),
   ]
   if (wrong.length) { console.error('✖ comments self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
   console.log(`✓ comments self-test: ${fires.length} bad inputs fire, ${clean.length} good inputs stay clean.`)

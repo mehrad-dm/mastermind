@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process'
+import { readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,9 +8,13 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const CLI = process.env.MM_ROUTE_CLI || join(ROOT, 'cli', 'bin', 'mastermind.mjs')
 // A ranker that returns the same three names for every request scores under 20% here.
 const MIN_HINTED = Number(process.env.MIN_HINTED ?? 50)
+// A ranker that arrows every skill would pass the floor while telling the model nothing.
+const MAX_HINTED_SKILLS = 3
+const ON_DISK = readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)
 
 // This reads the routing table, not a model: a user-only skill (handoff, help, signature,
 // levelup) is still listed there, which is how a session finds it.
+// Disclosed exception: these reuse their target's description words on purpose, to gate the arrows.
 const PARAPHRASE = [
   ['why is this page so slow when there are lots of orders?', 'performance'],
   ['this test keeps failing randomly and I cannot work out why', 'debug'],
@@ -44,19 +49,22 @@ const ORGANIC = [
 const route = (q) => {
   const r = JSON.parse(execFileSync('node', [CLI, 'route', q, '--json'],
     { cwd: ROOT, encoding: 'utf8', env: { ...process.env, MASTERMIND_HOME: ROOT } }))
-  return { all: r.skills.map((s) => s.name), hints: r.hints }
+  const agents = new Set((r.agents ?? []).map((a) => a.name))
+  return { all: r.skills.map((s) => s.name), hints: r.hints, skillHints: r.hints.filter((h) => !agents.has(h)) }
 }
 
 const score = (cases) => {
   let recall = 0, hinted = 0
-  const missed = []
+  const missed = [], wide = [], absent = new Set()
   for (const [q, want] of cases) {
-    const { all, hints } = route(q)
+    const { all, hints, skillHints } = route(q)
     if (all.includes(want)) recall++
     else missed.push({ request: q.slice(0, 52), want, note: 'MISSING FROM TABLE, a real bug' })
     if (hints.includes(want)) hinted++
+    if (skillHints.length > MAX_HINTED_SKILLS) wide.push(`${skillHints.length} skills hinted for "${q.slice(0, 40)}"`)
+    for (const s of ON_DISK) if (!all.includes(s)) absent.add(s)
   }
-  return { n: cases.length, recall, hinted, missed }
+  return { n: cases.length, recall, hinted, missed, wide, absent: [...absent] }
 }
 
 const pct = (n, of) => `${((n / of) * 100).toFixed(0)}%`
@@ -69,10 +77,12 @@ if (process.argv.includes('--self-test')) {
     try { execFileSync('node', [fileURLToPath(import.meta.url)], { env: { ...process.env, MM_ROUTE_CLI: stub, STUB_MODE: mode }, stdio: 'ignore' }); return 0 }
     catch (e) { return e.status }
   }
-  const wrong = [['constant', 'a ranker that ignores the request'], ['drop', 'a table missing a skill']]
-    .filter(([mode]) => exit(mode) !== 1).map(([, what]) => `did not fail on ${what}`)
+  const bad = [['constant', 'a ranker that ignores the request'], ['drop', 'a table missing a skill a case expects'],
+    ['dropother', 'a table missing a skill no case expects'], ['wide', 'a ranker that hints every skill']]
+  const wrong = [...bad.filter(([mode]) => exit(mode) !== 1).map(([, what]) => `did not fail on ${what}`),
+    ...(exit('honest') === 0 ? [] : ['failed on a stub that lists every skill and hints only the right one'])]
   if (wrong.length) { console.error('✖ routing self-test: ' + wrong.join('; ')); process.exit(1) }
-  console.log('✓ routing self-test: a constant ranker and an incomplete table each fail the gate.')
+  console.log(`✓ routing self-test: ${bad.length} bad inputs fire, 1 good input stays clean (a constant ranker, two incomplete tables and a ranker that hints everything each fail the gate).`)
   process.exit(0)
 }
 
@@ -95,4 +105,8 @@ console.log(
   + `\nranker that stopped reading the request falls under the floor of ${floor} of ${p.n}.`,
 )
 if (p.hinted < floor) console.error(`\n✖ only ${p.hinted} of ${p.n} paraphrased requests were hinted, under the floor of ${floor} (${MIN_HINTED}%).`)
-process.exit(p.recall === p.n && o.recall === o.n && p.hinted >= floor ? 0 : 1)
+const wide = [...p.wide, ...o.wide]
+if (wide.length) console.error(`\n✖ the arrows mark more than ${MAX_HINTED_SKILLS} skills, so they no longer narrow anything: ${wide[0]}`)
+const absent = [...new Set([...p.absent, ...o.absent])]
+if (absent.length) console.error(`\n✖ the routing table omits skill(s) on disk: ${absent.join(', ')}`)
+process.exit(p.recall === p.n && o.recall === o.n && p.hinted >= floor && !wide.length && !absent.length ? 0 : 1)

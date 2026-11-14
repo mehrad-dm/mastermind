@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
-import { join, resolve, dirname } from 'node:path'
+import { readFileSync, readdirSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve, dirname, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -11,57 +12,67 @@ const UA = 'Mozilla/5.0 (compatible; MasterMind-linkcheck/1.0; +https://mastermi
 
 // TLDs we treat as real when a bare domain appears in prose (allowlist = fewer false hits).
 const TLDS = 'com|dev|org|io|net|guru|gg|es|xyz'
-const SKIP = ['/ui-ux-pro-max/', '/lab/', '/_', 'ROUTER.md']   // /_ skips all _-prefixed scaffolding
+// Matched against the path inside the repository, so a checkout under a folder such as `_work/`
+// is scanned like any other.
+const SKIP = [/(^|\/)ui-ux-pro-max\//, /(^|\/)lab\//, /(^|\/)ROUTER\.md$/]
 
-const EXCLUDE_DIRS = new Set(['.git', '.github', '.claude', '.cursor', '.agents', '.mastermind', 'node_modules', '.eval-run', 'lab', 'private', 'local'])
+const EXCLUDE_DIRS = new Set(['.git', '.claude', '.cursor', '.agents', '.mastermind', 'node_modules', '.eval-run', 'lab', 'private', 'local'])
 const EXCLUDE_FILES = new Set(['CHANGELOG.md'])
-
-// --- collect curated markdown files ------------------------------------------
-const walk = (d) =>
-  readdirSync(d, { withFileTypes: true }).flatMap((e) => {
-    const p = join(d, e.name)
-    if (SKIP.some((s) => p.includes(s))) return []
-    if (e.isDirectory()) return EXCLUDE_DIRS.has(e.name) ? [] : walk(p)
-    return e.name.endsWith('.md') && !EXCLUDE_FILES.has(e.name) ? [p] : []
-  })
-
 const MANIFESTS = ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json']
-const files = [...walk(ROOT), ...MANIFESTS.map((m) => join(ROOT, m))]
 
-// --- extract candidate links + staleness dates -------------------------------
-const targets = new Map() // url -> Set(sourceFile)
 const RESERVED = /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:example\.(?:com|net|org)|localhost|invalid|test)(?:[:/]|$)/i
-const add = (url, file) => {
-  if (RESERVED.test(url)) return
-  if (!targets.has(url)) targets.set(url, new Set())
-  targets.get(url).add(file.replace(ROOT + '/', ''))
-}
-const staleNotes = []
-
 const FULL = /https?:\/\/[^\s)\]"'`<>·,;]+/g
 // domain must be followed by a non-alphanumeric, so `navigator.connection` isn't read as `navigator.co`.
 const BARE = new RegExp(`\\b((?:[a-z0-9-]+\\.)+(?:${TLDS}))(?![a-z0-9])(\\/[^\\s)\\]"'\`<>·,;]*)?`, 'gi')
 const DATE = /verif\w*[^\n]*?(20\d\d)-(\d\d)/i
-
 const clean = (u) => u.replace(/[.,;:]+$/, '') // trailing punctuation from prose
-
 const RELATIVE = /\[[^\]]*\]\((?!https?:|mailto:|#)([^)\s]+)\)/g
-const brokenLocal = []
+const ATTRIBUTE = /\b(?:src|href)=["']([^"']+)["']/g
+const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i
 
-for (const f of files) {
-  const text = readFileSync(f, 'utf8')
-  for (const m of text.matchAll(FULL)) add(clean(m[0]), f)
-  for (const m of text.matchAll(BARE)) add('https://' + clean(m[1] + (m[2] || '')), f)
-  if (f.endsWith('.md')) {
-    for (const m of text.matchAll(RELATIVE)) {
-      const target = m[1].split('#')[0]
-      if (!target) continue // pure anchor
-      const abs = target.startsWith('/') ? join(ROOT, target) : resolve(dirname(f), target)
-      if (!existsSync(abs)) brokenLocal.push({ file: f.replace(ROOT + '/', ''), target: m[1] })
-    }
+// Every file link a Markdown page makes: `[text](path)` and an HTML `src` or `href`.
+function localLinks(text) {
+  const out = []
+  for (const m of text.matchAll(RELATIVE)) out.push(m[1])
+  for (const m of text.matchAll(ATTRIBUTE)) if (!EXTERNAL.test(m[1])) out.push(m[1])
+  return out
+}
+
+function collect(root) {
+  const rel = (p) => relative(root, p).split(sep).join('/')
+  const walk = (d) =>
+    readdirSync(d, { withFileTypes: true }).flatMap((e) => {
+      const p = join(d, e.name)
+      if (SKIP.some((s) => s.test(rel(p) + (e.isDirectory() ? '/' : '')))) return []
+      if (e.isDirectory()) return EXCLUDE_DIRS.has(e.name) ? [] : walk(p)
+      return e.name.endsWith('.md') && !EXCLUDE_FILES.has(e.name) ? [p] : []
+    })
+  const files = [...walk(root), ...MANIFESTS.map((m) => join(root, m)).filter((m) => existsSync(m))]
+  const targets = new Map() // url -> Set(sourceFile)
+  const add = (url, file) => {
+    if (RESERVED.test(url)) return
+    if (!targets.has(url)) targets.set(url, new Set())
+    targets.get(url).add(rel(file))
   }
-  const d = text.match(DATE)
-  if (d) staleNotes.push({ file: f.replace(ROOT + '/', ''), year: +d[1], month: +d[2] })
+  const staleNotes = []
+  const brokenLocal = []
+  for (const f of files) {
+    const text = readFileSync(f, 'utf8')
+    for (const m of text.matchAll(FULL)) add(clean(m[0]), f)
+    for (const m of text.matchAll(BARE)) add('https://' + clean(m[1] + (m[2] || '')), f)
+    if (f.endsWith('.md')) {
+      for (const link of localLinks(text)) {
+        let target = link.split('#')[0].split('?')[0]
+        try { target = decodeURI(target) } catch { /* left as written */ }
+        if (!target) continue // pure anchor
+        const abs = target.startsWith('/') ? join(root, target) : resolve(dirname(f), target)
+        if (!existsSync(abs)) brokenLocal.push({ file: rel(f), target: link })
+      }
+    }
+    const d = text.match(DATE)
+    if (d) staleNotes.push({ file: rel(f), year: +d[1], month: +d[2] })
+  }
+  return { files, targets, staleNotes, brokenLocal }
 }
 
 // --- check one URL -----------------------------------------------------------
@@ -122,12 +133,37 @@ async function selfTest() {
   if (exitCode([{ kind: 'MOVED' }, { kind: 'OK' }], []) !== 1) wrong.push('a moved URL did not fail the run')
   if (exitCode([{ kind: 'BLOCKED' }, { kind: 'OK' }], []) !== 0) wrong.push('one unreachable URL failed a run that checked others')
   if (exitCode([{ kind: 'BLOCKED' }, { kind: 'BLOCKED' }], []) !== 2) wrong.push('a run that checked nothing did not report "could not check"')
+  const box = mkdtempSync(join(tmpdir(), 'mm-links-'))
+  const repo = join(box, '_work', 'mastermind')
+  const put = (p, t) => { mkdirSync(dirname(join(repo, p)), { recursive: true }); writeFileSync(join(repo, p), t) }
+  put('README.md', '[ok](docs/here.md) <img src="docs/gone.png"> [gone](docs/missing.md) <a href="https://example.com/x">x</a>\n')
+  put('docs/here.md', '<img src="./here.md"> [anchor](#top) [mail](mailto:a@example.com)\n')
+  put('engineering/fields/_template/field.md', '[gone](./missing-too.md)\n')
+  put('lab/notes.md', '[gone](./skipped.md)\n')
+  const found = collect(repo).brokenLocal.map((b) => `${b.file} ${b.target}`).sort()
+  rmSync(box, { recursive: true, force: true })
+  const wanted = ['README.md docs/gone.png', 'README.md docs/missing.md', 'engineering/fields/_template/field.md ./missing-too.md']
+  if (JSON.stringify(found) !== JSON.stringify(wanted))
+    wrong.push(`under a _work checkout the broken file links were ${JSON.stringify(found)}, wanted ${JSON.stringify(wanted)}`)
   if (wrong.length) { console.error('✖ links self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
-  console.log('✓ links self-test: a moved URL and a dead one fail, a blocked one is "could not check", a slash redirect is clean.')
+  console.log(`✓ links self-test: ${2 + 3 + wanted.length} bad inputs fire, 5 good inputs stay clean (moved and dead URLs fail, a blocked one is "could not check", broken file links are found under a _work checkout).`)
   process.exit(0)
 }
 
 // --- run with a concurrency cap ----------------------------------------------
+const { files, targets, staleNotes, brokenLocal } = process.argv.includes('--self-test') ? {} : collect(ROOT)
+
+// Files in this repository only: nothing on the network, so a broken link here can fail a pull request.
+function runLocal() {
+  if (brokenLocal.length) {
+    console.error(`✖ BROKEN FILE LINKS (${brokenLocal.length}): the target does not exist:`)
+    for (const b of brokenLocal) console.error(`  ${b.target}\n           ← ${b.file}`)
+    process.exit(1)
+  }
+  console.log(`✓ every file link resolves (${files.length} curated files; external links not checked by --local).`)
+  process.exit(0)
+}
+
 async function run() {
   const urls = [...targets.keys()].sort()
   const results = []
@@ -187,4 +223,5 @@ async function run() {
 }
 
 if (process.argv.includes('--self-test')) selfTest()
+else if (process.argv.includes('--local')) runLocal()
 else run()

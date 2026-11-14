@@ -16,8 +16,9 @@ const SHELL = /\.(sh|bash)$|(^|\/)(pre-commit|pre-push|mastermind)$/
 const WORKFLOW = /^\.github\/workflows\/[^/]+\.ya?ml$/
 const PIPEFAIL = /(^|[;&|(\s])set\s+(?:[-+][A-Za-z]+\s+|-o\s+[a-z]+\s+)*-[A-Za-z]*o\s+pipefail\b/m
 // `head` is left alone: it is nearly always display truncation where the status is discarded.
-const READER = /(?<![|&])\|&?(?!\|)\s*(?:command\s+)?[ef]?grep\b/g
-const QUIET = /^(?:--quiet|--silent|-[A-Za-z0-9]*q[A-Za-z0-9]*)$/
+// Any reader that can stop before its input ends: -q, -l, -L and -m, for grep at any path and for rg.
+const READER = /(?<![|&])\|&?(?!\|)\s*(?:command\s+)?(?:\/\S*\/)?(?:[ef]?grep|rg)\b/g
+const QUIET = /^(?:--quiet|--silent|--files-with(?:out)?-match(?:es)?|--max-count(?:=\S*)?|-[A-Za-z0-9]*[qlLm][A-Za-z0-9]*)$/
 
 const uncomment = (line) => line.replace(/(^|\s)#.*$/, '$1')
 

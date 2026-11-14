@@ -21,7 +21,12 @@ itself, or whose fully resolved path
 leaves the project (or your home directory, for `--global`), is refused with a message naming the
 path and a non-zero exit. It is never followed, and a path that cannot be resolved is refused, not
 guessed at. The same check covers the per-tool files: `.codex/hooks.json`, `.cursor/agents/` and
-the kernel block in an `AGENTS.md` of your own. It will only restore a backup pointer of the exact shape it writes itself. If you find a
+the kernel block in an `AGENTS.md` of your own. It will only restore a backup pointer of the exact shape it writes itself.
+
+Outside the project, a per-project install creates one thing: the `~/.mastermind` link to the brain
+it was run from, through the same check, scoped to your home directory. A `--shared` install also
+writes its install record under `~/.mastermind-state/projects/`. A `~/.mastermind` that already
+points at a different brain is refused, never repointed. If you find a
 write or a delete that escapes this, that is a vulnerability, and the reporting instructions below
 apply.
 

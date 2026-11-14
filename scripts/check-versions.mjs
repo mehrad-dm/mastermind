@@ -76,7 +76,7 @@ function selfTest() {
   if (!tree({ noModEntry: true }).length) wrong.push('did not fire when the Mod has no marketplace entry')
   rmSync(dir, { recursive: true, force: true })
   if (wrong.length) { console.error('✖ versions self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
-  console.log('✓ versions self-test: eight drifted locations and a missing Mod entry each fire, an agreeing tree is clean.')
+  console.log('✓ versions self-test: 9 bad inputs fire, 1 good input stays clean (eight drifted locations and a missing Mod entry).')
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

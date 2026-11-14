@@ -40,6 +40,36 @@ release_refuses_on_master() {
   case "$out" in *"you are on master"*) return 0 ;; *) printf '%s\n' "$out"; return 1 ;; esac
 }
 
+# The release order: a branch, the CHANGELOG section committed on it, then release.sh.
+release_runs_on_branch() {
+  local tmp out code v
+  tmp="$(mktemp -d)" || return 1
+  git clone -q --no-hardlinks "$REPO" "$tmp/repo" || { rm -rf "$tmp"; return 1; }
+  cp "$REPO/scripts/release.sh" "$tmp/repo/scripts/release.sh"
+  v="$(cat "$tmp/repo/VERSION")"
+  mkdir -p "$tmp/site/src" "$tmp/site/public"
+  printf "export const site = { version: 'v%s' }\n" "$v" > "$tmp/site/src/site.config.ts"
+  printf 'Current release: v%s\n' "$v" > "$tmp/site/public/llms.txt"
+  git -C "$tmp/site" init -q && git -C "$tmp/site" add -A &&
+    git -C "$tmp/site" -c user.name=preflight -c user.email=preflight@localhost commit -qm site || { rm -rf "$tmp"; return 1; }
+  git -C "$tmp/repo" checkout -q -b release/v99.0.0 || { rm -rf "$tmp"; return 1; }
+  { printf '## [99.0.0] - rehearsal\n\n- a rehearsal entry\n\n'; cat "$tmp/repo/CHANGELOG.md"; } > "$tmp/changelog"
+  mv "$tmp/changelog" "$tmp/repo/CHANGELOG.md"
+  git -C "$tmp/repo" add -A &&
+    git -C "$tmp/repo" -c user.name=preflight -c user.email=preflight@localhost commit -qm "changelog: v99.0.0" || { rm -rf "$tmp"; return 1; }
+  out="$(MASTERMIND_SITE="$tmp/site" bash "$tmp/repo/scripts/release.sh" 99.0.0 --dry-run 2>&1)"
+  code=$?
+  rm -rf "$tmp"
+  [ "$code" = 0 ] || { printf '%s\n' "$out"; return 1; }
+  case "$out" in *"dry run complete"*) return 0 ;; *) printf '%s\n' "$out"; return 1 ;; esac
+}
+
+# MM_SKIP_LIVE=1 reports the model-backed evals as could not run, without starting a session.
+live_eval() {
+  if [ -n "${MM_SKIP_LIVE:-}" ]; then echo "MM_SKIP_LIVE set: no live session was started"; return 2; fi
+  node "$@"
+}
+
 step_live() {
   local name="$1"; shift
   "$@" >"$LOG" 2>&1
@@ -119,6 +149,8 @@ site_available() {
 
 site_builds() {
   site_available || return $?
+  # The build writes into the site checkout; MM_SKIP_SITE_BUILD=1 keeps a borrowed checkout untouched.
+  if [ -n "${MM_SKIP_SITE_BUILD:-}" ]; then echo "MM_SKIP_SITE_BUILD set: the site build was NOT run"; return 2; fi
   ( cd "$SITE" && pnpm run build )
 }
 
@@ -129,12 +161,13 @@ step "installer regression suite"      bash "$REPO/tests/install.test.sh"
 step "agent-callable surface"          bash "$REPO/tests/agent-surface.test.sh"
 step "every skill routable, hints above floor" node "$REPO/evals/agent-surface-routing.mjs"
 step "routing still pays for itself"   node "$REPO/evals/agent-surface-cost.mjs" --strict
-step_live "skills auto-invoke (live)"  node "$REPO/evals/auto-invoke.mjs"
-step_live "codex routing (live)"       node "$REPO/evals/codex-routing.mjs"
-step_live "cursor routing (live)"      node "$REPO/evals/cursor-routing.mjs"
+step_live "skills auto-invoke (live)"  live_eval "$REPO/evals/auto-invoke.mjs"
+step_live "codex routing (live)"       live_eval "$REPO/evals/codex-routing.mjs"
+step_live "cursor routing (live)"      live_eval "$REPO/evals/cursor-routing.mjs"
 step "shell scripts parse"             shell_parses "$REPO/scripts/release.sh" "$REPO/scripts/verify-release.sh" "$REPO/scripts/prove-regression.sh" "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/tests/agent-surface.test.sh" "$REPO/scripts/verify-tools.sh" "$REPO/scripts/validate-plugin.sh" "$REPO/bin/mastermind" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
 step "release version grammar"         release_rejects_bad_versions
 step "release refuses to run on master" release_refuses_on_master
+step "release runs on a branch with its changelog committed" release_runs_on_branch
 step "every gate fires on its fixtures" node "$REPO/scripts/self-test.mjs"
 
 echo "Repo integrity"
@@ -142,6 +175,8 @@ step "router in sync"                  node "$REPO/scripts/build-router.mjs" --c
 step_live "library pages in sync"      node "$REPO/scripts/build-library.mjs" --check
 step "indexes, references, kernel and description budgets" node "$REPO/scripts/check-integrity.mjs"
 step_live "plugin manifests validate (--strict)" bash "$REPO/scripts/validate-plugin.sh"
+step_live "the Mod's contract and marketplace entry hold" bash "$REPO/mod/tests/validate.sh"
+step      "every file link in the docs resolves" node "$REPO/scripts/check-links.mjs" --local
 step_live "statements in the docs hold" node "$REPO/scripts/check-claims.mjs"
 step_live "cited resources resolve, none moved" node "$REPO/scripts/check-links.mjs"
 step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --strict

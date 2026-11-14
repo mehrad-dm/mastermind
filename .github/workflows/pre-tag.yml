@@ -6,6 +6,11 @@ name: pre-tag
 # The steps below the version check are publish.yml's gate, kept identical by check-claims.mjs.
 on:
   workflow_dispatch:
+    inputs:
+      site-ref:
+        description: the site branch to check, pushed but not yet on main (empty reads main)
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -62,6 +67,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: mehrad-dm/mastermind-site
+          ref: ${{ inputs.site-ref }}
           path: site-checkout
           ssh-key: ${{ secrets.MASTERMIND_SITE_KEY }}
       - name: the public library matches the skill and agent sources
