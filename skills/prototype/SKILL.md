@@ -19,18 +19,17 @@ design it twice). A prototype buys knowledge cheaply: the discipline is keeping 
    tests, review). **Ship the rebuild; the prototype gets discarded.**
 
 ## Rules
-**Time-box: 5 build-and-run attempts, roughly 30 minutes**: one question needs a handful of tries, not a
-day; proportionality over ceremony. An *attempt* is one edit → run → observe cycle against the named
-question; number each attempt in your updates, so the box is observable. Attempt 5 finished without an
-answer = the box is spent, whatever the clock says.
+**Time-box: three build-and-run attempts**, the loop limit in `core/agent-loop.md`. An *attempt* is one
+edit → run → observe cycle against the named question; number each attempt in your updates, so the box
+is observable. Attempt 3 finished without an answer = the box is spent, whatever the clock says.
 
 **When it expires, stop. That's a result, not a failure.** Report: what you learned, what is still
 unknown, and one recommendation: *proceed* (answer is yes, build it properly) / *different approach*
 (this path is wrong, here's the next one) / *needs more investigation* (name what a second prototype would
 target). Then discard the code: it stays throwaway and does not ship, same as a prototype that succeeded.
 
-**Extending the box is a decision, not drift.** Only extend when the attempts narrowed the question
-rather than wandering: say so explicitly, state the new bound (e.g. "3 more attempts"), and stop there.
+**Extending the box is the user's call.** When the attempts narrowed the question, say so in the
+report and recommend a second prototype with its own question; do not extend it yourself.
 
 Keep it isolated (a scratch branch/dir) so it can't leak into production. The deliverable is
 the *learning*, not the code.

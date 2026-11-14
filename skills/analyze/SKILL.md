@@ -15,8 +15,9 @@ code exists, when a gap still costs a sentence instead of a rewrite. Layout and 
 
 The context that wrote the documents already believes they agree. Dispatch the `code-reviewer` agent
 with the four files and this skill's six passes, and nothing about how they were written. Never use a
-fork of this session: a fork inherits what this context believes. Where no agent is wired, run it
-yourself and label the report self-checked.
+fork of this session: a fork inherits what this context believes. Where no agent is wired, follow the
+kernel's fallback: run `agents/code-reviewer.md` as a procedure in a separate session; where that is
+impossible, label the result self-checked.
 
 ## The six passes
 

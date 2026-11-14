@@ -109,7 +109,7 @@ or persist a test suite the user didn't agree to first. If the project's
 **`cycle-report`** preference is on (`.mastermind/prefs.md`), also follow the **`report`** skill to save a
 durable write-up; default off, so by default the verdict stays in chat.
 
-**The optional quiz.** After the verdict, offer once in one line: *"Want three questions to check you
-know what was tested?"* On a yes, ask three whose answers are in your report: what was exercised, what
+**The optional quiz.** Offer it once, as a line under Suggested (not done): *three questions to check
+what was tested*. When the user asks for it, ask three whose answers are in your report: what was exercised, what
 would have failed without the change, and what is still unchecked. Give the answers after the user
 replies. Never ask them unprompted, and never offer twice in a session.

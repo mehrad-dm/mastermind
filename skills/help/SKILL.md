@@ -84,7 +84,7 @@ also summon one directly.
 | Agent | What it does | Used automatically when… | Call it by hand |
 | --- | --- | --- | --- |
 | **architect** | designs the solution before code (boundaries, data model, APIs) | a decision crosses a module boundary, the data model or a public API | *"architect this feature"* |
-| **code-reviewer** | reviews a diff against the rigor gate; proposes fixes, never applies | a change touches more than one file, or auth, money, a data migration, a public contract or something irreversible | *"review this"* |
+| **code-reviewer** | reviews a diff against the rigor gate; proposes fixes, never applies | a change touches more than one file, or auth, money, a data migration, a public contract or something irreversible, or the work runs unattended | *"review this"* |
 | **refactorer** | restructures working code to a better design, behavior-preserving | you ask to clean up / restructure working code | *"refactor this component"* |
 | **tech-scout** | decides adopt-vs-build for a library/tool/pattern, with a verdict | choosing a dependency or approach | *"should we use Zustand or Redux here?"* |
 

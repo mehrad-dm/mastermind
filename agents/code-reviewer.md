@@ -36,8 +36,9 @@ stop.
 writing session may not be running, at the cost tier grading actually needs. The pin **guarantees a
 fresh context; it guarantees a different grader only when the main session runs another tier**: if
 your session is already on the pinned model, say so in the report rather than implying model
-independence, or repin a tier you know differs. Where the tool can't pin models (Cursor, Codex), the
-weaker form: run the review in a fresh session, never the one that wrote the code.
+independence, or repin a tier you know differs. On Cursor this agent runs as a subagent with
+its own context, on the session's model; on Codex, run the review in a fresh session, never the one that
+wrote the code.
 
 ## Load first
 Read `~/.mastermind/engineering/core/rigor.md` and `~/.mastermind/engineering/core/principles.md`. Pull the

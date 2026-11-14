@@ -20,10 +20,11 @@ feature, below, is a separate step taken after the verdict.
 ## Who runs it
 
 The session that built the feature already believes it is finished. Dispatch the `code-reviewer` agent
-with the feature folder, the constitution and this skill's method, and nothing about how the build
-went. Never use a fork of this session: a fork inherits what this context believes. The agent returns
-the findings table and the proposed tasks; you append them, because it does not edit. Where no agent is
-wired, run it yourself and label the result self-checked.
+with the feature folder, the constitution and this skill's method, and nothing about how the build went.
+Never use a fork of this session: a fork inherits what this context believes. The agent returns the
+findings table and the proposed tasks; you append them, because it does not edit. Where no agent is
+wired, follow the kernel's fallback: run `agents/code-reviewer.md` as a procedure in a separate session;
+where that is impossible, label the result self-checked.
 
 ## Method
 

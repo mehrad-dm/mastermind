@@ -80,9 +80,8 @@ coincidence, not a fix.
    where they all pass through, not at the one caller that reported it.
 
 6. **Verify + guard.** Confirm the red check now passes and nothing else broke (typecheck/lint/tests/
-   build). **Add the guard that would have caught this**: a case in the project's suite if it has one;
-   otherwise an assertion or invariant at the boundary, and *offer* the test rather than writing it into
-   a repo that has none. The bug must not be able to return silently. Show the evidence.
+   build). **Add the guard that would have caught this**: an assertion or invariant at the boundary. A test
+   case is offered under Suggested (not done), never written unasked. The bug must not be able to return silently. Show the evidence.
 
    **Prove the guard guards:** with the new test green, revert the fix, the test must go red, then
    restore. A guard that stays green without the fix is testing something else; thirty seconds here
