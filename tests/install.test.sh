@@ -1718,6 +1718,18 @@ codex_probe() { python3 -c "import json,sys;v=json.load(sys.stdin)['hookSpecific
 codex_matchers() { python3 -c "import json,sys;print(' '.join(e.get('matcher','') for e in json.load(open(sys.argv[1]))['hooks']['SessionStart'] if 'session-start.sh' in json.dumps(e)))" "$1" 2>/dev/null; }
 
 echo "── an AGENTS.md of their own carries the kernel in a block, and gets its bytes back"
+restamp() {                         # $1 file: its kernel block re-signed as if MasterMind wrote that body
+  python3 - "$1" <<'PY'
+import hashlib, re, sys
+t = open(sys.argv[1], 'rb').read().decode()
+S, E = '<!-- MASTERMIND:KERNEL:START -->', '<!-- MASTERMIND:KERNEL:END -->'
+lines = t.split('\n'); i = next(k for k, l in enumerate(lines) if l.rstrip('\r') == S)
+j = next(k for k in range(i + 1, len(lines)) if lines[k].rstrip('\r') == E)
+body = ''.join(l.rstrip() + '\n' for l in lines[i + 2:j] if l.strip())
+lines[i + 1] = re.sub(r'sha256=[0-9a-f]+', 'sha256=' + hashlib.sha256(body.encode()).hexdigest(), lines[i + 1])
+sys.stdout.write('\n'.join(lines))
+PY
+}
 kb() {                              # $1 name, $2 printf format of their file
   local P O out rc
   P=$(proj "kb-$1"); O="$TMP/kb-$1.orig"
@@ -1730,9 +1742,14 @@ kb() {                              # $1 name, $2 printf format of their file
   is "$1: check passes and names the block" "$rc|$(printf '%s' "$out" | grep -c 'with the kernel in a marked block')" "0|1"
   cp "$P/AGENTS.md" "$TMP/kb-$1.first"; run "$P" agents >/dev/null 2>&1
   is "$1: a second install changes nothing" "$(same "$P/AGENTS.md" "$TMP/kb-$1.first")" "same"
-  sed 's/^## Prime directives$/## Prime directives (edited)/' "$TMP/kb-$1.first" > "$P/AGENTS.md"
+  sed 's/^## Prime directives$/## Prime directives (edited)/' "$TMP/kb-$1.first" > "$P/AGENTS.md"; cp "$P/AGENTS.md" "$TMP/kb-$1.edited"
   out=$(run "$P" --check 2>&1); rc=$?
-  is "$1: check fails a block that differs from the kernel" "$([ "$rc" -ne 0 ] && echo fails)|$(printf '%s' "$out" | grep -c 'block is not the current kernel')" "fails|1"
+  is "$1: check fails a block whose text was edited, and says so" "$([ "$rc" -ne 0 ] && echo fails)|$(printf '%s' "$out" | grep -c 'kernel block was edited')" "fails|1"
+  run "$P" agents >/dev/null 2>&1; rc=$?
+  is "$1: install refuses to overwrite the edit (exit 1, file untouched)" "$rc|$(same "$P/AGENTS.md" "$TMP/kb-$1.edited")" "1|same"
+  restamp "$TMP/kb-$1.edited" > "$P/AGENTS.md"
+  out=$(run "$P" --check 2>&1); rc=$?
+  is "$1: a block of an older kernel, unedited, is out of date" "$([ "$rc" -ne 0 ] && echo fails)|$(printf '%s' "$out" | grep -c 'block is not the current kernel')" "fails|1"
   run "$P" agents >/dev/null 2>&1
   is "$1: an update refreshes it" "$(same "$P/AGENTS.md" "$TMP/kb-$1.first")" "same"
   run "$P" --uninstall >/dev/null 2>&1
@@ -2290,6 +2307,182 @@ if [ -n "$(git -C "$REPO" tag --list v0.33.2)" ]; then
   is "the user's own empty .cursor/rules survives the upgrade and the uninstall" "$([ -d "$P/.cursor/rules" ] && echo kept || echo gone)" "kept"
 else
   echo "  (v0.33.2 tag not in this checkout: the upgrade tests were not run)"
+fi
+
+echo "── an unedited hook file comes back byte for byte whatever our install added to it"
+for c in claude-emptyhooks claude-emptyevent cursor-versiononly cursor-noversion codex-emptyhooks; do
+  P=$(proj "bb-$c")
+  case "$c" in
+    claude-emptyhooks)  f=.claude/settings.json; tool=claude; body='{\n    "hooks": {}\n}\n' ;;
+    claude-emptyevent)  f=.claude/settings.json; tool=claude; body='{"hooks":{"SessionStart":[]}}' ;;
+    cursor-versiononly) f=.cursor/hooks.json; tool=cursor; body='{\n  "version": 1\n}\n' ;;
+    cursor-noversion)   f=.cursor/hooks.json; tool=cursor; body='{"hooks":{"sessionStart":[{"command":"mine"}]}}' ;;
+    codex-emptyhooks)   f=.codex/hooks.json; tool=agents; body='{"hooks":{}}\n' ;;
+  esac
+  mkdir -p "$P/$(dirname "$f")"; printf "$body" > "$P/$f"; cp "$P/$f" "$TMP/bb-$c.orig"
+  run "$P" "$tool" >/dev/null 2>&1; out=$(run "$P" --uninstall 2>&1)
+  is "$c: the original bytes come back, with no false 'changed' warning" "$(same "$P/$f" "$TMP/bb-$c.orig")|$(printf '%s' "$out" | grep -c 'changed since the install')" "same|0"
+done
+
+echo "── sync records what it creates, so uninstall takes it back"
+P=$(proj sync-record); mkdir -p "$P/apps/web"; B="$(snap "$P")"
+run "$P" claude cursor agents >/dev/null 2>&1
+printf 'apps/web/**  web\n' > "$P/.mastermind/routes.map"; mkfield "$P/.mastermind" web
+(cd "$P" && HOME="$SANDBOX_HOME" MM_NO_NETWORK=1 bash "$P/.mastermind/install.sh" --sync >/dev/null 2>&1)
+run "$P" --check >/dev/null 2>&1; crc=$?
+run "$P" --uninstall >/dev/null 2>&1; rm -rf "$P/.mastermind"
+is "the record still checks after sync, and uninstall leaves the project as it was (no empty apps/web/.cursor)" "$crc|$( [ "$(snap "$P")" = "$B" ] && echo same || echo differs)" "0|same"
+
+echo "── sync refuses a project that was uninstalled, even with its brain still there"
+P=$(proj sync-gone); mkdir -p "$P/apps/web"; run "$P" claude cursor agents >/dev/null 2>&1
+printf 'apps/web/**  web\n' > "$P/.mastermind/routes.map"; mkfield "$P/.mastermind" web
+run "$P" --uninstall >/dev/null 2>&1
+out=$(cd "$P" && HOME="$SANDBOX_HOME" MM_NO_NETWORK=1 bash "$P/.mastermind/install.sh" --sync 2>&1); rc=$?
+is "exit 1, says there is no install record, writes no anchor" "$rc|$(printf '%s' "$out" | grep -c 'no install record')|$([ -e "$P/apps/web/CLAUDE.md" ] && echo anchor || echo none)" "1|1|none"
+
+echo "── shared sync rebuilds the shared brain's router"
+HS="$TMP_REAL/sync-shared-home"; rm -rf "$HS"; mkdir -p "$HS/brain"
+tar -C "$IREPO" --exclude=.git --exclude=node_modules --exclude=./.mastermind -cf - . | tar -C "$HS/brain" -xf -
+P=$(proj sync-shared); (cd "$P" && HOME="$HS" MM_NO_NETWORK=1 bash "$HS/brain/install.sh" --shared claude >/dev/null 2>&1)
+mkfield "$HS/brain" web; printf 'MARKER-STALE\n' > "$HS/brain/engineering/ROUTER.md"
+out=$(cd "$P" && HOME="$HS" MM_NO_NETWORK=1 bash "$HS/brain/install.sh" --sync 2>&1); rc=$?
+is "exit 0 and the clone's ROUTER.md was regenerated" "$rc|$(grep -c 'MARKER-STALE' "$HS/brain/engineering/ROUTER.md")|$(printf '%s' "$out" | grep -c 'ROUTER.md regenerated')" "0|0|1"
+
+echo "── a code fence of the user's is read as CommonMark reads it"
+P=$(proj fence-long); printf '# notes\n\n````md\n```js\n````\n' > "$P/AGENTS.md"; cp "$P/AGENTS.md" "$TMP/fl.orig"
+run "$P" agents >/dev/null 2>&1; irc=$?
+run "$P" --uninstall >/dev/null 2>&1; urc=$?
+is "a \`\`\`\` fence is not closed by \`\`\`js: the block goes after it and comes out again" "$irc|$(kblocks "$P/AGENTS.md")|$urc|$(same "$P/AGENTS.md" "$TMP/fl.orig")" "0|0|0|same"
+P=$(proj fence-open); printf '# notes\n\n```sh\nnpm test\n' > "$P/AGENTS.md"; cp "$P/AGENTS.md" "$TMP/fo.orig"
+out=$(run "$P" agents 2>&1); irc=$?
+is "a file that ends inside an open fence is refused, untouched" "$irc|$(same "$P/AGENTS.md" "$TMP/fo.orig")|$(printf '%s' "$out" | grep -c 'ends inside an open code fence')" "1|same|1"
+P=$(proj fence-after); printf '# notes\n' > "$P/AGENTS.md"; run "$P" agents >/dev/null 2>&1
+printf '```sh\nnpm test\n' >> "$P/AGENTS.md"
+out=$(run "$P" --uninstall 2>&1); urc=$?
+is "an open fence after our proven block: uninstall exits 0, takes the block out, keeps the fence" "$urc|$(kblocks "$P/AGENTS.md")|$(grep -c 'npm test' "$P/AGENTS.md")" "0|0|1"
+
+echo "── AGENTS.md -> CLAUDE.md: naming only claude keeps the kernel loading once"
+P=$(proj agentslink-claude); printf '# team rules\n' > "$P/CLAUDE.md"; ln -s CLAUDE.md "$P/AGENTS.md"
+run "$P" claude agents >/dev/null 2>&1; run "$P" claude >/dev/null 2>&1
+run "$P" --check >/dev/null 2>&1; crc=$?
+is "after 'install.sh claude' there is still one kernel heading and check passes" "$(cat "$P/CLAUDE.md" "$P/.claude/CLAUDE.md" 2>/dev/null | grep -c "^$KHEAD")|$crc" "1|0"
+
+echo "── a record planted in the repository cannot widen what uninstall removes"
+P=$(proj forged); run "$P" claude >/dev/null 2>&1
+mkdir -p "$P/.claude/skills"; ln -s "$TMP_REAL/elsewhere-brain/skills/mine" "$P/.claude/skills/mine"
+python3 - "$P/.mastermind/.installed" "$TMP_REAL/elsewhere-brain" <<'PY'
+import hashlib, sys
+p, b = sys.argv[1], sys.argv[2]
+lines = [l for l in open(p).read().splitlines() if not l.startswith(('digest=', 'brain='))] + ['brain=' + b]
+body = '\n'.join(lines) + '\n'
+open(p, 'w').write(body + 'digest=' + hashlib.sha256(body.encode()).hexdigest() + '\n')
+PY
+run "$P" --uninstall >/dev/null 2>&1
+is "the user's own link into another folder survives a forged brain= line" "$([ -L "$P/.claude/skills/mine" ] && echo kept || echo removed)" "kept"
+
+echo "── the kernel block survives a formatter, and only the line after its start marker vouches for it"
+P=$(proj fmt); printf '# Team rules\n' > "$P/AGENTS.md"; cp "$P/AGENTS.md" "$TMP/fmt.orig"; run "$P" agents >/dev/null 2>&1
+python3 - "$P/AGENTS.md" <<'PY'
+import sys
+p = sys.argv[1]; lines = open(p).read().split('\n'); out = []
+for i, l in enumerate(lines):
+    out.append(l + ('   ' if l.startswith('## ') else ''))
+    if l.startswith('<!-- The MasterMind kernel'): out.append('')
+open(p, 'w').write('\n'.join(out))
+PY
+cp "$P/AGENTS.md" "$TMP/fmt.formatted"
+run "$P" --check >/dev/null 2>&1; crc=$?
+run "$P" agents >/dev/null 2>&1; irc=$?
+is "after the formatter, check passes and a re-run leaves the file as the formatter left it" "$crc|$irc|$(same "$P/AGENTS.md" "$TMP/fmt.formatted")" "0|0|same"
+run "$P" --uninstall >/dev/null 2>&1; urc=$?
+is "a blank line after the note and trailing spaces: re-run exits 0, uninstall exits 0 and hands the file back" "$irc|$urc|$(same "$P/AGENTS.md" "$TMP/fmt.orig")" "0|0|same"
+P=$(proj noteabove); printf '# Team rules\n' > "$P/AGENTS.md"; run "$P" agents >/dev/null 2>&1
+python3 - "$P/AGENTS.md" <<'PY'
+import re, sys
+p = sys.argv[1]; t = open(p).read()
+note = next(l for l in t.split('\n') if l.startswith('<!-- The MasterMind kernel'))
+open(p, 'w').write(re.sub(r'sha256=[0-9a-f]+', 'sha256=' + '0' * 64, note) + '\n' + t)
+PY
+run "$P" --check >/dev/null 2>&1; crc=$?
+is "a note-shaped line elsewhere in the file does not decide whose block it is" "$crc" "0"
+
+echo "── uninstall with our block present but unprovable is unfinished; with no block it says nothing"
+P=$(proj nonote); printf '# Team rules\n' > "$P/AGENTS.md"; run "$P" agents >/dev/null 2>&1
+grep -v '^<!-- The MasterMind kernel' "$P/AGENTS.md" > "$TMP/nonote.txt" && cp "$TMP/nonote.txt" "$P/AGENTS.md"
+out=$(run "$P" --uninstall 2>&1); urc=$?
+is "the note line deleted by hand: exit 1, and AGENTS.md is listed as still in place" "$urc|$(printf '%s' "$out" | grep -c '^    AGENTS.md$')" "1|1"
+P=$(proj openfence-noblock); printf '# notes\n\n```sh\nnpm test\n' > "$P/AGENTS.md"
+run "$P" agents >/dev/null 2>&1; out=$(run "$P" --uninstall 2>&1)
+is "a file of the user's that only ends in an open fence draws no uninstall warning" "$(printf '%s' "$out" | grep -c 'AGENTS.md untouched')" "0"
+out=$(run "$P" agents 2>&1)
+is "the refusal for a block says how to fix the block, not to replace a link" "$(printf '%s' "$out" | grep -c 'fix the MasterMind block in each refused file')|$(printf '%s' "$out" | grep -c 'replace each refused link')" "1|0"
+
+echo "── AGENTS.md -> CLAUDE.md, naming only claude: a stale root block is refreshed, an edited one reported"
+P=$(proj agentslink-stale); printf '# team rules\n' > "$P/CLAUDE.md"; ln -s CLAUDE.md "$P/AGENTS.md"
+run "$P" claude agents >/dev/null 2>&1; cp "$P/CLAUDE.md" "$TMP/als.first"
+sed 's/^## Prime directives$/## Prime directives (older)/' "$TMP/als.first" > "$TMP/als.edited"; restamp "$TMP/als.edited" > "$P/CLAUDE.md"
+run "$P" claude >/dev/null 2>&1; irc=$?
+run "$P" --check >/dev/null 2>&1; crc=$?
+is "the stale block is refreshed and check passes" "$irc|$(same "$P/CLAUDE.md" "$TMP/als.first")|$crc" "0|same|0"
+cp "$TMP/als.edited" "$P/CLAUDE.md"
+out=$(run "$P" claude 2>&1); irc=$?
+is "an edited root block: exit 1, reported, and .claude/CLAUDE.md is not linked (the kernel never loads twice)" \
+   "$irc|$(printf '%s' "$out" | grep -c 'kernel block was edited')|$([ -e "$P/.claude/CLAUDE.md" ] && echo linked || echo absent)" "1|1|absent"
+
+P=$(proj agentslink-fenced); printf '# team\n\nOur file once held:\n\n```\n<!-- MASTERMIND:KERNEL:START -->\n```\n' > "$P/CLAUDE.md"
+cp "$P/CLAUDE.md" "$TMP/alf.orig"; ln -s CLAUDE.md "$P/AGENTS.md"
+run "$P" claude >/dev/null 2>&1; irc=$?
+run "$P" --check >/dev/null 2>&1; crc=$?
+is "a marker shown only inside a code fence: claude is wired the normal way, the root file is untouched, check passes" \
+   "$irc|$([ -e "$P/.claude/CLAUDE.md" ] && echo linked || echo absent)|$(same "$P/CLAUDE.md" "$TMP/alf.orig")|$crc" "0|linked|same|0"
+
+echo "── shared mode: a hook the user removed by hand still has its saved original cleaned up"
+P=$(proj orig-clean); mkdir -p "$P/.claude"; printf '{\n    "model": "opus"\n}\n' > "$P/.claude/settings.json"
+run "$P" --shared claude >/dev/null 2>&1
+printf '{\n    "model": "opus"\n}\n' > "$P/.claude/settings.json"
+run "$P" --uninstall >/dev/null 2>&1
+is "no .mastermind/.originals is left behind" "$([ -e "$P/.mastermind/.originals" ] && echo left || echo gone)" "gone"
+
+echo "── a shared clone that moved: every link is found, whichever way HOME is spelled"
+# $TMP and $TMP_REAL are one folder named through a symlinked prefix and without it (/var vs /private/var).
+for base in "$TMP" "$TMP_REAL"; do
+  T="$base/moved-$([ "$base" = "$TMP" ] && echo linked || echo real)"; rm -rf "$T"; mkdir -p "$T/home" "$T/clone" "$T/proj"
+  tar -C "$IREPO" --exclude=.git --exclude=node_modules --exclude=./.mastermind -cf - . | tar -C "$T/clone" -xf -
+  ln -s "$T/clone" "$T/home/.mastermind"
+  (cd "$T/proj" && HOME="$T/home" MM_NO_NETWORK=1 bash "$T/home/.mastermind/install.sh" --shared claude agents >/dev/null 2>&1)
+  rm "$T/home/.mastermind"; mv "$T/clone" "$T/home/.mastermind"
+  (cd "$T/proj" && HOME="$T/home" MM_NO_NETWORK=1 bash "$T/home/.mastermind/install.sh" --uninstall >/dev/null 2>&1); rc=$?
+  is "HOME as $base: uninstall exits 0 and leaves no link" "$rc|$(find "$T/proj" -type l | wc -l | tr -d ' ')" "0|0"
+done
+
+if [ -n "$(git -C "$REPO" tag --list v0.33.2)" ]; then
+  echo "── upgrade from v0.33.2: hook files the user committed are never deleted"
+  OLD3="$TMP_REAL/old-0332-e1"; rm -rf "$OLD3"; mkdir -p "$OLD3"; git -C "$REPO" archive v0.33.2 | tar -x -C "$OLD3"
+  for mode in "" --shared; do
+    HE="$TMP_REAL/e1-home${mode:-iso}"; rm -rf "$HE"; mkdir -p "$HE/.claude" "$HE/.cursor" "$HE/.mastermind"; cp -R "$OLD3/." "$HE/.mastermind/"
+    P=$(proj "e1${mode:-iso}"); mkdir -p "$P/.claude" "$P/.cursor"
+    printf '{\n  "hooks": {}\n}\n' > "$P/.claude/settings.json"; printf '{"version": 1}\n' > "$P/.cursor/hooks.json"
+    cp "$P/.claude/settings.json" "$TMP/e1-settings.orig"; cp "$P/.cursor/hooks.json" "$TMP/e1-cursor.orig"
+    (cd "$P" && git init -q . && git add -A . && git -c user.name=t -c user.email=t@t commit -qm mine)
+    (cd "$P" && HOME="$HE" MM_NO_NETWORK=1 bash "$HE/.mastermind/install.sh" $mode claude cursor >/dev/null 2>&1)
+    rm -rf "$HE/.mastermind"; mkdir -p "$HE/.mastermind"; tar -C "$IREPO" --exclude=.git --exclude=node_modules --exclude=./.mastermind -cf - . | tar -C "$HE/.mastermind" -xf -
+    (cd "$P" && HOME="$HE" MM_NO_NETWORK=1 bash "$HE/.mastermind/install.sh" claude cursor >/dev/null 2>&1)
+    (cd "$P" && HOME="$HE" MM_NO_NETWORK=1 bash "$HE/.mastermind/install.sh" --uninstall >/dev/null 2>&1)
+    is "${mode:-isolated}: both committed files survive uninstall, byte for byte" \
+       "$(same "$P/.claude/settings.json" "$TMP/e1-settings.orig")|$(same "$P/.cursor/hooks.json" "$TMP/e1-cursor.orig")" "same|same"
+  done
+  HE="$TMP_REAL/e1-home-sub"; rm -rf "$HE"; mkdir -p "$HE/.claude" "$HE/.cursor" "$HE/.mastermind"; cp -R "$OLD3/." "$HE/.mastermind/"
+  R=$(proj e1-sub); P="$R/sub"; mkdir -p "$P/.claude" "$P/.cursor"
+  printf '{\n  "hooks": {}\n}\n' > "$P/.claude/settings.json"; printf '{"version": 1}\n' > "$P/.cursor/hooks.json"
+  cp "$P/.claude/settings.json" "$TMP/e1s-settings.orig"; cp "$P/.cursor/hooks.json" "$TMP/e1s-cursor.orig"
+  (cd "$R" && git init -q . && git add -A . && git -c user.name=t -c user.email=t@t commit -qm mine)
+  mkdir -p "$P/.mastermind"
+  (cd "$P" && HOME="$HE" MM_NO_NETWORK=1 bash "$HE/.mastermind/install.sh" claude cursor >/dev/null 2>&1)
+  rm -rf "$HE/.mastermind"; mkdir -p "$HE/.mastermind"; tar -C "$IREPO" --exclude=.git --exclude=node_modules --exclude=./.mastermind -cf - . | tar -C "$HE/.mastermind" -xf -
+  (cd "$P" && HOME="$HE" MM_NO_NETWORK=1 bash "$HE/.mastermind/install.sh" claude cursor >/dev/null 2>&1)
+  (cd "$P" && HOME="$HE" MM_NO_NETWORK=1 bash "$HE/.mastermind/install.sh" --uninstall >/dev/null 2>&1)
+  is "a project in a subfolder of its repo: both committed files survive uninstall, byte for byte" \
+     "$(same "$P/.claude/settings.json" "$TMP/e1s-settings.orig")|$(same "$P/.cursor/hooks.json" "$TMP/e1s-cursor.orig")" "same|same"
 fi
 
 if [ -s "$CANARY_LOG" ]; then

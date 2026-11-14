@@ -321,11 +321,12 @@ mm_left() {                         # $1 path shown, $2 why: something of ours t
 }
 
 # A surface the installer would write but refused, because it is a symlink or leads outside.
-REFUSED=0; MM_REFUSED_LIST=""
-mm_refused() {                      # $1 path shown, $2 message
+REFUSED=0; MM_REFUSED_LIST=""; MM_REFUSED_KINDS=""
+mm_refused() {                      # $1 path shown, $2 message, $3 link (default) or block
   if [ "$MODE" = check ]; then bad "$2"; ISSUES=$((ISSUES + 1)); else warn "$2"; fi
   REFUSED=$((REFUSED + 1))
   MM_REFUSED_LIST="$MM_REFUSED_LIST $1"
+  MM_REFUSED_KINDS="$MM_REFUSED_KINDS ${3:-link}"
 }
 
 MM_TOUCHED=""
@@ -341,15 +342,21 @@ mm_note_created() {
 }
 
 mm_mkdir() {
-  local d="$1" p="$1" missing=""
+  local d="$1" p="$1" missing="" rp
+  rp="$(cd -P "$PROJECT" 2>/dev/null && pwd -P)" || rp="$PROJECT"
   while [ ! -d "$p" ] && [ "$p" != "$PROJECT" ] && [ "$p" != / ] && [ "$p" != . ]; do
     missing="$p
 $missing"; p="$(dirname "$p")"
   done
   mkdir -p "$d"
+  # A route's folder arrives resolved, so the project's real path names it too.
   while IFS= read -r p; do
-    case "$p" in "$PROJECT"/*) MM_CREATED="$MM_CREATED${p#"$PROJECT"/}
-" ;; esac
+    case "$p" in
+      "$PROJECT"/*) MM_CREATED="$MM_CREATED${p#"$PROJECT"/}
+" ;;
+      "$rp"/*) MM_CREATED="$MM_CREATED${p#"$rp"/}
+" ;;
+    esac
   done <<EOF
 $missing
 EOF
@@ -675,21 +682,29 @@ mm_block_body() {                   # $1 file, $2 $3 markers: how many whole blo
 
 MM_KNOTE='The MasterMind kernel, inlined by install.sh for tools that read only this file. Edit above or below, never inside'
 # A marker pair is ours only when it is the one pair, outside any code fence, and opens with our note.
-mm_kernel_markers() {               # none, ours, or why it is not ours
+mm_kernel_markers_raw() {           # none, ours, or why it is not ours, judged by the markers alone
   [ -f "$1" ] || { printf none; return 0; }
   MM_S="$MM_KSTART" MM_E="$MM_KEND" MM_N="<!-- $MM_KNOTE" awk '
     function ournote(t) {
       if (index(t, ENVIRON["MM_N"]) != 1) return 0
       t = substr(t, length(ENVIRON["MM_N"]) + 1)
+      sub(/^ sha256=[0-9a-f]+/, "", t)
       return t == " -->" || t == " (eol=none) -->" || t == " (file=empty) -->"
     }
     { sub(/\r$/, ""); L[NR] = $0 }
     END {
-      S = ENVIRON["MM_S"]; E = ENVIRON["MM_E"]; fence = ""; fenced = 0; pairs = 0; foreign = 0
+      S = ENVIRON["MM_S"]; E = ENVIRON["MM_E"]; fc = ""; fn = 0; fenced = 0; pairs = 0; foreign = 0
       for (i = 1; i <= NR; i++) {
-        t = L[i]; sub(/^ {0,3}/, "", t)
-        if (t ~ /^(```|~~~)/) { f = substr(t, 1, 3); if (fence == "") fence = f; else if (f == fence) fence = ""; continue }
-        if ((L[i] == S || L[i] == E) && fence != "") fenced = 1
+        t = L[i]
+        if (match(t, /^ {0,3}(```+|~~~+)/)) {
+          run = substr(t, RSTART, RLENGTH); sub(/^ +/, "", run); c = substr(run, 1, 1); rest = substr(t, RSTART + RLENGTH)
+          if (fc == "") {
+            if (!(c == "`" && index(rest, "`"))) { fc = c; fn = length(run) }
+            continue
+          }
+          if (c == fc && length(run) >= fn && rest ~ /^[ \t]*$/) { fc = ""; continue }
+        }
+        if ((L[i] == S || L[i] == E) && fc != "") fenced = 1
       }
       for (i = 1; i <= NR; i++) {
         if (L[i] != S) continue
@@ -703,18 +718,50 @@ mm_kernel_markers() {               # none, ours, or why it is not ours
       if (fenced) print "a MasterMind marker sits inside a fenced code block"
       else if (pairs > 1) print "it has " pairs " MasterMind kernel blocks, and only one can be ours"
       else if (foreign) print "its MasterMind kernel markers hold text MasterMind did not write"
+      else if (fc != "" && ENVIRON["MM_APPEND"] != "") print "it ends inside an open code fence, so a block appended to it would land inside that fence"
       else if (pairs) print "ours"
       else print "none"
     }' "$1"
 }
+
+# Blank lines and trailing whitespace are a formatter's, not an edit: they are left out of the hash.
+mm_kernel_norm() { awk '{ sub(/[ \t\r]+$/, "") } $0 != ""'; }
+mm_kernel_body_hash() { mm_block_body "$1" "$MM_KSTART" "$MM_KEND" | tail -n +2 | mm_kernel_norm | mm_hash_stdin; }
+mm_kernel_note_of() {               # $1 file: the line after the start marker of its marker pair
+  awk -v S="$MM_KSTART" -v E="$MM_KEND" '
+    { sub(/\r$/, ""); L[NR] = $0 }
+    END {
+      for (i = 1; i <= NR; i++) {
+        if (L[i] != S) continue
+        for (j = i + 1; j <= NR; j++) { if (L[j] == S) break; if (L[j] == E) { print L[i + 1]; exit } }
+      }
+    }' "$1"
+}
+
+# A block is ours only when its body is exactly what we wrote: the hash in its note says what that was.
+mm_kernel_markers() {
+  local m want
+  m="$(mm_kernel_markers_raw "$1")"
+  [ "$m" = ours ] || { printf '%s' "$m"; return 0; }
+  want="$(mm_kernel_note_of "$1" | sed -n 's/.* sha256=\([0-9a-f]*\).*$/\1/p')"
+  if [ -n "$want" ] && [ "$(mm_kernel_body_hash "$1")" = "$want" ]; then printf ours; return 0; fi
+  if [ -z "$want" ] && [ "$(mm_block_body "$1" "$MM_KSTART" "$MM_KEND")" = "1
+$(cat "$BRAIN/CLAUDE.md" 2>/dev/null)" ]; then printf ours; return 0; fi
+  printf 'the text inside its MasterMind kernel block was edited, and MasterMind will not delete an edit of yours'
+}
+
+# The note a block is written with: the hash of its body, so a later edit inside it is recognised.
+mm_kernel_note() { printf '%s sha256=%s' "$MM_KNOTE" "$(printf '%s\n' "$1" | mm_kernel_norm | mm_hash_stdin)"; }
 
 mm_kernel_block_state() {           # none, current, stale or foreign
   local m
   m="$(mm_kernel_markers "$1")"
   case "$m" in none|ours) : ;; *) printf foreign; return 0 ;; esac
   if [ "$m" = none ]; then printf none; return 0; fi
-  if [ "$(mm_block_body "$1" "$MM_KSTART" "$MM_KEND")" = "1
-$(cat "$BRAIN/CLAUDE.md" 2>/dev/null)" ]; then printf current
+  # Compared as the hash is: a formatter's blank lines and trailing spaces do not make it stale.
+  if [ "$(mm_block_body "$1" "$MM_KSTART" "$MM_KEND" | head -1)" = 1 ] &&
+     [ "$(mm_block_body "$1" "$MM_KSTART" "$MM_KEND" | tail -n +2 | mm_kernel_norm)" = \
+       "$(mm_kernel_norm < "$BRAIN/CLAUDE.md" 2>/dev/null)" ]; then printf current
   else printf stale; fi
 }
 
@@ -732,14 +779,18 @@ mm_wire_kernel_block() {            # $1 file to edit, $2 name shown, $3 root
   mm_gate file "$f" "$root"
   st="$(mm_kernel_block_state "$f")"
   if [ "$st" = foreign ]; then
-    mm_refused "$shown" "left your $shown untouched: $(mm_kernel_markers "$f"). Move or rename those marker lines, then re-run"
+    mm_refused "$shown" "left your $shown untouched: $(mm_kernel_markers "$f"). Move your text out of the markers (or close the code fence), then re-run" block
+    return 0
+  fi
+  if [ "$st" != current ] && [ "$(MM_APPEND=1 mm_kernel_markers_raw "$f")" != ours ] && [ "$(MM_APPEND=1 mm_kernel_markers_raw "$f")" != none ]; then
+    mm_refused "$shown" "left your $shown untouched: $(MM_APPEND=1 mm_kernel_markers_raw "$f"). Close the code fence, then re-run" block
     return 0
   fi
   local mine=""
   if mm_has_prose_pointer "$f"; then old=1; mm_strip_pointers "$f"; [ -s "$f" ] || mine=1; fi
   if [ "$st" = current ] && [ "$old" = 0 ]; then ok "$shown already carries the kernel"
   else
-    [ "$st" = current ] || MM_FILE_WAS_OURS="$mine" mm_write_block "$f" "$(cat "$BRAIN/CLAUDE.md")" "$MM_KSTART" "$MM_KEND" "$MM_KNOTE"
+    [ "$st" = current ] || MM_FILE_WAS_OURS="$mine" mm_write_block "$f" "$(cat "$BRAIN/CLAUDE.md")" "$MM_KSTART" "$MM_KEND" "$(mm_kernel_note "$(cat "$BRAIN/CLAUDE.md")")"
     if [ "$old" = 1 ]; then ok "your $shown now carries the MasterMind kernel in a marked block (the old pointer line is gone)"
     elif [ "$st" = stale ]; then ok "refreshed the MasterMind kernel block in your $shown"
     else ok "your $shown now carries the MasterMind kernel in a marked block, after your own content"; fi
@@ -773,7 +824,7 @@ mm_check_brain_file() {
         bad "$shown: the MasterMind block is not the current kernel (edited or out of date): re-run install.sh"
         ISSUES=$((ISSUES + 1)) ;;
       foreign)
-        bad "$shown: $(mm_kernel_markers "$t"), so the installer will not write it: move or rename those marker lines"
+        bad "$shown: $(mm_kernel_markers "$t"), so the installer will not write it: move your text out of the markers (or close the code fence)"
         ISSUES=$((ISSUES + 1)) ;;
       *)
         if mm_has_pointer "$t"; then bad "$shown has only the old pointer line, so Codex never reads the kernel: re-run install.sh"
@@ -1059,14 +1110,21 @@ const fires = (m, src) => {
   if (m === undefined || m === "" || m === "*") return true;
   try { return new RegExp(m).test(src); } catch (e) { return false; }
 };
-if (op === "install") {
-  const s = read() || {};
+const addOurs = (s, c) => {
   if (tool === "cursor") s.version ??= 1;
   if (!s.hooks || typeof s.hooks !== "object" || Array.isArray(s.hooks)) s.hooks = {};
   strip(s);
-  if (tool === "cursor") (s.hooks.sessionStart ||= []).push({ command: cmd });
-  else if (tool === "codex") (s.hooks.SessionStart ||= []).push({ matcher: CODEX_SOURCES.join("|"), hooks: [{ type: "command", command: cmd, timeout: 30 }] });
-  else (s.hooks.SessionStart ||= []).push({ matcher: "startup|clear|compact", hooks: [{ type: "command", command: cmd, async: false }] });
+  if (tool === "cursor") (s.hooks.sessionStart ||= []).push({ command: c });
+  else if (tool === "codex") (s.hooks.SessionStart ||= []).push({ matcher: CODEX_SOURCES.join("|"), hooks: [{ type: "command", command: c, timeout: 30 }] });
+  else (s.hooks.SessionStart ||= []).push({ matcher: "startup|clear|compact", hooks: [{ type: "command", command: c, async: false }] });
+};
+const dropOurs = (s) => {
+  strip(s);
+  if (tool !== "cursor" && s.hooks && !Object.keys(s.hooks).length) delete s.hooks;
+};
+if (op === "install") {
+  const s = read() || {};
+  addOurs(s, cmd);
   save(s);
 } else if (op === "uninstall") {
   const s = read();
@@ -1081,10 +1139,15 @@ if (op === "install") {
   save(s);
   console.log(empty ? "empty" : "kept");
 } else if (op === "same") {
+  // Unedited means: the original, put through our install and then our uninstall, is what is there now.
   const s = read();
   let o;
   try { o = JSON.parse(fs.readFileSync(E.MM_ORIG, "utf8") || "{}"); } catch (e) { process.exit(1); }
-  process.exit(s && JSON.stringify(s) === JSON.stringify(o) ? 0 : 1);
+  if (!s || !o || typeof o !== "object" || Array.isArray(o)) process.exit(1);
+  dropOurs(s);
+  addOurs(o, '".mastermind/hooks/session-start.sh" ' + tool);
+  dropOurs(o);
+  process.exit(JSON.stringify(s) === JSON.stringify(o) ? 0 : 1);
 } else if (op === "sole") {
   const s = read();
   if (!s) process.exit(1);
@@ -1136,13 +1199,13 @@ mm_keep_original() {                # $1 claude|cursor|codex, $2 file
   cp -p "$2" "$o"
 }
 
-mm_restore_original() {             # $1 claude|cursor|codex, $2 file, $3 name shown
+mm_restore_original() {             # $1 claude|cursor|codex, $2 file, $3 name shown, $4 quiet
   local o
   o="$(mm_original_of "$2")"
   [ -f "$o" ] && [ ! -L "$o" ] || return 0
   if [ -f "$2" ] && MM_ORIG="$o" mm_hooks_js "$1" same "$2"; then
-    cat "$o" > "$2"; ok "restored your $3 byte for byte"
-  elif [ -f "$2" ]; then
+    if ! cmp -s "$o" "$2"; then cat "$o" > "$2"; ok "restored your $3 byte for byte"; fi
+  elif [ -f "$2" ] && [ -z "${4:-}" ]; then
     warn "your $3 changed since the install: only our entry was removed, the rest is kept in your layout as far as JSON allows"
   fi
   rm -f "$o"
@@ -1150,6 +1213,21 @@ mm_restore_original() {             # $1 claude|cursor|codex, $2 file, $3 name s
   while [ "$(basename "$d")" != .originals ] && [ "$(basename "$d")" != originals ] && rmdir "$d" 2>/dev/null; do d="$(dirname "$d")"; done
   rmdir "$d" 2>/dev/null || true
   return 0
+}
+
+# With no saved original, a file git tracks has its committed bytes as the original.
+mm_restore_committed() {            # $1 claude|cursor|codex, $2 file, $3 name shown
+  local rel="${2#"$PROJECT"/}" tmp rc=1
+  [ "$rel" != "$2" ] && command -v git >/dev/null 2>&1 || return 1
+  git -C "$PROJECT" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1 || return 1
+  tmp="$(mktemp)"
+  if git -C "$PROJECT" show "HEAD:./$rel" > "$tmp" 2>/dev/null && ! mm_hooks_js "$1" has "$tmp" >/dev/null &&
+     MM_ORIG="$tmp" mm_hooks_js "$1" same "$2"; then
+    if ! cmp -s "$tmp" "$2"; then cat "$tmp" > "$2"; ok "restored your $3 as it is committed"; fi
+    rc=0
+  fi
+  rm -f "$tmp"
+  return "$rc"
 }
 
 mm_check_hook() {                   # $1 claude|cursor|codex, $2 file, $3 name shown
@@ -1302,12 +1380,17 @@ wire_cursor_agents() {
   return 0
 }
 
+# A real marker pair, ours or not: a lone marker, or one shown inside a code fence, is the user's text.
+mm_root_block_pair() {
+  case "$(mm_kernel_markers_raw "$1")" in ours|*"kernel blocks"*|*"did not write"*) return 0 ;; *) return 1 ;; esac
+}
+
 # AGENTS.md -> CLAUDE.md: the kernel block written through that link already loads in Claude Code
 # from the root CLAUDE.md, so a second copy through .claude/CLAUDE.md would load it twice.
 mm_kernel_in_root_claude() {
   local t c
   [ "$SCOPE" = project ] && [ -n "$AGENTS_FILE" ] && [ -L "$AGENTS_FILE" ] || return 1
-  [ ${#TOOLS[@]} -eq 0 ] || mm_wants agents || mm_wants codex || return 1
+  [ ${#TOOLS[@]} -eq 0 ] || mm_wants agents || mm_wants codex || mm_root_block_pair "$PROJECT/CLAUDE.md" || return 1
   [ -f "$PROJECT/CLAUDE.md" ] && [ ! -L "$PROJECT/CLAUDE.md" ] || return 1
   t="$(mm_realpath "$AGENTS_FILE" 2>/dev/null)" || return 1
   c="$(mm_realpath "$PROJECT/CLAUDE.md" 2>/dev/null)" || return 1
@@ -1318,6 +1401,8 @@ wire_claude_through_root() {        # $1 .claude/CLAUDE.md
   local f="$1"
   if [ "$MODE" = check ]; then
     if [ "$(mm_kernel_block_state "$PROJECT/CLAUDE.md")" = current ]; then ok "CLAUDE.md (the kernel block in your root CLAUDE.md, through your AGENTS.md link)"
+    elif [ "$(mm_kernel_block_state "$PROJECT/CLAUDE.md")" = foreign ]; then
+      bad "CLAUDE.md: your root CLAUDE.md: $(mm_kernel_markers "$PROJECT/CLAUDE.md"). Move your text out of the markers, then re-run install.sh"; ISSUES=$((ISSUES + 1))
     else bad "CLAUDE.md: your root CLAUDE.md, which AGENTS.md links to, does not carry the current kernel block: re-run install.sh"; ISSUES=$((ISSUES + 1)); fi
     if links_to "$f" "$BRAIN/CLAUDE.md" || mm_has_import "$f"; then
       bad ".claude/CLAUDE.md also loads the kernel, so Claude Code reads it twice: re-run install.sh"; ISSUES=$((ISSUES + 1))
@@ -1326,7 +1411,12 @@ wire_claude_through_root() {        # $1 .claude/CLAUDE.md
   fi
   if links_to "$f" "$BRAIN/CLAUDE.md"; then mm_gate link "$f"; rm -f "$f"
   elif [ -f "$f" ] && [ ! -L "$f" ] && mm_has_import "$f"; then mm_gate file "$f"; mm_strip_pointers "$f" imports; fi
-  ok "CLAUDE.md: the kernel goes in your root CLAUDE.md (AGENTS.md links to it), so Claude Code loads it once"
+  # The root block is refreshed here too, so naming only claude never leaves it stale or loads it twice.
+  if mm_wants agents || mm_wants codex; then
+    ok "CLAUDE.md: the kernel goes in your root CLAUDE.md (AGENTS.md links to it), so Claude Code loads it once"
+  else
+    mm_wire_kernel_block "$PROJECT/CLAUDE.md" "CLAUDE.md (the root file AGENTS.md links to)"
+  fi
 }
 
 wire_claude() {
@@ -1405,6 +1495,24 @@ mm_fold_link() {
 # Every brain a link of ours can point at: this one, the clone, the project's own copy, and the
 # brain the install record names (a shared clone that has since moved or been deleted).
 MM_RECORDED_BRAIN=""
+# The brain a record names widens what uninstall treats as ours, so it is believed only when the
+# record could not have been planted: one in the home state directory with an intact digest, or a
+# record inside the project that names that project's own brain.
+mm_trusted_brain() {                # $1 record file -> the brain it names, or nothing
+  local b body want
+  b="$(sed -n 's/^brain=//p' "$1" | head -1)"
+  [ -n "$b" ] || return 0
+  case "$1" in
+    "$MM_STATE"/*)
+      want="$(sed -n 's/^digest=//p' "$1" | head -1)"
+      body="$(mktemp)"; grep -v '^digest=' "$1" > "$body" || true
+      if [ -n "$want" ] && [ "$(mm_hash "$body")" = "$want" ]; then printf '%s' "$b"; fi
+      rm -f "$body" ;;
+    *)
+      if [ "$(mm_resolve_path "$b" 2>/dev/null)" = "$(mm_resolve_path "$PROJECT/.mastermind" 2>/dev/null)" ]; then printf '%s' "$b"; fi ;;
+  esac
+  return 0
+}
 mm_our_bases() {
   local b
   for b in "$REPO" "$BRAIN" ${PROJECT:+"$PROJECT/.mastermind"} ${MM_RECORDED_BRAIN:+"$MM_RECORDED_BRAIN"}; do
@@ -1648,7 +1756,7 @@ mm_remove_agents_wiring() {
 MM_EMPTIED=""
 mm_unwire_json() {                  # $1 claude|cursor|codex, $2 file, $3 name shown, $4 what stays wired, $5 root
   local tool="$1" f="$2" shown="$3" what="$4" out rc=0
-  [ -f "$f" ] || return 0
+  if [ ! -f "$f" ]; then mm_restore_original "$tool" "$f" "$shown" quiet; return 0; fi
   if ! command -v node >/dev/null 2>&1; then
     warn "node is not installed, so $shown was left as it is: $what"
     UNFINISHED=$((UNFINISHED + 1)); return 0
@@ -1656,7 +1764,7 @@ mm_unwire_json() {                  # $1 claude|cursor|codex, $2 file, $3 name s
   mm_hooks_js "$tool" has "$f" >/dev/null || rc=$?
   case "$rc" in
     0) : ;;
-    1) return 0 ;;
+    1) mm_restore_original "$tool" "$f" "$shown" quiet; return 0 ;;
     *) warn "could not edit $shown (unreadable JSON): $what"; UNFINISHED=$((UNFINISHED + 1)); return 0 ;;
   esac
   mm_gate file "$f" "${5:-$PROJECT}" || return 0
@@ -1665,6 +1773,7 @@ mm_unwire_json() {                  # $1 claude|cursor|codex, $2 file, $3 name s
   fi
   ok "unwired our hook from $shown"; n=$((n + 1))
   if [ -f "$(mm_original_of "$f")" ]; then mm_restore_original "$tool" "$f" "$shown"; return 0; fi
+  mm_restore_committed "$tool" "$f" "$shown" && return 0
   if [ "$out" = empty ]; then MM_EMPTIED="$MM_EMPTIED${f#"$PROJECT"/}
 "; fi
   return 0
@@ -1698,7 +1807,9 @@ mm_unwire_kernel_block() {          # $1 file, $2 root
   [ -f "$t" ] && [ ! -L "$t" ] || return 0
   [ "$(mm_kernel_markers "$t")" = none ] && return 0
   if [ "$(mm_kernel_markers "$t")" != ours ]; then
-    warn "left $(basename "$f") untouched: $(mm_kernel_markers "$t"), so no block in it is provably ours"
+    # A start marker with our note, or outside any fence, means our kernel may still be in there.
+    if grep -qF "<!-- $MM_KNOTE" "$t" || ! case "$(mm_kernel_markers "$t")" in *'fenced code block'*) true ;; *) false ;; esac; then mm_left "$(basename "$f")" "$(mm_kernel_markers "$t"), so no block in it is provably ours: take the MasterMind block out by hand"
+    else warn "left $(basename "$f") untouched: $(mm_kernel_markers "$t"), so no block in it is provably ours"; fi
     return 0
   fi
   mm_gate file "$t" "$root" || return 0
@@ -1742,7 +1853,7 @@ mm_user_made() {                    # $1 claude|cursor|codex, $2 path relative t
   first="$(git -C "$PROJECT" log --diff-filter=A --format=%H -- "$2" 2>/dev/null | tail -1)"
   [ -n "$first" ] || return 0
   tmp="$(mktemp)"
-  if git -C "$PROJECT" show "$first:$2" > "$tmp" 2>/dev/null && mm_hooks_js "$1" sole "$tmp"; then rc=1; fi
+  if git -C "$PROJECT" show "$first:./$2" > "$tmp" 2>/dev/null && mm_hooks_js "$1" sole "$tmp"; then rc=1; fi
   rm -f "$tmp"
   return "$rc"
 }
@@ -1771,7 +1882,7 @@ if [ "$MODE" = uninstall ]; then
   printf 'Removing MasterMind from %s%s%s…\n' "$g" "$([ "$SCOPE" = global ] && echo "global (~/.claude)" || echo "this project")" "$x"
   n=0
   _recf="$(mm_record_file)"
-  if [ -f "$_recf" ]; then MM_RECORDED_BRAIN="$(sed -n 's/^brain=//p' "$_recf")"; MM_RECORDED_BRAIN="${MM_RECORDED_BRAIN%%$'\n'*}"; fi
+  if [ -f "$_recf" ]; then MM_RECORDED_BRAIN="$(mm_trusted_brain "$_recf")"; fi
   if mm_wants claude; then
     remove_link "$CLAUDE_DIR/CLAUDE.md" "$BRAIN/CLAUDE.md"     && n=$((n + 1))
     remove_link "$CLAUDE_DIR/engineering" "$REPO/engineering" && n=$((n + 1))
@@ -2306,16 +2417,31 @@ seed_routes_example() {
 RMAP
 }
 
+mm_sync_router() {                  # $1 brain, $2 name shown
+  if [ -f "$1/scripts/build-router.mjs" ] && node "$1/scripts/build-router.mjs" >/dev/null 2>&1; then ok "$2/engineering/ROUTER.md regenerated"
+  else warn "$2/engineering/ROUTER.md could not be regenerated: run  node $2/scripts/build-router.mjs"; fi
+}
+
 if [ "$MODE" = sync ]; then
-  if [ "$SCOPE" = global ]; then
-    printf '%s✖ sync is per project:%s run it inside a project MasterMind is installed in.\n' "$r" "$x" >&2; exit 2
-  fi
   _recf="$(mm_record_file)"
-  if [ "$ISOLATED" = 0 ] && [ ! -f "$_recf" ]; then
-    printf '%s✖ MasterMind is not installed in this project, so there is nothing to sync.%s Install it:  npx mastermind-brain\n' "$r" "$x" >&2
+  if [ "$SCOPE" = global ] || { [ "$ISOLATED" = 0 ] && [ ! -f "$_recf" ] && [ -f "$MM_STATE/global" ]; }; then
+    # A global brain wires no project files: its field pack and router live in the clone.
+    if [ ! -f "$MM_STATE/global" ]; then
+      printf '%s✖ MasterMind is not installed globally, so there is nothing to sync.%s Install it:  npx mastermind-brain --global\n' "$r" "$x" >&2
+      exit 1
+    fi
+    printf 'MasterMind sync → %sglobal brain%s (offline)\n' "$g" "$x"
+    if [ -z "$(mm_active_field)" ]; then warn "no active field pack yet: say init in your AI tool to build one"; fi
+    mm_sync_router "$REPO" '~/.mastermind'
+    printf '\n%s✓ synced.%s  Verify: ~/.mastermind/install.sh --check --global\n' "$g" "$x"
+    exit 0
+  fi
+  # An isolated brain outlives an uninstall, so the brain alone is not an install: the record is.
+  if [ ! -f "$_recf" ]; then
+    printf '%s✖ MasterMind is not installed in this project (no install record), so there is nothing to sync.%s Install it:  npx mastermind-brain\n' "$r" "$x" >&2
     exit 1
   fi
-  _rec=""; [ -f "$_recf" ] && _rec=" $(sed -n 's/^tools=//p' "$_recf") "
+  _rec=" $(sed -n 's/^tools=//p' "$_recf") "
   printf 'MasterMind sync → %sthis project%s (offline)\n' "$g" "$x"
   if [ -z "$(mm_active_field)" ]; then warn "no active field pack yet: say init in your AI tool to build one"; fi
   if [ -f "$PROJECT/.cursor/rules/mastermind.mdc" ] || case "$_rec" in *' cursor '*) true ;; *) false ;; esac; then
@@ -2323,11 +2449,21 @@ if [ "$MODE" = sync ]; then
     wire_cursor_field
   fi
   if [ "$ISOLATED" = 1 ]; then
-    if [ -f "$BRAIN/scripts/build-router.mjs" ] && node "$BRAIN/scripts/build-router.mjs" >/dev/null 2>&1; then ok ".mastermind/engineering/ROUTER.md regenerated"
-    else warn ".mastermind/engineering/ROUTER.md could not be regenerated: run  node .mastermind/scripts/build-router.mjs"; fi
+    mm_sync_router "$BRAIN" .mastermind
     generate_context_anchors
   else
-    ok "shared brain: its field pack and router live in the clone at $REPO, so only this project's Cursor rule is written here"
+    mm_sync_router "$REPO" '~/.mastermind'
+  fi
+  # What sync created goes into the record, so uninstall takes it back.
+  if [ -n "$MM_CREATED" ]; then
+    case "$_recf" in "$MM_STATE"/*) mm_gate own "$_recf" "$MM_STATE" ;; *) mm_gate own "$_recf" ;; esac
+    _tf="$(mktemp)"
+    { grep -v -e '^digest=' -e '^created=' "$_recf" || true
+      { sed -n 's/^created=//p' "$_recf"; printf '%s' "$MM_CREATED"; } | grep -v '^$' | sort -u | sed 's/^/created=/' || true
+    } > "$_tf"
+    cat "$_tf" > "$_recf"
+    printf 'digest=%s\n' "$(mm_hash "$_tf")" >> "$_recf"
+    rm -f "$_tf"
   fi
   printf '\n%s✓ synced.%s  Verify: %s --check\n' "$g" "$x" "$(if [ "$ISOLATED" = 1 ]; then printf '.mastermind/install.sh'; else printf '~/.mastermind/install.sh'; fi)"
   exit 0
@@ -2449,12 +2585,16 @@ mm_only_ours() {                    # $1 directory
 }
 mm_sole_ours() {                    # $1 file
   mm_is_generated "$1" && return 0
-  case "${1#"$PROJECT"/}" in
-    .claude/settings.json) mm_hooks_js claude sole "$1" ;;
-    .cursor/hooks.json)    mm_hooks_js cursor sole "$1" ;;
-    .codex/hooks.json)     mm_hooks_js codex sole "$1" ;;
+  local rel="${1#"$PROJECT"/}" tool
+  case "$rel" in
+    .claude/settings.json) tool=claude ;;
+    .cursor/hooks.json)    tool=cursor ;;
+    .codex/hooks.json)     tool=codex ;;
     *) return 1 ;;
   esac
+  # A file the user committed is theirs, whatever our install has since put in it.
+  mm_user_made "$tool" "$rel" && return 1
+  mm_hooks_js "$tool" sole "$1"
 }
 mm_adopt_legacy() {
   local rel
@@ -2681,7 +2821,10 @@ if [ "$MODE" = check ]; then
 fi
 
 if [ "$REFUSED" -gt 0 ]; then
-  printf '\n%s✖ %d target(s) were refused, so those surfaces are not wired:%s%s. Replace each link with a real folder or file, then re-run.\n' "$r" "$REFUSED" "$x" "$MM_REFUSED_LIST"
+  _how=""
+  case "$MM_REFUSED_KINDS" in *link*) _how="replace each refused link with a real folder or file" ;; esac
+  case "$MM_REFUSED_KINDS" in *block*) _how="${_how:+$_how; }fix the MasterMind block in each refused file as described above" ;; esac
+  printf '\n%s✖ %d target(s) were refused, so those surfaces are not wired:%s%s. To fix: %s, then re-run.\n' "$r" "$REFUSED" "$x" "$MM_REFUSED_LIST" "$_how"
   exit 1
 fi
 

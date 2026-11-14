@@ -106,7 +106,9 @@ it, by design, and each one is asserted as a known miss in `tests/classifier.tes
 
 Two more limits. A relative path that contains a regenerable folder name is trusted wherever the shell
 happens to be, so `cd ~/elsewhere && rm -rf build` is not held. And text matching can hold a harmless
-command that merely quotes a risky one in an unusual way.
+command that merely quotes a risky one in an unusual way: a heredoc whose delimiter is only partly
+quoted, such as `<<E"OF"`, is read as unquoted, so a `$( )` written in its body is held although
+bash would not run it.
 
 This is a safety net under the kernel's rule, not a replacement for it and not a security boundary.
 Keep your own permission rules.

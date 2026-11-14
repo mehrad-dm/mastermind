@@ -76,7 +76,19 @@ function substitutionEnd(src, from) {
       marks.push(markOf(m))
       i += m[0].length
     } else if (c === '\n' && marks.length) i = skipBodies(src, i + 1, marks)[0]
-    else {
+    else if (c === '\\') i += 2
+    else if (c === '#' && (i === from || /[\s;&|(]/.test(src[i - 1]))) {
+      // A comment runs to the end of its line, and a quote inside it opens nothing.
+      const end = src.indexOf('\n', i)
+      i = end < 0 ? src.length : end
+    } else if (c === "'") {
+      const end = src.indexOf("'", i + 1)
+      i = end < 0 ? src.length : end + 1
+    } else if (c === '"') {
+      let j = i + 1
+      while (j < src.length && src[j] !== '"') j += src[j] === '\\' ? 2 : 1
+      i = j + 1
+    } else {
       if (c === '(') depth += 1
       if (c === ')') depth -= 1
       i += 1
@@ -101,6 +113,25 @@ function ansiQuoted(src, from) {
   return [i + 1, text]
 }
 
+// The commands an unquoted heredoc body runs: bash expands $( ) and backticks in it.
+function substitutions(body) {
+  const out = []
+  for (let i = 0; i < body.length; i += 1) {
+    if (body[i] === '\\') i += 1
+    else if (body[i] === '$' && body[i + 1] === '(' && body[i + 2] !== '(') {
+      const end = substitutionEnd(body, i + 2)
+      out.push(...segments(body.slice(i + 2, end - 1)))
+      i = end - 1
+    } else if (body[i] === '`') {
+      const end = body.indexOf('`', i + 1)
+      if (end < 0) break
+      out.push(...segments(body.slice(i + 1, end)))
+      i = end
+    }
+  }
+  return out
+}
+
 /**
  * Splits a command line into segments of words; quotes, heredoc bodies and comments are honoured.
  * Each segment: { words, writes, targets: [{ to, append }], body, piped }.
@@ -115,6 +146,7 @@ export function segments(text) {
   let open = false
   const heredocs = []
   const owners = []
+  const expands = []
   const endWord = () => {
     if (open) cur.words.push(word)
     word = ''
@@ -190,6 +222,7 @@ export function segments(text) {
       if (m) {
         heredocs.push(markOf(m))
         owners.push(cur)
+        expands.push(!m[1] && !m[2].includes('\\'))
       }
       i += m ? m[0].length : 2
     } else if (c === '<') {
@@ -218,10 +251,12 @@ export function segments(text) {
       endSegment()
       const marks = heredocs.splice(0)
       const who = owners.splice(0)
+      const live = expands.splice(0)
       let at = i + 1
       for (let k = 0; k < marks.length; k += 1) {
         const [end, body] = skipBodies(src, at, [marks[k]])
         who[k].body += body
+        if (live[k]) nested.push(...substitutions(body))
         at = end
       }
       i = at

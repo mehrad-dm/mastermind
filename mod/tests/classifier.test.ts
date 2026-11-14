@@ -189,6 +189,18 @@ const REVIEWED: Row[] = [
 const EXISTING = { root: '/work/proj', existing: new Set(['important.txt', 'data.json']) } as unknown as Ctx
 
 const PARSER: Row[] = [
+  ['cat <<EOF\n$(rm -rf src)\nEOF', 'rm -r'],
+  ['cat <<EOF\n`git push`\nEOF', 'git push'],
+  ['cat > notes.md <<EOF\nrun: $(npm publish)\nEOF', 'npm publish'],
+  ["cat <<'EOF'\n$(rm -rf src)\nEOF", null],
+  ['cat <<\\EOF\n`git push`\nEOF', null],
+  ['cat <<EOF\n\\$(rm -rf src)\nEOF', null],
+  ['cat <<EOF\n$(echo ")" ; git push)\nEOF', 'git push'],
+  ['cat <<EOF\n$(echo \\) ; git push)\nEOF', 'git push'],
+  ['echo "$(true # it\'s\n)"; git push', 'git push'],
+  ['echo "$(true # don\'t\n)"\nrm -rf src', 'rm -r'],
+  ['echo "$(echo a#b)"', null],
+  ['echo "$(printf \'%s)\' x; npm publish)"', 'npm publish'],
   ['grep -q foo <<< "$out"\ngit push --force', 'git push --force'],
   ['read -r a b <<< $line\nrm -rf src', 'rm -r'],
   ['echo $((1<<4))\ngit push --force', 'git push --force'],
@@ -363,7 +375,7 @@ test('classifier: substitutions in quotes, tight redirects, workspace flags and 
   expect(misread(REVIEWED)).toEqual([])
 })
 
-test('classifier: heredoc look-alikes, arithmetic shifts, escaped delimiters and ANSI-C quoting do not swallow what follows', async () => {
+test('classifier: heredoc look-alikes, arithmetic shifts, escaped delimiters and ANSI-C quoting do not swallow what follows, and an unquoted heredoc body runs its substitutions', async () => {
   expect(misread(PARSER)).toEqual([])
 })
 
