@@ -1,6 +1,6 @@
 ---
-title: Init: twenty seconds of setup, then out of your way
-blurb: Sets MasterMind up for one project by reading your stack instead of interrogating you, and asks at most a single question.
+title: Init: one setup per project, then out of your way
+blurb: Sets MasterMind up for one project by reading your stack instead of interrogating you. Once you say yes, it asks nothing.
 ---
 
 ## The problem this solves
@@ -12,8 +12,7 @@ The usual result is a wizard: eight questions, half of them technical, most with
 in your project files. People abandon setup, or click through it randomly, and the tool ends up
 configured wrong anyway.
 
-**Init is deliberately the opposite: detect everything readable, ask at most one thing, then start
-working.**
+**Init is deliberately the opposite: detect everything readable, ask nothing, then start working.**
 
 It runs **once per project**. Once MasterMind knows your stack, it never does this again.
 
@@ -37,8 +36,7 @@ There are two paths, and MasterMind picks based on whether your folder has code 
 folder shape, database, and test setup, then loads the matching body of domain knowledge. If the closest
 match is imperfect, say the stored knowledge assumes React and you're on Svelte, it prunes what doesn't
 apply and fills the gaps rather than forcing a bad fit. If there's no knowledge for your field at all, it
-offers a one-time deeper setup and tells you plainly what it costs: a few minutes now, reused forever
-after.
+builds it from the template for your exact stack: a few minutes once, reused after that.
 
 **If the folder is empty,** there's nothing to read, so it works from what you have already said you
 want to build. If you named a framework, it uses it. If you only described the product, it chooses the
@@ -60,10 +58,10 @@ into your real task without waiting.
 > *"I want to build a booking site, start from scratch"*
 > *"get me ready"*
 
-It does not start on its own. On your first real task in a project it hasn't seen, MasterMind tells
-you in one line that there is no field pack, offers `init`, and carries on with the task. Under a
-shared or global install the offer also says the pack is written in your home directory. Once you say
-yes, you'll see it in your terminal:
+It does not start on its own. Init runs in your AI tool's chat, after install, never as part of
+install. On your first real task in a project without a field pack, MasterMind's opening line ends with
+*"no field pack yet: say init to build one"*, and it carries on with the task. Under a shared or global
+install the offer also says the pack goes in your home directory. Once you say yes, you'll see:
 
 ```
 🧠 MasterMind ▸ setting up your project: will confirm what's wired
