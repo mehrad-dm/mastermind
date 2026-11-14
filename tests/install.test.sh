@@ -131,6 +131,7 @@ if [ -n "${MM_SHARD:-}" ]; then
       }
     }' "$TIMES" "$SELF" > "$TMP/units" || { no "MM_SHARD found no sections, or no finish line, in $SELF"; finish; }
   echo "shard $MM_SHARD: $(($(wc -l < "$TMP/units") - 1)) of $(head -1 "$TMP/units") units"
+  [ "$(wc -l < "$TMP/units")" -gt 1 ] || no "shard $MM_SHARD selected no sections: use fewer shards"
   now_ms() { python3 -c 'import time; print(int(time.time() * 1000))'; }
   while IFS=$'\t' read -r _mm_a _mm_b _mm_t <&3; do
     _mm_code="$(sed -n "${_mm_a},${_mm_b}p" "$SELF")"$'\n'
