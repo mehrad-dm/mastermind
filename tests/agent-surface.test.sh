@@ -629,6 +629,13 @@ out=$(push "$LIVE" "refs/heads/main $GSHA refs/tags/v9.9.9 $ZERO" MM_SKIP_TESTS=
 check "and the bypass does not lift the tag guard" "$rc" "1"
 out=$(push "$LIVE" "refs/tags/v9.9.9 $GSHA refs/heads/topic $ZERO" MM_SKIP_TESTS=1); rc=$?
 check "a local tag pushed to a branch name is not a release tag" "$rc" "0"
+for t in vnext v-1.0.0 v1.0 v01.2.3 v1.2.3.4; do
+  out=$(push "$LIVE" "refs/tags/$t $GSHA refs/tags/$t $ZERO" MM_SKIP_TESTS=1 ALLOW_SENSITIVE=1); rc=$?
+  case "$rc:$out" in 1:*"BLOCKED"*"is not v<major>.<minor>.<patch>"*) ok "a v* tag that is not semver ($t) is refused";; *) bad "$t not refused: exit $rc: $out";; esac
+done
+out=$(push "$LIVE" "refs/tags/v9.9.9-rc.1 $GSHA refs/tags/v9.9.9-rc.1 $ZERO" MM_SKIP_TESTS=1); rc=$?
+case "$rc:$out" in 1:*"BLOCKED"*"v9.9.9-rc.1"*) case "$out" in *"is not v<major>"*) bad "a semver pre-release tag was refused as not semver";; *) ok "a semver pre-release tag goes through the release checks";; esac ;;
+  *) bad "pre-release tag not guarded: exit $rc: $out";; esac
 
 out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" ALLOW_SENSITIVE=1 PROSE_RC=1); rc=$?
 case "$rc:$out" in 1:*"em dashes would be pushed"*) ok "ALLOW_SENSITIVE=1 does not skip the prose gate";; *) bad "prose gate skipped: exit $rc: $out";; esac

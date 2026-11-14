@@ -20,7 +20,7 @@ const MM_HOME = process.env.MASTERMIND_HOME || join(homedir(), '.mastermind')
 const PIN = process.env.MASTERMIND_REF || `v${VERSION}`
 
 const READ_CMDS = ['skills', 'skill', 'agents', 'agent', 'route', 'wrong-log', 'conflicts', 'next', 'status']
-const COMMANDS = [...READ_CMDS, 'check', 'update', 'uninstall', 'init']
+const COMMANDS = [...READ_CMDS, 'check', 'update', 'uninstall', 'init', 'sync']
 const FLAG_CMDS = { '--check': 'check', '--uninstall': 'uninstall' }
 const rawArgs = process.argv.slice(2)
 const cmdAt = rawArgs.findIndex((a) => !a.startsWith('-'))
@@ -38,6 +38,7 @@ if (argv.includes('--help') || argv.includes('-h')) {
   mastermind check            report what is wired here and what is broken
   mastermind update           update the brain and repair this project
   mastermind uninstall        remove MasterMind wiring from this project
+  mastermind sync             deliver the active field pack to every wired tool, offline
   mastermind status           version, brain, kernel, field, logged misses and the next spec step
   mastermind skills           list the skill routing table, ours and any pack you installed
   mastermind agents           list the agents
@@ -727,6 +728,14 @@ if (READ_CMDS.includes(cmd)) {
       ].join('\n'),
     )
   }
+}
+
+// Offline on purpose: it runs the engine already on disk and never clones, fetches or syncs it.
+if (cmd === 'sync') {
+  const brain = findBrain()
+  const engine = [brain, MM_HOME].filter(Boolean).map((b) => join(b, 'install.sh')).find((f) => existsSync(f))
+  if (!engine) fail('no MasterMind install here to sync: run `npx mastermind-brain` in this project first.')
+  process.exit(run('bash', [engine, '--sync', ...passthrough], { cwd: process.cwd(), env: { ...process.env, MM_NO_NETWORK: '1' } }))
 }
 
 try {

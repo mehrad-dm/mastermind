@@ -105,6 +105,36 @@ test('when the hold itself fails, a risky command is refused and a harmless one 
   expect(calm.decision).toBe('thrown')
 })
 
+test('when the hold fails with nobody to ask, a risky command is still refused, not deferred', async ($, on) => {
+  world(on, { rootFails: true })
+  const out = await $.tool.check(bash('git push --force')).catch((e: unknown) => ({ decision: 'thrown', reason: String(e) }))
+  expect(out.decision).toBe('deny')
+  expect(out.reason).toContain('hold failed')
+})
+
+test('when the hold fails before the session root is known, an absolute write outside the temp dirs is refused', async ($, on) => {
+  world(on, {
+    check: () => {
+      throw new Error('boom')
+    },
+  })
+  for (const approver of ['person', undefined] as const) {
+    const out = await $.tool.check(write('Write', { file_path: '/home/u/.zshrc' }, approver)).catch((e: unknown) => ({ decision: 'thrown', reason: String(e) }))
+    expect(out.decision).toBe('deny')
+    expect(out.reason).toContain('hold failed')
+  }
+  const temp = await $.tool.check(write('Write', { file_path: '/tmp/x.txt' }, 'person')).catch((e: unknown) => ({ decision: 'thrown', reason: String(e) }))
+  expect(temp.decision).toBe('thrown')
+})
+
+test('hold: a > that truncates a file which already exists asks; a new file does not', async ($, on) => {
+  world(on, { files: [ROOT + '/data.json'] })
+  const out = await $.tool.check(bash(': > data.json', 'person'))
+  expect(out.decision).toBe('ask')
+  expect(out.reason).toContain('truncates an existing file')
+  expect((await $.tool.check(bash('echo hi > fresh.txt', 'person'))).decision).toBe('allow')
+})
+
 test('write hold: a write outside the project asks, in the kernel\'s words', async ($, on) => {
   world(on)
   const out = await $.tool.check(write('Write', { file_path: '/home/u/.zshrc' }, 'person'))

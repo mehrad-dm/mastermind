@@ -66,6 +66,7 @@ test('/mm-check runs the installer\'s --check from the brain, never the CLI\'s c
   const out = await $.command.run({ command: 'mm-check' })
   expect(seen.runs).toEqual([['bash', ROOT + '/.mastermind/install.sh', '--check']])
   expect(seen.cwds).toEqual([ROOT])
+  expect(seen.envs).toEqual([{ MM_NO_NETWORK: '1' }])
   expect(out.text).toContain('bash ' + ROOT + '/.mastermind/install.sh --check (exit 0)')
   expect(out.text).toContain('healthy')
 })

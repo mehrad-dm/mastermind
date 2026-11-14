@@ -1,6 +1,6 @@
 // The MasterMind mod: optional, Claude Code 2.1.287 or newer. The Markdown brain works without it.
 // Events and $ calls are spelled literally because Claude Code reads them from this source.
-import { irreversible, looksRisky, reasonFor } from './irreversible.mjs'
+import { irreversible, looksRisky, reasonFor, redirectTargets } from './irreversible.mjs'
 import { evidence, hasKernel, isReview, needsAttention, notices, statusLine, steps } from './signals.mjs'
 
 const WRITERS = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit']
@@ -45,7 +45,6 @@ export function register(on, options) {
     const risk = cfg.hold === 'off' ? null : looksRisky(e.input?.command)
     if (!risk || (cfg.hold === 'destructive-only' && !risk.destructive)) return next(e)
     const decided = await next(e).catch(() => null)
-    if (decided && decided.decision !== 'ask' && decided.decision !== 'deny' && e.approver === undefined && cfg.headless === 'defer') return decided
     if (decided && (decided.decision === 'ask' || decided.decision === 'deny')) return decided
     return { decision: 'deny', reason: 'The MasterMind hold failed (' + next.error.kind + '), so this command was not run. Ask the user to run it themselves.' }
   })
@@ -53,7 +52,7 @@ export function register(on, options) {
   on('tool.check', { tool: ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'] }, holdWrite).catch(async ($, e, next) => {
     const path = String(e.input?.file_path ?? e.input?.notebook_path ?? '')
     const temp = /^(\/private)?(\/tmp|\/var\/tmp|\/var\/folders)\//.test(path)
-    if (cfg.hold === 'off' || lastRoot === '' || temp || !path.startsWith('/') || path.startsWith(lastRoot + '/')) return next(e)
+    if (cfg.hold === 'off' || temp || !path.startsWith('/') || (lastRoot !== '' && path.startsWith(lastRoot + '/'))) return next(e)
     return { decision: 'deny', reason: 'The MasterMind hold failed (' + next.error.kind + '), so this write outside the project was not made. Ask the user to make it themselves.' }
   })
 
@@ -161,8 +160,16 @@ async function holdBash($, e, next) {
   const decided = await next(e)
   if (cfg.hold === 'off' || decided.decision === 'deny') return decided
   const command = e.input?.command
-  if (!irreversible(command)) return decided
-  const risk = irreversible(command, { root: await $.session.root(), tmpdir: await $.env.get('TMPDIR') })
+  const targets = redirectTargets(command)
+  if (!irreversible(command) && !targets.length) return decided
+  const root = await $.session.root()
+  const home = (await $.env.get('HOME')) ?? ''
+  const existing = new Set()
+  for (const t of targets) {
+    const at = t.startsWith('/') ? t : t.startsWith('~/') ? home + t.slice(1) : root + '/' + t
+    if (await $.fs.exists(at)) existing.add(t)
+  }
+  const risk = irreversible(command, { root, tmpdir: await $.env.get('TMPDIR'), existing })
   return risk ? held(e, decided, risk) : decided
 }
 
@@ -317,6 +324,6 @@ async function check($, at) {
   }
   if (installer === null)
     return 'No installer here, so nothing was checked. This looks like a plugin-only install: the skills and this mod came from the plugin marketplace, and `--check` verifies the wiring that `npx mastermind-brain` creates in a project.'
-  const run = await $.process.run(['bash', installer, '--check'], { cwd: at.root, timeoutMs: 120000 })
+  const run = await $.process.run(['bash', installer, '--check'], { cwd: at.root, timeoutMs: 120000, env: { MM_NO_NETWORK: '1' } })
   return 'bash ' + installer + ' --check (exit ' + run.exitCode + ')\n' + (clean(run) || '(no output)')
 }

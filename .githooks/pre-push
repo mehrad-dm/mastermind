@@ -29,10 +29,13 @@ REFS="$(cat)"
 # secret scan and must not wave a tag through. Keyed on the remote ref: that is the name the
 # tag gets, whatever local ref it is pushed from.
 while read -r _lref lsha rref _rsha; do
-  case "$rref" in refs/tags/v[0-9]*) ;; *) continue ;; esac
+  case "$rref" in refs/tags/v*) ;; *) continue ;; esac
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
   TAG="${rref#refs/tags/}"; WANT="${TAG#v}"
   tag_refuse() { printf '%s\n' "${RED}✖ BLOCKED: $1${NC}"; printf '%s\n' "  A pushed tag cannot be moved, so the version would be burnt."; exit 1; }
+  # The ruleset and the publish workflow both match v*, so every such tag is a release tag.
+  [[ $WANT =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]] ||
+    tag_refuse "$TAG is not v<major>.<minor>.<patch>, and every v* tag is published as a release."
 
   TARGET="$(git rev-parse -q --verify "$lsha^{commit}" 2>/dev/null)" ||
     tag_refuse "$TAG does not resolve to a commit."

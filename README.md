@@ -100,16 +100,19 @@ the current repo's `.claude/` (Claude Code) plus `AGENTS.md`, `.codex/hooks.json
 tools you have: active only there. Prefer one shared brain for every project instead? add `--shared`.
 Want it everywhere at once? `--global`. You install **from** `~/.mastermind`; that clone is the source.
 
-It's **safe and self-healing**: re-run anytime: it never touches a `CLAUDE.md` at your project root,
-never overwrites an existing `.claude/CLAUDE.md` or `AGENTS.md` (the first gets one import line
+It's **safe and self-healing**: re-run anytime: it never touches a `CLAUDE.md` at your project root
+(one exception: when your `AGENTS.md` is a link to it, the kernel block goes in that file, so Claude
+Code and Codex each load it once, and `uninstall` puts the file back byte for byte), never overwrites an existing `.claude/CLAUDE.md` or `AGENTS.md` (the first gets one import line
 appended; the second gets the kernel in a marked block after your own content, because Codex has no
 import syntax, and `uninstall` takes the block out and leaves your bytes as they were), backs up
 a symlink of yours before replacing it, refreshes the engine while **keeping your project's own
 lessons**, and repairs any wiring. It makes exactly one edit to your settings: it merges the MasterMind
 `SessionStart` hook entry into `.claude/settings.json`, leaving every other key and value as it was
-(the file is written back as JSON, so its spacing may change; it is left alone entirely if it cannot
-be parsed). `uninstall` removes just that entry. `.cursor/hooks.json` and `.codex/hooks.json` are
-merged the same way. Your sessions and memory are never touched or published.
+(written back in your own indentation; it is left alone entirely if it cannot be parsed). `uninstall`
+removes just that entry and, when you have not edited the file since, writes your original bytes
+back. `.cursor/hooks.json` and `.codex/hooks.json` are merged the same way. A symlinked target it
+will not write through, or a marked block it cannot prove is its own, is reported and the run exits
+non-zero. Your sessions and memory are never touched or published.
 
 ```bash
 npx mastermind-brain update      # refresh the brain + repair links
@@ -167,7 +170,7 @@ What it can and cannot do is listed in [`mod/README.md`](mod/README.md) and
 | Tool | How MasterMind loads | Wired by |
 | --- | --- | --- |
 | **Claude Code** | project `.claude/`: native `skills/`, `agents/`, and the kernel `CLAUDE.md` | `npx mastermind-brain` |
-| **Cursor / Composer** | `.cursor/rules/mastermind.mdc`: `alwaysApply: true`, **kernel inlined**; plus `mastermind-field.mdc` carrying the active field's `stack-defaults` + `lessons`; plus the four agents as subagents in `.cursor/agents/`, with `code-reviewer` and `tech-scout` read-only (all generated; re-run `npx mastermind-brain` to refresh). With `--global`, only the subagents, in `~/.cursor/agents/` | `npx mastermind-brain` |
+| **Cursor / Composer** | `.cursor/rules/mastermind.mdc`: `alwaysApply: true`, **kernel inlined**; plus `mastermind-field.mdc` carrying the active field's `stack-defaults` + `lessons`; plus the four agents as subagents in `.cursor/agents/`, with `code-reviewer` and `tech-scout` read-only (all generated; re-run `npx mastermind-brain` to refresh, or `mastermind sync` after a field pack changes). With `--global`, only the subagents, in `~/.cursor/agents/`, when Cursor is detected (or named: `--global cursor`) | `npx mastermind-brain` |
 | **Codex** | project `AGENTS.md` → the brain (an `AGENTS.md` of your own gets the kernel in a marked block instead; `check` warns if the file passes Codex's 32 KiB limit), plus every skill linked into `.agents/skills/`, where Codex discovers skills and can pick one by its description or by `$name`, plus a `SessionStart` entry in `.codex/hooks.json` that tells the model to re-read `AGENTS.md` after a compaction; it runs only in a trusted project, after you approve it with `/hooks`. With `--global`, also `~/.codex/AGENTS.md`, `~/.codex/hooks.json` and `~/.agents/skills/`, but Codex may not merge global instructions into a project that has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705)), so per-project is the reliable path. Codex 0.150 and later ignores a project's `AGENTS.md` until you trust the project, so say yes when it asks | `npx mastermind-brain` |
 
 Those three are what MasterMind supports. The brain is plain Markdown with no tool-specific mechanisms
@@ -216,7 +219,9 @@ The installer **compiles** that into each app's own tool-native anchor: a nested
 `AGENTS.md` and a glob-scoped `.cursor/rules`: so **the tool loads the right context by file path,
 not the model guessing.** Web's lessons never reach api; each app pulls only its own field +
 context, so it's isolated *and* uses fewer tokens. A missing context is created from a template using
-the default field; edit its `field.md` to point at another field once you've bootstrapped one.
+the default field; edit its `field.md` to point at another field once you've bootstrapped one. Until
+the brain has a field pack, the routes wait: say `init` in your AI tool, and it builds the pack and
+compiles them with `mastermind sync`, so nothing needs re-running.
 A project with no `routes.map` is single-field: nothing changes, the common case stays simple.
 
 > **Cursor's kernel is per-project only.** `--global` covers `~/.claude` (and `~/.codex` for Codex); Cursor has no

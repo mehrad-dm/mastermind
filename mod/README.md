@@ -58,7 +58,7 @@ Set them in the `/config` menu, or in `~/.claude/settings.json` under `pluginCon
 | Setting | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `hold` | `all`, `destructive-only`, `off` | `all` | `destructive-only` lets plain push, publish and deploy through and still asks for force pushes, deletes, discarded work and writes outside the project. `off` turns the hold off. |
-| `headless` | `defer`, `deny` | `defer` | What the hold does when nobody can be asked (`claude -p`, the SDK). `defer` leaves the decision to your permission rules, so a pipeline you allowed to push still pushes. `deny` refuses the action and tells the model why. |
+| `headless` | `defer`, `deny` | `defer` | What the hold does when nobody can be asked (`claude -p`, the SDK). `defer` leaves the decision to your permission rules, so a pipeline you allowed to push still pushes (unless the hold itself fails, which refuses). `deny` refuses the action and tells the model why. |
 | `handoffAt` | 0 to 100 | 70 | Context percent for the handoff hint. `0` turns the hint off. |
 | `nudge` | `on`, `off` | `on` | `off` silences the verdict notice, the evidence receipt and the fork-review line. |
 
@@ -97,8 +97,10 @@ it, by design, and each one is asserted as a known miss in `tests/classifier.tes
 - `bash -c "git push"`, and any other shell given a command string
 - `xargs rm`
 - `find -delete`
-- wrappers the classifier does not open, such as `timeout 30 git push`, `doas rm -rf dir`, `env -i git push`
-- SQL in a file: `psql -f drop.sql`
+- wrappers the classifier does not open, such as `xargs git push`, `watch git push`, `parallel`
+- SQL in a file whose name does not say what it does: `psql -f migrate.sql` (a file named like
+  `drop.sql`, `reset.sql` or `delete-users.sql` is held)
+- a `>` onto a file the hold cannot see, such as one in a folder the command `cd`s into first
 - MCP tools, and any tool other than Bash and the four file-writing tools
 - spending a one-use credential, which no command line reveals
 
@@ -115,9 +117,9 @@ Keep your own permission rules.
   2.1.323 shows its own file prompt and not the reason; the reason is in the debug log.
 - In auto mode, when the classifier is unavailable, Claude Code refuses a held action instead of
   asking.
-- `/mm-check` runs `bash <brain>/install.sh --check` directly. It never runs `mastermind check`,
-  which can fetch or sync the brain first. In a plugin-only install there is no installer, and the
-  command says so.
+- `/mm-check` runs `bash <brain>/install.sh --check` directly, with `MM_NO_NETWORK=1`, so it never
+  fetches. It never runs `mastermind check`, which can fetch or sync the brain first. In a plugin-only
+  install there is no installer, and the command says so.
 - The status facts come from one call, `mastermind status --json`, made when the session starts and
   after a turn that changed something. Never on a timer. If the CLI is missing or too old to know
   `status`, the line says "status unavailable" and nothing fails.
@@ -153,7 +155,8 @@ What that means:
   text is kept in memory for the current turn only and is shown only by `/mm-evidence`.
 - It runs two programs, and only these: the MasterMind CLI at `<project>/.mastermind/bin/mastermind`,
   or `~/.mastermind/bin/mastermind` when the project has none, with `status --json`, `status`, `next`
-  or `wrong-log`; and `bash <brain>/install.sh --check` when you type `/mm-check`. The project copy is
+  or `wrong-log`; and `bash <brain>/install.sh --check` (with `MM_NO_NETWORK=1` set for it) when you
+  type `/mm-check`. The project copy is
   code from the repository you opened, the same trust you give its other hooks.
 - It reads file metadata (`$.fs.stat`) to resolve where a write would land. It reads no file contents.
 
@@ -162,8 +165,8 @@ above from the source, and `bash mod/tests/validate.sh` fails if any of them gro
 file write, a model call, a prompt submission or an environment write.
 
 The Mod API is early access and may change between Claude Code releases. If a release breaks a hook,
-Claude Code skips that hook and carries on; if the hold itself fails, a command that looks risky is
-refused, not run.
+Claude Code skips that hook and carries on; if the hold itself fails, a command that looks risky, or
+a write outside the project, is refused, not run, with `headless` set to `defer` too.
 
 ## Tests
 

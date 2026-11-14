@@ -40,6 +40,7 @@ export type Over = {
   tool?: (e: any) => any
   check?: (e: any) => any
   spawn?: (e: any) => any
+  rootFails?: boolean
 }
 
 export function cliRun(argv: readonly string[]) {
@@ -59,12 +60,17 @@ export function world(on: any, over: Over = {}) {
     toasts: [] as string[],
     runs: [] as string[][],
     cwds: [] as (string | undefined)[],
+    envs: [] as (Record<string, string> | undefined)[],
     registered: [] as string[],
     calls: [] as string[],
   }
   const files = over.files ?? [CLI, ROOT + '/.mastermind/install.sh']
   const real = { ...REAL, ...over.real }
-  on('session.root', () => (seen.calls.push('session.root'), { value: ROOT }))
+  on('session.root', () => {
+    seen.calls.push('session.root')
+    if (over.rootFails) throw new Error('no root')
+    return { value: ROOT }
+  })
   on('env.get', (_: any, e: any) => ({ value: e.name === 'HOME' ? '/home/u' : e.name === 'TMPDIR' ? '/var/folders/x/T/' : undefined }))
   on('session.surfaces', () => ({ value: over.surfaces ?? ['terminal'] }))
   on('fs.exists', (_: any, e: any) => ({ value: files.includes(e.path) }))
@@ -76,6 +82,7 @@ export function world(on: any, over: Over = {}) {
   on('process.run', (_: any, e: any) => {
     seen.runs.push([...e.argv])
     seen.cwds.push(e.init?.cwd)
+    seen.envs.push(e.init?.env)
     return { value: (over.run ?? cliRun)(e.argv) }
   })
   on('ui.log', (_: any, e: any) => ((e.to === 'debug' ? seen.debug : seen.logs).push(e.text), { value: undefined }))

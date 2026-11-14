@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import { irreversible, looksRisky, reasonFor } from '../hooks/irreversible.mjs'
 
-type Ctx = { root?: string; tmpdir?: string }
+type Ctx = { root?: string; tmpdir?: string; existing?: Set<string> }
 type Row = [command: string, label: string | null, ctx?: Ctx]
 
 const PUSH: Row[] = [
@@ -60,7 +60,7 @@ const RM: Row[] = [
   ['rm -R docs/old', 'rm -r'],
   ['rm --recursive --force packages/api', 'rm -r'],
   ['rm -f notes.md', 'rm -f'],
-  ['rm notes.md', null],
+  ['rm notes.md', 'rm'],
   ['rm -rf node_modules', null],
   ['rm -rf dist build .next coverage .turbo', null],
   ['rm -rf ./dist/', null],
@@ -116,10 +116,10 @@ const PUBLISH: Row[] = [
   ['kubectl apply -f deploy.yaml', 'kubectl apply'],
   ['kubectl apply -f deploy.yaml --dry-run=client', null],
   ['kubectl get pods', null],
-  ['psql -c "DROP TABLE users"', 'psql DROP/TRUNCATE'],
-  ['psql app -c "drop database app"', 'psql DROP/TRUNCATE'],
-  ['mysql -e "TRUNCATE orders"', 'mysql DROP/TRUNCATE'],
-  ['echo "DROP TABLE users;" | psql app', 'psql DROP/TRUNCATE'],
+  ['psql -c "DROP TABLE users"', 'psql DROP/DELETE/TRUNCATE'],
+  ['psql app -c "drop database app"', 'psql DROP/DELETE/TRUNCATE'],
+  ['mysql -e "TRUNCATE orders"', 'mysql DROP/DELETE/TRUNCATE'],
+  ['echo "DROP TABLE users;" | psql app', 'psql DROP/DELETE/TRUNCATE'],
   ['psql -c "select count(*) from users"', null],
   ['mysql -e "show tables"', null],
 ]
@@ -168,7 +168,7 @@ const REVIEWED: Row[] = [
   ['npx vercel@latest --prod', 'vercel --prod'],
   ['vercel --target production', 'vercel --prod'],
   ['vercel --prod=true', 'vercel --prod'],
-  ['psql -c "ALTER TABLE users DROP COLUMN email"', 'psql DROP/TRUNCATE'],
+  ['psql -c "ALTER TABLE users DROP COLUMN email"', 'psql DROP/DELETE/TRUNCATE'],
   ['psql -c "select 1" && echo "truncate done"', null],
   ['grep -c "drop table" x.sql && psql -c "select 1"', null],
   ['kubectl -v 6 delete pod x', 'kubectl delete'],
@@ -185,6 +185,142 @@ const REVIEWED: Row[] = [
   ['git reset -q --hard', 'git reset --hard'],
 ]
 
+
+const EXISTING = { root: '/work/proj', existing: new Set(['important.txt', 'data.json']) } as unknown as Ctx
+
+const PARSER: Row[] = [
+  ['grep -q foo <<< "$out"\ngit push --force', 'git push --force'],
+  ['read -r a b <<< $line\nrm -rf src', 'rm -r'],
+  ['echo $((1<<4))\ngit push --force', 'git push --force'],
+  ['n=$((x << 2))\nrm -rf src', 'rm -r'],
+  ['cat <<\\EOF\nhello\nEOF\ngit push --force', 'git push --force'],
+  ['echo $\'don\\\'t\' ; git push', 'git push'],
+  ['cat <<\'EOF\'\nrm -rf src\nEOF\ngit push', 'git push'],
+  ['cat <<-EOF\n\trm -rf src\n\tEOF\nnpm publish', 'npm publish'],
+  ['echo "$((1 << 2))" && rm -rf src', 'rm -r'],
+  ['(( n <<= 1 )); git push', 'git push'],
+]
+
+const NOW_HELD: Row[] = [
+  ['git stash drop', 'git stash drop'],
+  ['git stash clear', 'git stash clear'],
+  ['git tag -d v1.0.0', 'git tag -d'],
+  ['git checkout -B main origin/main', 'git checkout -B'],
+  ['git switch -C main origin/main', 'git switch -C'],
+  ['git switch --discard-changes main', 'git switch --discard-changes'],
+  ['git branch -f main origin/main', 'git branch -f'],
+  ['git checkout src/', 'git checkout (discard)'],
+  ['git checkout HEAD~1 src/a.ts', 'git checkout (discard)'],
+  ['git worktree remove --force ../wt', 'git worktree remove --force'],
+  ['git reflog expire --expire=now --all', 'git reflog expire'],
+  ['git filter-branch --force --tree-filter x HEAD', 'git filter-branch'],
+  ['git subtree push --prefix=dist origin gh-pages', 'git subtree push'],
+  ['git update-ref -d refs/heads/x', 'git update-ref -d'],
+  ['rm important.txt', 'rm'],
+  ['rm *.ts', 'rm'],
+  ['unlink file', 'unlink'],
+  ['shred -u secret', 'shred'],
+  ['truncate -s 0 data.db', 'truncate'],
+  ['dd if=/dev/zero of=/dev/disk2', 'dd of='],
+  ['mkfs.ext4 /dev/sdb1', 'mkfs.ext4'],
+  ['> important.txt', '> important.txt', EXISTING],
+  [': > data.json', '> data.json', EXISTING],
+  ['mv -f new.txt existing.txt', 'mv -f'],
+  ['cp -f a b', 'cp -f'],
+  ['echo x > ~/.zshrc', '> ~/.zshrc'],
+  ['tee /etc/hosts < x', 'tee /etc/hosts'],
+  ['npm unpublish pkg@1.0.0', 'npm unpublish'],
+  ['npm deprecate pkg@1 "x"', 'npm deprecate'],
+  ['npm dist-tag add pkg@1 latest', 'npm dist-tag add'],
+  ['cargo publish', 'cargo publish'],
+  ['twine upload dist/*', 'twine upload'],
+  ['gem push x.gem', 'gem push'],
+  ['npx changeset publish', 'changeset publish'],
+  ['npx lerna publish', 'lerna publish'],
+  ['timeout 30 npm publish', 'npm publish'],
+  ['netlify deploy --prod', 'netlify deploy --prod'],
+  ['firebase deploy', 'firebase deploy'],
+  ['fly deploy', 'fly deploy'],
+  ['wrangler deploy', 'wrangler deploy'],
+  ['gcloud app deploy', 'gcloud app deploy'],
+  ['aws s3 rm s3://bucket --recursive', 'aws s3 rm'],
+  ['aws ec2 terminate-instances --instance-ids i-1', 'aws ec2 terminate-instances'],
+  ['aws cloudformation delete-stack --stack-name x', 'aws cloudformation delete-stack'],
+  ['heroku apps:destroy x', 'heroku apps:destroy'],
+  ['pulumi up -y', 'pulumi up'],
+  ['pulumi destroy', 'pulumi destroy'],
+  ['cdk deploy', 'cdk deploy'],
+  ['cdk destroy', 'cdk destroy'],
+  ['serverless deploy', 'serverless deploy'],
+  ['railway up', 'railway up'],
+  ['vercel remove app --yes', 'vercel remove'],
+  ['vercel promote x', 'vercel promote'],
+  ['vercel rollback', 'vercel rollback'],
+  ['gh repo delete me/x --yes', 'gh repo delete'],
+  ['gh release delete v1', 'gh release delete'],
+  ['gh api -X DELETE repos/me/x', 'gh api DELETE'],
+  ['docker volume rm data', 'docker volume rm'],
+  ['docker system prune -af --volumes', 'docker system prune'],
+  ['docker compose down -v', 'docker compose down -v'],
+  ['docker compose push', 'docker push'],
+  ['docker buildx build --push .', 'docker build --push'],
+  ['tofu apply', 'tofu apply'],
+  ['terragrunt apply', 'terragrunt apply'],
+  ['terraform state rm x', 'terraform state rm'],
+  ['kubectl scale deploy x --replicas=0', 'kubectl scale --replicas=0'],
+  ['kubectl drain node1', 'kubectl drain'],
+  ['kubectl rollout restart deploy/x', 'kubectl rollout restart'],
+  ['helm upgrade x ./chart', 'helm upgrade'],
+  ['helm uninstall x', 'helm uninstall'],
+  ['psql -c "DELETE FROM users"', 'psql DROP/DELETE/TRUNCATE'],
+  ['psql -c "UPDATE users SET admin=true"', 'psql DROP/DELETE/TRUNCATE'],
+  ['mysql < drop.sql', 'mysql DROP/DELETE/TRUNCATE'],
+  ['sqlite3 db.sqlite "DROP TABLE x"', 'sqlite3 DROP/DELETE/TRUNCATE'],
+  ['dropdb mydb', 'dropdb'],
+  ['mongosh --eval "db.dropDatabase()"', 'mongosh DROP/DELETE/TRUNCATE'],
+  ['redis-cli FLUSHALL', 'redis-cli DROP/DELETE/TRUNCATE'],
+  ['prisma migrate reset --force', 'prisma migrate reset'],
+  ['rails db:drop', 'rails db:drop'],
+  ['python manage.py flush --noinput', 'manage.py flush'],
+  ['supabase db reset', 'supabase db reset'],
+  ['curl -X DELETE https://api.example.com/x', 'curl DELETE'],
+  ['scp secrets.env host:/tmp', 'scp'],
+  ['rsync -a . host:/srv', 'rsync'],
+  ['rsync -a --delete src/ dst/', 'rsync --delete'],
+  ['ssh host "rm -rf /srv/app"', 'ssh rm -r'],
+  ['kubectl exec pod -- rm -rf /data', 'kubectl exec rm -r'],
+  ['crontab -r', 'crontab -r'],
+  ['env -u X git push', 'git push'],
+  ['nice git push', 'git push'],
+  ['nohup git push &', 'git push'],
+  ['> important.txt', null],
+  ['> new-file.txt', null, EXISTING],
+  ['npm test > test.log', null, { root: '/work/proj', existing: new Set(['test.log']) } as unknown as Ctx],
+  ['netlify deploy', null],
+  ['psql -f migrate_up.sql', null],
+  ['ssh host ls', null],
+  ['scp host:/var/log/app.log .', null],
+]
+
+const NOT_HELD: Row[] = [
+  ['kubectl -n apply get pods', null],
+  ['psql -c "select 1" | grep -i truncate', null],
+  ['rm -rf target', null],
+  ['rm -rf out', null],
+  ['rm -rf .cache', null],
+  ['rm -rf __pycache__', null],
+  ['rm -rf .pytest_cache', null],
+  ['rm -rf tmp/', null],
+  ['rm -f .DS_Store', null],
+  ['rm -f *.pyc', null],
+  ['rm -f npm-debug.log', null],
+  ['tmp=$(mktemp -d); rm -rf "$tmp"', null],
+  ['rm -rf "$tmp"', 'rm -r'],
+  ['kubectl -n prod get pods', null],
+  ['kubectl --namespace delete describe pod x', null],
+  ['psql -c "select * from drop_log"', null],
+  ['psql -c "select truncate_name from t"', null],
+]
 const KNOWN_MISSES: Row[] = [
   ['$(echo git) push', null],
   ['gp origin main', null],
@@ -195,10 +331,6 @@ const KNOWN_MISSES: Row[] = [
   ['bash -c "git push"', null],
   ['find . -name "*.tmp" | xargs rm -rf', null],
   ["find . -name '*.log' -delete", null],
-  ['timeout 30 git push', null],
-  ['doas rm -rf /var/lib/app', null],
-  ['env -i git push', null],
-  ['psql -f drop-everything.sql', null],
 ]
 
 function misread(rows: Row[]) {
@@ -229,6 +361,23 @@ test('classifier: chains, prefixes, sudo, and quoted text that only mentions a c
 
 test('classifier: substitutions in quotes, tight redirects, workspace flags and other forms found in review', async () => {
   expect(misread(REVIEWED)).toEqual([])
+})
+
+test('classifier: heredoc look-alikes, arithmetic shifts, escaped delimiters and ANSI-C quoting do not swallow what follows', async () => {
+  expect(misread(PARSER)).toEqual([])
+})
+
+test('classifier: history rewrites, flagless deletes, overwrites, publishes, deploys, cloud, SQL and remote deletes are held', async () => {
+  expect(misread(NOW_HELD)).toEqual([])
+})
+
+test('classifier: kubectl reads, a later grep, regenerable folders, litter and mktemp folders are not held', async () => {
+  expect(misread(NOT_HELD)).toEqual([])
+})
+
+test('classifier: what used to be a documented miss is held now', async () => {
+  const was = ['timeout 30 git push', 'doas rm -rf /var/lib/app', 'env -i git push', 'psql -f drop-everything.sql']
+  expect(was.filter((c) => !irreversible(c))).toEqual([])
 })
 
 test('classifier: the documented blind spots are misses, on purpose', async () => {

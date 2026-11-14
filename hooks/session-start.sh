@@ -77,6 +77,9 @@ if [ -z "$name" ] || [ "$level" -eq 0 ]; then
     field_nudge="$field_nudge This brain is shared or global: say in that offer that the pack will be written in the home directory."
     field_state="\nState: no field pack; the brain is shared, so a pack is written in the home directory." ;;
   esac
+else
+  field_nudge="\nState: field pack \\\"$(esc "$name")\\\" (level $level): load its files when a task touches its stack."
+  field_state="$field_nudge"
 fi
 
 spec_nudge=""; spec_state=""
@@ -92,8 +95,22 @@ for d in "$proj/$specs_dir"/[0-9][0-9][0-9]*-*; do
 done
 nudge="$field_nudge$spec_nudge"
 
+if [ "$SHAPE" = auto ]; then
+  if   [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then SHAPE=cursor
+  elif [ -n "${COPILOT_CLI:-}" ]; then SHAPE=sdk
+  elif [ -n "${CLAUDE_PLUGIN_ROOT:-}${CLAUDE_PROJECT_DIR:-}" ]; then SHAPE=claude
+  else SHAPE=sdk
+  fi
+fi
+
 # The file this session loads the kernel from natively, if any.
-if [ "$SHAPE" = codex ]; then
+if [ "$SHAPE" = cursor ]; then
+  # Cursor reads its always-on rule and AGENTS.md; it has no notion of .claude/CLAUDE.md.
+  loaded=""
+  for f in "$proj/.cursor/rules/mastermind.mdc" "$proj/AGENTS.md"; do
+    if grep -qsE "^# $HEADING" "$f"; then loaded="$f"; break; fi
+  done
+elif [ "$SHAPE" = codex ]; then
   # Codex reads one file per directory, an override first, and has no import syntax.
   loaded=""
   for dir in "$proj" "${CODEX_HOME:-${HOME:-/nonexistent}/.codex}"; do
@@ -144,14 +161,6 @@ else
   fi
   if [ -z "$payload" ]; then
     payload="<mastermind-brain>\nYou are running as MasterMind. The MasterMind kernel is your operating contract, and it is NOT loaded:\nno CLAUDE.md or AGENTS.md in this session holds it, and at $units characters it does not fit in this\nmessage, which is capped at $cap_words. Read $(esc "$KERNEL") in full before doing anything else, then follow it.\n$root$nudge\n</mastermind-brain>"
-  fi
-fi
-
-if [ "$SHAPE" = auto ]; then
-  if   [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then SHAPE=cursor
-  elif [ -n "${COPILOT_CLI:-}" ]; then SHAPE=sdk
-  elif [ -n "${CLAUDE_PLUGIN_ROOT:-}${CLAUDE_PROJECT_DIR:-}" ]; then SHAPE=claude
-  else SHAPE=sdk
   fi
 fi
 

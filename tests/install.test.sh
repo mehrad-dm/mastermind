@@ -841,7 +841,7 @@ P=$(proj iso); run "$P" --isolated claude >/dev/null 2>&1
 is "brain copied into the project" "$([ -f "$P/.mastermind/VERSION" ] && echo y)" "y"
 is "records the version it installed" "$(cat "$P/.mastermind/VERSION" 2>/dev/null)" "$(cat "$REPO/VERSION")"
 yes_ "links point at the LOCAL brain" "$(readlink "$P/.claude/skills/build" | grep -o '\.mastermind/skills/build')"
-yes_ "no ~/.mastermind left in the copied docs" "$([ "$(grep -rl '~/\.mastermind' "$P/.mastermind" 2>/dev/null | wc -l | tr -d ' ')" = 0 ] && echo y)"
+yes_ "no ~/.mastermind left in the copied docs" "$([ "$(grep -rl --exclude=install.sh '~/\.mastermind' "$P/.mastermind" 2>/dev/null | wc -l | tr -d ' ')" = 0 ] && echo y)"
 
 run "$P" claude >/dev/null 2>&1
 run "$P" claude >/dev/null 2>&1
@@ -1125,7 +1125,7 @@ is "a project's own mastermind-build is never touched" "$(cat "$P/.cursor/skills
 V="$TMP_REAL/victims/cursor_skills"; rm -rf "$V"; mkdir -p "$V"
 P=$(proj cursoralias-hostile); mkdir -p "$P/.cursor"; ln -s "$V" "$P/.cursor/skills"
 out=$(run "$P" cursor 2>&1); rc=$?
-is "a symlinked .cursor/skills is skipped, not written through" "$rc|$(find "$V" -mindepth 1 | wc -l | tr -d ' ')" "0|0"
+is "a symlinked .cursor/skills is refused, not written through, and the run says so with exit 1" "$rc|$(find "$V" -mindepth 1 | wc -l | tr -d ' ')" "1|0"
 P=$(proj cursoralias-file); mkdir -p "$P/.cursor"; echo x > "$P/.cursor/skills"
 run "$P" cursor claude >/dev/null 2>&1; rc=$?
 is "a file where .cursor/skills belongs never blocks the rest of the install" "$rc|$(ls "$P/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')" "0|$N_SKILLS"
@@ -1149,7 +1149,7 @@ P=$(proj codexglob); GH2="$TMP/cghome"; CH2="$TMP/cgcodex"; mkdir -p "$GH2" "$CH
 yes_ "CODEX_HOME/AGENTS.md linked to the brain" "$([ -L "$CH2/AGENTS.md" ] && echo yes)"
 P=$(proj codexempty); CH3="$TMP/cgempty"; GH3="$TMP/cgemptyhome"; mkdir -p "$CH3" "$GH3"; : > "$CH3/AGENTS.md"
 (cd "$P" && HOME="$GH3" CODEX_HOME="$CH3" "$INSTALL" --global codex >/dev/null 2>&1) || true
-yes_ "an empty AGENTS.md is replaced by the link, not appended to" "$([ -L "$CH3/AGENTS.md" ] && echo yes)"
+is "an empty AGENTS.md is the user's: it stays a file and gets the kernel block" "$([ -L "$CH3/AGENTS.md" ] && echo link || echo file)|$(kblocks "$CH3/AGENTS.md")" "file|1"
 # A real file the user wrote is still never clobbered.
 P=$(proj codexown); CH4="$TMP/cgown"; GH4="$TMP/cgownhome"; mkdir -p "$CH4" "$GH4"; printf 'MY OWN RULES\n' > "$CH4/AGENTS.md"
 (cd "$P" && HOME="$GH4" CODEX_HOME="$CH4" "$INSTALL" --global codex >/dev/null 2>&1) || true
@@ -2029,6 +2029,254 @@ is "two pointer lines in a row leave the text and its newline" "$(od -An -c "$P/
 H="$TMP_REAL/codexglobal-big"; rm -rf "$H"; mkdir -p "$H/.codex"; python3 -c "print('A long house rule that fills a line.\n' * 800, end='')" > "$H/.codex/AGENTS.md"
 (cd "$H" && HOME="$H" env -u CODEX_HOME "$INSTALL" --global codex >/dev/null 2>&1)
 is "the global check warns past 32 KiB too" "$( (cd "$H" && HOME="$H" env -u CODEX_HOME "$INSTALL" --check --global 2>&1) | grep -c '32 KiB (project_doc_max_bytes)')" "1"
+
+snap() { (cd "$1" && find . -path ./.git -prune -o -print | LC_ALL=C sort | while IFS= read -r f; do
+  if [ -L "$f" ]; then printf 'L %s -> %s\n' "$f" "$(readlink "$f")"
+  elif [ -d "$f" ]; then printf 'D %s\n' "$f"
+  else printf 'F %s %s\n' "$(shasum -a 256 < "$f" | cut -c1-16)" "$f"; fi; done); }
+mkfield() {                         # $1 brain, $2 field name: what init leaves behind
+  cp -R "$1/engineering/fields/_template" "$1/engineering/fields/$2"
+  printf '# Active Field\n\n## Current field: **%s**\n\n- **Field pack:** `engineering/fields/%s/`\n- **Level:** 1.\n' "$2" "$2" > "$1/engineering/active-field.md"
+}
+dangling() { find "$1" -type l ! -exec test -e {} \; -print 2>/dev/null | wc -l | tr -d ' '; }
+
+echo "── uninstall after the brain was deleted by hand still takes every piece of wiring back"
+P=$(proj gone-iso); printf '# mine\n' > "$P/AGENTS.md"; B="$(snap "$P")"
+run "$P" claude cursor agents >/dev/null 2>&1; rm -rf "$P/.mastermind"
+out=$(run "$P" --uninstall 2>&1); rc=$?
+is "it exits 0 with nothing of ours left: no link, no emptied hook file, no empty folder" "$rc|$(dangling "$P")|$( [ "$(snap "$P")" = "$B" ] && echo same || echo differs)" "0|0|same"
+
+echo "── uninstall after a shared clone moved still finds its links"
+H3="$TMP_REAL/moved-home"; rm -rf "$H3"; mkdir -p "$H3/clone-a"
+tar -C "$IREPO" --exclude=.git --exclude=node_modules -cf - . | tar -C "$H3/clone-a" -xf -
+P=$(proj gone-shared); B="$(snap "$P")"
+(cd "$P" && HOME="$H3" MM_NO_NETWORK=1 bash "$H3/clone-a/install.sh" --shared claude agents >/dev/null 2>&1)
+mv "$H3/clone-a" "$H3/clone-b"; rm -f "$H3/.mastermind"
+out=$(cd "$P" && HOME="$H3" MM_NO_NETWORK=1 bash "$H3/clone-b/install.sh" --uninstall 2>&1); rc=$?
+rm -rf "$P/.mastermind"
+is "it exits 0, no link is left, and the project is as it was" "$rc|$(find "$P" -type l | wc -l | tr -d ' ')|$( [ "$(snap "$P")" = "$B" ] && echo same || echo differs)" "0|0|same"
+
+echo "── a surface swapped for a link that leaves the project fails uninstall and is listed"
+V="$TMP_REAL/victims/agents-skills"; rm -rf "$V"; mkdir -p "$V"
+P=$(proj swapped); run "$P" claude agents >/dev/null 2>&1
+cp -RP "$P/.agents/skills/." "$V/"; rm -rf "$P/.agents/skills"; ln -s "$V" "$P/.agents/skills"
+out=$(run "$P" --uninstall 2>&1); rc=$?
+is "the exit is non-zero, the folder is listed as still in place, and the outside folder is untouched" \
+   "$rc|$(printf '%s' "$out" | grep -c '^    .agents/skills$')|$(ls "$V" | wc -l | tr -d ' ')" "1|1|$N_SKILLS"
+
+echo "── KERNEL markers MasterMind cannot prove are its own are never written or stripped"
+KS='<!-- MASTERMIND:KERNEL:START -->'; KE='<!-- MASTERMIND:KERNEL:END -->'
+for c in userblock fenced twoblocks; do
+  P=$(proj "km-$c")
+  case "$c" in
+    userblock) printf '# mine\n\n%s\nmy own text between markers\n%s\n\ntail\n' "$KS" "$KE" > "$P/AGENTS.md" ;;
+    fenced)    printf '# mine\n\n```\n%s\nexample\n%s\n```\nmore\n' "$KS" "$KE" > "$P/AGENTS.md" ;;
+    twoblocks) printf '# mine\n\n%s\n<!-- The MasterMind kernel, inlined by install.sh for tools that read only this file. Edit above or below, never inside -->\na\n%s\n\nmid\n\n%s\nb\n%s\n' "$KS" "$KE" "$KS" "$KE" > "$P/AGENTS.md" ;;
+  esac
+  cp "$P/AGENTS.md" "$TMP/km-$c.orig"
+  out=$(run "$P" agents 2>&1); irc=$?
+  i1=$(same "$P/AGENTS.md" "$TMP/km-$c.orig")
+  run "$P" --check agents >/dev/null 2>&1; crc=$?
+  run "$P" --uninstall >/dev/null 2>&1
+  is "$c: install refuses (exit 1) and leaves the file byte for byte, check fails, uninstall keeps it" \
+     "$irc|$i1|$crc|$(same "$P/AGENTS.md" "$TMP/km-$c.orig")" "1|same|1|same"
+done
+
+echo "── check: a single break is reported, with and without the install record"
+P=$(proj breakbase); run "$P" claude cursor agents >/dev/null 2>&1
+run "$P" --check >/dev/null 2>&1; is "the unbroken install is healthy" "$?" "0"
+for rec in with without; do
+  for brk in matcher skillmd core bin cli kernel agents-link askills-link build-link; do
+    Q="$TMP_REAL/brk-$rec-$brk"; rm -rf "$Q"; cp -RP "$P" "$Q"
+    [ "$rec" = without ] && rm -f "$Q/.mastermind/.installed"
+    case "$brk" in
+      matcher) python3 - "$Q/.claude/settings.json" <<'PY'
+import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d['hooks']['SessionStart'][0]['matcher']='clear|compact'; json.dump(d,open(p,'w'),indent=2)
+PY
+      ;;
+      skillmd) rm -f "$Q/.mastermind/skills/build/SKILL.md" ;;
+      core)    rm -f "$Q/.mastermind/engineering/core/rigor.md" ;;
+      bin)     rm -f "$Q/.mastermind/bin/mastermind" ;;
+      cli)     rm -f "$Q/.mastermind/cli/bin/mastermind.mjs" ;;
+      kernel)  rm -f "$Q/.mastermind/CLAUDE.md" ;;
+      agents-link) mkdir -p "$TMP_REAL/elsewhere-$rec"; cp -RP "$Q/.agents/." "$TMP_REAL/elsewhere-$rec/"; rm -rf "$Q/.agents"; ln -s "$TMP_REAL/elsewhere-$rec" "$Q/.agents" ;;
+      askills-link) mkdir -p "$TMP_REAL/elsewhere2-$rec"; rm -rf "$Q/.agents/skills"; ln -s "$TMP_REAL/elsewhere2-$rec" "$Q/.agents/skills" ;;
+      build-link) mkdir -p "$TMP_REAL/elsewhere3-$rec"; rm -rf "$Q/.cursor/skills/mastermind-build"; ln -s "$TMP_REAL/elsewhere3-$rec" "$Q/.cursor/skills/mastermind-build" ;;
+    esac
+    run "$Q" --check >/dev/null 2>&1; is "check fails on: $brk ($rec the record)" "$?" "1"
+  done
+done
+
+echo "── an install that refuses a symlinked surface exits non-zero, with one summary line"
+P=$(proj refuse-summary); mkdir -p "$TMP_REAL/victims/rs"; ln -s "$TMP_REAL/victims/rs" "$P/.agents"
+out=$(run "$P" claude agents 2>&1); rc=$?
+is "exit 1, one summary line naming .agents/skills, the rest still wired" \
+   "$rc|$(printf '%s' "$out" | grep -c 'target(s) were refused')|$(printf '%s' "$out" | grep -c 'refused.*\.agents/skills')|$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "1|1|1|$N_SKILLS"
+
+echo "── empty and whitespace-only files of the user's are appended to, and come back as they were"
+P=$(proj emptyfiles); mkdir -p "$P/.claude"; : > "$P/AGENTS.md"; printf '  \n' > "$P/.claude/CLAUDE.md"
+cp "$P/AGENTS.md" "$TMP/ef-agents.orig"; cp "$P/.claude/CLAUDE.md" "$TMP/ef-claude.orig"
+run "$P" claude agents >/dev/null 2>&1
+is "both stay files of theirs: one import line, one kernel block" \
+   "$([ -L "$P/AGENTS.md" ] && echo link || echo file)|$([ -L "$P/.claude/CLAUDE.md" ] && echo link || echo file)|$(kblocks "$P/AGENTS.md")|$(count_in "$P/.claude/CLAUDE.md" '^@')" "file|file|1|1"
+run "$P" --check >/dev/null 2>&1; is "and check accepts them" "$?" "0"
+run "$P" --uninstall >/dev/null 2>&1
+is "uninstall leaves the empty AGENTS.md empty and the whitespace file as it was" \
+   "$(same "$P/AGENTS.md" "$TMP/ef-agents.orig")|$(same "$P/.claude/CLAUDE.md" "$TMP/ef-claude.orig")" "same|same"
+P=$(proj emptyclaude); mkdir -p "$P/.claude"; : > "$P/.claude/CLAUDE.md"
+run "$P" claude >/dev/null 2>&1; run "$P" --uninstall claude >/dev/null 2>&1
+is "a 0-byte .claude/CLAUDE.md is still there, still 0 bytes" "$([ -f "$P/.claude/CLAUDE.md" ] && wc -c < "$P/.claude/CLAUDE.md" | tr -d ' ')" "0"
+P=$(proj userimport); printf '# mine\n\n@.mastermind/CLAUDE.md\n' > "$P/AGENTS.md"; cp "$P/AGENTS.md" "$TMP/ui.orig"
+run "$P" agents >/dev/null 2>&1; run "$P" --uninstall >/dev/null 2>&1
+is "an @ line the user wrote in AGENTS.md survives uninstall" "$(same "$P/AGENTS.md" "$TMP/ui.orig")" "same"
+
+echo "── hook files come back byte for byte after uninstall"
+P=$(proj bytes); mkdir -p "$P/.claude" "$P/.cursor" "$P/.codex"
+printf '{\n    "model": "opus"\n}\n' > "$P/.claude/settings.json"
+printf '{\n\t"version": 1,\n\t"hooks": {\n\t\t"stop": [{"command": "x"}]\n\t}\n}\n' > "$P/.cursor/hooks.json"
+printf '{"hooks":{"Stop":[]}}' > "$P/.codex/hooks.json"
+for f in .claude/settings.json .cursor/hooks.json .codex/hooks.json; do cp "$P/$f" "$TMP/bytes-$(basename "$(dirname "$f")")"; done
+run "$P" claude cursor agents >/dev/null 2>&1
+is "install keeps each layout: 4 spaces, tabs, one line" \
+   "$(grep -c '^    "model"' "$P/.claude/settings.json")|$(grep -c $'^\t"version"' "$P/.cursor/hooks.json")|$(wc -l < "$P/.codex/hooks.json" | tr -d ' ')" "1|1|0"
+run "$P" --uninstall >/dev/null 2>&1
+is "uninstall writes the original bytes back" \
+   "$(same "$P/.claude/settings.json" "$TMP/bytes-.claude")|$(same "$P/.cursor/hooks.json" "$TMP/bytes-.cursor")|$(same "$P/.codex/hooks.json" "$TMP/bytes-.codex")" "same|same|same"
+P=$(proj bytes-edited); mkdir -p "$P/.claude"; printf '{\n    "model": "opus"\n}\n' > "$P/.claude/settings.json"
+run "$P" claude >/dev/null 2>&1
+python3 - "$P/.claude/settings.json" <<'PY'
+import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d['theme']='dark'; open(p,'w').write(json.dumps(d, indent=4) + '\n')
+PY
+out=$(run "$P" --uninstall claude 2>&1)
+is "edited since: our entry goes, their new key stays, and it says so" \
+   "$(python3 -c "import json;d=json.load(open('$P/.claude/settings.json'));print(sorted(d))")|$(printf '%s' "$out" | grep -c 'changed since the install')" "['model', 'theme']|1"
+
+echo "── AGENTS.md -> CLAUDE.md: the kernel loads once, from the root file"
+P=$(proj agentslink); printf '# team rules\n' > "$P/CLAUDE.md"; ln -s CLAUDE.md "$P/AGENTS.md"; cp "$P/CLAUDE.md" "$TMP/al.orig"
+run "$P" claude agents >/dev/null 2>&1
+is "one kernel heading across root CLAUDE.md and .claude/CLAUDE.md, the link kept" \
+   "$(cat "$P/CLAUDE.md" "$P/.claude/CLAUDE.md" 2>/dev/null | grep -c "^$KHEAD")|$([ -L "$P/AGENTS.md" ] && echo link)|$([ -e "$P/.claude/CLAUDE.md" ] && echo present || echo absent)" "1|link|absent"
+run "$P" --check >/dev/null 2>&1; is "check accepts the layout" "$?" "0"
+run "$P" claude agents >/dev/null 2>&1
+is "a re-run settles: still one heading" "$(cat "$P/CLAUDE.md" "$P/.claude/CLAUDE.md" 2>/dev/null | grep -c "^$KHEAD")" "1"
+run "$P" --uninstall >/dev/null 2>&1
+is "uninstall restores the root CLAUDE.md byte for byte" "$(same "$P/CLAUDE.md" "$TMP/al.orig")|$([ -L "$P/AGENTS.md" ] && echo link)" "same|link"
+
+echo "── preflight: no node, or a folder it cannot write, stops before any write"
+NB="$TMP_REAL/nonode-bin"; rm -rf "$NB"; mkdir -p "$NB"
+for t in bash sh git cat sed awk grep tr cut head tail mkdir ln rm cp mv dirname basename readlink pwd find sort wc date mktemp shasum env printf uname id chmod ls touch od tee xargs; do
+  w="$(command -v "$t" 2>/dev/null)" && [ -n "$w" ] && [ "${w#/}" != "$w" ] && ln -sf "$w" "$NB/$t"
+done
+P=$(proj nonode); HN="$TMP_REAL/nonode-home"; rm -rf "$HN"; mkdir -p "$HN"
+out=$(cd "$P" && env PATH="$NB" HOME="$HN" bash "$INSTALL" 2>&1); rc=$?
+is "no node: exit 1, one plain message, nothing written in the project or the home" \
+   "$rc|$(printf '%s' "$out" | grep -c 'needs Node 18 or newer')|$(ls -A "$P" | wc -l | tr -d ' ')|$(ls -A "$HN" | wc -l | tr -d ' ')" "1|1|0|0"
+P=$(proj readonly); chmod 555 "$P"; HR="$TMP_REAL/ro-home"; rm -rf "$HR"; mkdir -p "$HR"
+out=$(cd "$P" && HOME="$HR" bash "$INSTALL" 2>&1); rc=$?
+chmod 755 "$P"
+is "read-only project: exit 1, one plain message, nothing written" \
+   "$rc|$(printf '%s' "$out" | grep -c 'is not writable')|$(printf '%s' "$out" | grep -c 'Permission denied')|$(ls -A "$P" | wc -l | tr -d ' ')|$(ls -A "$HR" | wc -l | tr -d ' ')" "1|1|0|0|0"
+
+echo "── monorepo routes with no field pack yet: install and check agree, and no empty field is seeded"
+P=$(proj mono); mkdir -p "$P/apps/web" "$P/apps/api"
+run "$P" claude cursor agents >/dev/null 2>&1
+printf 'apps/web/**  web\napps/api/**  api\n' > "$P/.mastermind/routes.map"
+out=$(run "$P" claude cursor agents 2>&1); irc=$?
+run "$P" --check >/dev/null 2>&1; crc=$?
+is "install exits 0, says init, seeds no context, writes no anchor, and check agrees" \
+   "$irc|$(printf '%s' "$out" | grep -ci 'say init in your AI tool')|$(ls "$P/.mastermind/engineering/contexts" 2>/dev/null | wc -l | tr -d ' ')|$([ -e "$P/apps/web/CLAUDE.md" ] && echo anchor || echo none)|$crc" "0|3|0|none|0"
+mkdir -p "$P/.mastermind/engineering/contexts/api"; printf -- '---\nfield: \n---\n\n# Context: api\n\nThis context uses the **``** field pack.\n' > "$P/.mastermind/engineering/contexts/api/field.md"
+mkfield "$P/.mastermind" web
+out=$(run "$P" claude cursor agents 2>&1)
+run "$P" --check >/dev/null 2>&1; crc=$?
+is "once a field exists, a context seeded with an empty field is repaired, and check agrees" \
+   "$(sed -n 's/^field:[[:space:]]*//p' "$P/.mastermind/engineering/contexts/api/field.md")|$(grep -c '\*\*`web`\*\*' "$P/.mastermind/engineering/contexts/api/field.md")|$crc" "web|1|0"
+
+echo "── sync delivers a field pack built after install to every tool, with no install re-run"
+P=$(proj syncs); mkdir -p "$P/apps/web"
+run "$P" claude cursor agents >/dev/null 2>&1
+printf 'apps/web/**  web\n' > "$P/.mastermind/routes.map"
+mkfield "$P/.mastermind" web
+run "$P" --check >/dev/null 2>&1; before=$?
+out=$(cd "$P" && HOME="$SANDBOX_HOME" "$P/.mastermind/bin/mastermind" sync 2>&1); rc=$?
+run "$P" --check >/dev/null 2>&1; after=$?
+is "check fails before sync; sync exits 0; then the Cursor field rule and both anchors are there and check passes" \
+   "$before|$rc|$(grep -c 'Active field pack: web' "$P/.cursor/rules/mastermind-field.mdc" 2>/dev/null)|$(grep -c 'engineering/fields/web/field.md' "$P/apps/web/CLAUDE.md" 2>/dev/null)|$(grep -c 'fields/web/field.md' "$P/apps/web/AGENTS.md" 2>/dev/null)|$after" "1|0|1|1|1|0"
+is "sync reports what it wrote and stays offline" "$(printf '%s' "$out" | grep -c 'mastermind-field.mdc: web pack inlined')|$(printf '%s' "$out" | grep -c '(offline)')" "1|1"
+P=$(proj nosync); out=$(cd "$P" && HOME="$SANDBOX_HOME" bash "$INSTALL" --sync 2>&1); rc=$?
+is "sync outside a project install refuses and writes nothing" "$rc|$(ls -A "$P" | wc -l | tr -d ' ')" "1|0"
+out=$(run "$P" claude 2>&1)
+is "an install with no field says to say init; with one it names the field" "$(printf '%s' "$out" | grep -c 'say init in your AI tool to build its field')" "1"
+mkfield "$P/.mastermind" web; out=$(run "$P" claude 2>&1)
+is "and names the field once there is one" "$(printf '%s' "$out" | grep -c 'say init')|$(printf '%s' "$out" | grep -c '(web field)')" "0|1"
+
+echo "── the session hook: the field it runs on, and where Cursor got the kernel"
+P=$(proj hookfield); run "$P" claude cursor agents >/dev/null 2>&1; mkfield "$P/.mastermind" web
+hk() { (cd "$P" && env -u CLAUDE_PLUGIN_ROOT -u CURSOR_PLUGIN_ROOT HOME="$SANDBOX_HOME" CLAUDE_PROJECT_DIR="$P" bash "$P/.mastermind/hooks/session-start.sh" "$1"); }
+for s in claude cursor codex; do
+  is "$s: one state line names the field and its level" "$(hk "$s" | grep -oF 'State: field pack \"web\" (level 1): load its files when a task touches its stack.' | wc -l | tr -d ' ')" "1"
+done
+is "cursor: the kernel source is the always-on rule, not .claude/CLAUDE.md" \
+   "$(hk cursor | grep -c 'loads from [^ ]*\.cursor/rules/mastermind\.mdc')|$(hk cursor | grep -c '\.claude/CLAUDE\.md')" "1|0"
+Q=$(proj hookcarry); mkdir -p "$Q/.mastermind/engineering"; cp "$P/.mastermind/engineering/active-field.md" "$Q/.mastermind/engineering/"
+HCAR="$TMP_REAL/carry-home"; mkdir -p "$HCAR"
+out=$(cd "$Q" && env -u CLAUDE_PLUGIN_ROOT -u CURSOR_PLUGIN_ROOT HOME="$HCAR" CLAUDE_PROJECT_DIR="$Q" bash "$REPO/hooks/session-start.sh" claude)
+is "carry mode: the state line rides with the kernel, under the cap" \
+   "$(printf '%s' "$out" | grep -c 'State: field pack')|$(printf '%s' "$out" | python3 -c 'import json,sys;print(len(json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"]) < 10000)')" "1|True"
+
+echo "── the global check forgets a project install once it is uninstalled"
+HG="$TMP_REAL/overlap-home"; rm -rf "$HG"; mkdir -p "$HG/.claude"
+P=$(proj overlap); (cd "$P" && HOME="$HG" "$INSTALL" claude >/dev/null 2>&1)
+(cd "$HG" && HOME="$HG" "$INSTALL" --global claude >/dev/null 2>&1)
+(cd "$P" && HOME="$HG" "$INSTALL" --uninstall >/dev/null 2>&1)
+is "no 'has its own MasterMind install' warning for a project that has none now" \
+   "$( (cd "$P" && HOME="$HG" "$INSTALL" --check --global 2>&1) | grep -c 'has its own MasterMind install')" "0"
+
+echo "── a teammate's clone with no install record: uninstall removes the hook files that held only ours"
+P=$(proj teammate); (cd "$P" && git init -q . && git config user.email t@t && git config user.name t)
+mkdir -p "$P/.claude"; printf '{\n  "model": "opus"\n}\n' > "$P/.claude/settings.local.json"
+run "$P" claude cursor agents >/dev/null 2>&1
+(cd "$P" && git add -A . && git commit -qm installed)
+rm -f "$P/.mastermind/.installed"
+run "$P" --uninstall >/dev/null 2>&1
+is "the three hook files are removed, not left as {}" \
+   "$([ -e "$P/.claude/settings.json" ] && echo kept || echo gone)|$([ -e "$P/.cursor/hooks.json" ] && echo kept || echo gone)|$([ -e "$P/.codex/hooks.json" ] && echo kept || echo gone)" "gone|gone|gone"
+P=$(proj teammate-own); (cd "$P" && git init -q . && git config user.email t@t && git config user.name t)
+mkdir -p "$P/.claude"; printf '{\n  "model": "opus"\n}\n' > "$P/.claude/settings.json"; (cd "$P" && git add -A . && git commit -qm mine)
+run "$P" claude >/dev/null 2>&1; (cd "$P" && git add -A . && git commit -qm installed)
+rm -f "$P/.mastermind/.installed" "$P/.mastermind/.originals/.claude/settings.json"
+run "$P" --uninstall >/dev/null 2>&1
+is "a hook file git shows held settings of the user's own is kept" "$(python3 -c "import json;print(json.load(open('$P/.claude/settings.json')))")" "{'model': 'opus'}"
+
+if [ -n "$(git -C "$REPO" tag --list v0.33.2)" ]; then
+  echo "── upgrade from v0.33.2: global, and a project's own empty .cursor/rules"
+  OLD="$TMP_REAL/old-0332"; rm -rf "$OLD"; mkdir -p "$OLD"; git -C "$REPO" archive v0.33.2 | tar -x -C "$OLD"
+  HU="$TMP_REAL/upg-home"; rm -rf "$HU"; mkdir -p "$HU/.claude" "$HU/.codex"; printf "# mine\n" > "$HU/.claude/CLAUDE.md"; printf "model = \"x\"\n" > "$HU/.codex/config.toml"
+  mkdir -p "$HU/.mastermind"; cp -R "$OLD/." "$HU/.mastermind/"; BH="$(cd "$HU" && find . -path ./.mastermind -prune -o -print | LC_ALL=C sort)"
+  (cd "$HU" && HOME="$HU" MM_NO_NETWORK=1 env -u CODEX_HOME bash "$HU/.mastermind/install.sh" --global claude codex >/dev/null 2>&1)
+  rm -rf "$HU/.mastermind"; mkdir -p "$HU/.mastermind"; tar -C "$IREPO" --exclude=.git --exclude=node_modules -cf - . | tar -C "$HU/.mastermind" -xf -
+  (cd "$HU" && HOME="$HU" MM_NO_NETWORK=1 env -u CODEX_HOME bash "$HU/.mastermind/install.sh" --global >/dev/null 2>&1)
+  (cd "$HU" && HOME="$HU" MM_NO_NETWORK=1 env -u CODEX_HOME bash "$HU/.mastermind/install.sh" --check --global >/dev/null 2>&1); crc=$?
+  (cd "$HU" && HOME="$HU" MM_NO_NETWORK=1 env -u CODEX_HOME bash "$HU/.mastermind/install.sh" --uninstall --global >/dev/null 2>&1)
+  AH="$(cd "$HU" && find . -path ./.mastermind -prune -o -path ./.mastermind-state -prune -o -print | LC_ALL=C sort)"
+  is "check passes after the plain re-run, and uninstall leaves home as it was before the old install" "$crc|$( [ "$AH" = "$BH" ] && echo same || echo differs)" "0|same"
+  HC="$TMP_REAL/upg-cursor-home"; rm -rf "$HC"; mkdir -p "$HC/.claude" "$HC/.cursor"; ln -s "$IREPO" "$HC/.mastermind"
+  (cd "$HC" && HOME="$HC" MM_NO_NETWORK=1 bash "$INSTALL" --global cursor >/dev/null 2>&1)
+  rm -rf "$HC/.cursor"
+  (cd "$HC" && HOME="$HC" MM_NO_NETWORK=1 bash "$INSTALL" --global >/dev/null 2>&1)
+  (cd "$HC" && HOME="$HC" MM_NO_NETWORK=1 bash "$INSTALL" --check --global >/dev/null 2>&1)
+  is "a plain --global re-run re-wires every tool in the record, cursor included" "$?" "0"
+  P=$(proj upg-rules); mkdir -p "$P/.cursor/rules"; HP="$TMP_REAL/upg-proj-home"; rm -rf "$HP"; mkdir -p "$HP/.claude"; ln -s "$OLD" "$HP/.mastermind"
+  (cd "$P" && HOME="$HP" MM_NO_NETWORK=1 bash "$OLD/install.sh" claude >/dev/null 2>&1)
+  rm -f "$HP/.mastermind"; ln -s "$IREPO" "$HP/.mastermind"
+  (cd "$P" && HOME="$HP" MM_NO_NETWORK=1 bash "$INSTALL" claude >/dev/null 2>&1)
+  (cd "$P" && HOME="$HP" MM_NO_NETWORK=1 bash "$INSTALL" --uninstall >/dev/null 2>&1)
+  is "the user's own empty .cursor/rules survives the upgrade and the uninstall" "$([ -d "$P/.cursor/rules" ] && echo kept || echo gone)" "kept"
+else
+  echo "  (v0.33.2 tag not in this checkout: the upgrade tests were not run)"
+fi
 
 if [ -s "$CANARY_LOG" ]; then
   while IFS= read -r line; do no "a run wrote OUTSIDE every fixture: $line"; done < "$CANARY_LOG"
