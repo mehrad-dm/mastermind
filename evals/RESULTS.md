@@ -579,6 +579,69 @@ Raw data: `evals/runs/v0.27-set2/`.
 
 ---
 
+## Run V10: 2026-11-14 · did 0.34 make skill routing worse? (`evals/auto-invoke.mjs`, A/B against 0.33.2)
+
+Live headless Claude Code sessions (2.1.311, `MODEL=sonnet`), the same 29 prompts and the same harness
+against two trees: the 0.33.2 tag and the 0.34 working tree. Two reps each. Ground truth is the native
+`Skill` tool call.
+
+| tree | right skill fired | per rep |
+| --- | --: | --- |
+| 0.33.2 | 44/58 (76%)* | 23 · 23 (with the leaked `help` case) |
+| 0.34, descriptions cut to bare intent, six skills hidden from the model | 35/58 (60%) | 16 · 19 |
+| 0.34, user phrasings restored, nothing hidden | 37/58 (64%) | 18 · 19 |
+| 0.34, plus "apply skills automatically" as its own kernel rule | 46/58 (79%) | 23 · 23 |
+| 0.34, that rule says "before any other tool call (in Claude Code, the Skill tool)" | **48/58 (83%)** | **24 · 24** |
+
+\* 0.33.2 scored 46/58 with the old `help` prompt, which repeated three words of `help`'s description
+("what can you"). The new three-word check refused that prompt; reworded, 0.33.2 scores 0/2 on it, so
+its fair score is 44/58.
+
+**Honest reading.**
+- **The regression was real and had two causes.** Descriptions cut to intent dropped the words people
+  say, and `disable-model-invocation` hid `help` and `signature` from the model (2/2 to 0/2 on a plain
+  request). Restoring the phrasings alone recovered little; making "recognise the intent and load the
+  skill" a headline rule in the kernel again recovered the rest.
+- **0.34 is level with or slightly ahead of 0.33.2.** +4 hits on 58 is near the run-to-run spread.
+  Saying the skill loads before any other tool call is what made `build` and `qa` fire: watched in a
+  session, the model had been announcing and doing the work under the kernel's rules without loading
+  the skill. On the 9 core prompts the release gate runs, that line took 6/9 to 17/18 over two reps.
+- **Still never fire:** `clarify`, `help` (with an honest prompt), `prototype`, `learn`; `double-check`
+  fired 1 of 4 across the last two runs. The model handles those asks inline.
+- **The keyword hints** in `mastermind route` (the arrows Cursor and Codex see) went 15/17 to 11/17
+  with the short descriptions and back to 14/17 with the phrasings restored.
+- **Cursor and Codex on the final 0.34 tree, two reps:** `cursor-routing.mjs` (cursor-agent, model Auto)
+  6/6 with the brain, 3/6 without it; `codex-routing.mjs` (gpt-6-luna) 10/10 with the brain, 0/10
+  without. These ask the session to name the skill from the kernel's menu.
+
+## Run V9: 2026-11-07 · does the session hook reach Claude Code at all, and does Codex still obey?
+
+Prompted by a report that installed projects ignored the brain. Claude Code 2.1.236, Sonnet, headless
+`claude -p` in scratch projects, each answer checked against the persisted transcript rather than the
+model's own account. Codex: `evals/codex-routing.mjs` on Codex CLI 0.167.0, model `gpt-6-luna` on a
+ChatGPT free account (`gpt-5.5` retired from ChatGPT sign-in on 2026-10-14).
+
+| arm | n | result |
+| --- | --: | --- |
+| Claude Code, hook registered as the installer wrote it (no shape argument, no `CLAUDE.md`) | 1 | "No, I am not MasterMind": the JSON carried a field Claude Code does not read |
+| Claude Code, same hook with `claude` argument, 16 KB kernel in the payload, no `CLAUDE.md` | 2 | answered as MasterMind, but the transcript shows the injected context was "Output too large (15.4KB)" plus a 2,000-character preview; the model had read the saved file to answer |
+| Claude Code, `.claude/CLAUDE.md` symlink only, no hook | 1 | MasterMind, first and last headings correct: the native memory path carries the kernel |
+| Claude Code, fixed hook (709-character framing) + `.claude/CLAUDE.md` | 1 | MasterMind, last heading correct, injected context 529 characters, no truncation marker |
+| Claude Code, fixed hook alone, no `CLAUDE.md` (the plugin-only layout) | 1 | framing and init nudge injected (802 characters); the pointer to read the kernel file was **not** followed in a one-shot question |
+| Codex, treatment (brain installed, scratch project with no trust entry) | 5 | **5/5** |
+| Codex, control (no brain) | 5 | 0/5 named the same skill |
+
+**Honest reading.**
+- **The hook never delivered the kernel in a project install.** Two defects stacked: the missing shape
+  argument (all of 2026) and the 10,000-character cap (since Claude Code 2.1.89). Sessions still had
+  the brain through `.claude/CLAUDE.md`; what they lacked was the framing and the two nudges.
+- **A model's report of what it received is not a measurement.** The second row was first read as
+  "delivered whole"; the transcript said otherwise. Opening the transcript is now the rule for hook claims.
+- **Codex loaded `AGENTS.md` from an untrusted scratch directory** under `codex exec`, so the 0.150
+  trust change blocks only projects marked untrusted, at least in this setup. One rep per case.
+- **Cursor was not measured.** `cursor-agent status` said "Not logged in".
+- **Plugin-only installs are not fixed by this change**; the kernel must ship inside the plugin as a skill.
+
 ## Run V8: 2026-10-08 · Cursor, live (cursor-agent 2026.08.25, free plan, model Auto)
 
 | check | result |

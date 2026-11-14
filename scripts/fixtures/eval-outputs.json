@@ -1,0 +1,690 @@
+{
+ "claude": [
+  {
+   "name": "rate limit reported on stdout as a synthetic message and an error result",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"<synthetic>\", \"content\": [{\"type\": \"text\", \"text\": \"API Error: 429 {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"rate_limit_error\\\",\\\"message\\\":\\\"This request would exceed your account's rate limit.\\\"}}\"}]}, \"error\": \"rate_limit\"}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": true, \"result\": \"API Error: 429 rate_limit_error\"}"
+   ]
+  },
+  {
+   "name": "credit balance on the result record only",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": true, \"result\": \"Credit balance is too low\"}"
+   ]
+  },
+  {
+   "name": "rejected rate_limit_event",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"rate_limit_event\", \"rate_limit_info\": {\"status\": \"rejected\", \"rateLimitType\": \"five_hour\"}}"
+   ]
+  },
+  {
+   "name": "error during execution with no known phrase",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"result\", \"subtype\": \"error_during_execution\", \"is_error\": true}"
+   ]
+  },
+  {
+   "name": "plain text refusal before the stream starts",
+   "infra": true,
+   "stdout": [
+    "Invalid API key · Please run /login"
+   ],
+   "err": {
+    "code": 1
+   }
+  },
+  {
+   "name": "authentication failure on stderr only",
+   "infra": true,
+   "stdout": [],
+   "stderr": "Error: authentication_error: not logged in",
+   "err": {
+    "code": 1
+   }
+  },
+  {
+   "name": "timed out",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}"
+   ],
+   "err": {
+    "killed": true
+   }
+  },
+  {
+   "name": "crashed with no output",
+   "infra": true,
+   "stdout": [],
+   "err": {
+    "code": 137
+   }
+  },
+  {
+   "name": "a session that fixes an unauthorized handler and hits a rate limit bug in the app",
+   "infra": false,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"text\", \"text\": \"The handler returns 401 unauthorized because the rate limit middleware runs first. Not logged in users hit the quota check.\"}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ]
+  },
+  {
+   "name": "the model quotes an API Error line from a log file",
+   "infra": false,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"text\", \"text\": \"API Error: 429 appears in logs/app.log, the retry loop is the cause.\"}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ]
+  },
+  {
+   "name": "no skill fired and nothing failed: a real routing miss",
+   "infra": false,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"text\", \"text\": \"I added the field.\"}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ]
+  },
+  {
+   "name": "ran out of turns after invoking a skill",
+   "infra": false,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"error_max_turns\", \"is_error\": true}"
+   ],
+   "err": {
+    "code": 1
+   }
+  },
+  {
+   "name": "exit 1 after the init record: socket hang up",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}"
+   ],
+   "stderr": "Error: socket hang up",
+   "err": {
+    "code": 1
+   }
+  },
+  {
+   "name": "connection reset after a skill fired",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}"
+   ],
+   "stderr": "Error: read ECONNRESET",
+   "err": {
+    "code": 1
+   }
+  },
+  {
+   "name": "killed by SIGKILL, not by the timeout",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}"
+   ],
+   "err": {
+    "code": null,
+    "signal": "SIGKILL",
+    "killed": false
+   }
+  },
+  {
+   "name": "exit 0 with empty stdout",
+   "infra": true,
+   "stdout": []
+  },
+  {
+   "name": "exit 0 with crash text instead of stream-json",
+   "infra": true,
+   "stdout": [
+    "TypeError: Cannot read properties of undefined (reading 'content')",
+    "    at main (cli.js:12:5)"
+   ]
+  },
+  {
+   "name": "exit 0 with records but no result record",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}"
+   ]
+  },
+  {
+   "name": "a result record and a non-zero exit",
+   "infra": true,
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "err": {
+    "code": 1
+   }
+  }
+ ],
+ "cli": [
+  {
+   "name": "codex usage limit on stderr",
+   "kind": "account",
+   "error": {
+    "stderr": "ERROR: You've hit your usage limit. Upgrade to Plus to continue.",
+    "stdout": ""
+   }
+  },
+  {
+   "name": "codex model not available to this account",
+   "kind": "account",
+   "error": {
+    "stderr": "{\"error\":{\"type\":\"invalid_request_error\",\"message\":\"The 'gpt-5.5' model is not supported when using Codex with a ChatGPT account.\"}}"
+   }
+  },
+  {
+   "name": "http status with its label",
+   "kind": "account",
+   "error": {
+    "stderr": "stream error: unexpected status 401 Unauthorized"
+   }
+  },
+  {
+   "name": "cursor asks for a login",
+   "kind": "account",
+   "error": {
+    "stdout": "",
+    "stderr": "Error: Not logged in. Please run `agent login`."
+   }
+  },
+  {
+   "name": "cursor prints its account error on stdout and exits non-zero",
+   "kind": "account",
+   "error": {
+    "stdout": "Your subscription expired. Renew to continue.",
+    "stderr": ""
+   }
+  },
+  {
+   "name": "timeout",
+   "kind": "could not run",
+   "error": {
+    "killed": true,
+    "stderr": ""
+   }
+  },
+  {
+   "name": "a synchronous call that timed out",
+   "kind": "could not run",
+   "error": {
+    "code": "ETIMEDOUT",
+    "signal": "SIGTERM",
+    "stderr": "rate limit warning printed before the hang"
+   }
+  },
+  {
+   "name": "a crash that mentions a login form in the project",
+   "kind": "could not run",
+   "error": {
+    "stderr": "thread 'main' panicked while reading src/login/expired-session.ts: stack overflow"
+   }
+  },
+  {
+   "name": "a bare status number in a path",
+   "kind": "could not run",
+   "error": {
+    "stderr": "failed to open fixtures/403.html: No such file",
+    "message": "Command failed: codex exec"
+   }
+  },
+  {
+   "name": "an oauth module named in a stack trace",
+   "kind": "could not run",
+   "error": {
+    "stderr": "TypeError: undefined is not a function at auth.js:14"
+   }
+  },
+  {
+   "name": "unknown flag",
+   "kind": "could not run",
+   "error": {
+    "stderr": "error: unexpected argument '--mode' found"
+   }
+  }
+ ],
+ "answer": [
+  {
+   "name": "a skill name",
+   "kind": "answer",
+   "stdout": "handoff\n"
+  },
+  {
+   "name": "an answer that names a login skill",
+   "kind": "answer",
+   "stdout": "debug: the login form loses its session\n"
+  },
+  {
+   "name": "exit 0 with nothing printed",
+   "kind": "could not run",
+   "stdout": ""
+  },
+  {
+   "name": "exit 0 with only whitespace",
+   "kind": "could not run",
+   "stdout": "\n  \n"
+  },
+  {
+   "name": "exit 0 with a usage limit on stdout",
+   "kind": "account",
+   "stdout": "You have hit your usage limit. Upgrade to Plus to continue."
+  },
+  {
+   "name": "exit 0 with a login prompt on stdout",
+   "kind": "account",
+   "stdout": "Not logged in. Please run agent login."
+  }
+ ],
+ "model": [
+  {
+   "name": "the environment variable wins",
+   "env": {
+    "MM_CODEX_MODEL": "gpt-5.6-terra"
+   },
+   "catalog": {
+    "models": [
+     {
+      "slug": "gpt-6-luna",
+      "visibility": "list"
+     }
+    ]
+   },
+   "want": "gpt-5.6-terra"
+  },
+  {
+   "name": "first listed model, hidden ones skipped",
+   "env": {},
+   "catalog": {
+    "models": [
+     {
+      "slug": "gpt-reserve",
+      "visibility": "hide"
+     },
+     {
+      "slug": "gpt-6-luna",
+      "visibility": "list"
+     },
+     {
+      "slug": "gpt-5.6-terra",
+      "visibility": "list"
+     }
+    ]
+   },
+   "want": "gpt-6-luna"
+  },
+  {
+   "name": "an unreadable catalog picks nothing",
+   "env": {},
+   "catalog": "error: not logged in",
+   "want": null
+  }
+ ],
+ "verdict": [
+  {
+   "name": "every case routed",
+   "code": 0,
+   "runs": [
+    [
+     {
+      "hit": true,
+      "control": false
+     }
+    ],
+    [
+     {
+      "hit": true,
+      "control": true
+     }
+    ]
+   ]
+  },
+  {
+   "name": "one case missed",
+   "code": 1,
+   "runs": [
+    [
+     {
+      "hit": true
+     }
+    ],
+    [
+     {
+      "hit": false
+     }
+    ]
+   ]
+  },
+  {
+   "name": "one rep of three missed is variance",
+   "code": 0,
+   "runs": [
+    [
+     {
+      "hit": true
+     },
+     {
+      "hit": true
+     },
+     {
+      "hit": false
+     }
+    ]
+   ]
+  },
+  {
+   "name": "two reps of three missed is a miss",
+   "code": 1,
+   "runs": [
+    [
+     {
+      "hit": true
+     },
+     {
+      "hit": false
+     },
+     {
+      "hit": false
+     }
+    ]
+   ]
+  },
+  {
+   "name": "a session that could not run is not a miss",
+   "code": 2,
+   "runs": [
+    [
+     {
+      "hit": true
+     }
+    ],
+    [
+     {
+      "failed": true
+     }
+    ]
+   ]
+  },
+  {
+   "name": "a miss outranks a session that could not run",
+   "code": 1,
+   "runs": [
+    [
+     {
+      "hit": false
+     }
+    ],
+    [
+     {
+      "failed": true
+     }
+    ]
+   ]
+  },
+  {
+   "name": "the account ran dry mid-run",
+   "code": 2,
+   "runs": [
+    [
+     {
+      "hit": true
+     }
+    ],
+    [
+     {
+      "failed": true
+     }
+    ]
+   ],
+   "account": [
+    false,
+    true
+   ]
+  }
+ ],
+ "known": [
+  "build",
+  "debug",
+  "handoff",
+  "help",
+  "levelup",
+  "qa"
+ ],
+ "observed": [
+  {
+   "name": "an ordinary skill fired through the Skill tool",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "debug",
+   "case": {
+    "expected": [
+     "debug"
+    ]
+   },
+   "hit": true
+  },
+  {
+   "name": "a user-only skill reached by reading its file",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Read\", \"input\": {\"file_path\": \"/p/.claude/skills/handoff/SKILL.md\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "menu:handoff",
+   "case": {
+    "expected": [
+     "handoff"
+    ]
+   },
+   "hit": true
+  },
+  {
+   "name": "a user-only skill reached through the CLI",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Bash\", \"input\": {\"command\": \".mastermind/bin/mastermind skill help\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "menu:help",
+   "case": {
+    "expected": [
+     "help"
+    ]
+   },
+   "hit": true
+  },
+  {
+   "name": "a user-only skill fired through the Skill tool breaks the negative case",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"handoff\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "handoff",
+   "case": {
+    "neverAutoFires": true
+   },
+   "hit": false
+  },
+  {
+   "name": "a user-only skill fired through the Skill tool is not the menu route",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"handoff\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "handoff",
+   "case": {
+    "expected": [
+     "handoff"
+    ]
+   },
+   "hit": false
+  },
+  {
+   "name": "a plain answer fires nothing, which the negative case wants",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"text\", \"text\": \"See you tomorrow.\"}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": null,
+   "case": {
+    "neverAutoFires": true
+   },
+   "hit": true
+  },
+  {
+   "name": "a plain answer is a miss for a positive case",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"text\", \"text\": \"I added the field.\"}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": null,
+   "case": {
+    "expected": [
+     "build"
+    ]
+   },
+   "hit": false
+  },
+  {
+   "name": "before the flag exists the same skill is fired and counted",
+   "userOnly": [],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"handoff\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "handoff",
+   "case": {
+    "expected": [
+     "handoff"
+    ]
+   },
+   "hit": true
+  },
+  {
+   "name": "a memory write counts as levelup by the menu route",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Write\", \"input\": {\"file_path\": \"/s/memory/indent.md\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "menu:levelup",
+   "case": {
+    "expected": [
+     "levelup",
+     "signature"
+    ]
+   },
+   "hit": true
+  },
+  {
+   "name": "reading an ordinary skill file is not firing it",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Read\", \"input\": {\"file_path\": \"/p/.claude/skills/debug/SKILL.md\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": null,
+   "case": {
+    "expected": [
+     "debug"
+    ]
+   },
+   "hit": false
+  },
+  {
+   "name": "a forbidden skill fired",
+   "userOnly": [
+    "handoff",
+    "help",
+    "levelup"
+   ],
+   "stdout": [
+    "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"claude-sonnet\"}",
+    "{\"type\": \"assistant\", \"message\": {\"model\": \"claude-sonnet\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"debug\"}}]}}",
+    "{\"type\": \"result\", \"subtype\": \"success\", \"is_error\": false, \"result\": \"done\"}"
+   ],
+   "got": "debug",
+   "case": {
+    "forbidden": [
+     "debug"
+    ]
+   },
+   "hit": false
+  }
+ ]
+}

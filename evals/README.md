@@ -144,7 +144,70 @@ results drift as both change.
   objective truth. Improve them as they're proven too lax or too strict.
 
 ## Files
-- `tasks/*.md`: 8 tasks: data-modeling, illegal-states, debugging, untrusted API, refactor/simplify,
-  XSS boundary, a11y primitive, and a YAGNI **restraint** control (where over-engineering must lose).
+
+- `tasks/*.md`: 15 single-shot tasks, retired as a measure of the trust layer (see the note at the
+  top) and kept as history and for weaker-model regression checks.
+  - 01 to 08, the original set: state modeling, illegal states, root-cause debugging, an untrusted
+    API boundary, a simplifying refactor, an XSS boundary, an accessible dropdown, and a YAGNI
+    **restraint** control (where over-engineering must lose).
+  - 09 to 13, cross-field: a backend API handler, N+1 data access, an algorithm with edge-case
+    traps, a shell-injection boundary, and resource cleanup on every path.
+  - 14 and 15, the rules themselves: whether a rule holds when it is reworded, and whether the
+    rigor gate holds under pressure.
+- `runs/`: the living suite. `v0.27-real/` (the seed repository, the scripted checks and `run.mjs`),
+  `v0.27-set2/` and `v0.28-headtohead/`, each with its `SUMMARY.json`.
+- `pilot-multimodel/`: the multi-model pilot, with its own tasks and results.
+- `mechanism-v0.24.0/`: keys, rubrics and outputs from the mechanism runs.
 - `judge-prompt.md`: the blind rubric-scoring prompt for an LLM-judge.
 - `RESULTS.md`: the running log of scores (date · model · task · baseline · treatment · delta).
+
+## The five scripts
+
+Two need no model and gate every pull request. Three drive a live session, cost money or quota,
+and report "could not run" (exit 2) when the tool, the login or the quota is missing: that is
+never counted as a pass, and never as a routing miss.
+
+| Script | Live? | What it measures | Fails when |
+| --- | --- | --- | --- |
+| `agent-surface-routing.mjs` | no | every skill reaches the routing table for every request, and how often the keyword arrows land | a skill on disk is missing from the table, a request has more than three skills hinted, or fewer than `MIN_HINTED` percent (default 50) of the paraphrased requests are hinted |
+| `agent-surface-cost.mjs --strict` | no | characters spent routing through the CLI against inlining every skill | the saving falls under `MIN_SAVING` percent (default 65) |
+| `auto-invoke.mjs` | Claude Code | which skill a session invokes from a plain request, on a seeded repository | fewer than three in four sessions invoke the expected skill |
+| `codex-routing.mjs` | Codex | which skill a `codex exec` session names, with the brain and in a bare project | a case does not route with the brain |
+| `cursor-routing.mjs` | Cursor | the same, through the Cursor CLI (`cursor-agent` or `agent`) | a case does not route with the brain |
+
+Settings, all optional:
+
+- `auto-invoke.mjs`: `FULL=1` runs every case with three repetitions, `REPS`, `MODEL` (default
+  `sonnet`), `POOL`, `ONLY=<text in the prompt>`, `CROWDED=1` adds foreign skill packs. With
+  `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` set, the sessions run under a scratch `HOME`.
+  Without one they need your own login, so they keep your `HOME` and auto-memory is pointed at a
+  scratch directory.
+- `codex-routing.mjs`: `REPS` (default 1), `MM_CODEX_MODEL` (default: the first model
+  `codex debug models` lists for your account), `MM_CODEX` when the command is not `codex` on
+  `PATH`, for example `MM_CODEX="npx -y @openai/codex"`. Each call marks its scratch project as
+  trusted for that call only, because Codex 0.150 and later ignores `AGENTS.md` in a project it
+  does not trust.
+- `cursor-routing.mjs`: `REPS` (default 1), `MM_CURSOR` to name the binary.
+
+No skill sets `disable-model-invocation`: hidden from the model, `help` and `signature` went from
+2/2 to 0/2 on a plain request. Six skills run only on request (help, handoff, report, levelup, lint,
+signature) and say so in their descriptions. One case in the default set asserts that a plain
+end-of-day remark fires none of `handoff`, `report` or `levelup`. `auto-invoke.mjs` still reads the
+flag, so a skill that sets it is scored by the menu route (opening its file or asking the CLI).
+
+Both routing evals print the control beside the treatment for every case. The control is reported
+and never gated: these skill names are guessable, so a bare session often names them too.
+
+The prompts are written the way a user would speak and must not borrow a phrase from the
+description of the skill they target: a prompt that reuses its target's own words measures string
+matching. `node evals/auto-invoke.mjs --self-test` holds that line: it fails when a prompt shares
+three words in a row with its target's description, and starts no session. The paraphrased set in
+`agent-surface-routing.mjs` is the one deliberate exception, said so in that file.
+
+`classify.mjs` holds the rules for telling a failed session from a routing miss, and
+`node evals/classify.mjs --self-test` runs them against recorded output without a model. A Claude
+Code session is an observation only when it exited 0 and wrote a `result` record (one that ran out
+of turns exits 1 after writing it, and still counts). Any other exit, a signal, empty output or
+text that is not stream-json is "could not run", so a negative case can never pass on a session
+that produced nothing. A Codex or Cursor call that exits 0 with an account message or nothing at
+all is "could not run" too, never a miss.

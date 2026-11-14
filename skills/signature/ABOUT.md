@@ -53,7 +53,7 @@ contributor.
 
 ## When it fires
 
-You don't type a command. Say something like this:
+It runs only when you ask for it. Say something like this:
 
 > *"make this match the rest of our codebase"*
 > *"you keep writing it wrong. This is the third time I've corrected this"*

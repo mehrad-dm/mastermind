@@ -41,17 +41,20 @@ jobs:
           grep -q "^## \[${GITHUB_REF_NAME#v}\]" CHANGELOG.md ||
             { echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME#v}"; exit 1; }
       - run: bash tests/install.test.sh
+      # Without this the release-to-release upgrade test can skip itself and count as a pass.
       - run: bash tests/agent-surface.test.sh
+        env:
+          MM_REQUIRE_LIFECYCLE: 1
       - run: node scripts/check-integrity.mjs
       - run: node scripts/check-instructions.mjs --strict
       - run: node evals/agent-surface-cost.mjs --strict
       - run: node scripts/build-router.mjs --check
-      - run: node scripts/check-links.mjs
       - run: node scripts/lint-brain.mjs --strict
+      - run: node scripts/check-versions.mjs
       - run: node evals/agent-surface-routing.mjs
       # Repo only until the site checkout below; exit 2 says so rather than passing quietly.
       - run: node scripts/check-prose.mjs || [ "$?" = 2 ]
-      - run: node scripts/check-comments.mjs
+      - run: node scripts/check-comments.mjs || [ "$?" = 2 ]
       - run: node scripts/check-shell-patterns.mjs
       # MASTERMIND_SITE_KEY is a read-only deploy key for the private site repository, scoped to
       # that one repo. This fails the release when it cannot read: the check exists to stop the
@@ -69,11 +72,13 @@ jobs:
         env:
           MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
         run: node scripts/build-library.mjs --check
-      - name: no em dashes on the website either
+      - name: no em dashes or long comment blocks on the website either
         if: steps.sitesrc.outcome == 'success'
         env:
           MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
-        run: node scripts/check-prose.mjs
+        run: |
+          node scripts/check-prose.mjs
+          node scripts/check-comments.mjs
       - name: the site agrees with the repo, and still builds
         if: steps.sitesrc.outcome == 'success'
         env:

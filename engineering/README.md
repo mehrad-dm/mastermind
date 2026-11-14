@@ -16,11 +16,11 @@ opinion (e.g. RTL, per the project's audience), the docs say so.
 
 A lean always-on kernel (`CLAUDE.md`) plus modules loaded only when relevant. Split into a
 **universal core** (how to think & work) and a **swappable field pack** (what to know for the domain).
-The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlinked from the repo by
-`install.sh`); each tool's entry file just points here, so editing the repo updates every tool at once.
+A per-project install copies the brain into the project's `.mastermind/`; a shared or global install
+uses the one in your home directory. Each tool's entry file points at the brain.
 
 ```
-~/.mastermind/                    # canonical, tool-neutral (symlink → the repo)
+~/.mastermind/                    # the brain (a project's own copy, or the shared one)
 ├── CLAUDE.md                     # the kernel: always loaded, tiny
 ├── AGENTS.md                     # → CLAUDE.md (the open entry file for agentic tools)
 ├── agents/                       # specialist roles (architect, code-reviewer, refactorer, tech-scout)
@@ -33,8 +33,10 @@ The brain lives at the tool-neutral canonical path **`~/.mastermind/`** (symlink
     │   ├── mindset.md            # genius-builder mental models (the operating soul)
     │   ├── principles.md         # decision framework + clean-code laws
     │   ├── rigor.md              # the quality gate + refuse-list + the verdict
-    │   ├── agent-loop.md         # how to execute: verify-loop, explore→plan→implement, context
-    │   └── product-sense.md      # product & business literacy: scope tasks & specs right
+    │   ├── agent-loop.md         # how to execute: verify-loop, stop conditions, failures, delegation
+    │   ├── clarity.md            # the register for anything written
+    │   ├── product-sense.md      # product & business literacy: scope tasks & specs right
+    │   └── spec-driven.md        # spec-first features: layout, IDs, order
     └── fields/
         └── _template/            # FIELD SCAFFOLD: init builds a field from this
             ├── field.md          # pack manifest
@@ -53,16 +55,18 @@ for the project's real stack from this scaffold, and the project owns it thereaf
 
 | Module | Load when |
 | --- | --- |
-| `core/mindset.md` | Always: the default way of thinking |
+| `core/mindset.md` | A design call turns on why one of the kernel's four clauses holds |
 | `core/principles.md` | Any design/refactor decision |
 | `core/rigor.md` | Every non-trivial task |
-| `core/agent-loop.md` | Executing any task |
+| `core/agent-loop.md` | A loop, a failure, or a delegation needs its rule |
+| `core/clarity.md` | Writing an explanation, a report, or an instruction |
 | `core/product-sense.md` | Scoping a task / unclear "why" or spec |
+| `core/spec-driven.md` | A feature goes spec-first |
 | `fields/<active>/stack-defaults.md` | Choosing a tool/lib/pattern |
 | `fields/<active>/mentors.md` | Taste/philosophy is contested |
 | `fields/<active>/curriculum.md` | Going deep / recommending resources |
 | `fields/<active>/learning-sources.md` | Design-system work or an unfamiliar topic |
-| `fields/<active>/lessons.md` | Always relevant: what's been learned |
+| `fields/<active>/lessons.md` | Working in the field: what's been learned |
 
 ## How it improves (leveling up)
 
@@ -71,15 +75,13 @@ MasterMind's weights are fixed; it gets better by **editing this knowledge base*
 refreshes the curriculum against the live ecosystem, or bootstraps a new field pack. See
 `active-field.md`.
 
-## Use with any AI
+## The supported tools
 
-Run `install.sh` once to symlink the brain to `~/.mastermind/` + each tool's entry file (see the root
-`README.md` for the full table). Then:
+The installer wires each tool's entry file to the brain:
 
-- **Claude Code**: auto-loaded via `~/.claude/CLAUDE.md` → the repo. Nothing more to do.
-- **Cursor**: `install.sh` generates `.cursor/rules/mastermind.mdc` with the kernel inlined.
-
-- **Codex**: reads the project's `AGENTS.md` → the brain. `--global` also wires `$CODEX_HOME/AGENTS.md`.
+- **Claude Code**: the project's `CLAUDE.md` points at the kernel. The four agents are wired as subagents.
+- **Cursor**: `.cursor/rules/mastermind.mdc` carries the kernel as an always-on rule.
+- **Codex**: reads the project's `AGENTS.md`. `--global` also wires `$CODEX_HOME/AGENTS.md`.
 
 Those three are the supported set. Anything else is unwired and unclaimed.
 

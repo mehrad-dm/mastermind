@@ -49,7 +49,7 @@ it's a style choice: and the rule is to match the surrounding code, never to rep
 It works through correctness first, then security, then honest types, architecture, clean code, stack fit,
 and consistency, hunting for the bug the author hoped wouldn't happen.
 
-**It proposes fixes and never applies them.** It has no ability to edit your files, deliberately. It shows
+**It proposes fixes and never applies them.** It can run checks, and it is instructed never to edit your files. It shows
 you the problem and the change it would make; the decision to make that change stays with you.
 
 ## When it fires

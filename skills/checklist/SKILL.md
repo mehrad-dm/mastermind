@@ -1,6 +1,6 @@
 ---
 name: checklist
-description: "Use when a feature's requirements need testing for one concern before planning or building: \"make a security checklist for this spec\", \"are the UX requirements complete?\", \"review the API requirements\", \"what did the spec forget about accessibility?\", \"give me a requirements checklist for this feature\", \"does our spec cover abuse or partial failure?\", a spec that looks thin on one area such as security, access rules or error recovery, or a sensitive feature heading into `blueprint` or `build`. Not for testing code or QA steps (that's `qa`), not for checking documents against each other (that's `analyze`)."
+description: "Use when a feature's requirements need testing for one concern before planning or building: \"make a security checklist for this spec\", \"are the UX requirements complete?\", \"what did the spec forget about accessibility?\", \"does our spec cover abuse or partial failure?\", a spec that looks thin on security, access rules or error recovery, or a sensitive feature heading into `blueprint` or `build`. Not for testing code (`qa`), not for whole documents against each other (`analyze`)."
 ---
 
 # MasterMind: Checklist

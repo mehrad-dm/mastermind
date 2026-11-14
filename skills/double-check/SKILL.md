@@ -1,6 +1,6 @@
 ---
 name: double-check
-description: "Use when you are about to tell the user something works, hand over a decision you feel confident about, or make a change that can't be undone: and when a review came back suspiciously clean. Symptoms: \"are you sure?\", \"you said that was fixed last time\", nothing to report, the answer feels too tidy. Not for a routine small change; not for reviewing a finished diff: that's `code-reviewer`; not for driving a finished change end-to-end to get evidence: that's `qa`. Doubt tests a claim (a diagnosis, a design call, an answer), which is often not runnable code."
+description: "Use when you are about to tell the user something works, hand over a decision you feel confident about, or make a change that can't be undone, and when a review came back suspiciously clean: \"are you sure?\", \"you said that was fixed last time\", the answer feels too tidy. Tests a claim (a diagnosis, a design call, an answer) that running code often cannot settle. Not for a routine small change, not for a finished diff (`code-reviewer`), not for driving a change end to end (`qa`)."
 ---
 
 # MasterMind: Double-check
@@ -10,8 +10,8 @@ You are about to hand over something you believe. Belief is not evidence
 claim has to happen while the work is still moving, not after the user has acted on it. Claim:
 **$ARGUMENTS**.
 
-The kernel's rule: **whatever did the work doesn't get to grade it**: is the entire mechanism here.
-This applies it to a *claim*, not only to a diff.
+The kernel's rule that the work does not grade itself is the entire mechanism here. This applies it to
+a *claim*, not only to a diff.
 
 ## The five moves
 
@@ -24,9 +24,9 @@ This applies it to a *claim*, not only to a diff.
    asked). **If you can't write the contract down, stop and get one.** Without it there is no bar, and
    any reviewer defaults to grading your intent.
 
-3. **Doubt.** Dispatch a reviewer in a fresh context with **the artifact and the contract, nothing else**.
-   It is a fresh context, not a second model: say so, and use a second model where one is installed.
-   Brief it adversarially:
+3. **Doubt.** Dispatch the `code-reviewer` agent with **the artifact and the contract, nothing else**.
+   Never use a fork of this session: a fork inherits your conclusion. It is a fresh context, not a
+   second model: say so. Brief it adversarially:
 
    > Find what is wrong with this. Assume the author is overconfident. Do not validate and do not
    > summarize: report what fails the contract, or state plainly that you could not find anything
@@ -54,8 +54,8 @@ This applies it to a *claim*, not only to a diff.
    a colleague whose goodwill you need.
 
 5. **Stop.** Bounded at **three cycles**, then every open finding exits as fixed · parked-with-a-reason ·
-   **blocked** (handed to the human): the same close-out, in the same words, `build` step 6 runs
-   (`~/.mastermind/skills/build/SKILL.md`), including its two prohibitions.
+   **blocked** (handed to the human): the same close-out, in the same words, as the review loop in
+   `build` (`~/.mastermind/skills/build/SKILL.md`), including its two prohibitions.
 
 ## The red flag: doubt theater
 
@@ -75,5 +75,6 @@ applies. Doubt interrogates a **claim still in flight**, which is often not code
 design call, an answer, a "this works" you're one sentence from saying. It ends with *your* written
 verdict on every finding, before the user sees anything.
 
-When the artifact is a finished diff, that is `code-reviewer`: and `build` step 6 already runs it.
-Don't wrap one in the other.
+When the artifact is a finished diff, that is a plain `code-reviewer` review, and `build` already
+runs it above the kernel's threshold. Don't wrap one in the other, and don't run this at the end of
+every build.

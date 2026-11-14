@@ -1,6 +1,6 @@
 ---
 name: converge
-description: "Use after building a feature from a task list, to find out whether the code actually does what its spec, plan and constitution say: \"is this feature really done?\", \"check the code against the spec\", \"what's still missing?\", \"did we build everything we planned?\", every box in tasks.md ticked, or before calling a spec-driven feature done. Not before code exists (that's `analyze`), not for a single claim (that's `double-check`), not for running the thing end to end (that's `qa`)."
+description: "Use after building a feature from a task list, to find out whether the code actually does what its spec, plan and constitution say: \"is this feature really done?\", \"check the code against the spec\", \"what's still missing?\", \"did we build everything we planned?\", every box in tasks.md ticked, or before calling a spec-driven feature done. Not before code exists (`analyze`), not for one claim (`double-check`), not for only running it (`qa`)."
 ---
 
 # MasterMind: Converge
@@ -19,9 +19,12 @@ feature, below, is a separate step taken after the verdict.
 
 ## Who runs it
 
-The session that built the feature already believes it is finished. Dispatch a fresh-context subagent
-with the feature folder, the constitution and repository access, and nothing about how the build went.
-Where no isolated context exists, run it yourself and label the result self-graded.
+The session that built the feature already believes it is finished. Dispatch the `code-reviewer` agent
+with the feature folder, the constitution and this skill's method, and nothing about how the build went.
+Never use a fork of this session: a fork inherits what this context believes. The agent returns the
+findings table and the proposed tasks; you append them, because it does not edit. Where no agent is
+wired, follow the kernel's fallback: run `agents/code-reviewer.md` as a procedure in a separate session;
+where that is impossible, label the result self-checked.
 
 ## Method
 
@@ -72,7 +75,8 @@ docs and `.mastermind/MAP.md`, and treat the folder as frozen history from here.
 After every round, run `mastermind next` and end with the step it names.
 
 `build` the appended tasks, then converge again. Three rounds without converging means the documents
-and the code disagree about something real. Stop and ask the user which one is wrong.
+and the code disagree about something real (`agent-loop.md` → stop conditions). Stop and ask the user
+which one is wrong.
 
 ## Gotchas
 

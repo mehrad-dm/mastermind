@@ -24,7 +24,7 @@ tools to reach for*.
 | `lessons.md` | Always relevant, durable lessons from real usage (the leveling record) |
 
 Every file above except this one carries `route_when` frontmatter. That is what puts it in the router
-(`scripts/build-router.mjs`). **Keep the frontmatter and retag it for your field**; a file without
+(`.mastermind/scripts/build-router.mjs` in a project). **Keep the frontmatter and retag it for your field**; a file without
 `route_when` is invisible to routing, and `check-integrity.mjs` will fail the build if one is missing.
 
 ## Where things are (fill during `init`: this section is why the pack saves tokens)

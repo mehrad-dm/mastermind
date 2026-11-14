@@ -1,0 +1,496 @@
+{
+ "kernel": {
+  "fires": [
+   {
+    "name": "201 short lines",
+    "repeat": {
+     "line": "a line",
+     "times": 201
+    }
+   },
+   {
+    "name": "100 lines, 10,000 characters",
+    "repeat": {
+     "line": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+     "times": 100
+    }
+   },
+   {
+    "name": "one line of 9,501 characters",
+    "chars": 9501
+   },
+   {
+    "name": "120 lines of 40 emoji: 4,920 characters, 9,720 units of the hook's cap",
+    "repeat": {
+     "line": "🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠",
+     "times": 120
+    }
+   }
+  ],
+  "clean": [
+   {
+    "name": "200 lines, 9,400 characters",
+    "repeat": {
+     "line": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+     "times": 200
+    }
+   },
+   {
+    "name": "exactly 9,500 characters",
+    "chars": 9500
+   }
+  ]
+ },
+ "descriptions": {
+  "fires": [
+   {
+    "name": "one description of 501 characters",
+    "many": {
+     "count": 1,
+     "chars": 501
+    }
+   },
+   {
+    "name": "25 descriptions of 490 characters total 12,250",
+    "many": {
+     "count": 25,
+     "chars": 490
+    }
+   },
+   {
+    "name": "name differs from its folder",
+    "skills": [
+     {
+      "dir": "build",
+      "text": "---\nname: builder\ndescription: Use when building.\n---\n\n# builder\n"
+     }
+    ]
+   },
+   {
+    "name": "no description",
+    "skills": [
+     {
+      "dir": "build",
+      "text": "---\nname: build\n---\n"
+     }
+    ]
+   },
+   {
+    "name": "folded description over the limit",
+    "skills": [
+     {
+      "dir": "build",
+      "text": "---\nname: build\ndescription: >\n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n---\n"
+     }
+    ]
+   },
+   {
+    "name": "a 530-character plain description folded over indented lines",
+    "skills": [
+     {
+      "dir": "s0",
+      "text": "---\nname: s0\ndescription: Use when the request is long and the words keep coming Use when the\n  request is long and the words keep coming Use when the request is\n  long and the words keep coming Use when the request is long and the\n  words keep coming Use when the request is long and the words keep\n  coming Use when the request is long and the words keep coming Use\n  when the request is long and the words keep coming Use when the\n  request is long and the words keep coming Use when the request is\n  long and the words keep coming Use when the request is long andxxx\n---\n"
+     }
+    ]
+   },
+   {
+    "name": "a plain description that carries on after a blank line",
+    "skills": [
+     {
+      "dir": "s0",
+      "text": "---\nname: s0\ndescription: Use to prove a finished change works\n\n  the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming\n---\n"
+     }
+    ]
+   }
+  ],
+  "clean": [
+   {
+    "name": "24 descriptions of 500 characters total 12,000",
+    "many": {
+     "count": 24,
+     "chars": 500
+    }
+   },
+   {
+    "name": "quoted description with a user-only key",
+    "skills": [
+     {
+      "dir": "help",
+      "text": "---\nname: help\ndescription: \"Use when: the user asks what this can do.\"\ndisable-model-invocation: true\n---\n"
+     }
+    ]
+   }
+  ]
+ },
+ "journal": {
+  "fires": [
+   {
+    "name": "capitalised marker",
+    "text": "2026-11-07 · Wrong · claimed X · caught by a test\n"
+   },
+   {
+    "name": "hyphens for separators",
+    "text": "2026-11-07 - wrong - claimed X - caught by a test\n"
+   },
+   {
+    "name": "bulleted entry",
+    "text": "- 2026-11-07 · wrong · claimed X · caught by a test\n"
+   },
+   {
+    "name": "middot bullet",
+    "text": "· 2026-11-07 · wrong · claimed X · caught by a test\n"
+   },
+   {
+    "name": "misspelt marker",
+    "text": "2026-11-07 · wrnog · claimed X · caught by a test\n"
+   },
+   {
+    "name": "marker with a colon",
+    "text": "2026-11-07 · wrong: claimed X · caught by a test\n"
+   },
+   {
+    "name": "impossible date",
+    "text": "2026-13-07 · shipped X · 12 assertions\n"
+   },
+   {
+    "name": "date with nothing after it",
+    "text": "2026-11-07 shipped X\n"
+   },
+   {
+    "name": "miss marker inside prose",
+    "text": "Entries carry · wrong · between separators.\n"
+   },
+   {
+    "name": "31 February",
+    "text": "2026-02-31 · shipped X · 12 assertions\n"
+   },
+   {
+    "name": "29 February outside a leap year",
+    "text": "2026-02-29 · shipped X · 12 assertions\n"
+   },
+   {
+    "name": "a miss with no catcher",
+    "text": "2026-11-07 · wrong · claimed X · fix the check\n"
+   },
+   {
+    "name": "a miss whose catcher field is empty",
+    "text": "2026-11-07 · wrong · claimed X · caught by \n"
+   }
+  ],
+  "clean": [
+   {
+    "name": "a miss and an ordinary entry",
+    "text": "# Journal\n\nProse about the log, written on 2026-08-04 by hand.\n\n2026-11-07 · wrong · claimed X · caught by a test\n2026-11-07 · shipped X · ship: 12 assertions\n"
+   },
+   {
+    "name": "an ordinary entry that mentions the word",
+    "text": "2026-11-07 · fixed the wrong-log count · ship: 3 assertions\n"
+   },
+   {
+    "name": "an entry whose outcome word is wrote",
+    "text": "2026-11-07 · wrote · the release notes, 3 pages\n"
+   },
+   {
+    "name": "29 February in a leap year",
+    "text": "2028-02-29 · shipped X · 12 assertions\n"
+   }
+  ]
+ },
+ "marketplace": {
+  "fires": [
+   {
+    "name": "listing reworded so the list cannot be found",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A markdown brain. It ships build and debug, with the architect agent."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "architect"
+    ]
+   },
+   {
+    "name": "no entry for the plugin",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind-mod",
+       "description": "Skills: build + agents: architect."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "architect"
+    ]
+   },
+   {
+    "name": "a shipped skill is not named",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build + agents: architect. Experimental."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "architect"
+    ]
+   },
+   {
+    "name": "a named skill is not shipped",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build, perf + agents: architect. Experimental."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "architect"
+    ]
+   },
+   {
+    "name": "an agent is not named",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build, debug + agents: architect. Experimental."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "architect",
+     "refactorer"
+    ]
+   }
+  ],
+  "clean": [
+   {
+    "name": "every skill and agent named",
+    "manifest": {
+     "plugins": [
+      {
+       "name": "mastermind",
+       "description": "A brain. Skills: build, debug, double-check + agents: architect, code-reviewer. Experimental (v0.34.0)."
+      },
+      {
+       "name": "mastermind-mod",
+       "description": "The optional Mod."
+      }
+     ]
+    },
+    "known": [
+     "build",
+     "debug",
+     "double-check",
+     "architect",
+     "code-reviewer"
+    ]
+   }
+  ]
+ },
+ "userOnly": {
+  "fires": [
+   {
+    "name": "help hides itself from the model",
+    "skills": [
+     {
+      "dir": "handoff",
+      "text": "---\nname: handoff\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "help",
+      "text": "---\nname: help\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     },
+     {
+      "dir": "levelup",
+      "text": "---\nname: levelup\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "lint",
+      "text": "---\nname: lint\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "report",
+      "text": "---\nname: report\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "signature",
+      "text": "---\nname: signature\ndescription: \"x\"\n---\n"
+     }
+    ]
+   },
+   {
+    "name": "an ordinary skill hides itself",
+    "skills": [
+     {
+      "dir": "handoff",
+      "text": "---\nname: handoff\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "help",
+      "text": "---\nname: help\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "levelup",
+      "text": "---\nname: levelup\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "lint",
+      "text": "---\nname: lint\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "report",
+      "text": "---\nname: report\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "signature",
+      "text": "---\nname: signature\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "build",
+      "text": "---\nname: build\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     }
+    ]
+   },
+   {
+    "name": "every skill on request only",
+    "skills": [
+     {
+      "dir": "handoff",
+      "text": "---\nname: handoff\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     },
+     {
+      "dir": "help",
+      "text": "---\nname: help\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     },
+     {
+      "dir": "levelup",
+      "text": "---\nname: levelup\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     },
+     {
+      "dir": "lint",
+      "text": "---\nname: lint\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     },
+     {
+      "dir": "report",
+      "text": "---\nname: report\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     },
+     {
+      "dir": "signature",
+      "text": "---\nname: signature\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     }
+    ]
+   }
+  ],
+  "clean": [
+   {
+    "name": "no skill carries the flag",
+    "skills": [
+     {
+      "dir": "handoff",
+      "text": "---\nname: handoff\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "help",
+      "text": "---\nname: help\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "levelup",
+      "text": "---\nname: levelup\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "lint",
+      "text": "---\nname: lint\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "report",
+      "text": "---\nname: report\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "signature",
+      "text": "---\nname: signature\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "build",
+      "text": "---\nname: build\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "debug",
+      "text": "---\nname: debug\ndescription: \"x\"\n---\n"
+     }
+    ]
+   }
+  ]
+ },
+ "frontmatterKeys": {
+  "fires": [
+   {
+    "name": "a key outside the Agent Skills core",
+    "text": "---\nname: x\ndescription: \"y\"\ntriggers: [a, b]\n---\n"
+   },
+   {
+    "name": "a misspelt flag",
+    "text": "---\nname: x\ndescription: \"y\"\ndisable-model-invokation: true\n---\n"
+   }
+  ],
+  "clean": [
+   {
+    "name": "the core keys and the one flag",
+    "text": "---\nname: x\ndescription: \"y\"\nlicense: MIT\nallowed-tools: Read\ndisable-model-invocation: true\n---\n"
+   }
+  ]
+ },
+ "unquotedColon": {
+  "fires": [
+   {
+    "name": "a colon and a space in a plain description",
+    "text": "---\nname: x\ndescription: Use when: the user asks\n---\n"
+   },
+   {
+    "name": "a hash after a space",
+    "text": "---\nname: x\ndescription: Use for #1 issues\n---\n"
+   }
+  ],
+  "clean": [
+   {
+    "name": "the same value quoted",
+    "text": "---\nname: x\ndescription: \"Use when: the user asks\"\n---\n"
+   },
+   {
+    "name": "a folded block",
+    "text": "---\nname: x\ndescription: >\n  Use when: the user asks\n---\n"
+   }
+  ]
+ }
+}

@@ -1,0 +1,146 @@
+name: pre-tag
+
+# publish.yml runs after the tag is pushed, and a pushed tag can never be moved: a failure
+# there burns the version. This runs the same gate and the same platform matrix on a commit
+# BEFORE it is tagged, so a failure costs a fix. Run it on the merge commit (RELEASING.md).
+# The steps below the version check are publish.yml's gate, kept identical by check-claims.mjs.
+on:
+  workflow_dispatch:
+    inputs:
+      site-ref:
+        description: the site branch to check, pushed but not yet on main (empty reads main)
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: this commit is on master and its version is not tagged yet
+        run: |
+          set -e
+          git fetch --no-tags --quiet origin +refs/heads/master:refs/remotes/origin/master
+          master="$(git rev-parse --verify refs/remotes/origin/master)"
+          git merge-base --is-ancestor "$GITHUB_SHA" "$master" || {
+            echo "::error::$GITHUB_SHA is not on master, so it could not be released. Run this on master."
+            exit 1
+          }
+          V="$(cat VERSION)"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$V" >/dev/null; then
+            echo "::error::v$V is already tagged, and a tag cannot be moved. Release a new version."
+            exit 1
+          fi
+          grep "^## \[$V\]" CHANGELOG.md >/dev/null ||
+            { echo "::error::CHANGELOG.md has no section for $V"; exit 1; }
+          echo "v$V at $GITHUB_SHA is on master and not tagged yet"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 22
+      - run: bash tests/install.test.sh
+      # Without this the release-to-release upgrade test can skip itself and count as a pass.
+      - run: bash tests/agent-surface.test.sh
+        env:
+          MM_REQUIRE_LIFECYCLE: 1
+      - run: node scripts/check-integrity.mjs
+      - run: node scripts/check-instructions.mjs --strict
+      - run: node evals/agent-surface-cost.mjs --strict
+      - run: node scripts/build-router.mjs --check
+      - run: node scripts/lint-brain.mjs --strict
+      - run: node scripts/check-versions.mjs
+      - run: node evals/agent-surface-routing.mjs
+      # Repo only until the site checkout below; exit 2 says so rather than passing quietly.
+      - run: node scripts/check-prose.mjs || [ "$?" = 2 ]
+      - run: node scripts/check-comments.mjs || [ "$?" = 2 ]
+      - run: node scripts/check-shell-patterns.mjs
+      # MASTERMIND_SITE_KEY is a read-only deploy key for the private site repository, scoped to
+      # that one repo. This fails the release when it cannot read: the check exists to stop the
+      # published pages drifting from the instructions behind them, and a check that shrugs is
+      # not one. MM_ALLOW_UNCHECKED_LIBRARY=1 in the repo variables is the deliberate override.
+      - id: sitesrc
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: mehrad-dm/mastermind-site
+          ref: ${{ inputs.site-ref }}
+          path: site-checkout
+          ssh-key: ${{ secrets.MASTERMIND_SITE_KEY }}
+      - name: the public library matches the skill and agent sources
+        if: steps.sitesrc.outcome == 'success'
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: node scripts/build-library.mjs --check
+      - name: the site's diagram data is what this repo generates
+        if: steps.sitesrc.outcome == 'success'
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: node scripts/build-architecture.mjs --check
+      - name: no em dashes or long comment blocks on the website either
+        if: steps.sitesrc.outcome == 'success'
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: |
+          node scripts/check-prose.mjs
+          node scripts/check-comments.mjs
+      - name: the site agrees with the repo, and still builds
+        if: steps.sitesrc.outcome == 'success'
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: |
+          set -euo pipefail
+          SITE="$GITHUB_WORKSPACE/site-checkout"
+          WANT="$(cat VERSION)"
+          GOT="$(sed -n "s/.*version:[[:space:]]*'\(v[0-9.]*\)'.*/\1/p" "$SITE/src/site.config.ts" | head -1)"
+          [ -n "$GOT" ] || { echo "site.config.ts declares no version"; exit 1; }
+          [ "$GOT" = "v$WANT" ] || { echo "site says $GOT, repo says v$WANT"; exit 1; }
+          S=$(find skills -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+          A=$(find agents -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+          BAD="$(grep -rnoE '[0-9]+ (skills|agents)' "$SITE/src" | grep -vE ":${S} skills\$|:${A} agents\$" || true)"
+          [ -z "$BAD" ] || { echo "the site states a count the repo does not:"; printf '%s\n' "$BAD"; exit 1; }
+          node scripts/sync-evals.mjs --check
+          corepack enable
+          ( cd "$SITE" && corepack prepare --activate && pnpm install --frozen-lockfile && pnpm run build )
+      - name: refuse to pass without checking the library
+        if: steps.sitesrc.outcome != 'success'
+        run: |
+          if [ "${{ vars.MM_ALLOW_UNCHECKED_LIBRARY }}" = "1" ]; then
+            echo "::warning::the site could not be read and MM_ALLOW_UNCHECKED_LIBRARY is set, so the library pages were NOT checked"
+            echo "· library check skipped by explicit override" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "::error::the site repository could not be read, so the library pages cannot be checked against the skill and agent sources."
+          echo "Fix MASTERMIND_SITE_KEY on mastermind-site, or set the repository variable MM_ALLOW_UNCHECKED_LIBRARY=1 to release without this evidence." >&2
+          exit 1
+      - name: the published tarball contains exactly what we intend
+        working-directory: cli
+        run: |
+          npm pack --dry-run --json > /tmp/pack.json
+          node -e '
+            // npm 10 prints an ARRAY; npm 12 prints an OBJECT keyed by package name. The two
+            // jobs here run different npm versions, so read whichever shape arrives.
+            const raw = require("/tmp/pack.json");
+            const p = Array.isArray(raw) ? raw[0] : Object.values(raw)[0];
+            const files = p.files.map(f => f.path).sort();
+            const want = ["README.md", "bin/mastermind.mjs", "package.json"].sort();
+            if (JSON.stringify(files) !== JSON.stringify(want))
+              { console.error("unexpected tarball contents:", files); process.exit(1) }
+            console.log("tarball OK:", files.join(", "));
+          '
+      # Not in publish.yml: these need a download or a slow install, which a tag must not wait on.
+      - run: node scripts/self-test.mjs
+      - run: node scripts/check-claims.mjs
+      - run: node scripts/build-architecture.mjs --check || [ "$?" = 2 ]
+      - run: npm install -g @anthropic-ai/claude-code@2.1.319 --registry=https://registry.npmjs.org
+      - name: plugin manifests pass Claude Code's own validator
+        env:
+          MM_REQUIRE_CLAUDE: 1
+        run: bash scripts/validate-plugin.sh
+
+  # Every platform we claim to support, on the commit that is about to be tagged.
+  cross-os:
+    uses: ./.github/workflows/cross-os.yml

@@ -5,8 +5,43 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+import { spawnSync } from 'node:child_process'
+import os from 'node:os'
+
+const at = process.argv.indexOf('--root')
+const ROOT = at > 0 ? path.resolve(process.argv[at + 1]) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, 'engineering', 'ROUTER.md')
+
+// A manifest written from one tree must fail --check once a routed file changes, and pass otherwise.
+if (process.argv.includes('--self-test')) {
+  const box = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-router-'))
+  const put = (rel, text) => { fs.mkdirSync(path.dirname(path.join(box, rel)), { recursive: true }); fs.writeFileSync(path.join(box, rel), text) }
+  const run = (...a) => spawnSync('node', [fileURLToPath(import.meta.url), '--root', box, ...a], { encoding: 'utf8' }).status
+  const reset = () => {
+    fs.rmSync(box, { recursive: true, force: true })
+    put('engineering/fields/web/react.md', '---\nroute_when: [react, hooks]\n---\n\n# React\n')
+    put('engineering/fields/_template/stack-defaults.md', '---\nroute_when: [template]\n---\n\n# Template\n')
+    put('skills/build/SKILL.md', '---\nname: build\ndescription: "Use when building."\n---\n\n# Build\n')
+    run()
+  }
+  const fires = [
+    ['a routed field file changed', () => put('engineering/fields/web/react.md', '---\nroute_when: [react, hooks]\n---\n\n# React, edited\n')],
+    ['a skill added', () => put('skills/debug/SKILL.md', '---\nname: debug\ndescription: "Use when debugging."\n---\n\n# Debug\n')],
+    ['a routed file removed', () => fs.rmSync(path.join(box, 'engineering/fields/web/react.md'))],
+    ['the manifest edited by hand', () => fs.appendFileSync(path.join(box, 'engineering', 'ROUTER.md'), '\n| `extra` | web | x | 1 | x.md | 00000000 |\n')],
+  ]
+  const clean = [
+    ['nothing changed', () => {}],
+    ['a scaffold file under _template changed', () => put('engineering/fields/_template/stack-defaults.md', '---\nroute_when: [template]\n---\n\n# Edited\n')],
+  ]
+  const wrong = []
+  for (const [name, change] of fires) { reset(); change(); if (run('--check') !== 1) wrong.push(`did not fire: ${name}`) }
+  for (const [name, change] of clean) { reset(); change(); if (run('--check') !== 0) wrong.push(`fired on clean input: ${name}`) }
+  fs.rmSync(box, { recursive: true, force: true })
+  if (wrong.length) { console.error('✖ router self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
+  console.log(`✓ router self-test: ${fires.length} bad inputs fire, ${clean.length} good inputs stay clean.`)
+  process.exit(0)
+}
 
 const tokens = (s) => Math.round(s.length / 4)
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 8)
@@ -93,6 +128,11 @@ there. Under-loading silently is the failure mode; a slightly wider load is chea
 
 If this file is missing or stale (a \`hash\` no longer matches its file), ignore it and fall back to the
 prose pointers in \`active-field.md\` / each field's \`field.md\`. The router only ever speeds things up.
+
+Each \`hash\` is the first 8 hex characters of the SHA-256 of the file at \`path\`. To test the whole
+file: \`node .mastermind/scripts/build-router.mjs --check\` in an installed project
+(\`node scripts/build-router.mjs --check\` in the MasterMind repository). Exit 1 means stale; the same
+command without \`--check\` rewrites it.
 
 ${section('field', 'Field-pack files')}
 ${section('skill', 'Skills')}`

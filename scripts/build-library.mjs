@@ -68,15 +68,23 @@ for (const d of readdirSync(join(REPO, 'skills'), { withFileTypes: true })) {
   items.push({ kind: 'skill', name: d.name, title: meta.title ?? d.name, blurb: meta.blurb ?? '',
                trigger: skillMeta.description ?? '', body: clean(body), newUntil: newUntil(meta.since) })
 }
-for (const f of readdirSync(join(REPO, 'agents', 'about'))) {
+for (const f of readdirSync(join(REPO, 'library', 'agents'))) {
   if (!f.endsWith('.md')) continue
-  const [meta, body] = fm(readFileSync(join(REPO, 'agents', 'about', f), 'utf8'))
+  const [meta, body] = fm(readFileSync(join(REPO, 'library', 'agents', f), 'utf8'))
   const name = f.replace(/\.md$/, '')
   const agentMeta = fm(readFileSync(join(REPO, 'agents', `${name}.md`), 'utf8'))[0]
   items.push({ kind: 'agent', name, title: meta.title ?? name, blurb: meta.blurb ?? '',
                trigger: agentMeta.description ?? '', body: clean(body), newUntil: newUntil(meta.since) })
 }
 items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
+
+// The Mod has no library page: the site keys its New badge on the plugin's name.
+const modSince = fm(readFileSync(join(REPO, 'mod', 'README.md'), 'utf8'))[0].since
+if (!modSince) {
+  console.error('✖ mod/README.md has no since: in its frontmatter, so the site cannot date the Mod\'s New badge')
+  process.exit(1)
+}
+const badges = [...items, { name: JSON.parse(readFileSync(join(REPO, 'mod', '.claude-plugin', 'plugin.json'), 'utf8')).name, newUntil: newUntil(modSince) }]
 
 // Neighbours for prev/next, wrapping around so the library is browsable end to end.
 const short = (t) => t.split(/:\s+/)[1] ?? t
@@ -113,7 +121,7 @@ ${it.body}
 let stale = 0
 const wanted = new Map(items.map((it, i) => [`${it.name}.md`, page(it, i, items)]))
 const NEW_JSON = join(SITE, 'src', 'data', 'new.json')
-const newJson = JSON.stringify(Object.fromEntries(items.filter((it) => it.newUntil).map((it) => [it.name, it.newUntil])), null, 2) + '\n'
+const newJson = JSON.stringify(Object.fromEntries(badges.filter((it) => it.newUntil).map((it) => [it.name, it.newUntil])), null, 2) + '\n'
 
 if (CHECK) {
   if (!existsSync(SITE)) {

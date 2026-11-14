@@ -3,7 +3,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 REPO="$PWD"
-SITE="$REPO/../mastermind-site"
+SITE="${MASTERMIND_SITE:-$REPO/../mastermind-site}"
+export MASTERMIND_SITE="$SITE"
 
 g=$'\033[0;32m'; r=$'\033[0;31m'; y=$'\033[0;33m'; x=$'\033[0m'
 PASS=0; SKIPPED=0; FAIL=0; LOG="$(mktemp)"; SKIPPED_NAMES=""
@@ -25,6 +26,54 @@ release_rejects_bad_versions() {
   case "$out" in *"not a release version"*) return 0 ;; *) printf '%s\n' "$out"; return 1 ;; esac
 }
 
+# release.sh must refuse on master, where a release commit could never be pushed.
+release_refuses_on_master() {
+  local tmp out
+  tmp="$(mktemp -d)" || return 1
+  git clone -q --no-hardlinks "$REPO" "$tmp/repo" || { rm -rf "$tmp"; return 1; }
+  cp "$REPO/scripts/release.sh" "$tmp/repo/scripts/release.sh"
+  git -C "$tmp/repo" checkout -q -B master
+  out="$(bash "$tmp/repo/scripts/release.sh" '99.0.0' --dry-run 2>&1)"
+  local code=$?
+  rm -rf "$tmp"
+  [ "$code" -ne 0 ] || { echo "release.sh ran on master"; return 1; }
+  case "$out" in *"you are on master"*) return 0 ;; *) printf '%s\n' "$out"; return 1 ;; esac
+}
+
+# The release order: a branch, the CHANGELOG section committed on it, then release.sh.
+release_runs_on_branch() {
+  local tmp out code v
+  tmp="$(mktemp -d)" || return 1
+  git clone -q --no-hardlinks "$REPO" "$tmp/repo" || { rm -rf "$tmp"; return 1; }
+  cp "$REPO/scripts/release.sh" "$tmp/repo/scripts/release.sh"
+  v="$(cat "$tmp/repo/VERSION")"
+  mkdir -p "$tmp/site/src" "$tmp/site/public"
+  printf "export const site = { version: 'v%s' }\n" "$v" > "$tmp/site/src/site.config.ts"
+  printf 'Current release: v%s\n' "$v" > "$tmp/site/public/llms.txt"
+  git -C "$tmp/site" init -q && git -C "$tmp/site" add -A &&
+    git -C "$tmp/site" -c user.name=preflight -c user.email=preflight@localhost commit -qm site || { rm -rf "$tmp"; return 1; }
+  git -C "$tmp/repo" checkout -q -b release/v99.0.0 || { rm -rf "$tmp"; return 1; }
+  { printf '## [99.0.0] - rehearsal\n\n- a rehearsal entry\n\n'; cat "$tmp/repo/CHANGELOG.md"; } > "$tmp/changelog"
+  mv "$tmp/changelog" "$tmp/repo/CHANGELOG.md"
+  git -C "$tmp/repo" add -A &&
+    git -C "$tmp/repo" -c user.name=preflight -c user.email=preflight@localhost commit -qm "changelog: v99.0.0" || { rm -rf "$tmp"; return 1; }
+  git -C "$tmp/site" branch -M main
+  out="$(MASTERMIND_SITE="$tmp/site" bash "$tmp/repo/scripts/release.sh" 99.0.0 --dry-run 2>&1)"
+  case "$out" in *"the site checkout is on main"*) ;; *) echo "release.sh ran with the site on main:"; printf '%s\n' "$out"; rm -rf "$tmp"; return 1 ;; esac
+  git -C "$tmp/site" checkout -q -b release/v99.0.0
+  out="$(MASTERMIND_SITE="$tmp/site" bash "$tmp/repo/scripts/release.sh" 99.0.0 --dry-run 2>&1)"
+  code=$?
+  rm -rf "$tmp"
+  [ "$code" = 0 ] || { printf '%s\n' "$out"; return 1; }
+  case "$out" in *"dry run complete"*) return 0 ;; *) printf '%s\n' "$out"; return 1 ;; esac
+}
+
+# MM_SKIP_LIVE=1 reports the model-backed evals as could not run, without starting a session.
+live_eval() {
+  if [ -n "${MM_SKIP_LIVE:-}" ]; then echo "MM_SKIP_LIVE set: no live session was started"; return 2; fi
+  node "$@"
+}
+
 step_live() {
   local name="$1"; shift
   "$@" >"$LOG" 2>&1
@@ -39,11 +88,7 @@ step_live() {
 
 versions_agree() {
   local want; want="$(cat "$REPO/VERSION")"
-  local found
-  found="$(grep -o 'version-[0-9.]*' "$REPO/README.md" | head -1 | cut -d- -f2)";      [ "$found" = "$want" ] || { echo "README badge $found ≠ $want"; return 1; }
-  for f in "$REPO/.claude-plugin/plugin.json" "$REPO/.claude-plugin/marketplace.json" "$REPO/cli/package.json"; do
-    grep -q "\"$want\"" "$f" || { echo "$f missing $want"; return 1; }
-  done
+  node "$REPO/scripts/check-versions.mjs" || return 1
   site_available || return $?
   # One source, asserted to exist: the version moved into site.config.ts and this kept grepping two
   # .astro files that no longer carry it, so it failed on a correct site and could never catch drift.
@@ -95,14 +140,6 @@ site_counts_agree() {
   return 0
 }
 
-scan_is_fresh() {
-  local before; before="$(mktemp)"
-  cp "$REPO/.foglamp/scan.json" "$before"
-  node "$REPO/scripts/update-scan.mjs" >/dev/null 2>&1 || { rm -f "$before"; return 1; }
-  diff -q "$before" "$REPO/.foglamp/scan.json" >/dev/null 2>&1 || { rm -f "$before"; echo "scan.json was stale: regenerated, commit it"; return 1; }
-  rm -f "$before"
-}
-
 site_available() {
   [ -d "$SITE" ] && return 0
   if [ -n "${MM_SKIP_SITE:-}" ]; then
@@ -116,6 +153,8 @@ site_available() {
 
 site_builds() {
   site_available || return $?
+  # The build writes into the site checkout; MM_SKIP_SITE_BUILD=1 keeps a borrowed checkout untouched.
+  if [ -n "${MM_SKIP_SITE_BUILD:-}" ]; then echo "MM_SKIP_SITE_BUILD set: the site build was NOT run"; return 2; fi
   ( cd "$SITE" && pnpm run build )
 }
 
@@ -124,28 +163,35 @@ echo
 echo "Code & tests"
 step "installer regression suite"      bash "$REPO/tests/install.test.sh"
 step "agent-callable surface"          bash "$REPO/tests/agent-surface.test.sh"
-step "skill routing accuracy"          node "$REPO/evals/agent-surface-routing.mjs"
+step "every skill routable, hints above floor" node "$REPO/evals/agent-surface-routing.mjs"
 step "routing still pays for itself"   node "$REPO/evals/agent-surface-cost.mjs" --strict
-step_live "skills auto-invoke (live)"  node "$REPO/evals/auto-invoke.mjs"
-step_live "codex routing (live)"       node "$REPO/evals/codex-routing.mjs"
-step_live "cursor routing (live)"      node "$REPO/evals/cursor-routing.mjs"
-step "shell scripts parse"             shell_parses "$REPO/scripts/release.sh" "$REPO/scripts/verify-release.sh" "$REPO/scripts/prove-regression.sh" "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/tests/agent-surface.test.sh" "$REPO/bin/mastermind" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
+step_live "skills auto-invoke (live)"  live_eval "$REPO/evals/auto-invoke.mjs"
+step_live "codex routing (live)"       live_eval "$REPO/evals/codex-routing.mjs"
+step_live "cursor routing (live)"      live_eval "$REPO/evals/cursor-routing.mjs"
+step "shell scripts parse"             shell_parses "$REPO/scripts/release.sh" "$REPO/scripts/verify-release.sh" "$REPO/scripts/prove-regression.sh" "$REPO/install.sh" "$REPO/hooks/session-start.sh" "$REPO/scripts/preflight.sh" "$REPO/tests/install.test.sh" "$REPO/tests/agent-surface.test.sh" "$REPO/scripts/verify-tools.sh" "$REPO/scripts/validate-plugin.sh" "$REPO/bin/mastermind" "$REPO/skills/quarantine/assets/pre-push" "$REPO/skills/quarantine/assets/pre-commit" "$REPO/.githooks/pre-push" "$REPO/.githooks/pre-commit"
 step "release version grammar"         release_rejects_bad_versions
+step "release refuses to run on master" release_refuses_on_master
+step "release runs on a branch with its changelog committed" release_runs_on_branch
+step "every gate fires on its fixtures" node "$REPO/scripts/self-test.mjs"
 
 echo "Repo integrity"
 step "router in sync"                  node "$REPO/scripts/build-router.mjs" --check
 step_live "library pages in sync"      node "$REPO/scripts/build-library.mjs" --check
-step "indexes/counts/references"       node "$REPO/scripts/check-integrity.mjs"
-step "cited resources resolve"         node "$REPO/scripts/check-links.mjs"
+step "indexes, references, kernel and description budgets" node "$REPO/scripts/check-integrity.mjs"
+step_live "plugin manifests validate (--strict)" bash "$REPO/scripts/validate-plugin.sh"
+step_live "the Mod's contract and marketplace entry hold" bash "$REPO/mod/tests/validate.sh"
+step      "every file link in the docs resolves" node "$REPO/scripts/check-links.mjs" --local
+step_live "statements in the docs hold" node "$REPO/scripts/check-claims.mjs"
+step_live "cited resources resolve, none moved" node "$REPO/scripts/check-links.mjs"
 step "brain has no structural drift"   node "$REPO/scripts/lint-brain.mjs" --strict
 step_live "no em dashes (repo + site)" node "$REPO/scripts/check-prose.mjs"
-step      "comments stay rare and short" node "$REPO/scripts/check-comments.mjs"
+step_live "comments stay rare and short (repo + site)" node "$REPO/scripts/check-comments.mjs"
 step      "no early-exit pipe under pipefail" node "$REPO/scripts/check-shell-patterns.mjs"
 step      "no over-long or hedged directive" node "$REPO/scripts/check-instructions.mjs" --strict
 
 echo "Release consistency"
 step_live "version strings agree (repo + site)" versions_agree
-step "architecture map is fresh"             scan_is_fresh
+step_live "architecture data matches the repo" node "$REPO/scripts/build-architecture.mjs" --check
 step_live "site counts match the repo"       site_counts_agree
 # Same gate as the other two site checks, so a missing site cannot make one of the three pass.
 site_numbers() { site_available || return $?; node "$REPO/scripts/sync-evals.mjs" --check; }

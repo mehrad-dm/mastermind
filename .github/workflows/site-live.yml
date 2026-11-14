@@ -2,8 +2,8 @@ name: site-live
 
 # Nothing in CI had ever looked at the website. The two repositories are siblings, the publish
 # workflow checks out one of them, and every site guarantee ran on one person's laptop. That is
-# how the architecture page shipped with its map blocked by the CSP: correct to a crawler, empty
-# to a person, and no job in the world was loading it.
+# how the architecture page once shipped with an embed its own CSP blocked: correct to a crawler,
+# empty to a person, and no job in the world was loading it.
 on:
   # The site is deployed from its own repository after the package tag is pushed. Running this on
   # that tag would test the previous deployment by design, so releases use verify-release.sh after
@@ -44,16 +44,17 @@ jobs:
             [ "$code" = 200 ] && note "$path -> 200" || bad "$path -> ${code:-no response}"
           done
 
-          # A CSP that blocks an embed fails silently in the browser and nowhere else.
+          # The diagrams are drawn by the page itself, so no frame is allowed at all.
           csp="$(curl -fsSI "$SITE/architecture" | tr -d '\r' | grep -i '^content-security-policy:' || true)"
           case "$csp" in
-            *"frame-src https://www.foglamp.dev"*) note "the CSP allows the canonical embedded-map origin" ;;
+            *"frame-src 'none'"*) note "the CSP allows no frame: the architecture page draws its own diagrams" ;;
             '') bad "no CSP header on /architecture" ;;
-            *) bad "the CSP does not allow https://www.foglamp.dev, so the embedded map is blocked" ;;
+            *) bad "the CSP on /architecture does not say frame-src 'none', so the page could still embed a frame" ;;
           esac
 
+          headers="$(curl -fsSI "$SITE/" | tr -d '\r')"
           for h in strict-transport-security x-content-type-options referrer-policy; do
-            curl -fsSI "$SITE/" | tr -d '\r' | grep -qi "^$h:" && note "$h present" || bad "$h missing"
+            grep -qi "^$h:" <<<"$headers" && note "$h present" || bad "$h missing"
           done
 
           # Every skill and agent we ship must have a page, or the library is lying about itself.

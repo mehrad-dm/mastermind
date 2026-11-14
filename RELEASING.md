@@ -47,6 +47,12 @@ it.
 `install.sh`, `cli/`, `bin/`, `tests/`, `hooks/` or `scripts/`, so you find breakage in seconds
 rather than in a CI queue. `MM_SKIP_TESTS=1 git push` overrides it and says so out loud.
 
+Dependabot opens its pull requests against the same checks. The two `github/codeql-action` steps
+are grouped in `.github/dependabot.yml`, because they refuse to run at different versions and a
+pull request that moves only one of them can never go green. `cross-os` is not a required check,
+so a Dependabot pull request that touches it can be merged while one platform is red: read that
+run before merging, because the release blocks on every platform.
+
 ## Tags are immutable once pushed
 
 `.github/tag-ruleset.json` stops any `v*` tag being moved or deleted, by anyone, with no bypass.
@@ -73,8 +79,11 @@ immutability. If the Release step ever fails, npm has the version and GitHub doe
 command fixes:
 
 ```
-gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <(sed -n '/^## \[X.Y.Z\]/,/^## \[/p' CHANGELOG.md) --verify-tag --latest
+gh release create vX.Y.Z --title "vX.Y.Z" --verify-tag --latest --notes-file <(
+  awk -v v="## [X.Y.Z]" 'index($0, v) == 1 { on = 1; next } on && /^## \[/ { exit } on' CHANGELOG.md)
 ```
+
+That prints the body of one section, the same way the publish job extracts it.
 
 The reverse order would leave an immutable Release for a version that never reached npm, which
 nothing can clean up.
@@ -104,27 +113,58 @@ there, it is decoration: rewrite it until it fails, or delete it.
 
 ## Cutting a release
 
-### 1. Write the changelog entry first
+Every step below is in the order it runs. Each one that leaves this machine waits for the one
+before it to be **finished**, not started: a merge that has only been requested, or a rehearsal
+that has only been queued, is not a result. `release.sh` prints the same steps, with this
+release's version and paths filled in, when it finishes.
+
+### 1. Branch both repositories from an up-to-date main line
+
+```
+export MASTERMIND_SITE=../mastermind-site    # the site checkout: every site command below uses it
+git fetch origin && git checkout -b release/v0.34.0 origin/master
+git -C "${MASTERMIND_SITE:?}" fetch origin && git -C "${MASTERMIND_SITE:?}" checkout -b release/v0.34.0 origin/main
+```
+
+`master` takes pull requests only, so the release commit is made on a branch like any other
+change, and `release.sh` refuses to run on `master`. The site gets a branch too: nothing reaches its
+`main`, which deploys, until the rehearsal in step 6 is green, and `release.sh` refuses while the
+site is on `main`. Every site command below is written `${MASTERMIND_SITE:?}`, so in a new terminal
+without the export it stops instead of running in this repository.
+
+### 2. Write the changelog entry, and commit it on the branch
 
 `CHANGELOG.md` needs a `## [X.Y.Z]` section before anything else runs. It is not paperwork: the
 GitHub Release is generated from it, and `release.sh` refuses to proceed without it.
 
 Say what broke and what it cost the user. Never name who found it or how the review was run.
 
-### 2. Move the version
-
 ```
-scripts/release.sh 0.31.0 --dry-run    # show what would change
-scripts/release.sh 0.31.0
+git add CHANGELOG.md && git commit -m "changelog: v0.34.0"
 ```
 
-The version lives in **six** places across **two** repositories: `VERSION`, `cli/package.json`,
-both `.claude-plugin` manifests, the README badge, and the site's `src/site.config.ts`. Every
-release that drifted did so because one was updated by hand and another was not. The script moves
-all six, then greps for anything still carrying the old number and tells you about it.
+It is committed first because `release.sh` refuses a dirty working tree: everything it then
+changes is its own, so its diff can be read and, if it stops, undone exactly.
+
+### 3. Move the version
+
+```
+scripts/release.sh 0.34.0 --dry-run    # show what would change
+scripts/release.sh 0.34.0
+```
+
+The version is written in several files across **two** repositories: `VERSION`,
+`cli/package.json`, `.claude-plugin/plugin.json`, every entry in `.claude-plugin/marketplace.json`,
+`mod/.claude-plugin/plugin.json` (the optional Mod ships at the brain's version), the README badge,
+and the site's `src/site.config.ts`. Every release that drifted did so because one was updated by
+hand and another was not. The script moves all of them, then greps for anything still carrying the
+old number and tells you about it. `scripts/check-versions.mjs` checks the ones in this repository
+on every pull request, so a drift is found before the tag and not by it.
 
 It also moves the version in the site's `public/llms.txt`, regenerates the library pages (which dates
-each New badge) and redraws the link card and banners with the site's committed generator, because
+each New badge), regenerates `architecture.json` and the site's copy of it
+(`scripts/build-architecture.mjs`, the data behind the site's diagrams), and redraws the link card
+and banners with the site's committed generator, because
 those are the details a release kept missing: the link card carried an old version and `llms.txt`
 fell two releases behind before anyone looked. `preflight.sh` fails when `llms.txt` lists a different
 set of skills than the repo, and `verify-release.sh` checks the live `llms.txt` and that the live link
@@ -132,31 +172,115 @@ card is the one on the site's main branch.
 
 It runs `preflight.sh` and stops if anything fails. It does not commit, tag, push or publish.
 
-### 3. Commit, tag, push
+#### When `release.sh` stops part way
+
+A run that stops after its first edit (a failed regeneration, a red preflight, a closed terminal)
+leaves both trees half moved, and says so. Fix the cause, then either finish it:
 
 ```
-# -a stages tracked files only, so a release that ADDS a file would tag without it.
-git add -A && git commit -m "release: v0.31.0"
-git -C ../mastermind-site add -A && git -C ../mastermind-site commit -m "v0.31.0"
-git tag -a v0.31.0 -m "v0.31.0: <the changelog's opening line>"
-git push
-git -C ../mastermind-site push # the site goes FIRST: the tag gate checks out the pushed site
-git push origin v0.31.0        # this is what publishes, and it is the irreversible step
+scripts/release.sh 0.34.0 --resume
 ```
 
-**The site is pushed before the tag, and that order is load-bearing.** `publish.yml` checks out the
-published website and refuses to release if its version, skill counts, library pages or build
-disagree with this repo. Tagging first means the gate reads yesterday's site and fails.
+`--resume` accepts a dirty tree only when every changed path is one the script writes (the version
+files and `architecture.json` here, `src/` and `public/` in the site); anything else is someone's
+work, and it refuses. Edits already made are kept, everything else is made again, and preflight runs
+again. Or undo it and start over:
 
-Pushing the tag is the only irreversible step, and now doubly so: the ruleset forbids moving it,
+```
+git checkout -- .
+git -C "${MASTERMIND_SITE:?}" checkout -- .
+git -C "${MASTERMIND_SITE:?}" status --short    # a new library page is untracked: delete it by name
+```
+
+Both are safe only because step 2 left nothing else uncommitted.
+
+### 4. Pull request, and wait until it is merged
+
+```
+# -a stages tracked files only, so a release that ADDS a file would ship without it.
+git add -A && git commit -m "release: v0.34.0"
+git -C "${MASTERMIND_SITE:?}" add -A && git -C "${MASTERMIND_SITE:?}" commit -m "v0.34.0"
+
+git push -u origin release/v0.34.0
+gh pr create --fill
+PR="$(gh pr view --json number --jq .number)"
+gh pr merge "$PR" --squash --auto    # merges once check, suites, analyze and shellcheck pass
+gh pr checks "$PR" --watch &&
+while s="$(gh pr view "$PR" --json state --jq .state)" && [ "$s" = OPEN ]; do sleep 15; done
+gh pr view "$PR" --json state,mergeCommit    # must say MERGED; CLOSED means stop here
+```
+
+`--auto` only asks GitHub to merge later, and the checks going green is not the merge either: the
+merge lands some seconds after them, or never, if a required check is missing. Everything below
+reads `master`, so nothing below runs until the state is `MERGED`.
+
+### 5. Take the merge commit
+
+```
+git fetch origin && git checkout master && git reset --hard origin/master
+test "$(git rev-parse HEAD)" = "$(gh pr view "$PR" --json mergeCommit --jq .mergeCommit.oid)"
+```
+
+The squash merge makes a **new** commit on `master`. The commit on your branch is not the release:
+a tag on it is refused by `pre-push` and by the publish gate, because it is not on `master`.
+`git reset --hard origin/master` is used, not `git pull`, because a local `master` that ever held
+a commit of its own has diverged: `git pull --ff-only` then refuses, leaves you on the old commit,
+and the next `git tag` silently tags the wrong thing. The `test` line fails loudly if the commit you
+are on is not the one GitHub merged.
+
+### 6. Rehearse the release on the merge commit, before the site or the tag moves
+
+```
+git -C "${MASTERMIND_SITE:?}" push -u origin release/v0.34.0    # a branch: the live site does not change
+SHA="$(git rev-parse HEAD)"
+test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$SHA"    # master has not moved since step 5
+gh workflow run pre-tag.yml --ref master -f site-ref=release/v0.34.0
+until RUN="$(gh run list --workflow pre-tag.yml --commit "$SHA" --event workflow_dispatch --limit 1 \
+  --json databaseId --jq '.[0].databaseId')" && [ -n "$RUN" ]; do sleep 5; done
+gh run watch "$RUN" --exit-status
+```
+
+The run is picked by the commit it ran on, never as "the latest run", so it is the rehearsal of the
+commit step 7 tags. If `master` moved after step 5, the `test` line stops: go back to step 5.
+
+`pre-tag.yml` runs everything the publish gate runs, and the whole platform matrix (Linux on two
+Node versions, macOS, Alpine, WSL, the native-Windows refusal, the packed tarball), on the commit
+you are about to tag. It also runs the checks that need a download and so are kept out of the tag
+itself: the gates' own self-tests, the claims check, the architecture data check (it runs a real
+install), and Claude Code's plugin validator.
+
+It reads the site from the branch named by `site-ref`, so it checks the site this release will
+deploy without deploying it. The site deploys on a push to `main` only; with the hosting's default
+Git integration a branch push builds a preview at most.
+
+This step exists because the publish workflow runs **after** the tag is pushed, and a pushed tag
+cannot be moved. Anything that first fails there burns the version: the only way forward is a new
+patch release. The matrix is not a required check on pull requests (it is path-filtered, and a
+required check that never runs blocks the merge forever), so a release commit can reach `master`
+with a platform red. Here is where that is caught while it is still free, and before the live site
+claims a version that does not exist yet.
+
+Do not go on until this run is green. If it fails, fix it through another pull request and start
+again at step 4.
+
+### 7. Deploy the site, then tag the merge commit and push the tag
+
+```
+git -C "${MASTERMIND_SITE:?}" push origin release/v0.34.0:main    # only after step 6 is green
+git tag -a v0.34.0 -m "v0.34.0: <the changelog's opening line>" "$(git rev-parse HEAD)"
+git push origin v0.34.0        # this is what publishes, and it is the irreversible step
+```
+
+The site goes before the tag, and that order is load-bearing: the publish gate checks out the
+site's `main` and refuses if its version, skill counts, library pages or build disagree with this
+repo. A push to `main` that is not a fast-forward is refused, which means the site moved since
+step 1: rebase the site branch, and rehearse again.
+
+Pushing the tag is the only irreversible step, and doubly so: the ruleset forbids moving it,
 so a tag on the wrong commit burns that version. `pre-push` refuses a `v*` tag unless its commit
 is on `origin/master` and that commit's `VERSION` and `CHANGELOG.md` match the tag.
 
-That guard exists because a squash merge leaves a local `master` that has *diverged* rather than
-fast-forwarded whenever you committed to `master` before branching. `git pull --ff-only` then
-refuses, leaves you on the old commit, and the next `git tag` silently tags the wrong thing.
-
-### 4. What CI does with the tag
+### 8. What CI does with the tag
 
 `publish.yml` will not publish unless, on that exact commit:
 
@@ -164,7 +288,13 @@ refuses, leaves you on the old commit, and the next `git tag` silently tags the 
   tags, so without this a version bump that never saw a pull request or a required check could
   be tagged straight to npm
 - the tag matches `VERSION`
-- both suites, integrity, router, links, brain lint and the routing eval all pass
+- both suites (with the release-to-release upgrade test required, not skipped), integrity, the
+  version locations, router, brain lint, prose, comments, shell patterns, instruction clarity and
+  the routing check all pass. Link liveness is deliberately absent: a page on someone else's
+  server going down must not burn a version, so links are checked weekly (`freshness.yml`), on
+  pull requests as a job that cannot fail the run, and by `preflight.sh` before the release commit.
+  Links to files in this repository are different: `check-links.mjs --local` needs no network, and
+  a broken one fails the pull request's `check` job.
 - the library pages match the skill and agent sources, when CI can read the site (see below)
 - the packed tarball contains exactly `README.md`, `bin/mastermind.mjs`, `package.json`
 - **every** platform passes: Linux on Node 18 and 22, macOS, Alpine, WSL, the native-Windows
@@ -200,7 +330,7 @@ It deliberately does not run on the release tag. The site is deployed from its o
 *after* the package tag is pushed, so running it then would test the previous deployment. The
 release checks the site with `verify-release.sh`, after the site push.
 
-### 5. Verify all three surfaces agree
+### 9. Verify all three surfaces agree
 
 ```
 scripts/verify-release.sh 0.31.0
@@ -208,7 +338,7 @@ scripts/verify-release.sh 0.31.0
 
 Checks the tag and every version location, that npm serves that version, that the published
 package is stamped with the commit the tag points at, that the site shows it, that the site's CSP
-allows the origin the embedded map actually resolves to, and that a Release object exists.
+allows no frame on the architecture page (it draws its own diagrams), and that a Release object exists.
 Read-only.
 
 Run it **after** pushing the site, not before: it reads the deployed site, so running it earlier
@@ -229,7 +359,8 @@ release.
 deploys on push to its own repository; the repo does not deploy it.
 
 **`preflight` reports checks it could not run.** That is not the same as passing, and it says so.
-A missing site checkout or an absent Claude CLI both land here. Decide whether shipping without
+A missing site checkout, an absent Claude CLI, a link check with no network and a live eval whose
+account is out of quota all land here. Decide whether shipping without
 that evidence is acceptable, and if it is, set the documented override so the gap is on the record.
 
 **The gate says the site repository could not be read.** `MASTERMIND_SITE_KEY` is missing,

@@ -1,0 +1,43 @@
+{
+  "fires": [
+    "- Perhaps run the tests, if you feel like it.",
+    "- Ideally you could maybe add a test.",
+    "- You may want to read the file first.",
+    "You may want to read the file first.",
+    "Perhaps run the tests.",
+    "- Run the tests if you feel like it.",
+    "- Maybe add a test for the edge case.",
+    "- Ideally, write the test before the fix.",
+    "- You could also run the linter.",
+    "- It could be worth checking the logs.",
+    "- You might want to restart the server.",
+    "- State the result. You could also add a note.",
+    "- You should probably run the tests.",
+    "- Try to keep the diff small.",
+    "- If the tests are slow you could skip them."
+  ],
+  "clean": [
+    "- Run the tests.",
+    "- Report what could not be verified.",
+    "- Name the input that could break it.",
+    "- A check that could pass by failing is not a check.",
+    "- Ask when the request could mean two things.",
+    "This could be slow on a large repository.",
+    "- Read the file before you edit it.",
+    "- \"You could also run qa\" does not earn its line.",
+    "earns its line. \"You could also run qa\" does not.",
+    "- `not checked:` what you could not verify, and why."
+  ],
+  "long": {
+    "fires": [
+      "- Run the full installer suite and the agent surface suite on a fresh clone with a scratch home before you report any result to the person who asked for it today.",
+      "- Report what failed\n  and why it failed, wrapped across lines so that the second line carries the rest of a directive that is far too long for one reader to hold at once.",
+      "You must read every file that the change touches before you edit any of them, because a stale read of a file is how an edit lands on the wrong line in practice."
+    ],
+    "clean": [
+      "- Run the full installer suite and the agent surface suite on a fresh clone with a scratch home before you report to the person who asked.",
+      "- Run the tests. Then report what failed and why it failed, in one short line.",
+      "This paragraph explains at length why the installer behaves as it does on a fresh clone and why that matters for every later step a reader takes, without commanding anything."
+    ]
+  }
+}

@@ -4,23 +4,186 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const ALLOWED_FM_KEYS = new Set(['name', 'description', 'license', 'allowed-tools', 'metadata'])
+const ALLOWED_FM_KEYS = new Set(['name', 'description', 'license', 'compatibility', 'allowed-tools', 'metadata', 'disable-model-invocation'])
 const errors = []
 const fail = (m) => errors.push(m)
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 const readIfPresent = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), 'utf8') : null)
 
 // --- parse the simple `key: value` frontmatter block at the top of a file ----
-const unquote = (v) => { if (!/^"[\s\S]*"$/.test(v)) return v; try { return JSON.parse(v) } catch { return v } }
+const unquote = (v) => {
+  if (/^'[\s\S]*'$/.test(v)) return v.slice(1, -1).replace(/''/g, "'")
+  if (!/^"[\s\S]*"$/.test(v)) return v
+  try { return JSON.parse(v) } catch { return v }
+}
 function frontmatter(text) {
   const m = text.match(/^---\n([\s\S]*?)\n---/)
   if (!m) return null
   const fm = {}
-  for (const line of m[1].split('\n')) {
-    const km = line.match(/^([A-Za-z][\w-]*):\s?(.*)$/)
-    if (km) fm[km[1]] = unquote(km[2])
+  const lines = m[1].split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const km = lines[i].match(/^([A-Za-z][\w-]*):\s?(.*)$/)
+    if (!km) continue
+    let value = km[2]
+    if (/^[>|][+-]?$/.test(value.trim())) {
+      const parts = []
+      while (i + 1 < lines.length && /^(\s+\S|\s*$)/.test(lines[i + 1])) parts.push(lines[++i].trim())
+      value = parts.join(' ').trim()
+    } else if (value.trim()) {
+      // A plain or quoted scalar may continue on indented lines, which YAML folds into one value.
+      // Blank lines inside it fold too, as long as an indented line still follows them.
+      const more = (j) => { while (j < lines.length && !lines[j].trim()) j++; return j < lines.length && /^\s+\S/.test(lines[j]) }
+      while (i + 1 < lines.length && more(i + 1)) { const l = lines[++i].trim(); if (l) value = `${value.trimEnd()} ${l}` }
+    }
+    fm[km[1]] = unquote(value)
   }
   return fm
+}
+
+const KERNEL_MAX_LINES = 200
+const KERNEL_MAX_CHARS = 9500
+// Under 10,000 characters the session hook can carry the kernel whole, and Claude Code warns past 200 lines.
+// Counted in UTF-16 units, as that cap is: an emoji counts two.
+function kernelBudget(text) {
+  const lines = text.replace(/\n$/, '').split('\n').length
+  const chars = text.length
+  if (lines <= KERNEL_MAX_LINES && chars <= KERNEL_MAX_CHARS) return []
+  return [`CLAUDE.md is ${lines} lines and ${chars} characters; the kernel budget is ${KERNEL_MAX_LINES} lines and `
+    + `${KERNEL_MAX_CHARS} characters, and both must hold`]
+}
+
+// A skill with `disable-model-invocation: true` is invisible to the model, so a plain request such as
+// "what can you do?" never reaches it, and in Claude Code `/help` is the built-in command. Measured live:
+// help and signature went from 2/2 to 0/2. Skills that run only on request say so in their description.
+function userOnlyErrors(skills) {
+  return skills.filter(({ fm }) => String(fm['disable-model-invocation'] ?? '').trim() === 'true')
+    .map(({ dir }) => `skills/${dir}/SKILL.md: \`disable-model-invocation: true\` hides it from the model, so a plain request cannot reach it: say "only when the user asks" in its description instead`)
+}
+
+function frontmatterKeyErrors(rel, fm) {
+  return Object.keys(fm).filter((k) => !ALLOWED_FM_KEYS.has(k)).map((k) => `${rel}: unexpected frontmatter key "${k}"`)
+}
+
+// An unquoted value holding ": " is not YAML. Claude Code and Codex read it anyway; a strict parser drops the skill.
+function unquotedColonErrors(rel, text) {
+  const head = (text ?? '').match(/^---\n([\s\S]*?)\n---/)?.[1] ?? ''
+  const out = []
+  for (const line of head.split('\n')) {
+    const kv = line.match(/^([A-Za-z][\w-]*):\s(.*)$/)
+    if (kv && !/^["'>|]/.test(kv[2]) && /:\s|\s#/.test(kv[2]))
+      out.push(`${rel}: \`${kv[1]}\` holds ": " or " #" unquoted, which strict YAML rejects: wrap the value in double quotes`)
+  }
+  return out
+}
+
+const DESC_MAX = 500
+const DESC_TOTAL_MAX = 12000
+// Every description is loaded into every session and competes for a share of the context window.
+// They carry the phrasings users actually say: cut to bare intent, live routing fell from 79% to 60%.
+function descriptionBudget(skills) {
+  const out = []
+  let total = 0
+  for (const { dir, fm } of skills) {
+    if (fm.name !== dir) out.push(`skills/${dir}/SKILL.md: name "${fm.name}" ≠ directory "${dir}"`)
+    const n = [...(fm.description ?? '')].length
+    total += n
+    if (!n) out.push(`skills/${dir}/SKILL.md: missing description`)
+    else if (n > DESC_MAX) out.push(`skills/${dir}/SKILL.md: description is ${n} characters, over the ${DESC_MAX} limit`)
+  }
+  if (total > DESC_TOTAL_MAX)
+    out.push(`skill descriptions total ${total} characters across ${skills.length} skills, over the ${DESC_TOTAL_MAX} budget`)
+  return { errors: out, total }
+}
+
+const distance = (a, b) => {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
+  for (let j = 1; j <= b.length; j++) d[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return d[a.length][b.length]
+}
+
+// Outcome words one or two letters away from "wrong" that an entry legitimately opens with.
+const REAL_WORDS = new Set(['wrote', 'write', 'writ', 'prong', 'wring', 'wrung', 'won', 'song', 'long', 'strong', 'along', 'among', 'wrongs'])
+
+// `mastermind wrong-log` reads only lines of the exact entry shape, so a mistyped miss vanishes from it.
+function journalErrors(text) {
+  const out = []
+  const ENTRY = /^(\d{4})-(\d{2})-(\d{2})\s*·\s*(.*)$/
+  for (const [i, raw] of text.split('\n').entries()) {
+    const line = raw.trim()
+    if (!/^(?:[-*·•>]\s*)?\d{4}-\d{1,2}-\d{1,2}\b/.test(line)) continue
+    const at = `journal.md:${i + 1}`
+    const m = line.match(ENTRY)
+    const shown = line.slice(0, 60)
+    if (!m) { out.push(`${at}: a dated line that is not an entry (want "YYYY-MM-DD · what · outcome"): "${shown}"`); continue }
+    const day = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+    if (day.getUTCFullYear() !== +m[1] || day.getUTCMonth() !== +m[2] - 1 || day.getUTCDate() !== +m[3])
+      out.push(`${at}: "${m[1]}-${m[2]}-${m[3]}" is not a date`)
+    const fields = m[4].split(/\s*·\s*/).filter(Boolean)
+    if (fields.length < 2) out.push(`${at}: an entry needs at least "what · outcome" after the date: "${shown}"`)
+    const marker = (fields[0] ?? '').toLowerCase().replace(/[^a-z]/g, '')
+    const exact = /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(line)
+    const meant = /^wrong\b/i.test(fields[0] ?? '') || (marker.length <= 7 && !REAL_WORDS.has(marker) && distance(marker, 'wrong') <= 2)
+    if (meant && !exact)
+      out.push(`${at}: looks like a miss but is not marked exactly "· wrong ·", so wrong-log cannot see it: "${shown}"`)
+    if (exact && !fields.slice(2).some((f) => /^caught by\s+\S/i.test(f)))
+      out.push(`${at}: a miss with no "caught by <catcher>" field, so nobody can calibrate trust from it: "${shown}"`)
+  }
+  const lines = text.split('\n')
+  const entries = lines.filter((l) => /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(l.trim()))
+  const mentions = lines.filter((l) => l.includes('\u00b7 wrong \u00b7'))
+  if (entries.length !== mentions.length) {
+    const stray = mentions.filter((l) => !entries.includes(l)).map((l) => l.trim().slice(0, 60))
+    out.push(`journal.md: ${mentions.length} lines carry the miss marker but only ${entries.length} `
+      + `are entries: prose inflates every count of the log: "${stray[0]}…"`)
+  }
+  return out
+}
+
+// The listing people install from names every skill and agent. A listing this cannot find is a failure.
+function marketplaceErrors(manifest, known) {
+  const entry = (manifest?.plugins ?? []).find((p) => p.name === 'mastermind')
+  if (!entry) return ['.claude-plugin/marketplace.json: no plugin entry named "mastermind", so nothing lists what the plugin carries']
+  const listed = String(entry.description ?? '').match(/Skills:\s*([^.]+)\./)?.[1]
+  if (!listed)
+    return ['.claude-plugin/marketplace.json: the "mastermind" entry has no "Skills: a, b + agents: c, d." list, '
+      + 'so the listing cannot be checked against what ships']
+  const advertised = new Set(listed.split(/[,+]/).map((t) => t.trim().replace(/^agents:\s*/, '')).filter(Boolean))
+  const out = []
+  for (const token of advertised)
+    if (!known.has(token)) out.push(`.claude-plugin/marketplace.json advertises "${token}", which is not a skill or agent on disk`)
+  const unlisted = [...known].filter((n) => !advertised.has(n))
+  if (unlisted.length)
+    out.push(`.claude-plugin/marketplace.json ships ${unlisted.length} skill(s) or agent(s) it never names: ${unlisted.join(', ')}`)
+  return out
+}
+
+if (process.argv.includes('--self-test')) {
+  const fx = JSON.parse(read('scripts/fixtures/integrity.json'))
+  const run = {
+    kernel: (c) => kernelBudget(c.repeat ? `${c.repeat.line}\n`.repeat(c.repeat.times) : 'z'.repeat(c.chars)),
+    descriptions: (c) => descriptionBudget(c.many
+      ? Array.from({ length: c.many.count }, (_, i) => ({ dir: `s${i}`, fm: { name: `s${i}`, description: 'x'.repeat(c.many.chars) } }))
+      : c.skills.map((s) => ({ dir: s.dir, fm: frontmatter(s.text) ?? {} }))).errors,
+    journal: (c) => journalErrors(c.text),
+    marketplace: (c) => marketplaceErrors(c.manifest, new Set(c.known)),
+    userOnly: (c) => userOnlyErrors(c.skills.map((s) => ({ dir: s.dir, fm: frontmatter(s.text) ?? {} }))),
+    frontmatterKeys: (c) => frontmatterKeyErrors('fixture', frontmatter(c.text) ?? {}),
+    unquotedColon: (c) => unquotedColonErrors('fixture', c.text),
+  }
+  const wrong = []
+  let fired = 0, clean = 0
+  for (const [gate, cases] of Object.entries(fx)) {
+    if (!run[gate]) { wrong.push(`${gate}: fixtures for a rule this script does not have`); continue }
+    if (!cases.fires?.length) wrong.push(`${gate}: no bad input, so nothing shows the rule can fire`)
+    for (const c of cases.fires ?? []) { fired++; if (!run[gate](c).length) wrong.push(`${gate} did not fire: ${c.name}`) }
+    for (const c of cases.clean ?? []) { clean++; const e = run[gate](c); if (e.length) wrong.push(`${gate} fired on clean input: ${c.name}: ${e[0]}`) }
+  }
+  if (wrong.length) { console.error('✖ integrity self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
+  console.log(`✓ integrity self-test: ${fired} bad inputs fire, ${clean} good inputs stay clean.`)
+  process.exit(0)
 }
 
 // --- 1. skills exist & have valid frontmatter --------------------------------
@@ -29,6 +192,7 @@ const skillDirs = readdirSync(join(ROOT, 'skills'), { withFileTypes: true })
   .map((d) => d.name)
   .sort()
 
+const parsedSkills = []
 for (const dir of skillDirs) {
   const rel = `skills/${dir}/SKILL.md`
   if (!existsSync(join(ROOT, rel))) {
@@ -40,13 +204,12 @@ for (const dir of skillDirs) {
     fail(`${rel}: missing/malformed frontmatter`)
     continue
   }
-  for (const k of Object.keys(fm)) {
-    if (!ALLOWED_FM_KEYS.has(k)) fail(`${rel}: unexpected frontmatter key "${k}"`)
-  }
-  if (fm.name !== dir) fail(`${rel}: name "${fm.name}" ≠ directory "${dir}"`)
-  if (!fm.description) fail(`${rel}: missing description`)
-  else if (fm.description.length > 1024) fail(`${rel}: description > 1024 chars`)
+  frontmatterKeyErrors(rel, fm).forEach(fail)
+  parsedSkills.push({ dir, fm })
 }
+const descriptions = descriptionBudget(parsedSkills)
+descriptions.errors.forEach(fail)
+userOnlyErrors(parsedSkills).forEach(fail)
 
 const skillsReadme = readIfPresent('skills/README.md') ?? ''
 const listedSkills = new Set(
@@ -239,7 +402,7 @@ const aboutPairs = [
   ...readdirSync(join(ROOT, 'agents'))
     .filter((f) => f.endsWith('.md'))
     .map((f) => f.replace(/\.md$/, ''))
-    .map((n) => ({ kind: 'agent', name: n, about: `agents/about/${n}.md`, source: `agents/${n}.md` })),
+    .map((n) => ({ kind: 'agent', name: n, about: `library/agents/${n}.md`, source: `agents/${n}.md` })),
 ]
 
 const anyAbout = aboutPairs.some((a) => existsSync(join(ROOT, a.about)))
@@ -287,33 +450,10 @@ for (const { kind, name, about, source } of (anyAbout ? aboutPairs : [])) {
 }
 
 const journal = readIfPresent('journal.md')
-if (journal !== null) {
-  const lines = journal.split('\n')
-  const entries = lines.filter((l) => /^\d{4}-\d{2}-\d{2}\s*·\s*wrong\s*·/.test(l.trim()))
-  const mentions = lines.filter((l) => l.includes('\u00b7 wrong \u00b7'))
-  if (entries.length !== mentions.length) {
-    const stray = mentions.filter((l) => !entries.includes(l)).map((l) => l.trim().slice(0, 60))
-    fail(`journal.md: ${mentions.length} lines carry the miss marker but only ${entries.length} `
-      + `are entries: prose inflates every count of the log: "${stray[0]}…"`)
-  }
-}
+if (journal !== null) journalErrors(journal).forEach(fail)
 
-for (const manifest of ['.claude-plugin/marketplace.json', '.claude-plugin/plugin.json']) {
-  const file = join(ROOT, manifest)
-  if (!existsSync(file)) continue
-  const blob = JSON.stringify(JSON.parse(readFileSync(file, 'utf8')))
-  const listed = blob.match(/(?:Skills|skills & agents):([^.]+)/)?.[1]
-  if (!listed) continue
-  const advertised = new Set(listed.split(/[,+]/).map((t) => t.trim().replace(/^agents:\s*/, '')))
-  for (const token of advertised)
-    if (/^[a-z][a-z-]{2,}$/.test(token) && !realNames.has(token))
-      fail(`${manifest} advertises "${token}", which is not a skill or agent on disk`)
-  // Only the other direction was checked, so a new skill shipped unadvertised: the
-  // marketplace listing people install from undercounted what the plugin actually carries.
-  const unlisted = skillDirs.filter((n) => !advertised.has(n))
-  if (unlisted.length)
-    fail(`${manifest} ships ${unlisted.length} skill(s) it never names: ${unlisted.join(', ')}`)
-}
+const marketplace = readIfPresent('.claude-plugin/marketplace.json')
+if (marketplace !== null) marketplaceErrors(JSON.parse(marketplace), realNames).forEach(fail)
 
 // A script that hardcodes the site as a sibling passes on a developer's machine and fails
 // wherever the site is checked out elsewhere, which is every CI run. sync-evals did exactly
@@ -338,21 +478,12 @@ for (const f of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json'
   }
 }
 
-// An unquoted value holding ": " is not YAML. Claude Code and Codex read it anyway; a strict parser drops the skill.
-for (const rel of [...skillDirs.map((d) => `skills/${d}/SKILL.md`), ...readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`)]) {
-  const head = (readIfPresent(rel) ?? '').match(/^---\n([\s\S]*?)\n---/)?.[1] ?? ''
-  for (const line of head.split('\n')) {
-    const kv = line.match(/^([A-Za-z][\w-]*):\s(.*)$/)
-    if (kv && !/^["'>|]/.test(kv[2]) && /:\s|\s#/.test(kv[2]))
-      fail(`${rel}: \`${kv[1]}\` holds ": " or " #" unquoted, which strict YAML rejects: wrap the value in double quotes`)
-  }
-}
+for (const rel of [...skillDirs.map((d) => `skills/${d}/SKILL.md`), ...readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`)])
+  unquotedColonErrors(rel, readIfPresent(rel)).forEach(fail)
 
-// Codex stops reading instructions at 32 KiB, and a global plus a project copy of the kernel both count.
-const KERNEL_MAX = 16 * 1024
-const kernelBytes = Buffer.byteLength(readIfPresent('CLAUDE.md') ?? '')
-if (kernelBytes > KERNEL_MAX)
-  fail(`CLAUDE.md is ${kernelBytes} bytes, over ${KERNEL_MAX}: two copies would pass Codex's 32 KiB instruction limit and be cut off`)
+const kernel = readIfPresent('CLAUDE.md')
+if (kernel === null) fail('CLAUDE.md is missing: there is no kernel to load')
+else kernelBudget(kernel).forEach(fail)
 
 // --- report ------------------------------------------------------------------
 if (errors.length) {
@@ -361,4 +492,5 @@ if (errors.length) {
   console.error('')
   process.exit(1)
 }
-console.log(`✓ MasterMind integrity: ${skillDirs.length} skills, indexes and references consistent.`)
+console.log(`✓ MasterMind integrity: ${skillDirs.length} skills, indexes and references consistent `
+  + `(kernel ${kernel.length} characters, descriptions ${descriptions.total}).`)

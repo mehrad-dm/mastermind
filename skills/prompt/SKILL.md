@@ -1,6 +1,6 @@
 ---
 name: prompt
-description: "Use ONLY when the user explicitly asks to improve a prompt aimed at an AI: \"improve my prompt\", \"fix this prompt\", \"how should I ask for this\", \"make this prompt better\". A prompt pasted to be answered or executed is a task, not a rewrite request: do that task instead. About prompts for an AI, not about optimizing code."
+description: "Use ONLY when the user explicitly asks to improve or write a prompt aimed at an AI: \"improve my prompt\", \"fix this prompt\", \"how should I ask for this\", \"make this prompt better\". A prompt pasted to be answered or run is a task, not a rewrite request: do the task. Not for optimizing code."
 ---
 
 # MasterMind: Prompt
@@ -33,8 +33,8 @@ unasked destroys their text.
 The output is a **proposal**, never an action:
 
 1. **Never execute the rewritten prompt**: not in the same turn, not "to show it works". Hand it back.
-2. **Never drop a requirement.** Every constraint in the original survives, or you say out loud that you
-   cut it and why. Silent removal is the failure mode that makes this skill dangerous.
+2. **Never drop a requirement.** Every constraint in the original survives, or "what changed" names
+   the cut and why. Silent removal is the failure mode that makes this skill dangerous.
 3. **Never add a requirement they didn't imply.** Additions get named in "what changed": a specific the
    user never chose (a framework, a length, a tone) is a guess wearing their voice.
 4. **Never rewrite a prompt containing credentials, private data, or client names** into a form that
@@ -65,23 +65,24 @@ requirements the user actually implied. You sharpen their intent; it stays their
 
 ## Keyword effects: what words actually do to a modern model
 
-Prompts written for 2023-era models are now actively harmful, because current models follow
-instructions far more literally. What to strip, and what to reach for instead:
+Current models follow instructions closely and literally, so a prompt tuned for a weaker model can
+now over-apply. What to change, and what to reach for instead:
 
 | Pattern | Effect today | Instead |
 | --- | --- | --- |
 | `CRITICAL:` / `MUST` / `NEVER` / ALL-CAPS, several per prompt | Emphasis inflation: when everything is critical, nothing is. Causes over-triggering and rigid behavior in gray areas | Plain imperative + the reason. Reserve emphasis for the one genuinely load-bearing constraint |
 | "think step by step", `<scratchpad>` instructions | Redundant on reasoning models, which already think; can add latency for nothing | Control depth with the tool's thinking/effort setting, not prose |
-| "double-check your work", "verify before answering" | Current models self-verify; instructing it causes *over*-verification and padding. This inverts the old best practice | Delete. State the acceptance test instead |
-| "be thorough", "don't be lazy", "don't stop early" | Written against models that quit early; now just noise | Delete |
+| "double-check your work", "verify before answering" | Too vague to act on: it names no check | Keep the intent and make it concrete: name the acceptance test the answer must pass |
+| "be thorough", "don't be lazy" | Generic virtue with no observable result | Replace with what finished looks like |
+| "don't stop early", "finish the whole task" | Still useful on long agentic tasks, where a model can stop with work left | Keep, and say which obstacles to work through and which to report |
 | "try to", "if possible", "ideally" on a real requirement | Read literally as permission to skip it | State it as a requirement |
 | "don't hallucinate", "only use the provided context" | Still useful when grounding genuinely matters | Keep: but pair it with what to do when the answer isn't there ("say you don't know") |
 | Politeness padding, repeated context, restated rules | Consumes budget and makes the model reconcile wordings | Say it once, in the right place |
 
 **Placement matters as much as wording.** Long documents go **first**, the question **last**: a model
-attends best to the start and end, and a question buried above 50k tokens of context gets lost. If the
-same preamble is reused across calls, keeping it stable and at the front is also what makes prompt
-caching hit (`core/agent-loop.md`).
+attends best to the start and end, and a question buried above a long document gets lost. If the same
+preamble is reused across calls, keeping it stable and at the front is also what lets a provider's
+prompt cache hit.
 
 ## Token efficiency (efficient ≠ lossy)
 
@@ -99,5 +100,5 @@ Return, in this order:
    (e.g. "added output format; cut 3 lines of backstory; made 'fast' concrete = <2.5s LCP").
 3. **Open questions**: anything still genuinely ambiguous the user should decide.
 
-Flag any change of scope out loud. If the request implies a product/business decision, surface it rather
-than guessing (`product-sense.md`).
+Name any change of scope in "what changed". If the request implies a product/business decision, surface
+it rather than guessing (`product-sense.md`).

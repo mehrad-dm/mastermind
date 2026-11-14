@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.33.2-7c6bff" alt="version 0.33.2" />
+  <img src="https://img.shields.io/badge/version-0.34.0-7c6bff" alt="version 0.34.0" />
   <img src="https://img.shields.io/badge/status-experimental-e0a800" alt="status: experimental" />
   <img src="https://img.shields.io/badge/license-MIT-555" alt="license MIT" />
 </p>
 
-<p align="center"><sub><b>⚗️ Experimental (v0.33.2).</b> Under active development: not yet stable, but usable. Its
+<p align="center"><sub><b>⚗️ Experimental (v0.34.0).</b> Under active development: not yet stable, but usable. Its
 effect is measured in the open (see <a href="evals/RESULTS.md">evals/RESULTS.md</a>); APIs and defaults may change.</sub></p>
 
 > **Make your AI coding assistant trustworthy.** MasterMind is plain Markdown that gives **Claude Code,
@@ -27,7 +27,7 @@ normally** ("build me X", "why is this slow?", "review this") and MasterMind app
 automatically. It **improves itself** over time, and it supports [**Claude Code, Cursor and Codex**](#where-its-tested),
 nothing else.
 
-> **🗺️ New here?** Explore the <a href="https://www.foglamp.dev/scan/mastermind-mkfscq" target="_blank" rel="noopener"><b>live interactive map</b></a>.
+> **🗺️ New here?** Explore the <a href="https://mastermind.mehrad.me/architecture" target="_blank" rel="noopener"><b>live interactive map</b></a>.
 
 ## Why it exists
 
@@ -78,7 +78,7 @@ lab/                          # your private, gitignored space for sensitive pro
 
 ## Install
 
-**First, you need an AI coding tool**: MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/claude-code), [Cursor](https://cursor.com), or [Codex](https://learn.chatgpt.com/docs). Then, **from inside the project you want it in**:
+**First, you need an AI coding tool**: MasterMind is the brain that plugs into one. If you don't have one yet, install [Claude Code](https://claude.com/product/claude-code), [Cursor](https://cursor.com), or [Codex](https://learn.chatgpt.com/docs). Then, **from inside the project you want it in**:
 
 ```bash
 # Per-project (default): wires MasterMind into THIS project, for every AI tool you have:
@@ -91,21 +91,28 @@ npx mastermind-brain --global
 
 Every npm release is a **versioned, immutable, provenance-signed artifact**, and a fresh install pins
 the brain to the matching git tag: you always know exactly what ran, and you can read all of it first
-(`npm pack mastermind-brain`: the whole CLI is ~11 KB packed, 32 KB unpacked, on top of this repo).
+(`npm pack mastermind-brain`: the whole CLI is about 16 KB packed, 46 KB unpacked, on top of this repo).
 
 
 MasterMind installs **per project by default**, and **each project gets its own copy of the brain** in
-`<project>/.mastermind/`: its own field, lessons and stack, **ready to commit** so your team shares it (the installer never commits for you: review the diff, then `git add .mastermind .claude .cursor .agents AGENTS.md`). It wires
-the current repo's `.claude/` (Claude Code) plus `AGENTS.md` / `.cursor/rules` for the
+`<project>/.mastermind/`: its own field, lessons and stack, **ready to commit** so your team shares it (the installer never commits for you: review the diff, then `git add .mastermind .claude .cursor .agents .codex AGENTS.md`). It wires
+the current repo's `.claude/` (Claude Code) plus `AGENTS.md`, `.codex/hooks.json` and `.cursor/` for the
 tools you have: active only there. Prefer one shared brain for every project instead? add `--shared`.
 Want it everywhere at once? `--global`. You install **from** `~/.mastermind`; that clone is the source.
 
-It's **safe and self-healing**: re-run anytime: it **backs up** a real `CLAUDE.md`, **appends** (never
-overwrites) an existing `AGENTS.md`, refreshes the engine while **keeping your project's own lessons**,
-and repairs any wiring. It makes exactly one edit to your settings: it merges the MasterMind
-`SessionStart` hook entry into `.claude/settings.json`, leaving every other key exactly as it was (and
-leaving the file alone entirely if it cannot be parsed). `uninstall` removes just that entry. Your
-sessions and memory are never touched or published.
+It's **safe and self-healing**: re-run anytime: it never touches a `CLAUDE.md` at your project root
+(one exception: when your `AGENTS.md` is a link to it, the kernel block goes in that file, so Claude
+Code and Codex each load it once, and `uninstall` puts the file back byte for byte), never overwrites an existing `.claude/CLAUDE.md` or `AGENTS.md` (the first gets one import line
+appended; the second gets the kernel in a marked block after your own content, because Codex has no
+import syntax, and `uninstall` takes the block out and leaves your bytes as they were), backs up
+a symlink of yours before replacing it, refreshes the engine while **keeping your project's own
+lessons**, and repairs any wiring. It makes exactly one edit to your settings: it merges the MasterMind
+`SessionStart` hook entry into `.claude/settings.json`, leaving every other key and value as it was
+(written back in your own indentation; it is left alone entirely if it cannot be parsed). `uninstall`
+removes just that entry and, when you have not edited the file since, writes your original bytes
+back. `.cursor/hooks.json` and `.codex/hooks.json` are merged the same way. A symlinked target it
+will not write through, or a marked block it cannot prove is its own, is reported and the run exits
+non-zero. Your sessions and memory are never touched or published.
 
 ```bash
 npx mastermind-brain update      # refresh the brain + repair links
@@ -115,6 +122,11 @@ npx mastermind-brain uninstall   # remove from this project (or --global)
 
 > **Restart your tool after installing**: until you do, the brain isn't loaded. Then confirm it's live:
 > ask *"are you running as MasterMind?"*
+
+> **Codex asks whether you trust the project: say yes.** Codex 0.150 and later ignores a project's
+> `AGENTS.md` until the project is trusted, and that file is how MasterMind reaches it. Then run
+> `/hooks` once and approve the MasterMind entry: Codex skips a new or changed hook until you do.
+> The installer never edits `~/.codex/config.toml` or any trust setting for you.
 
 > **Already installed globally (pre-0.20)?** Your setup keeps working, nothing breaks. To switch to
 > per-project: `npx mastermind-brain uninstall --global`, then run `npx mastermind-brain`
@@ -130,13 +142,36 @@ npx mastermind-brain uninstall   # remove from this project (or --global)
 This registers the skills and agents as native commands (user-global). They read the brain from
 **`~/.mastermind`**, so run `npx mastermind-brain` too: the plugin adds the command surface, the installer wires the brain.
 
+### Optional: the Claude Code Mod
+
+A second, opt-in plugin for Claude Code 2.1.287 or later. The brain above is text; the Mod is
+code that Claude Code loads into your session, so it is never installed for you.
+
+- **Asks before what cannot be undone.** A push, a publish, a hard reset or a recursive delete gets
+  one question first, even where a permission rule would wave it through. It only ever tightens:
+  it never approves a tool call.
+- **Shows the brain's state in one line**: the field pack, the logged misses, the next spec step,
+  and a hint when the context is full enough to hand off.
+- **Tells you, not the model, when an answer overclaims**: it says done with no verdict, or reports
+  a check that never ran.
+- **Answers without spending a model turn**: `/mm-status`, `/mm-wrong-log`, `/mm-next`, `/mm-check`.
+
+```text
+/plugin marketplace add mehrad-dm/mastermind
+/plugin install mastermind-mod@mastermind
+```
+
+It is not sandboxed, and its hold reads command text, so it is a safety net and not a firewall.
+What it can and cannot do is listed in [`mod/README.md`](mod/README.md) and
+[SECURITY.md](SECURITY.md#the-optional-mod).
+
 ### Per tool (what a per-project install wires)
 
 | Tool | How MasterMind loads | Wired by |
 | --- | --- | --- |
 | **Claude Code** | project `.claude/`: native `skills/`, `agents/`, and the kernel `CLAUDE.md` | `npx mastermind-brain` |
-| **Cursor / Composer** | `.cursor/rules/mastermind.mdc`: `alwaysApply: true`, **kernel inlined**; plus `mastermind-field.mdc` carrying the active field's `stack-defaults` + `lessons` (generated; re-run `npx mastermind-brain` to refresh) | `npx mastermind-brain` |
-| **Codex** | project `AGENTS.md` → the brain, plus every skill linked into `.agents/skills/`, where Codex discovers skills and can pick one by its description or by `$name`. With `--global`, also `~/.codex/AGENTS.md` and `~/.agents/skills/`, but Codex may not merge global instructions into a project that has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705)), so per-project is the reliable path. Codex 0.150 and later ignores a project's `AGENTS.md` until you trust the project, so say yes when it asks | `npx mastermind-brain` |
+| **Cursor / Composer** | `.cursor/rules/mastermind.mdc`: `alwaysApply: true`, **kernel inlined**; plus `mastermind-field.mdc` carrying the active field's `stack-defaults` + `lessons`; plus the four agents as subagents in `.cursor/agents/`, with `code-reviewer` and `tech-scout` read-only (all generated; re-run `npx mastermind-brain` to refresh, or `mastermind sync` after a field pack changes). With `--global`, only the subagents, in `~/.cursor/agents/`, when Cursor is detected (or named: `--global cursor`) | `npx mastermind-brain` |
+| **Codex** | project `AGENTS.md` → the brain (an `AGENTS.md` of your own gets the kernel in a marked block instead; `check` warns if the file passes Codex's 32 KiB limit), plus every skill linked into `.agents/skills/`, where Codex discovers skills and can pick one by its description or by `$name`, plus a `SessionStart` entry in `.codex/hooks.json` that tells the model to re-read `AGENTS.md` after a compaction; it runs only in a trusted project, after you approve it with `/hooks`. With `--global`, also `~/.codex/AGENTS.md`, `~/.codex/hooks.json` and `~/.agents/skills/`, but Codex may not merge global instructions into a project that has its own `AGENTS.md` ([openai/codex#27705](https://github.com/openai/codex/issues/27705)), so per-project is the reliable path. Codex 0.150 and later ignores a project's `AGENTS.md` until you trust the project, so say yes when it asks | `npx mastermind-brain` |
 
 Those three are what MasterMind supports. The brain is plain Markdown with no tool-specific mechanisms
 inside, so another tool that reads an instruction file may well load it: but we don't wire it, test it,
@@ -157,7 +192,7 @@ builds one from your actual stack on the first real task.
 | The brain lives in | `<project>/.mastermind/`: its own copy | `~/.mastermind`: one copy for all |
 | Field, `lessons.md`, `stack-defaults` | **owned by this project** | shared by every project |
 | Updating | re-run `npx mastermind-brain` here, when you choose | `npx mastermind-brain update` refreshes the shared clone for every project at once |
-| Committed to the repo? | commit `.mastermind/` and teammates get the same brain | only project state: `brief.md`, `prefs.md`, a `.gitignore`, and the `AGENTS.md` pointer |
+| Committed to the repo? | commit `.mastermind/` and teammates get the same brain | only `.mastermind/brief.md` and `prefs.md`. The wiring (links, the `AGENTS.md` pointer, the hook command) holds absolute paths into this machine's `~/.mastermind`, so each teammate runs the installer themselves |
 
 ```bash
 cd my-project && npx mastermind-brain                 # isolated: its own brain
@@ -184,11 +219,14 @@ The installer **compiles** that into each app's own tool-native anchor: a nested
 `AGENTS.md` and a glob-scoped `.cursor/rules`: so **the tool loads the right context by file path,
 not the model guessing.** Web's lessons never reach api; each app pulls only its own field +
 context, so it's isolated *and* uses fewer tokens. A missing context is created from a template using
-the default field; edit its `field.md` to point at another field once you've bootstrapped one.
+the default field; edit its `field.md` to point at another field once you've bootstrapped one. Until
+the brain has a field pack, the routes wait: say `init` in your AI tool, and it builds the pack and
+compiles them with `mastermind sync`, so nothing needs re-running.
 A project with no `routes.map` is single-field: nothing changes, the common case stays simple.
 
-> **Cursor is per-project only.** `--global` covers `~/.claude` (and `~/.codex` for Codex); Cursor has no
-> equivalent user-level rules directory we can write, so run `npx mastermind-brain` inside each repo you
+> **Cursor's kernel is per-project only.** `--global` covers `~/.claude` (and `~/.codex` for Codex); Cursor has no
+> equivalent user-level rules directory we can write (`--global cursor` wires the subagents into
+> `~/.cursor/agents/` and nothing else), so run `npx mastermind-brain` inside each repo you
 > want it in. Without that, Cursor has no MasterMind at all: and you end up typing
 > *"use MasterMind"* on every prompt to do by hand what the rule should do for you.
 
@@ -204,13 +242,14 @@ matching skill. (Power users *can* type `/name` as a shortcut, but nobody has to
 | finish something | proves it works end-to-end; **offers** tests/TDD rather than forcing them (`qa`) |
 | face an unknown | learns the real stack + challenges its own assumptions against the source (`learn`, `prototype`) |
 | give a fuzzy ask | turns it into a crisp spec: problem, scope, terms, acceptance (`interview`) |
-| want code to fit your team | captures the codebase's real style → name-free rules it follows (`signature`) |
+| want code to fit your team | when you ask for `signature`, captures the codebase's real style → name-free rules it follows |
 | want code in a style you admire | writes in the documented public style of an engineer you name, e.g. Dan Abramov, Kent C. Dodds (`persona`) |
 | did not follow the last answer | re-pitches it in plain words or as a picture, and learns where it wrote badly (`clarify`) |
 | feel the design is hurting | surveys the area, ranks what is costing you, you pick one to fix (`deepen`) |
 
-Also auto-applied (and callable by name): `explain` (AI-friendly docs for an internal package), `quarantine`
-(a private, gitignored space for sensitive data), `handoff`, and `levelup` (teach MasterMind something durable).
+Also auto-applied (and callable by name): `explain` (AI-friendly docs for an internal package) and `quarantine`
+(a private, gitignored space for sensitive data). Six run only when you ask for them, in your own words: `handoff`,
+`signature`, `levelup` (teach MasterMind something durable), `report`, `lint` and `help`.
 Specialist **agents**: `architect`, `code-reviewer`, `refactorer`, `tech-scout`: handle deep,
 isolated-context work. Full index: [`skills/README.md`](skills/README.md).
 
@@ -240,9 +279,9 @@ of it. Details: [`engineering/core/spec-driven.md`](engineering/core/spec-driven
 
 ## Checking on it
 
-You never need these. MasterMind calls them itself, which is the point: in Cursor and Codex,
-which have no native skill mechanism, it can ask for the one skill it needs instead of pasting the
-whole library into context. They are read-only, so nothing installs or changes when you run them.
+You never need these. MasterMind calls them itself, which is the point: when a tool has not
+listed a skill it needs, it can ask for that one skill instead of pasting the whole library into
+context. They are read-only, so nothing installs or changes when you run them.
 
 ```bash
 mastermind skills                      # the routing table: every skill, one line each
@@ -287,13 +326,12 @@ fail loudly, not to make one impossible.
 ## Where it's tested
 
 MasterMind is plain Markdown with no runtime. It is developed and measured on **Claude Code**: most of
-the numbers in [`evals/RESULTS.md`](evals/RESULTS.md) come from there. **Codex is now measured too**, with
-a treatment-and-control run that asks a live session which skill it would use: the latest is 3 of 3 with
-the brain against 1 of 3 without it, and the control is noisy, so read it as a trend. **Cursor** is
-exercised live, confirming it loads the brain, but its routing is not yet measured. None of the three has
-its own mechanisms broken by it.
+the numbers in [`evals/RESULTS.md`](evals/RESULTS.md) come from there. **Codex and Cursor are measured too**, with
+a treatment-and-control run that asks a live session which skill it would use: the latest is 10 of 10
+with the brain against 0 of 10 without it in Codex, and 6 of 6 against 3 of 6 in Cursor (two reps
+each, so read it as a trend). None of the three has its own mechanisms broken by it.
 
-The installer wires those two plus `AGENTS.md`. Everywhere else the brain still loads. It's just files: but
+The installer wires those three. Everywhere else the brain still loads. It's just files: but
 whether it changes that tool's output is not something we've measured, so it isn't something we claim. If you
 try it and can measure a difference either way, that's the most useful contribution you could make.
 

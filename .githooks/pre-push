@@ -26,11 +26,16 @@ REFS="$(cat)"
 # >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
 # A pushed release tag can never be moved: the ruleset forbids it. Everything the release gate
 # would check has to be true BEFORE the push, and above the bypass, which is meant for the
-# secret scan and must not wave a tag through.
-while read -r lref lsha _rref _rsha; do
-  case "$lref" in refs/tags/v[0-9]*) ;; *) continue ;; esac
-  TAG="${lref#refs/tags/}"; WANT="${TAG#v}"
+# secret scan and must not wave a tag through. Keyed on the remote ref: that is the name the
+# tag gets, whatever local ref it is pushed from.
+while read -r _lref lsha rref _rsha; do
+  case "$rref" in refs/tags/v*) ;; *) continue ;; esac
+  [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
+  TAG="${rref#refs/tags/}"; WANT="${TAG#v}"
   tag_refuse() { printf '%s\n' "${RED}✖ BLOCKED: $1${NC}"; printf '%s\n' "  A pushed tag cannot be moved, so the version would be burnt."; exit 1; }
+  # The ruleset and the publish workflow both match v*, so every such tag is a release tag.
+  [[ $WANT =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]] ||
+    tag_refuse "$TAG is not v<major>.<minor>.<patch>, and every v* tag is published as a release."
 
   TARGET="$(git rev-parse -q --verify "$lsha^{commit}" 2>/dev/null)" ||
     tag_refuse "$TAG does not resolve to a commit."
@@ -60,9 +65,10 @@ $REFS
 REFLIST
 # <<< repo-only ------------------------------------------------------------------
 
+SCAN=1
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
-  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: push guard BYPASSED.${NC}"
-  exit 0
+  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: secret, denylist and lab/ checks BYPASSED.${NC}"
+  SCAN=0
 fi
 
 TERMS="$({ mm_secret_patterns
@@ -73,6 +79,7 @@ TERMS="$({ mm_secret_patterns
 FAIL=0
 # <local ref> <local sha> <remote ref> <remote sha>
 while read -r _lref lsha _rref rsha; do
+  [ "$SCAN" = 1 ] || break
   [ "$lsha" = "0000000000000000000000000000000000000000" ] && continue
 
   if [ "$rsha" = "0000000000000000000000000000000000000000" ]; then
@@ -106,7 +113,7 @@ if [ "$FAIL" -ne 0 ]; then
   exit 1
 fi
 
-printf '%s\n' "${GRN}✓ push guard: clean${NC}"
+[ "$SCAN" = 1 ] && printf '%s\n' "${GRN}✓ push guard: clean${NC}"
 
 # >>> repo-only: not shipped in skills/quarantine/assets/pre-push ---------------
 
@@ -114,16 +121,20 @@ printf '%s\n' "${GRN}✓ push guard: clean${NC}"
 if command -v node >/dev/null 2>&1 && [ -f "$REPO_ROOT/scripts/check-prose.mjs" ]; then
   node "$REPO_ROOT/scripts/check-prose.mjs" >/dev/null 2>&1
   case $? in
-    0|2) printf '%s\n' "${GRN}✓ no em dashes${NC}" ;;
+    0) printf '%s\n' "${GRN}✓ no em dashes${NC}" ;;
+    2) printf '%s\n' "${YEL}⚠ no em dashes in this repo; the site is not checked out, so it was NOT checked${NC}" ;;
     *)   printf '%s\n' "${RED}✖ BLOCKED: em dashes would be pushed${NC}"
          node "$REPO_ROOT/scripts/check-prose.mjs" 2>&1 | sed 's/^/    /' | head -12
          exit 1 ;;
   esac
-  if ! node "$REPO_ROOT/scripts/check-comments.mjs" >/dev/null 2>&1; then
-    printf '%s\n' "${RED}✖ BLOCKED: a comment block is over the house limit${NC}"
-    node "$REPO_ROOT/scripts/check-comments.mjs" 2>&1 | sed 's/^/    /' | head -10
-    exit 1
-  fi
+  node "$REPO_ROOT/scripts/check-comments.mjs" >/dev/null 2>&1; _cc=$?
+  case "$_cc" in
+    0) ;;
+    2) printf '%s\n' "${YEL}⚠ comments in this repo are within the limit; the site is not checked out, so it was NOT checked${NC}" ;;
+    *) printf '%s\n' "${RED}✖ BLOCKED: a comment block is over the house limit${NC}"
+       node "$REPO_ROOT/scripts/check-comments.mjs" 2>&1 | sed 's/^/    /' | head -10
+       exit 1 ;;
+  esac
   if ! node "$REPO_ROOT/scripts/check-shell-patterns.mjs" >/dev/null 2>&1; then
     printf '%s\n' "${RED}✖ BLOCKED: a pipeline reader exits early under pipefail${NC}"
     node "$REPO_ROOT/scripts/check-shell-patterns.mjs" 2>&1 | sed 's/^/    /' | head -10

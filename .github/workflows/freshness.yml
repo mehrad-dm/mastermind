@@ -1,15 +1,18 @@
 name: freshness
 
-# Weekly check that MasterMind's curated resources still resolve and the curriculum
-# hasn't gone stale (a nudge to run `levelup refresh`). Advisory by design: it runs on
-# a schedule and via manual dispatch, NOT on every push: link liveness is flaky and
-# must never block a commit. A red run means a curriculum link 404'd or DNS-failed.
-# See scripts/check-links.mjs.
+# Weekly check that MasterMind's curated resources still resolve, have not moved, and that
+# the curriculum hasn't gone stale (a nudge to run `levelup refresh`). Link liveness is
+# flaky and belongs to other people's servers, so it never blocks a merge or a release:
+# it runs here on a schedule, and on pull requests as a job that cannot fail the run.
+# A red run means a cited page died or moved. See scripts/check-links.mjs.
 
 on:
   schedule:
     - cron: '0 9 * * 1' # Mondays, 09:00 UTC
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   links:

@@ -31,11 +31,6 @@ engineering/fields/*/*-coding-patterns/
 # that collided with a future upstream one made `git pull` abort and froze the brain.
 /local/
 
-# Foglamp scan: commit .foglamp/scan.json (public architecture data, no secrets);
-# NEVER commit the lock file (holds the secret editToken). The token lives as the
-# GitHub Actions secret FOGLAMP_EDIT_TOKEN, used by .github/workflows/foglamp.yml.
-/.foglamp/scan.lock.json
-
 # Python bytecode from the vendored ui-ux-pro-max search engine
 __pycache__/
 *.pyc
@@ -49,3 +44,7 @@ evals/runs/*/raw-work/
 
 # Local Remotion video workspace and generated media.
 /video/
+
+# written by Claude Code when the mod folder is loaded interactively
+mod/tsconfig.json
+mod/.claude-plugin/types/

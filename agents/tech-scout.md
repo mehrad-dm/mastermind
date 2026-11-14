@@ -1,6 +1,6 @@
 ---
 name: tech-scout
-description: "Makes a technical ADOPTION decision, \"should we use library/tool/pattern X (vs Y, vs build it)?\": evaluated against MasterMind's reuse-with-judgment rubric and returned as a clear verdict with trade-offs. Use when choosing a dependency, framework, or approach. Distinct from /deep-research (broad reports) and Explore (searches your code): this is a bounded decision with a recommendation."
+description: "Makes a technical ADOPTION decision, \"should we use library/tool/pattern X (vs Y, vs build it)?\": evaluated against MasterMind's reuse-with-judgment rubric and returned as a clear verdict with trade-offs. Use when choosing a dependency, framework, or approach. Distinct from a broad research report and from a search of your code: this is a bounded decision with a recommendation."
 tools: Read, Grep, Glob, WebFetch, WebSearch, Bash
 ---
 
@@ -52,7 +52,9 @@ Thresholds are defaults, not physics: override any of them with a stated reason,
 
 ## Rules
 Verify every claim (repo activity, downloads, advisories) with tools, memory and marketing both go stale.
-Compare 2–3 real candidates *plus* build-it-yourself. State your assumptions.
+Compare 2–3 real candidates *plus* build-it-yourself. State your assumptions. You cannot ask the user:
+when the verdict turns on a constraint only they know, return that question to the caller with the
+verdict for each answer.
 
 ## Output
 A verdict in the vocabulary above: **adopt · adopt-with-guardrails · build it · reject**: plus which

@@ -1,6 +1,6 @@
 ---
 name: debug
-description: "Use when a bug isn't obvious, resists a quick fix, keeps coming back, or you're about to start guessing: \"why is this broken\", \"this keeps happening\", intermittent or flaky failures, a crash you can't explain, behaviour that makes no sense. Not for a typo or an obvious mistake."
+description: "Use when a bug's cause is unknown: it resists a quick fix, keeps coming back, or you are about to start guessing: \"why is this broken\", \"this keeps happening\", intermittent or flaky failures, a crash you can't explain, behaviour that makes no sense. Not for a typo or an obvious mistake, not for slowness (`performance`)."
 ---
 
 # MasterMind: Debug
@@ -10,6 +10,9 @@ actual cause. Bug: **$ARGUMENTS**. Grounded in `~/.mastermind/engineering/core/r
 
 The cardinal rule: **understand the mechanism before you change a line.** A fix you can't explain is a
 coincidence, not a fix.
+
+**When the user asked why, not for a fix,** run phases 1 to 4, report the mechanism, and stop. Phases
+5 and 6 run when they ask for the fix (kernel → Question or request).
 
 ## The six phases
 
@@ -71,20 +74,19 @@ coincidence, not a fix.
    *"it's still broken"* after a confident fix means the reproduction never covered the real case.
 
 5. **Fix the root cause, not the symptom** (`~/.mastermind/engineering/core/rigor.md`). Address why the bad state was possible,
-   ideally make it unrepresentable (types, invariants, a reshaped data structure so the edge case
+   and make it unrepresentable where the design allows (types, invariants, a reshaped data structure so the edge case
    disappears, `~/.mastermind/engineering/core/mindset.md`). Never suppress an error to green the check.
    Before patching a function, search every caller of it. When several share the bug, fix it once,
    where they all pass through, not at the one caller that reported it.
 
 6. **Verify + guard.** Confirm the red check now passes and nothing else broke (typecheck/lint/tests/
-   build). **Add the guard that would have caught this**: a case in the project's suite if it has one;
-   otherwise an assertion or invariant at the boundary, and *offer* the test rather than writing it into
-   a repo that has none. The bug must not be able to return silently. Show the evidence.
+   build). **Add the guard that would have caught this**: an assertion or invariant at the boundary. A test
+   case is offered under Suggested (not done), never written unasked. The bug must not be able to return silently. Show the evidence.
 
    **Prove the guard guards:** with the new test green, revert the fix, the test must go red, then
    restore. A guard that stays green without the fix is testing something else; thirty seconds here
    buys the only proof that the regression can't come back unseen.
 
 ## After
-Run **`levelup`** (capture) to record the class of bug and its lesson in the active field's
-`lessons.md`, so MasterMind doesn't relearn it. Report: root cause, the fix, and the guard added.
+Report: root cause, the fix, and the guard added. When the bug taught a durable lesson about this
+stack, run **`levelup`** (capture) to record its class in the active field's `lessons.md`.

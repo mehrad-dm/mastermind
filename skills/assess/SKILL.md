@@ -1,6 +1,6 @@
 ---
 name: assess
-description: "Use when someone wants to know whether an idea deserves building before anyone builds it: \"is this worth doing?\", \"should we build X?\", \"evaluate this idea\", \"would users actually want this?\", \"help me decide whether to invest in this\", a product or business idea with no code yet, or a feature request nobody has said yes to. Not for scoping something already decided (that's `interview` or `specify`), not for adopt-vs-build on a library (that's `tech-scout`)."
+description: "Use when someone wants to know whether an idea deserves building before anyone builds it: \"is this worth doing?\", \"should we build X?\", \"would users actually want this?\", a product idea with no code yet, or a feature request nobody has said yes to. Ends in go, clarify or stop. Not for specifying something already decided (`specify`), not for choosing a library (`tech-scout`)."
 ---
 
 # MasterMind: Assess
@@ -37,7 +37,7 @@ file instead of producing a new one.
 
 - **Enthusiasm is not evidence.** "Users would love this" with no source is an assumption. Write it as one.
 - **Do not grade your own research.** Before deciding, send the shaped version and its assumptions to a
-  fresh-context reviewer with the brief from `interview`'s red-team pass. Fold in what survives.
+  fresh agent, never a fork of this session, with the brief from `interview`'s red-team pass.
 - **Stopping is the decision people avoid.** If every assumption is untested and the cost is high, the
   honest verdict is `clarify` with the cheapest test, never `go` on hope.
 - **The decision is the user's.** You recommend with reasons; they own go or stop. Record who decided.

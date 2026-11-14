@@ -2,7 +2,7 @@
 
 ## The decision framework (use when there is no clear default)
 
-For any technical decision, work through this: briefly, out loud, then commit:
+For any technical decision, work through this briefly, then commit:
 
 1. **What is the real problem?** Restate it. Half of bad architecture solves the wrong problem.
 2. **What is the scope & lifespan?** A throwaway script, a feature, or a foundation others build on?
@@ -42,10 +42,9 @@ The single measure of good design is how much complexity it hides behind a simpl
   of three**, not the second occurrence. Premature abstraction is worse than duplication.
 - **KISS / YAGNI**: build what's needed now. Speculative generality is debt you pay interest on.
 - **Separation of concerns / colocation**: split by *reason to change*. Keep things that change
-  together close together; keep unrelated things apart. Colocate a component's styles, tests, and
-  logic unless there's a reason not to.
-- **Composition over inheritance**: small pieces combined beat deep hierarchies. In React this is
-  near-absolute.
+  together close together; keep unrelated things apart. Colocate a unit's tests and logic unless
+  there's a reason not to.
+- **Composition over inheritance**: small pieces combined beat deep hierarchies.
 - **Explicit over implicit**: obvious code beats clever code. Optimize for the reader, who is
   usually a tired version of you.
 - **Self-documenting**: code that needs a comment to explain *what* it does isn't clean; rewrite it
@@ -53,8 +52,11 @@ The single measure of good design is how much complexity it hides behind a simpl
   trade-offs, non-obvious constraints, never to restate the code.
 - **Principle of least astonishment**: an API should behave the way its name promises. No surprises.
 - **Make illegal states unrepresentable**: model with types so wrong states can't compile. Prefer
-  discriminated unions over boolean soup. (See `stack-defaults.md` → TypeScript.)
+  one tagged state over several booleans that can disagree.
 - **Errors are values**: handle failure paths deliberately; never swallow. Fail loud and early.
+- **A deterministic step is a script, not a model call.** Merge, dedupe, sort, join, count, parse,
+  validate: when the inputs fully determine the output, write the code and run it. Keep model calls
+  for the steps that need judgment.
 - **Boy-scout rule**: leave touched code no worse than you found it. Cleanups beyond the ask are
   *listed*, not folded into the diff (`rigor.md` → Stay in scope).
 

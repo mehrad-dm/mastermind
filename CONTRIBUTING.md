@@ -34,7 +34,8 @@ There's no build step and no dependencies: you edit Markdown and test behavioral
 - **Encode judgment, not knowledge.** Don't add what a frontier model already knows (language syntax,
   standard APIs). Add defaults, decisions, rigor, taste, and lessons.
 - **Keep it light.** Ask of each line: *"Would removing this cause the assistant to make a mistake?"*
-  If not, cut it. A bloated kernel gets ignored.
+  If not, cut it. A bloated kernel gets ignored, so `check-integrity.mjs` holds `CLAUDE.md` to 200
+  lines and 9,500 characters, and fails when either is passed.
 - **Core vs. field.** Universal reasoning goes in `engineering/core/`. Domain specifics go in a field
   pack under `engineering/fields/<field>/`. Never leak field specifics into the core.
 - **Convention vs. correctness.** When encoding a rule, separate house-style (*conform to it*) from a
@@ -66,14 +67,19 @@ everyone agreed with it.
 - **Never name who found a defect**, or that a review or audit happened, in anything public:
   commits, the changelog, code comments, the website. Say what broke and what it cost.
 
-- **A directive states one thing, and states it.** Bullets and numbered steps in a skill body or an
-  agent brief are instructions parsed by a reader who cannot ask a follow-up. Two verbs joined by
-  "and" is two steps. "Should probably", "try to" and "where possible" reopen the decision the rule
-  existed to close. `scripts/check-instructions.mjs` **fails** a directive over 30 words or one that
-  hedges, and **reports** the ones carrying more than one action. That last count is judgment, not a
-  rule, so it is shown and never fatal: enforcing it flagged two dozen legitimate two-part bullets,
-  and a gate that fires on the wrong thing gets skipped. Frontmatter, tables, quotes and code are
-  skipped, because a `description` is a trigger list by design.
+- **No AI attribution in commits or pull requests**: no `Co-Authored-By` line for Claude, Cursor,
+  Codex or any other assistant, and no "Generated with" footer. `.githooks/commit-msg` removes those
+  lines from every commit message; a PR description is yours to keep clean.
+
+- **A directive states one thing, and states it.** Bullets and numbered steps in a skill body, an agent
+  brief, the kernel or a core doc are instructions parsed by a reader who cannot ask a follow-up. Two verbs joined by
+  "and" is two steps. "Should probably", "try to", "where possible", "perhaps", "ideally", "maybe"
+  and "you may want to" reopen the decision the rule existed to close. `scripts/check-instructions.mjs`
+  **fails** a directive over 30 words or one that hedges, and **reports** the ones carrying more than
+  one action. That last count is judgment, not a rule, so it is shown and never fatal: enforcing it
+  flagged two dozen legitimate two-part bullets, and a gate that fires on the wrong thing gets
+  skipped. Tables, quotes, code and wording quoted as an example are skipped. So is frontmatter,
+  which `check-integrity.mjs` holds to its own budget.
   The register is `engineering/core/clarity.md`, which is STE-informed: ASD-STE100 is free to obtain
   and not free to redistribute, so we follow the discipline and never reproduce the standard.
 
@@ -90,8 +96,21 @@ watched fail is not known to work. Before wiring one into `preflight.sh` or CI:
 - run it against the current tree, and confirm it is **clean**
 - say how many things it flags on the current tree, and look at every one
 
-That last step is the one that gets skipped. Both checks added recently flagged the wrong thing on
-their first run: the comment limit counted a heredoc the installer writes into a user's file, and
+Then keep both inputs. The bad input that made the check fire and a good one that keeps it quiet
+go in `scripts/fixtures/`, and the check gets a `--self-test` mode that runs them.
+`node scripts/self-test.mjs` runs the self-tests of the gates that have one, in `preflight.sh` and
+on every pull request: `check-shell-patterns`, `check-comments`, `check-instructions`,
+`check-integrity`, `check-links`, `check-versions`, `check-claims`, `check-prose`, `lint-brain`,
+`build-router`, `build-architecture`, `validate-plugin.sh` (against a stub `claude`), and the
+evals `agent-surface-routing`, `auto-invoke` (its prompts only, no session) and `classify`. Each
+must print how many bad inputs fired, and a count of zero fails. `agent-surface-cost` has no
+self-test yet; `codex-routing` and `cursor-routing` only run live, and the rules they apply are
+`classify`'s. A check that has stopped firing is noticed the day it stops and not the day it was
+needed. Several gates here passed for months on input they were written to reject, because the
+proof that they fired was run once by hand and never again.
+
+Looking at every flag on the current tree is the step that gets skipped. Two early checks flagged
+the wrong thing on their first run: the comment limit counted a heredoc the installer writes into a user's file, and
 the pipeline check flagged three dozen `printf | sed | head` lines where the exit status is
 discarded. Neither was caught by a test. They were caught by reading the output.
 
@@ -109,9 +128,10 @@ So: **the second time a lesson is violated, it stops being a note and becomes a 
 first, most mistakes are one-offs and a check for each would drown the real ones. The second time
 is the signal that memory is not going to hold it.
 
-Keep the gate narrow. `check-shell-patterns.mjs` flags `grep -q` downstream of a pipe and
-deliberately ignores `head`, which is almost always harmless truncation: a check that fires on the
-wrong thing teaches people to ignore it, which is worse than not having it.
+Keep the gate narrow. `check-shell-patterns.mjs` flags a quiet `grep` downstream of a pipe, in
+shell scripts and in the `run:` blocks of the workflows, and deliberately ignores `head`, which is
+almost always harmless truncation: a check that fires on the wrong thing teaches people to ignore
+it, which is worse than not having it.
 
 ## Adding a skill
 
@@ -119,6 +139,13 @@ The skill library grows freely: add one for any distinct, useful workflow. Hold 
 large library lean: **one job, an unambiguous routing-rule description, a lean on-demand body, and a
 Gotchas section** (only what pushes the model off its defaults); don't duplicate an agent. Register it
 in `skills/README.md`. Full discipline: `skills/levelup/authoring.md`.
+
+Every description is loaded into every session, so they share a budget: `check-integrity.mjs` fails
+a `description` over 500 characters, a library whose descriptions total more than 12,000, and a
+`name` that differs from its folder. Lead with the phrasings users actually say (`"why is this
+slow"`): a description cut to bare intent routes worse, which `evals/auto-invoke.mjs` measures. No
+skill sets `disable-model-invocation`: it hides the skill from the model, so a plain request never
+reaches it. A skill that runs only on request says so in its description.
 
 ## Adding a field pack
 
@@ -146,14 +173,19 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    ./scripts/preflight.sh
    ```
 
-   It runs everything and exits non-zero if any of it fails: the installer suite, the
-   design-engine tests, all shell parses, the router/library/integrity/link checks, that the
-   version strings agree across the repo *and* the site, that the architecture map is fresh,
-   and that the site builds. Add a check to `preflight.sh` the moment you find something a
-   release should never ship without: it's the single answer to "did I test everything?".
+   It runs everything and exits non-zero if any of it fails: the installer and agent-surface
+   suites, the routing checks, every gate's self-test, all shell parses, the router, library,
+   integrity, plugin, claims and link checks, the writing checks, that the version strings agree
+   across the repo *and* the site, that the architecture data matches the repo, and that the site
+   builds.
+   A check that cannot run where you are (no site checkout, no Claude CLI, a live eval with no
+   account) is reported as "could not run" and is never counted as passed. Add a check to
+   `preflight.sh` the moment you find something a release should never ship without: it's the
+   single answer to "did I test everything?".
 
-   (The pre-commit hook still runs `check-integrity` + `build-router` on every commit for fast
-   feedback; preflight is the full pre-release gate.)
+   (The git hooks give faster feedback. `pre-commit` runs the private-data guard and regenerates
+   `ROUTER.md` when it is stale. `pre-push` runs the guard again, the four writing checks, and
+   the two suites when the push touches code. Preflight is the full pre-release gate.)
 
 2. **If you fixed a bug, prove the test would have caught it.**
 
@@ -189,13 +221,14 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    **What preflight cannot tell you:** every check above inspects *files*, that the right
    things landed in the right place. None of them starts an agent, so none proves a tool
    actually loads the brain. `scripts/verify-tools.sh` does: it installs into a throwaway
-   project, asks a real Cursor/Codex session whether it is running as MasterMind, and fails if
-   the answer is no. It needs each tool's CLI and a logged-in account, so it stays a local
-   command rather than a CI gate, and skips whatever isn't installed. Run it when you change
+   project, asks a real Claude Code, Cursor and Codex session whether it is running as
+   MasterMind, and fails if the answer is no. It needs each tool's CLI and a logged-in account,
+   so it stays a local command rather than a CI gate. It names whatever isn't installed as not
+   checked, and exits 2 when no tool is installed at all. Run it when you change
    anything about how a tool is wired: `.cursor/rules`, `hooks.json`, `AGENTS.md`.
 
-2. **Keep it lean**: smaller, sharper diffs merge faster than big ones.
-3. **Write a clear commit**: conventional style is appreciated (`feat(install): …`, `docs(core): …`).
+4. **Keep it lean**: smaller, sharper diffs merge faster than big ones.
+5. **Write a clear commit**: conventional style is appreciated (`feat(install): …`, `docs(core): …`).
 
 ## Testing a change
 
@@ -247,7 +280,9 @@ Each of these was argued once and decided. Reopening one needs a new argument, n
   the site shows the badge from that release's changelog date for 60 days, then drops it on its own.
   People revisit a tool's docs occasionally, so 30 days expired before most of them saw it.
 - **Site docs are generated, never hand-written**: `scripts/build-library.mjs` builds them from
-  `skills/*/ABOUT.md`, so a page cannot claim something the skill doesn't say.
+  `skills/*/ABOUT.md`, so a page cannot claim something the skill doesn't say. The site's diagrams
+  are drawn from `architecture.json`, which `scripts/build-architecture.mjs` writes from the repo and
+  a real install; the only hand-written part is the wording in `scripts/architecture.source.json`.
 - **Prose column stays 768px** on the site; navigation may span the full container. 🧠 stays a literal
   emoji in terminal lines; genuine UI uses the icon component.
 
@@ -270,8 +305,8 @@ Each of these cost real debugging time at least once. They're here so nobody red
   occurrence deliberately; `evals/` records history and must keep its original versions.
 - **Never bulk-fix spelling from a partial word list.** A pass that declared "0 remaining" had left
   `memorise`, `licence`, `colour`, and `analyse` untouched.
-- **Don't restate a count: derive or assert it.** Hardcoded totals ("17 skills") drift the moment one
-  is added. `check-integrity.mjs` now fails on the ones we ship; keep it that way.
+- **Don't restate a count: derive or assert it.** Hardcoded totals (a skill count typed into prose) drift the
+  moment one is added. `check-claims.mjs` fails on the ones we ship; keep it that way.
 - **Always use `git -C <path>`.** A `cd` mistake once tagged and released on the *site* repo instead of
   this one.
 

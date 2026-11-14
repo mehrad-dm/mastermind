@@ -1,0 +1,30 @@
+{
+  "fires": [
+    { "name": "a step names an unknown node", "set": [["flow.steps.1.nodes", ["nowhere"]]], "expect": "names \"nowhere\", which is not a node" },
+    { "name": "a part names an unknown node", "set": [["install.sources.0.parts.0.node", "nowhere"]], "expect": "names \"nowhere\", which is not a node" },
+    { "name": "a layer names an unknown node", "set": [["layers.layers.0.node", "nowhere"]], "expect": "names \"nowhere\", which is not a node" },
+    { "name": "label over 32 characters", "set": [["nodes.kernel.label", "A kernel label that runs far too long"]], "expect": "label is 37 characters, over the 32 limit" },
+    { "name": "sub over 40 characters", "set": [["nodes.kernel.sub", "always loaded, tiny, and described at length"]], "expect": "sub is 44 characters, over the 40 limit" },
+    { "name": "detail over 160 characters", "set": [["nodes.kernel.detail", "The kernel is the only part loaded in every session, and this sentence keeps going well past the room a detail panel has on a phone, which is exactly what the limit is there to stop."]], "expect": "over the 160 limit" },
+    { "name": "an em dash in a detail", "set": [["nodes.kernel.detail", "The kernel \u2014 always loaded."]], "expect": "node \"kernel\" detail contains an em dash" },
+    { "name": "an em dash in a summary", "set": [["flow.summary", "From what you type \u2014 to a verdict."]], "expect": "flow summary contains an em dash" },
+    { "name": "a ref that is not in the repo", "set": [["nodes.kernel.ref", "KERNEL.md"]], "expect": "ref \"KERNEL.md\" does not exist in the repo" },
+    { "name": "a wrong count typed into a sub", "set": [["nodes.claude-skills.sub", "999 skills, native"]], "expect": "types a count (\"999 skills\")" },
+    { "name": "a typed count with a word between", "set": [["nodes.agent.sub", "one of 9 isolated roles"]], "expect": "types a count (\"9 isolated roles\")" },
+    { "name": "a placeholder that is not a count", "set": [["nodes.skill.sub", "one of {tools} workflows"]], "expect": "uses {tools}, which is not a count" },
+    { "name": "an empty detail", "set": [["nodes.kernel.detail", ""]], "expect": "node \"kernel\" detail is empty" },
+    { "name": "a back edge that skips a step", "set": [["flow.steps.4.back.to", "kernel"]], "expect": "must point at the step directly before it" },
+    { "name": "a part the installer did not write", "unwrite": [["cursor", ".cursor/hooks.json"]], "expect": "part \"cursor-hook\" stands for .cursor/hooks.json, which `install.sh cursor` did not write" },
+    { "name": "a hook file without the hook entry", "unwrite": [["claude", ".claude/settings.json"]], "write": [["claude", ".claude/settings.json"]], "expect": ".claude/settings.json was written without \"session-start.sh\"" },
+    { "name": "a skills folder with one link missing", "unwrite": [["claude", ".claude/skills/0"]], "expect": ".claude/skills holds" },
+    { "name": "the installer writes something no part shows", "write": [["codex", ".codex/config.toml"]], "expect": "wrote .codex/config.toml, which is on no part" },
+    { "name": "an unlisted path the installer stopped writing", "unwrite": [["cursor", ".cursor/skills"]], "expect": "\"unlisted\" names .cursor/skills" },
+    { "name": "a node on no diagram", "set": [["nodes.orphan", { "label": "Orphan", "sub": "unused", "detail": "On no diagram." }]], "expect": "node \"orphan\" is on no diagram" }
+  ],
+  "clean": [
+    { "name": "the source as committed" },
+    { "name": "a label of exactly 32 characters", "set": [["nodes.kernel.label", "A label of thirty-two characters"]] },
+    { "name": "a count written as a placeholder", "set": [["nodes.skills.sub", "{skills} inline workflows"]] },
+    { "name": "a number that is not a count", "set": [["nodes.codex.detail", "Codex 0.150 and later reads AGENTS.md once at startup."]] }
+  ]
+}

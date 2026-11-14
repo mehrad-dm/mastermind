@@ -2,8 +2,13 @@
   "$schema": "https://www.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mastermind",
   "description": "A markdown brain that gives your AI coding tools judgment and rigor: sharp defaults, real decisions, and the discipline to verify before saying done. For Claude Code, Cursor and Codex.",
-  "version": "0.33.2",
-  "hooks": "./hooks/hooks.json",
+  "version": "0.34.0",
+  "agents": [
+    "./agents/architect.md",
+    "./agents/code-reviewer.md",
+    "./agents/refactorer.md",
+    "./agents/tech-scout.md"
+  ],
   "author": {
     "name": "mehrad-dm"
   },

@@ -54,7 +54,7 @@ and the two optional per-project settings that are off unless you switch them on
 > *"how do I actually use this thing?"*
 > *"is there something in here for testing?"*
 
-It also fires when you seem stuck on where to begin. In your terminal:
+It runs only when you ask. In your terminal:
 
 ```
 🧠 MasterMind ▸ showing you what I can do and how to ask for it
@@ -76,5 +76,4 @@ It also fires when you seem stuck on where to begin. In your terminal:
 ## What you get
 
 A scannable picture of everything available, written around when each thing fires rather than what to
-type: because in normal use, you don't type anything special. You describe the problem; the right
-workflow shows up and says so.
+type: in normal use you describe the problem in plain words, and the right workflow shows up and says so.

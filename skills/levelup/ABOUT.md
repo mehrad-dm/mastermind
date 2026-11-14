@@ -53,7 +53,7 @@ sharper, not longer.
 
 ## When it fires
 
-You don't type a command. Say something like:
+It runs when you ask for it, or when a task produced a lesson worth keeping. Say something like:
 
 > *"remember that, we always do it this way"*
 > *"stop making that mistake"*

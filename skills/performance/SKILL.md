@@ -1,12 +1,15 @@
 ---
 name: performance
-description: "Use when something is slow, \"why is this slow\", \"optimize this\", \"make it faster\", jank, lag, a slow query, slow page load, slow render, slow build, high memory, a timeout. Not for correctness bugs; that's debug."
+description: "Use when something is slow or heavy: \"why is this slow\", \"optimize this\", \"make it faster\", jank, lag, a slow query, page load, render or build, high memory, a timeout. Measures first. Not for a wrong result (`debug`)."
 ---
 
 # Performance: measure, find the real bottleneck, fix the biggest, verify
 
 Slowness has a **real, measurable cause**. The cardinal sin is optimizing by intuition. You'll spend
 effort on the wrong thing and maybe trade away correctness for nothing. Get data first.
+
+**When the user asked why it is slow, not for a fix,** run steps 1 and 2, report the bottleneck with
+its number, and stop. Steps 3 to 5 run when they ask for the fix (kernel → Question or request).
 
 ## The loop
 
@@ -28,9 +31,9 @@ effort on the wrong thing and maybe trade away correctness for nothing. Get data
 5. **Guard it.** Note the metric (a comment, a budget, a perf test) so the regression is visible next time.
 
 ## After
-Run **`levelup`** (capture) to record the bottleneck class and its lesson in the active field's
-`lessons.md`: including the *wrong* suspect you ruled out, so MasterMind doesn't re-profile it next
-time. Report: before → after numbers, the cause, the fix, and the guard added.
+Report: before → after numbers, the cause, the fix, and the guard added. When the work taught a
+durable lesson about this stack, run **`levelup`** (capture) to record the bottleneck class in the
+active field's `lessons.md`, including the *wrong* suspect you ruled out.
 
 ## Gotchas
 - **Measure before *and* after**: "feels faster" is not a result; a number that moved is.

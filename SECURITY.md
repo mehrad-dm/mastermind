@@ -1,7 +1,8 @@
 # Security
 
 MasterMind is a markdown knowledge base plus a few small, dependency-free scripts. It ships no server
-and runs no service, which leaves two surfaces worth naming.
+and runs no service, which leaves two surfaces worth naming, and a third for anyone who installs
+the optional Mod.
 
 **Keeping private or client material out of this public repository and its history.** That is the one
 this file is mostly about, and the quarantine below is how it is enforced.
@@ -10,11 +11,24 @@ this file is mostly about, and the quarantine below is how it is enforced.
 point it at, and that repository supplies input: `.mastermind/routes.map` names directories to write
 into, existing paths may be symlinks, and a `<file>.mm-backup` pointer names a file to restore. A
 malicious or merely careless repository can therefore aim a write somewhere you did not intend. The
-installer treats all of it as untrusted: every destination is resolved through its full symlink chain
-and must land inside the project or the brain, files it writes content into may not be symlinks, and
-it will only restore a backup pointer of the exact shape it writes itself. It refuses and exits rather
-than guessing when a path cannot be resolved. If you find a path that escapes those checks, that is a
-vulnerability, and the reporting instructions below apply.
+installer treats all of it as untrusted, and every write and every delete passes through one
+containment check, in every mode: install, update, check, uninstall, `--shared`, `--global`, and the
+per-app anchors compiled from `routes.map`. That includes the files it seeds, the backups it makes
+and restores, and the lines uninstall takes back out of your files.
+
+The check is the same each time. A destination that is a symlink the installer did not make
+itself, or whose fully resolved path
+leaves the project (or your home directory, for `--global`), is refused with a message naming the
+path and a non-zero exit. It is never followed, and a path that cannot be resolved is refused, not
+guessed at. The same check covers the per-tool files: `.codex/hooks.json`, `.cursor/agents/` and
+the kernel block in an `AGENTS.md` of your own. It will only restore a backup pointer of the exact shape it writes itself.
+
+Outside the project, a per-project install creates one thing: the `~/.mastermind` link to the brain
+it was run from, through the same check, scoped to your home directory. A `--shared` install also
+writes its install record under `~/.mastermind-state/projects/`. A `~/.mastermind` that already
+points at a different brain is refused, never repointed. If you find a
+write or a delete that escapes this, that is a vulnerability, and the reporting instructions below
+apply.
 
 ## The Lab quarantine
 
@@ -27,6 +41,20 @@ Anything derived from a real, possibly-private codebase stays in `lab/`, which i
   **patterns, not identities.**
 
 To enable the guards after cloning: `git config core.hooksPath .githooks`.
+
+## The optional Mod
+
+`mastermind-mod` is a separate, opt-in Claude Code plugin in `mod/`. Nothing installs it for you.
+Everything else in this repository is text a model reads; the Mod is JavaScript that Claude Code
+loads into your session, and Claude Code does not sandbox it. Read
+[`mod/README.md`](mod/README.md) before installing it. What it does and does not do:
+
+- It handles tool, turn, agent, session and render events.
+- It runs only read-only MasterMind CLI commands and the installer's check.
+- It makes no network request, writes no file and calls no model.
+- It never approves a tool call. It can ask you, or leave the decision to your own permission rules.
+- Its hold on irreversible actions matches the text of a command. A command hidden inside a script,
+  an alias or a subshell passes it unseen, so it is a safety net and not a firewall.
 
 ## What the release pipeline can reach
 
@@ -59,6 +87,6 @@ what runs. `npm` itself is pinned in the publish job for the same reason.
 
 If you find leaked private data in the repo or history, a way to bypass the guards, or any other
 security issue, please **report it privately** via GitHub's
-[private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
+[private vulnerability reporting](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately)
 on this repository rather than opening a public issue. This is an experimental, single-maintainer
 project, so expect a best-effort response.

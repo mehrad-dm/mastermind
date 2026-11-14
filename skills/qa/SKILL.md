@@ -1,14 +1,14 @@
 ---
 name: qa
-description: "Use after finishing a feature or fix to confirm it actually works, when the user says \"test this\", \"does it work\", \"verify this\", \"QA it\", or before shipping something that has never been driven end-to-end. Also when the user asks for tests to be written or wants to work test-first."
+description: "Use after finishing a feature or fix to prove it actually works by running it: \"test this\", \"does it work\", \"verify this\", \"QA it\", before shipping something that has never been driven end to end, or when the user wants tests written or to work test-first. For a claim that cannot be run, use `double-check`."
 ---
 
 # QA: prove it works (verify by default, tests on request)
 
-Proving a change works is **mandatory**: though the proof is rarely a test suite. Default to **verify**
-(drive the real thing, watch what it does). Tests / TDD are a **project choice**: **offer them, don't
-impose them.** After a build, the honest close is: *"Built it: want me to QA it? (I can verify it end-to-end,
-and add tests / do it test-first if you want.)"*
+Proving a change works is **mandatory**, so it is never offered as a question: verify, then report.
+The proof is rarely a test suite. Default to **verify** (drive the real thing, watch what it does).
+Tests / TDD are a **project choice**: **offer them, don't impose them.** After a build, the close is
+the evidence and the verdict, with tests offered as one line under **Suggested (not done)**.
 
 ## Mode 1: Verify (the default; always do this)
 
@@ -32,7 +32,8 @@ and add tests / do it test-first if you want.)"*
    was sent, the tokens were not cleared, the user was not bounced to login, no second write landed.
    A test that only asserts the visible message passes while the damage happens behind it.
 6. **Report with evidence**: what you ran and what you observed (command output, response, screenshot).
-   State confidence plainly. Couldn't run a check? Say so; never present unrun work as verified.
+   When a check could not run, the verdict is **Done, not fully checked** and the `not checked:` line
+   names it (`~/.mastermind/engineering/core/rigor.md`).
 
 ## Driving a browser, when the thing under test is a page
 
@@ -44,10 +45,10 @@ Work down this list and use the first rung you actually have:
 2. **A deterministic driver** the project already has: Playwright, Cypress, or the same exposed to your
    tool over MCP. Use this for anything that should be repeatable, because a written selector fails the
    same way twice and that is what makes it a test.
-3. **An agentic driver**, `browser-use` being the current example: it opens the page, clicks and types
-   from a natural-language task. Reach for it when writing selectors is the bottleneck and the question
-   is exploratory: does a person get through this flow. It is MIT, it needs Python and its own model
-   call, and it is **never a requirement**: it is a rung, not a dependency.
+3. **An agentic driver**, `browser-use` being one example: it opens the page, clicks and types from a
+   natural-language task. Reach for it when writing selectors is the bottleneck and the question is
+   exploratory: does a person get through this flow. It brings its own runtime and its own model call,
+   and it is **never a requirement**: it is a rung, not a dependency.
 4. **Nothing.** Then say so. Report exactly which claims are unverified and why, and never let a
    screenshot you did not take stand in for a check you did not run.
 
@@ -102,8 +103,13 @@ behavior, one thin vertical slice that actually executes is worth more than a wa
 > user's call, even though the *testing* wasn't optional.
 
 ## Output
-A plain verdict: works / doesn't: with the evidence and the edge cases exercised, plus any gaps you
-couldn't cover (and why). If tests were written: note what they cover and confirm they stay, never write
+The evidence and the edge cases exercised first, then the kernel's verdict with its `not checked:`
+line naming any gap you couldn't cover (and why). If tests were written: note what they cover and confirm they stay, never write
 or persist a test suite the user didn't agree to first. If the project's
-**`cycle-report`** preference is on (`.mastermind/prefs.md`), also run the **`report`** skill to save a
+**`cycle-report`** preference is on (`.mastermind/prefs.md`), also follow the **`report`** skill to save a
 durable write-up; default off, so by default the verdict stays in chat.
+
+**The optional quiz.** Offer it once, as a line under Suggested (not done): *three questions to check
+what was tested*. When the user asks for it, ask three whose answers are in your report: what was exercised, what
+would have failed without the change, and what is still unchecked. Give the answers after the user
+replies. Never ask them unprompted, and never offer twice in a session.

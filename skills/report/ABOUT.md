@@ -20,14 +20,13 @@ a ticket, or read by whoever picks the work up next.
 This is opt-in, and **off by default**. MasterMind will not produce a report unless you ask for one, or
 unless you have explicitly turned automatic reports on for that project.
 
-You're offered the choice exactly once: a single skippable question during first-time setup: and if you
-ignore it, decline it, or say nothing, the answer is off. The setting is stored per project, so turning
-it on for one repo doesn't turn it on everywhere. You can change it at any time by saying so in plain
-words, and change it back just as easily.
+Nobody asks you about it: setup asks nothing, and the closing summary of `init` names the setting so
+you know it exists. The setting is stored per project, so turning it on for one repo doesn't turn it on
+everywhere. You can change it at any time by saying so in plain words, and change it back just as easily.
 
-The same restraint applies to the other optional preference offered at setup, plan-first mode, where
-MasterMind shows you its plan and waits for your approval before editing anything. Also off unless you
-turn it on. Neither of these is ever switched on quietly.
+The same restraint applies to the other optional preference, plan-first mode, where MasterMind shows you
+its plan and waits for your approval before editing anything. Also off unless you turn it on. Neither of
+these is ever switched on quietly.
 
 ## What goes wrong without it
 

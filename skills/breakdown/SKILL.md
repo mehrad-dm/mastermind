@@ -1,6 +1,6 @@
 ---
 name: breakdown
-description: "Use when a feature with a spec and a plan needs its ordered task list: \"break this into tasks\", \"make the task list\", \"what are the steps to build this?\", \"generate tasks.md\", a feature folder with plan.md and no tasks.md, or a task list made stale by a spec or plan change. Not for a feature with no plan (that's `blueprint`), not for one session's to-do list."
+description: "Use when a feature with a spec and a plan needs its ordered task list: \"break this into tasks\", \"make the task list\", \"what are the steps to build this?\", a feature folder with plan.md and no tasks.md, or a task list made stale by a spec or plan change. Not for a feature with no plan (`blueprint`), not for one session's to-do list."
 ---
 
 # MasterMind: Breakdown

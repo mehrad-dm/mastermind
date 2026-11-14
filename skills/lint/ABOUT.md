@@ -59,6 +59,8 @@ without you.
 > *"check MasterMind for contradictions before I release"*
 > *"is anything in here repeating itself?"*
 
+It runs only when you ask for it.
+
 ```
 🧠 MasterMind ▸ checking my own instructions for drift
    └ lint · count → judge the flagged → propose, never apply

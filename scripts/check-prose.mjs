@@ -25,7 +25,7 @@ const FORMS = [
   [new RegExp(['&' + 'mdash;', '&#' + '8212;', '&#' + 'x2014;'].join('|'), 'gi'), 'em dash, written as an HTML entity'],
 ]
 
-// Two exemptions, both line-scoped rather than file-scoped, so exempting a line cannot blind the
+// The exemptions are line-scoped rather than file-scoped, so exempting a line cannot blind the
 // check to the rest of the file it lives in.
 const ALLOW = [
   {
@@ -40,7 +40,49 @@ const ALLOW = [
     test: (file) => file.startsWith('evals/'),
     why: 'eval fixtures and recorded model output',
   },
+  {
+    // A gate that rejects the character proves it on an input that holds one.
+    test: (file, line, at, bad) => bad.has(at),
+    why: 'a bad input inside the "fires" list of a gate fixture under scripts/fixtures/',
+  },
 ]
+
+// The lines of a fixture's "fires" array, in a JSON file directly under scripts/fixtures/.
+function badInputLines(file, text) {
+  const lines = new Set()
+  if (!/^scripts\/fixtures\/[^/]+\.json$/.test(file)) return lines
+  const key = text.search(/"fires"\s*:\s*\[/)
+  if (key < 0) return lines
+  let i = text.indexOf('[', key), depth = 0, quoted = false
+  const from = i
+  for (; i < text.length; i++) {
+    const c = text[i]
+    if (quoted) { if (c === '\\') i++; else if (c === '"') quoted = false; continue }
+    if (c === '"') quoted = true
+    else if (c === '[') depth++
+    else if (c === ']' && --depth === 0) break
+  }
+  const first = text.slice(0, from).split('\n').length, last = text.slice(0, i).split('\n').length
+  for (let n = first; n <= last; n++) lines.add(n)
+  return lines
+}
+
+function inspect(file, text, label = '') {
+  const findings = []
+  let exempt = 0
+  if (!FORMS.some(([re]) => (re.lastIndex = 0) === 0 && re.test(text))) return { findings, exempt }
+  const bad = badInputLines(file, text)
+  text.split('\n').forEach((line, i) => {
+    for (const [re, what] of FORMS) {
+      re.lastIndex = 0
+      if (!re.test(line)) continue
+      if (ALLOW.find((a) => a.test(file, line, i + 1, bad))) { exempt++; return }
+      findings.push({ file: `${label}${file}`, line: i + 1, what, text: line.trim().slice(0, 96) })
+      return
+    }
+  })
+  return { findings, exempt }
+}
 
 const BINARY = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|otf|zip|gz|tgz|pdf|mp4|webm)$/i
 
@@ -61,22 +103,27 @@ function scan(root, label) {
     } catch {
       continue
     }
-    if (!FORMS.some(([re]) => (re.lastIndex = 0) === 0 && re.test(text))) continue
-    text.split('\n').forEach((line, i) => {
-      for (const [re, what] of FORMS) {
-        re.lastIndex = 0
-        if (!re.test(line)) continue
-        const allowed = ALLOW.find((a) => a.test(file, line))
-        if (allowed) {
-          exempt++
-          return
-        }
-        findings.push({ file: `${label}${file}`, line: i + 1, what, text: line.trim().slice(0, 96) })
-        return
-      }
-    })
+    const r = inspect(file, text, label)
+    findings.push(...r.findings)
+    exempt += r.exempt
   }
   return { findings, exempt }
+}
+
+if (process.argv.includes('--self-test')) {
+  // The fixtures spell the character as {EM} so that they hold none of the forms themselves.
+  const { fires, clean } = JSON.parse(readFileSync(join(REPO, 'scripts', 'fixtures', 'prose.json'), 'utf8'))
+  const forms = { '{EM}': CHAR, '{ESC}': '\\' + 'u2014', '{ENT}': '&' + 'mdash;' }
+  const fill = (t) => t.replace(/\{EM\}|\{ESC\}|\{ENT\}/g, (k) => forms[k])
+  const hits = (c) => inspect(c.file, fill(c.text)).findings.length
+  const wrong = [
+    ...(fires.length ? [] : ['no bad input, so nothing shows the rule can fire']),
+    ...fires.filter((c) => !hits(c)).map((c) => `did not fire: ${c.name}`),
+    ...clean.filter((c) => hits(c)).map((c) => `fired on clean input: ${c.name}`),
+  ]
+  if (wrong.length) { console.error('✖ prose self-test:\n  ' + wrong.join('\n  ')); process.exit(1) }
+  console.log(`✓ prose self-test: ${fires.length} bad inputs fire, ${clean.length} good inputs stay clean.`)
+  process.exit(0)
 }
 
 const roots = [[REPO, '']]

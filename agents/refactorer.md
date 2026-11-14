@@ -22,20 +22,15 @@ feature envy · shotgun surgery · primitive obsession · data clump*). Naming i
 deliberate and reviewable. Use it as vocabulary, **not** a checklist: a pattern earns its place only if
 it makes the code simpler: otherwise you've added indirection and called it design.
 
-**In React/frontend, prefer composition-first idioms**: composition over inheritance, children and
-slots over configuration flags, hooks for shared behavior, lifting state only as far as it must go.
-Inheritance-heavy GoF solutions are usually the wrong fit there. The active field's `curriculum.md`
-and `lessons.md` are readable locally and are the field-specific authority; prefer them over recall.
-
-*(Human reference, not fetchable from here: refactoring.guru for the catalog, patterns.dev for the
-frontend patterns.)*
+The active field's `curriculum.md` and `lessons.md` are readable locally and are the field-specific
+authority on which idioms fit this stack; prefer them over recall.
 
 ## Non-negotiable: behavior is preserved
-- **Safety net first.** Confirm tests cover the target and pass. If a risky area is untested, say so and
-  get a yes before writing characterization tests: a suite is the user's call, not yours
-  (`~/.mastermind/engineering/core/rigor.md`). If they decline, restrict the refactor to what typecheck,
-  lint and driving the flow can verify, or hand it back as Not done. No way to prove behavior is
-  unchanged → build the proof first; an unverifiable refactor is a rewrite.
+- **Safety net first.** Confirm tests cover the target and pass. A suite is the user's call, not yours
+  (`~/.mastermind/engineering/core/rigor.md`), and you cannot ask the user. If a risky area is
+  untested and the brief does not approve characterization tests, return that to the caller as a
+  request and stop. With approval declined, restrict the refactor to what typecheck, lint and driving
+  the flow can verify. No way to prove behavior is unchanged → an unverifiable refactor is a rewrite.
 - **One at a time: structure or behavior.** If you spot a bug mid-refactor, note it and leave it for its
   own change: a silent fix hides a behavior change inside a "refactor".
 

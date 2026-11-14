@@ -1,6 +1,6 @@
 ---
 name: interview
-description: "Use when the ask is ambiguous, the scope is unclear, terms are being used inconsistently, the work spans multiple files, or it will be handed to another session: and whenever the user wants to be interviewed about it: \"interview me\", \"ask me what you need\", \"question me on this\", \"tear this PRD/spec/plan apart\", \"what would kill this?\", \"resolve the open questions in the spec\". Also when a spec in specs/ still carries [NEEDS CLARIFICATION] markers, or is about to be planned. Symptoms: \"make it better\", \"add the thing\", or disagreement about what's in scope. Skip for a clear one-line change."
+description: "Use when it is unclear what to build: an ambiguous ask, disputed scope, terms used inconsistently, a spec with open questions or [NEEDS CLARIFICATION] markers, or the user wants to be questioned: \"interview me\", \"ask me what you need\", \"tear this plan apart\", \"what would kill this?\", \"make it better\", \"add the thing\". Skip when the ask is clear, however many files it spans."
 ---
 
 # MasterMind: Interview
@@ -8,8 +8,6 @@ description: "Use when the ask is ambiguous, the scope is unclear, terms are bei
 A precise spec is cheaper than a wrong build. Time spent making the spec exact pays off more than time
 watching the implementation (`~/.mastermind/engineering/core/product-sense.md`, `~/.mastermind/engineering/core/agent-loop.md`). This produces the *what*,
 not the code.
-
-Their own words stay theirs: propose, never rewrite unasked (`~/.mastermind/engineering/core/rigor.md` → Stay in scope).
 
 ## First, say what you think they're asking for
 
@@ -34,6 +32,9 @@ Q: Should a failed import roll back the whole batch, or keep the rows that parse
 
 Look facts up rather than asking for them: the stack, the conventions, what the code already does are
 yours to find. Only the *decisions* are theirs.
+
+**When the user has no hypothesis of their own, do not ask them for one.** Give what is known from the
+code and the brief, then ask only for the unknowns.
 
 Two things to catch, because both hide a wrong build behind an apparent agreement:
 
@@ -111,8 +112,10 @@ A spec with no markers still gets the scan: its silent gaps are the point. Repor
 partial, and set the spec's status to `clarified` when no marker remains. Then run `mastermind next` and end with the step it names. In this mode `spec.md` is the
 scope contract: skip *Write the spec* and *Output* below, and write no second spec file.
 
-Outside clarify mode, close the interview by writing the scope contract below and getting one real confirmation. Everything
-you noticed but were not asked for goes under **Suggested (not done)**: never folded into the build.
+Outside clarify mode, close the interview by writing the scope contract below. Show it and proceed: it
+is a contract the user can correct, not a gate. Stop for an answer only where the contract rests on a
+product decision the user has not made. Everything you noticed but were not asked for goes under
+**Suggested (not done)**: never folded into the build.
 
 ## Write the spec
 
@@ -169,10 +172,11 @@ Interview settles the **what**; `architect` (`~/.mastermind/agents/architect.md`
 problem, scope, glossary, acceptance criteria, and edge cases; architect produces module/interface
 boundaries, the data model, key types, and the technical decisions behind them.
 
-- Ask is *fuzzy* → run `interview` first. Ask is *clear but the design isn't* → go straight to `architect`.
+- Ask is *fuzzy* → run `interview` first. Ask is *clear but the design isn't* → `architect`, when the
+  design crosses a module boundary, the data model or a public API (the kernel's threshold).
 - **Handoff:** feed the finished spec to `architect` as its input, it restates the problem from the spec's
-  scope and acceptance criteria instead of re-deriving them. Non-trivial work usually wants both, in that
-  order; a small, well-understood change needs neither.
+  scope and acceptance criteria instead of re-deriving them. A small, well-understood change needs
+  neither.
 - The spec's "Interfaces & data" step stays at the level the spec needs (files touched, contracts the
   acceptance criteria depend on). Stop at the *what*; module design is architect's output, not spec's.
 
