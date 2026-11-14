@@ -62,20 +62,23 @@ function arithmeticEnd(src, from) {
   return i
 }
 
-// Where a "${ ... }" ends: a "#" or ")" inside it is part of the expansion.
+// Where a "${ ... }" ends, as bash reads it: only "${" nests, a "$( )" or backticks inside are skipped
+// whole, and a plain "{" does not count. -1 when it never closes: then it is plain text.
 function braceEnd(src, from) {
   let depth = 1
   let i = from
-  while (i < src.length && depth > 0) {
+  while (i < src.length) {
     const c = src[i]
     if (c === '\\') { i += 2; continue }
     if (c === "'") { const end = src.indexOf("'", i + 1); i = end < 0 ? src.length : end + 1; continue }
     if (c === '"') { let j = i + 1; while (j < src.length && src[j] !== '"') j += src[j] === '\\' ? 2 : 1; i = j + 1; continue }
-    if (c === '{') depth += 1
-    if (c === '}') depth -= 1
+    if (c === '`') { const end = src.indexOf('`', i + 1); i = end < 0 ? src.length : end + 1; continue }
+    if (c === '$' && src[i + 1] === '(') { i = substitutionEnd(src, i + 2); continue }
+    if (c === '$' && src[i + 1] === '{') { depth += 1; i += 2; continue }
+    if (c === '}' && --depth === 0) return i + 1
     i += 1
   }
-  return i
+  return -1
 }
 
 // Where a "$( ... )" inside double quotes ends: a quote in a heredoc body there does not close the string.
@@ -93,7 +96,7 @@ function substitutionEnd(src, from) {
       i += m[0].length
     } else if (c === '\n' && marks.length) i = skipBodies(src, i + 1, marks)[0]
     else if (c === '\\') i += 2
-    else if (c === '$' && src[i + 1] === '{') i = braceEnd(src, i + 2)
+    else if (c === '$' && src[i + 1] === '{' && braceEnd(src, i + 2) > 0) i = braceEnd(src, i + 2)
     else if (c === '$' && src[i + 1] === '(' && src[i + 2] === '(') i = arithmeticEnd(src, i + 3)
     else if (c === '#' && (i === from || /[\s;&|(]/.test(src[i - 1]))) {
       // A comment runs to the end of its line, and a quote inside it opens nothing.
@@ -198,7 +201,7 @@ export function segments(text) {
       word += src.slice(i, end)
       open = true
       i = end
-    } else if (c === '$' && src[i + 1] === '{') {
+    } else if (c === '$' && src[i + 1] === '{' && braceEnd(src, i + 2) > 0) {
       // One word: a "#" in it is not a comment, and a command inside it still runs.
       const end = braceEnd(src, i + 2)
       nested.push(...segments(src.slice(i + 2, end - 1)))
