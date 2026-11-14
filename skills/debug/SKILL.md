@@ -1,6 +1,6 @@
 ---
 name: debug
-description: "Use when a bug's cause is unknown: it resists a quick fix, keeps coming back, is intermittent, or you are about to guess. Not for a typo or an obvious mistake, not for slowness (`performance`)."
+description: "Use when a bug's cause is unknown: it resists a quick fix, keeps coming back, or you are about to start guessing: \"why is this broken\", \"this keeps happening\", intermittent or flaky failures, a crash you can't explain, behaviour that makes no sense. Not for a typo or an obvious mistake, not for slowness (`performance`)."
 ---
 
 # MasterMind: Debug

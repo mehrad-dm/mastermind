@@ -1,6 +1,6 @@
 ---
 name: specify
-description: "Use when a feature already decided needs its spec written or revised: spec-first work, or a feature that spans sessions or people, or touches money, auth, data migration or a public contract. Not for deciding whether to build it (`assess`), not for a fuzzy ask (`interview`)."
+description: "Use when a feature already decided needs its specification written or revised: \"write the spec for X\", \"spec this feature\", \"turn this idea into requirements\", an assessed idea that got a go, or a feature that spans sessions or people, or touches money, auth, data migration or a public contract. Not for deciding whether to build it (`assess`), not for a small clear change (`build`), not for a fuzzy ask (`interview`)."
 ---
 
 # MasterMind: Specify

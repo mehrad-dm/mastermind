@@ -18,6 +18,13 @@
    {
     "name": "one line of 9,501 characters",
     "chars": 9501
+   },
+   {
+    "name": "120 lines of 40 emoji: 4,920 characters, 9,720 units of the hook's cap",
+    "repeat": {
+     "line": "🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠",
+     "times": 120
+    }
    }
   ],
   "clean": [
@@ -37,17 +44,17 @@
  "descriptions": {
   "fires": [
    {
-    "name": "one description of 301 characters",
+    "name": "one description of 501 characters",
     "many": {
      "count": 1,
-     "chars": 301
+     "chars": 501
     }
    },
    {
-    "name": "26 descriptions of 290 characters total 7,540",
+    "name": "25 descriptions of 490 characters total 12,250",
     "many": {
-     "count": 26,
-     "chars": 290
+     "count": 25,
+     "chars": 490
     }
    },
    {
@@ -73,7 +80,7 @@
     "skills": [
      {
       "dir": "build",
-      "text": "---\nname: build\ndescription: >\n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n---\n"
+      "text": "---\nname: build\ndescription: >\n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n  a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok a folded line of forty-one characters ok \n---\n"
      }
     ]
    },
@@ -85,14 +92,23 @@
       "text": "---\nname: s0\ndescription: Use when the request is long and the words keep coming Use when the\n  request is long and the words keep coming Use when the request is\n  long and the words keep coming Use when the request is long and the\n  words keep coming Use when the request is long and the words keep\n  coming Use when the request is long and the words keep coming Use\n  when the request is long and the words keep coming Use when the\n  request is long and the words keep coming Use when the request is\n  long and the words keep coming Use when the request is long andxxx\n---\n"
      }
     ]
+   },
+   {
+    "name": "a plain description that carries on after a blank line",
+    "skills": [
+     {
+      "dir": "s0",
+      "text": "---\nname: s0\ndescription: Use to prove a finished change works\n\n  the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming the words keep coming and coming\n---\n"
+     }
+    ]
    }
   ],
   "clean": [
    {
-    "name": "25 descriptions of 300 characters total 7,500",
+    "name": "24 descriptions of 500 characters total 12,000",
     "many": {
-     "count": 25,
-     "chars": 300
+     "count": 24,
+     "chars": 500
     }
    },
    {
@@ -306,11 +322,11 @@
  "userOnly": {
   "fires": [
    {
-    "name": "one user-only skill lost the flag",
+    "name": "help hides itself from the model",
     "skills": [
      {
       "dir": "handoff",
-      "text": "---\nname: handoff\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+      "text": "---\nname: handoff\ndescription: \"x\"\n---\n"
      },
      {
       "dir": "help",
@@ -318,7 +334,7 @@
      },
      {
       "dir": "levelup",
-      "text": "---\nname: levelup\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+      "text": "---\nname: levelup\ndescription: \"x\"\n---\n"
      },
      {
       "dir": "lint",
@@ -326,16 +342,49 @@
      },
      {
       "dir": "report",
-      "text": "---\nname: report\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+      "text": "---\nname: report\ndescription: \"x\"\n---\n"
      },
      {
       "dir": "signature",
-      "text": "---\nname: signature\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+      "text": "---\nname: signature\ndescription: \"x\"\n---\n"
      }
     ]
    },
    {
-    "name": "a seventh skill gained the flag",
+    "name": "an ordinary skill hides itself",
+    "skills": [
+     {
+      "dir": "handoff",
+      "text": "---\nname: handoff\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "help",
+      "text": "---\nname: help\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "levelup",
+      "text": "---\nname: levelup\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "lint",
+      "text": "---\nname: lint\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "report",
+      "text": "---\nname: report\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "signature",
+      "text": "---\nname: signature\ndescription: \"x\"\n---\n"
+     },
+     {
+      "dir": "build",
+      "text": "---\nname: build\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
+     }
+    ]
+   },
+   {
+    "name": "every skill on request only",
     "skills": [
      {
       "dir": "handoff",
@@ -360,13 +409,11 @@
      {
       "dir": "signature",
       "text": "---\nname: signature\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
-     },
-     {
-      "dir": "build",
-      "text": "---\nname: build\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
      }
     ]
-   },
+   }
+  ],
+  "clean": [
    {
     "name": "no skill carries the flag",
     "skills": [
@@ -393,37 +440,6 @@
      {
       "dir": "signature",
       "text": "---\nname: signature\ndescription: \"x\"\n---\n"
-     }
-    ]
-   }
-  ],
-  "clean": [
-   {
-    "name": "exactly the six, among ordinary skills",
-    "skills": [
-     {
-      "dir": "handoff",
-      "text": "---\nname: handoff\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
-     },
-     {
-      "dir": "help",
-      "text": "---\nname: help\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
-     },
-     {
-      "dir": "levelup",
-      "text": "---\nname: levelup\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
-     },
-     {
-      "dir": "lint",
-      "text": "---\nname: lint\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
-     },
-     {
-      "dir": "report",
-      "text": "---\nname: report\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
-     },
-     {
-      "dir": "signature",
-      "text": "---\nname: signature\ndescription: \"x\"\ndisable-model-invocation: true\n---\n"
      },
      {
       "dir": "build",

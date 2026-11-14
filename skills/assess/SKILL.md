@@ -1,6 +1,6 @@
 ---
 name: assess
-description: "Use when nobody has decided yet whether an idea should be built: a product idea, or a feature request with no yes. Ends in go, clarify or stop. Not for specifying something already decided (`specify`), not for choosing a library (`tech-scout`)."
+description: "Use when someone wants to know whether an idea deserves building before anyone builds it: \"is this worth doing?\", \"should we build X?\", \"would users actually want this?\", a product idea with no code yet, or a feature request nobody has said yes to. Ends in go, clarify or stop. Not for specifying something already decided (`specify`), not for choosing a library (`tech-scout`)."
 ---
 
 # MasterMind: Assess

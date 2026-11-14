@@ -12,8 +12,7 @@ const MIN_HINTED = Number(process.env.MIN_HINTED ?? 50)
 const MAX_HINTED_SKILLS = 3
 const ON_DISK = readdirSync(join(ROOT, 'skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)
 
-// This reads the routing table, not a model: a user-only skill (handoff, help, signature,
-// levelup) is still listed there, which is how a session finds it.
+// This reads the routing table, not a model.
 // Disclosed exception: these reuse their target's description words on purpose, to gate the arrows.
 const PARAPHRASE = [
   ['why is this page so slow when there are lots of orders?', 'performance'],

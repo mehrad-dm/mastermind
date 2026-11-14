@@ -1,7 +1,6 @@
 ---
 name: lint
-description: "Use when the user asks to check MasterMind's own instruction files for bloat, repeated rules and contradictions. Reports; the user approves every change. Never lints project code (`refactorer`)."
-disable-model-invocation: true
+description: "Use when the user asks to check MasterMind's own instruction files (kernel, core, skills, agents) for bloat, repeated rules and contradictions between layers: \"lint the brain\", \"is MasterMind contradicting itself?\", before a MasterMind release. Reports with file:line; the user approves every change. Never lints project code (`refactorer`)."
 ---
 
 # MasterMind: Lint

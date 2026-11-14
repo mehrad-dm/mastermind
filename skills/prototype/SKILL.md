@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: "Use when the right approach is unknown and trying it will teach faster than planning: a risky assumption, an unfamiliar integration, a doubt that it can work at all. The result is throwaway and does not ship."
+description: "Use when the right approach is genuinely unknown and trying it will teach faster than planning: a risky unvalidated assumption, an unfamiliar integration, \"will this even work\", \"try something quick\". The result is explicitly throwaway and does not ship."
 ---
 
 # MasterMind: Prototype

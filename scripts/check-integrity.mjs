@@ -31,7 +31,9 @@ function frontmatter(text) {
       value = parts.join(' ').trim()
     } else if (value.trim()) {
       // A plain or quoted scalar may continue on indented lines, which YAML folds into one value.
-      while (i + 1 < lines.length && /^\s+\S/.test(lines[i + 1])) value = `${value.trimEnd()} ${lines[++i].trim()}`
+      // Blank lines inside it fold too, as long as an indented line still follows them.
+      const more = (j) => { while (j < lines.length && !lines[j].trim()) j++; return j < lines.length && /^\s+\S/.test(lines[j]) }
+      while (i + 1 < lines.length && more(i + 1)) { const l = lines[++i].trim(); if (l) value = `${value.trimEnd()} ${l}` }
     }
     fm[km[1]] = unquote(value)
   }
@@ -41,25 +43,21 @@ function frontmatter(text) {
 const KERNEL_MAX_LINES = 200
 const KERNEL_MAX_CHARS = 9500
 // Under 10,000 characters the session hook can carry the kernel whole, and Claude Code warns past 200 lines.
+// Counted in UTF-16 units, as that cap is: an emoji counts two.
 function kernelBudget(text) {
   const lines = text.replace(/\n$/, '').split('\n').length
-  const chars = [...text].length
+  const chars = text.length
   if (lines <= KERNEL_MAX_LINES && chars <= KERNEL_MAX_CHARS) return []
   return [`CLAUDE.md is ${lines} lines and ${chars} characters; the kernel budget is ${KERNEL_MAX_LINES} lines and `
     + `${KERNEL_MAX_CHARS} characters, and both must hold`]
 }
 
-// The skills a user types by name. A model that fires one of these on its own has taken a decision
-// that belongs to the user, and a skill that loses the flag starts competing for every request.
-const USER_ONLY = ['handoff', 'help', 'levelup', 'lint', 'report', 'signature']
+// A skill with `disable-model-invocation: true` is invisible to the model, so a plain request such as
+// "what can you do?" never reaches it, and in Claude Code `/help` is the built-in command. Measured live:
+// help and signature went from 2/2 to 0/2. Skills that run only on request say so in their description.
 function userOnlyErrors(skills) {
-  const flagged = skills.filter(({ fm }) => String(fm['disable-model-invocation'] ?? '').trim() === 'true').map(({ dir }) => dir)
-  const out = []
-  for (const dir of USER_ONLY.filter((d) => !flagged.includes(d)))
-    out.push(`skills/${dir}/SKILL.md: user-only, but has no \`disable-model-invocation: true\`, so a model can fire it unasked`)
-  for (const dir of flagged.filter((d) => !USER_ONLY.includes(d)))
-    out.push(`skills/${dir}/SKILL.md: \`disable-model-invocation: true\` hides it from the model, but it is not one of the user-only skills (${USER_ONLY.join(', ')})`)
-  return out
+  return skills.filter(({ fm }) => String(fm['disable-model-invocation'] ?? '').trim() === 'true')
+    .map(({ dir }) => `skills/${dir}/SKILL.md: \`disable-model-invocation: true\` hides it from the model, so a plain request cannot reach it: say "only when the user asks" in its description instead`)
 }
 
 function frontmatterKeyErrors(rel, fm) {
@@ -78,9 +76,10 @@ function unquotedColonErrors(rel, text) {
   return out
 }
 
-const DESC_MAX = 300
-const DESC_TOTAL_MAX = 7500
+const DESC_MAX = 500
+const DESC_TOTAL_MAX = 12000
 // Every description is loaded into every session and competes for a share of the context window.
+// They carry the phrasings users actually say: cut to bare intent, live routing fell from 79% to 60%.
 function descriptionBudget(skills) {
   const out = []
   let total = 0
@@ -494,4 +493,4 @@ if (errors.length) {
   process.exit(1)
 }
 console.log(`✓ MasterMind integrity: ${skillDirs.length} skills, indexes and references consistent `
-  + `(kernel ${[...kernel].length} characters, descriptions ${descriptions.total}).`)
+  + `(kernel ${kernel.length} characters, descriptions ${descriptions.total}).`)

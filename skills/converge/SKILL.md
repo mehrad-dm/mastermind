@@ -1,6 +1,6 @@
 ---
 name: converge
-description: "Use after a feature was built from a task list, to check the code against its spec, plan and constitution before calling it done. Not before code exists (`analyze`), not for one claim (`double-check`), not for only running it (`qa`)."
+description: "Use after building a feature from a task list, to find out whether the code actually does what its spec, plan and constitution say: \"is this feature really done?\", \"check the code against the spec\", \"what's still missing?\", \"did we build everything we planned?\", every box in tasks.md ticked, or before calling a spec-driven feature done. Not before code exists (`analyze`), not for one claim (`double-check`), not for only running it (`qa`)."
 ---
 
 # MasterMind: Converge

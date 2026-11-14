@@ -1,6 +1,6 @@
 ---
 name: qa
-description: "Use to prove a finished change works by running it: after a feature or fix, or when the user asks to test or verify something, wants tests written, or wants to work test-first. For a claim that cannot be run, use `double-check`."
+description: "Use after finishing a feature or fix to prove it actually works by running it: \"test this\", \"does it work\", \"verify this\", \"QA it\", before shipping something that has never been driven end to end, or when the user wants tests written or to work test-first. For a claim that cannot be run, use `double-check`."
 ---
 
 # QA: prove it works (verify by default, tests on request)

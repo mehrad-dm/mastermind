@@ -1,6 +1,6 @@
 ---
 name: quarantine
-description: "Use when secrets or confidential material must be kept out of git: keys, credentials, client data, real names, proprietary code, or a `lab/` folder whose guards are missing or broken."
+description: "Use whenever secrets or confidential material must be kept out of git: API keys, tokens, credentials, client data, real names, proprietary code: \"these keys must never end up in a commit\", \"make sure this never gets pushed\", \"this is sensitive\", \"don't commit this\", \"set up the lab\", or a `lab/` folder whose guards are missing or broken."
 ---
 
 # Quarantine: a safe place for project data

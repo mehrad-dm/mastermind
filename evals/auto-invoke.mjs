@@ -25,7 +25,7 @@ const CORE = [
   { prompt: 'we need some kind of discounts thing in the shop. I only have a rough idea, so quiz me until you know what I actually want, and write no code yet', expected: ['interview'] },
   { prompt: "there is a .env with live credentials in here and I do not want it reaching github", expected: ['quarantine'] },
   { prompt: 'you said the discount rounding was fixed, are you certain? check yourself before I merge', expected: ['double-check', 'qa', 'code-reviewer'] },
-  { prompt: 'that is me done for the day, back on this tomorrow morning', neverAutoFires: true },
+  { prompt: 'that is me done for the day, back on this tomorrow morning', forbidden: ['handoff', 'report', 'levelup'] },
   { prompt: 'nobody here thinks the old cart endpoint is needed any more. I want it gone without a customer noticing', expected: ['deprecate'] },
 ]
 const EXTRA = [
@@ -36,7 +36,7 @@ const EXTRA = [
   { prompt: 'we always use 2-space indent in this repo, you used tabs, keep that in mind from now on', expected: ['levelup', 'signature'] },
   { prompt: 'I am about to paste this into another AI and I doubt it will get what I mean, fix it up first: summarize customer feedback by theme', expected: ['prompt'] },
   { prompt: 'summarize the customer feedback in this repo by theme and list the top 3 complaints', forbidden: ['prompt'] },
-  { prompt: 'what can you actually do for me here?', expected: ['help'] },
+  { prompt: 'which of your tricks would be useful to me in this project?', expected: ['help'] },
   { prompt: 'I lost you halfway through that. say it again like I am new to all this', expected: ['clarify'] },
   { prompt: 'every small change in the orders code turns into a week of work. something about how it is put together is fighting us, show me what', expected: ['deepen'] },
   { prompt: 'my cofounder wants a referral program, I am not convinced people would use it, can we figure out if it is worth the effort', expected: ['assess'] },

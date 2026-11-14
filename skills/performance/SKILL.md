@@ -1,6 +1,6 @@
 ---
 name: performance
-description: "Use when something is slow or heavy: a page, query, render, build, memory use, a timeout. Measures first. Not for a wrong result (`debug`)."
+description: "Use when something is slow or heavy: \"why is this slow\", \"optimize this\", \"make it faster\", jank, lag, a slow query, page load, render or build, high memory, a timeout. Measures first. Not for a wrong result (`debug`)."
 ---
 
 # Performance: measure, find the real bottleneck, fix the biggest, verify

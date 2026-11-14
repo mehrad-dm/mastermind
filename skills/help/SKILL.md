@@ -1,7 +1,6 @@
 ---
 name: help
-description: "Use when the user asks what MasterMind can do or how to drive it. Shows the menu of skills and agents."
-disable-model-invocation: true
+description: "Use when the user asks what MasterMind can do or how to drive it: \"help\", \"what can you do\", \"how do I use this\", \"what commands are there\", \"list your skills\", \"what are my options\", or when they seem unsure how to get started. Shows the menu of skills and agents."
 ---
 
 # Help: what MasterMind can do, and how to use it

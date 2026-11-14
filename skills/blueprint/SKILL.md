@@ -1,6 +1,6 @@
 ---
 name: blueprint
-description: "Use when a written feature spec needs its technical plan, or a spec change has made the plan stale. Not for a feature with no spec (`specify`), not for one design question outside a feature (the `architect` agent)."
+description: "Use when a written feature spec needs its technical plan: \"plan this spec\", \"how should we build this spec?\", \"make the technical plan for this feature\", a spec in specs/ with no plan.md yet, or a plan that a spec or constitution change has made stale. Not for a feature with no spec (`specify`, or `build` for a small one), not for one design question outside any feature (the `architect` agent)."
 ---
 
 # MasterMind: Blueprint

@@ -1,6 +1,6 @@
 ---
 name: double-check
-description: "Use when a claim that running code cannot settle is about to be handed over: a diagnosis, a design call, an answer, a review that came back too clean, or the user asks whether you are sure. Not at the end of every build, not for running a change (`qa`)."
+description: "Use when you are about to tell the user something works, hand over a decision you feel confident about, or make a change that can't be undone, and when a review came back suspiciously clean: \"are you sure?\", \"you said that was fixed last time\", the answer feels too tidy. Tests a claim (a diagnosis, a design call, an answer) that running code often cannot settle. Not for a routine small change, not for a finished diff (`code-reviewer`), not for driving a change end to end (`qa`)."
 ---
 
 # MasterMind: Double-check

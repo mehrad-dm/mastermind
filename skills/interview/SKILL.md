@@ -1,6 +1,6 @@
 ---
 name: interview
-description: "Use when it is unclear what to build: an ambiguous ask, disputed scope, terms used inconsistently, a spec with open questions, or the user asks to be questioned or to have a plan attacked. Skip when the ask is clear, however many files it spans."
+description: "Use when it is unclear what to build: an ambiguous ask, disputed scope, terms used inconsistently, a spec with open questions or [NEEDS CLARIFICATION] markers, or the user wants to be questioned: \"interview me\", \"ask me what you need\", \"tear this plan apart\", \"what would kill this?\", \"make it better\", \"add the thing\". Skip when the ask is clear, however many files it spans."
 ---
 
 # MasterMind: Interview

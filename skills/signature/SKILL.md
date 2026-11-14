@@ -1,7 +1,6 @@
 ---
 name: signature
-description: "Use when the user asks for code to match their team's real conventions, or for repeated corrections to become durable rules. Private and quarantine-gated. For a named public engineer's style, use `persona`."
-disable-model-invocation: true
+description: "Use when code should match a team's real style and conventions the user keeps correcting you toward: \"make it match our codebase\", \"follow our patterns\", \"you keep writing it wrong\", or when repeated corrections should become durable rules. Private and quarantine-gated. For a named public engineer's style, use `persona`."
 ---
 
 # Signature: capture a team's code style, turn it into rules the AI follows

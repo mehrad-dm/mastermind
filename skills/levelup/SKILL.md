@@ -1,7 +1,6 @@
 ---
 name: levelup
-description: "Use when the user asks MasterMind to remember a lesson, refresh its standards or bootstrap a field pack, or when another skill sends you here with a durable lesson to record."
-disable-model-invocation: true
+description: "Use when the user asks MasterMind to remember a lesson or refresh its standards: \"remember this\", \"learn from that\", \"so you don't repeat it\", \"don't make that mistake again\", \"level up\", \"update your knowledge\", when switching to a new stack's field pack, or when another skill sends you here with a durable lesson to record."
 ---
 
 # MasterMind: Level Up

@@ -189,12 +189,11 @@ Settings, all optional:
   does not trust.
 - `cursor-routing.mjs`: `REPS` (default 1), `MM_CURSOR` to name the binary.
 
-Six skills are user-only (`disable-model-invocation: true`: help, handoff, report, levelup, lint,
-signature), so a model can never fire them. `auto-invoke.mjs` reads that flag from each skill: a
-case that targets one passes when the session reaches the skill through the kernel's menu, by
-opening its file or asking the CLI for it, and fails when the Skill tool fired it. One case in the
-default set asserts that a plain end-of-day remark fires no user-only skill. The routing evals for
-Codex and Cursor ask a session to name a skill, which is the menu route, so they are unaffected.
+No skill sets `disable-model-invocation`: hidden from the model, `help` and `signature` went from
+2/2 to 0/2 on a plain request. Six skills run only on request (help, handoff, report, levelup, lint,
+signature) and say so in their descriptions. One case in the default set asserts that a plain
+end-of-day remark fires none of `handoff`, `report` or `levelup`. `auto-invoke.mjs` still reads the
+flag, so a skill that sets it is scored by the menu route (opening its file or asking the CLI).
 
 Both routing evals print the control beside the treatment for every case. The control is reported
 and never gated: these skill names are guessable, so a bare session often names them too.

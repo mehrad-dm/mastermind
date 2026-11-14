@@ -1,6 +1,6 @@
 ---
 name: build
-description: "Use when the user asks for a feature, change or fix to be implemented and the scope is clear enough to start. Small features included. Not for a one-line edit, an ask whose scope is unsettled (`interview`), or a bug with no known cause (`debug`)."
+description: "Use when implementing any feature, change or fix whose scope is clear enough to start: \"build me X\", \"add this feature\", \"implement this\", \"make this work\", \"can you create\". Small features included: they still need verifying before \"done\". Not for a literal one-line edit, an ask whose scope is unsettled (`interview`), or a bug with no known cause (`debug`)."
 ---
 
 # MasterMind: Build

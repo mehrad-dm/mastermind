@@ -1,6 +1,6 @@
 ---
 name: explain
-description: "Use when an internal package, module or shared component lacks usage docs and people or AI sessions keep using it wrong, or it is being handed to another team. Not for re-explaining your own answer (`clarify`), not for product docs (`living-docs`)."
+description: "Use when an internal package, module or shared component has little or no usage documentation and people or future AI sessions keep using it wrong: \"document this\", \"write docs for our library\", onboarding someone onto an internal API, or handing a package to another team. Not for re-explaining your own answer (`clarify`), not for product docs (`living-docs`)."
 ---
 
 # Document Package: make an internal package self-explaining to any model

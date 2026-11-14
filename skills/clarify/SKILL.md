@@ -1,6 +1,6 @@
 ---
 name: clarify
-description: "Use when the user signals your last answer did not land: they did not follow it, want it simpler or shorter, or repeat a question you already answered. Not for a new question, not for documenting a package (`explain`)."
+description: "Use the moment the user signals your last answer did not land: \"I did not follow that\", \"I don't understand\", \"say it simply\", \"you lost me\", \"what does that mean\", \"too long\", \"explain again\", or a confused question repeating something you already answered. Re-pitch what you just said, in plain words or as a picture. Not for a new question, not for documenting a package (`explain`)."
 ---
 
 # MasterMind: Clarify

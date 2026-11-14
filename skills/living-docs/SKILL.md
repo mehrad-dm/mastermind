@@ -1,6 +1,6 @@
 ---
 name: living-docs
-description: "Use when a project's product, business or technical knowledge needs a written home or has gone stale: a new product, a codebase with no docs, a converged feature. Not usage docs for one package (`explain`), not the decision history (`roadmap`)."
+description: "Use when the project's product, business or technical knowledge needs a home or has gone stale: \"document what this product is\", \"write down how the business works\", \"where is the source of truth for X?\", \"our docs are out of date\", a new product, a codebase with no docs, or a converged feature whose lessons must outlive it. Not usage docs for one package (`explain`), not the decision history (`roadmap`)."
 ---
 
 # MasterMind: Living docs

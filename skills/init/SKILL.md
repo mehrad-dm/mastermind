@@ -1,6 +1,6 @@
 ---
 name: init
-description: "Use when the user asks to set MasterMind up for this project, or says yes to the setup offer. Builds the field pack for the project's real stack. Never run unasked: with no field pack, offer it in one line and carry on with the task."
+description: "Use when the user asks to set MasterMind up for this project: \"init\", \"initialize\", \"set up MasterMind\", \"get me ready\", or a yes to the setup offer. Builds the field pack for the project's real stack. Never run unasked: with no field pack, offer it on the first announce line and carry on with the task."
 ---
 
 # Initialize: get MasterMind ready for this project, fast
@@ -39,8 +39,8 @@ init to build one"*. Under a shared or global brain, add: *"(the pack goes in yo
    `.mastermind/bin/mastermind sync` for a per-project brain, the default, or
    `~/.mastermind/bin/mastermind sync` under a shared or global brain. It regenerates the router,
    writes the Cursor field rule and refreshes monorepo route anchors. The user re-runs nothing. If
-   that command is missing, run `node .mastermind/scripts/build-router.mjs` and say Cursor waits for
-   the next install.
+   that command is missing, run the brain's `scripts/build-router.mjs` with node (in `.mastermind/`, or
+   `~/.mastermind/` under a shared or global brain) and say Cursor waits for the next install.
 5. **Fill the project brief** (`.mastermind/brief.md`). An isolated install seeds it; under a shared
    brain there is no project brain, so create the file at that path. The field pack holds the stack;
    the brief holds *this* project: what it is, the words it uses, what breaks and who feels it, what

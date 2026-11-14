@@ -38,9 +38,9 @@ keeps a large library lean and navigable (the lesson from the best skill kits).
 - **Don't duplicate an agent**: review, architecture, refactor, adopt-decisions are agents (isolated
   context). Skills are for inline workflows.
 - **A deterministic step is a script, not a model call** (`~/.mastermind/engineering/core/principles.md`).
-- **Frontmatter is `name`, `description`, and for a user-invoked skill `disable-model-invocation: true`.**
-  Nothing else. The user-invoked skills are `help`, `handoff`, `report`, `levelup`, `lint` and
-  `signature`: they run when the user asks for them, or when another skill sends the model to their file.
+- **Frontmatter is `name` and `description`.** Never `disable-model-invocation`: it hides the skill from
+  the model, so a plain request never reaches it. A skill that runs only on request (`help`, `handoff`,
+  `report`, `levelup`, `lint`, `signature`) says so in its description and still lists the user's phrasings.
 - Add the skill to `skills/README.md` so the index stays honest.
 
 ## Match the form to the failure

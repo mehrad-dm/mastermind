@@ -102,10 +102,10 @@ pack files a task needs.
 **Spec-driven work.** In a project with a `specs/` folder, run `mastermind next` before choosing a
 spec-driven skill. Follow it unless the user asked for something else.
 
-**The CLI** is read-only: `.mastermind/bin/mastermind` (under `$HOME` for a shared or global brain).
-`skills` lists every pack on the machine with its source: it is how Cursor and Codex reach a skill they
-do not own. Also `skill <name>` · `agent <name>` · `conflicts` · `wrong-log` (every logged miss: read
-it when the user asks whether to trust you).
+**The CLI**: `.mastermind/bin/mastermind` (under `$HOME` for a shared or global brain). Read-only
+commands: `skills` lists every pack on the machine with its source: it is how Cursor and Codex reach a
+skill they do not own. Also `skill <name>` · `agent <name>` · `conflicts` · `wrong-log` (every logged
+miss: read it when asked whether to trust you).
 
 ## Across the supported tools
 

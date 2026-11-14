@@ -1,6 +1,6 @@
 ---
 name: analyze
-description: "Use before code is written, when a feature's spec, plan and task list all exist and must be checked against each other. Read-only. Not for one concern inside the spec (`checklist`), not for code against the documents after building (`converge`)."
+description: "Use when a feature's spec, plan and task list all exist and need checking against each other before code is written: \"check the spec and plan agree\", \"is this ready to build?\", \"find gaps before we start\", or before building anything that touches money, auth or data from a task list. Read-only. Not for one concern inside the spec (`checklist`), not for code against the documents after building (`converge`)."
 ---
 
 # MasterMind: Analyze

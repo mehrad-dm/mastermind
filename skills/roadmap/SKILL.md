@@ -1,6 +1,6 @@
 ---
 name: roadmap
-description: "Use when work spans weeks and its decisions need a durable map: returning after time away, onboarding someone, a choice nobody can find. Not one session's state (`handoff`), not scoping one feature (`interview`)."
+description: "Use when work spans weeks and the reasoning behind it is piling up: returning to a project after time away, \"why did we decide X?\", \"where did we land on this?\", \"what's still open?\", onboarding someone onto a long-running build, or a choice nobody can find. Not one session's state (`handoff`), not scoping one feature (`interview`)."
 ---
 
 # MasterMind: Roadmap

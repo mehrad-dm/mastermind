@@ -1,7 +1,6 @@
 ---
 name: handoff
-description: "Use when the user asks for a handoff: work must survive a reset, a pause, or a move to a teammate or a new session. Not the decision history across weeks (`roadmap`)."
-disable-model-invocation: true
+description: "Use when the user asks for work to survive losing context: \"save where we are\", \"I'm pausing this\", \"hand this over\", before a /clear on a long task, handing over to a teammate or the next session, or a context window filling up on multi-day work. Only when asked or when a skill sends you, never for a plain goodbye. Not the decision history across weeks (`roadmap`)."
 ---
 
 # MasterMind: Handoff
