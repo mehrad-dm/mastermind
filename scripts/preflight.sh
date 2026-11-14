@@ -57,6 +57,10 @@ release_runs_on_branch() {
   mv "$tmp/changelog" "$tmp/repo/CHANGELOG.md"
   git -C "$tmp/repo" add -A &&
     git -C "$tmp/repo" -c user.name=preflight -c user.email=preflight@localhost commit -qm "changelog: v99.0.0" || { rm -rf "$tmp"; return 1; }
+  git -C "$tmp/site" branch -M main
+  out="$(MASTERMIND_SITE="$tmp/site" bash "$tmp/repo/scripts/release.sh" 99.0.0 --dry-run 2>&1)"
+  case "$out" in *"the site checkout is on main"*) ;; *) echo "release.sh ran with the site on main:"; printf '%s\n' "$out"; rm -rf "$tmp"; return 1 ;; esac
+  git -C "$tmp/site" checkout -q -b release/v99.0.0
   out="$(MASTERMIND_SITE="$tmp/site" bash "$tmp/repo/scripts/release.sh" 99.0.0 --dry-run 2>&1)"
   code=$?
   rm -rf "$tmp"

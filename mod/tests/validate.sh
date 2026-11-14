@@ -16,15 +16,13 @@ if [ -z "$BIN" ]; then
   done
 fi
 [ -n "$BIN" ] || BIN="$(command -v claude || true)"
-if [ -z "$BIN" ]; then
-  echo "NOT CHECKED: no claude binary found. Set CLAUDE_BIN to Claude Code 2.1.287 or newer."
-  exit 2
-fi
+# Exit 2 is "not checked"; MM_REQUIRE_CLAUDE=1 (CI) makes it a failure.
+not_checked() { echo "NOT CHECKED: $1"; [ -n "${MM_REQUIRE_CLAUDE:-}" ] && exit 1; exit 2; }
+[ -n "$BIN" ] || not_checked "no claude binary found. Set CLAUDE_BIN to Claude Code 2.1.287 or newer."
 VERSION_LINE="$("$BIN" --version 2>/dev/null || true)"
-PATCH="$(printf '%s' "$VERSION_LINE" | sed -n 's/^2\.1\.\([0-9][0-9]*\).*/\1/p')"
-if [ -z "$PATCH" ] || [ "$PATCH" -lt 287 ]; then
-  echo "NOT CHECKED: $BIN is '$VERSION_LINE', which does not read hooks modules. Set CLAUDE_BIN to 2.1.287 or newer."
-  exit 2
+IFS=. read -r MAJ MIN PAT <<<"$(printf '%s' "$VERSION_LINE" | sed -n 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p')"
+if [ -z "${PAT:-}" ] || [ $((MAJ * 1000000 + MIN * 1000 + PAT)) -lt 2001287 ]; then
+  not_checked "$BIN is '$VERSION_LINE', which does not read hooks modules. Set CLAUDE_BIN to 2.1.287 or newer."
 fi
 echo "validating $MOD with $VERSION_LINE"
 

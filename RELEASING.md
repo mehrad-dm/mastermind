@@ -121,13 +121,16 @@ release's version and paths filled in, when it finishes.
 ### 1. Branch both repositories from an up-to-date main line
 
 ```
+export MASTERMIND_SITE=../mastermind-site    # the site checkout: every site command below uses it
 git fetch origin && git checkout -b release/v0.34.0 origin/master
-git -C "$MASTERMIND_SITE" fetch origin && git -C "$MASTERMIND_SITE" checkout -b release/v0.34.0 origin/main
+git -C "${MASTERMIND_SITE:?}" fetch origin && git -C "${MASTERMIND_SITE:?}" checkout -b release/v0.34.0 origin/main
 ```
 
 `master` takes pull requests only, so the release commit is made on a branch like any other
 change, and `release.sh` refuses to run on `master`. The site gets a branch too: nothing reaches its
-`main`, which deploys, until the rehearsal in step 6 is green.
+`main`, which deploys, until the rehearsal in step 6 is green, and `release.sh` refuses while the
+site is on `main`. Every site command below is written `${MASTERMIND_SITE:?}`, so in a new terminal
+without the export it stops instead of running in this repository.
 
 ### 2. Write the changelog entry, and commit it on the branch
 
@@ -185,8 +188,8 @@ again. Or undo it and start over:
 
 ```
 git checkout -- .
-git -C "$MASTERMIND_SITE" checkout -- .
-git -C "$MASTERMIND_SITE" status --short    # a new library page is untracked: delete it by name
+git -C "${MASTERMIND_SITE:?}" checkout -- .
+git -C "${MASTERMIND_SITE:?}" status --short    # a new library page is untracked: delete it by name
 ```
 
 Both are safe only because step 2 left nothing else uncommitted.
@@ -196,13 +199,13 @@ Both are safe only because step 2 left nothing else uncommitted.
 ```
 # -a stages tracked files only, so a release that ADDS a file would ship without it.
 git add -A && git commit -m "release: v0.34.0"
-git -C "$MASTERMIND_SITE" add -A && git -C "$MASTERMIND_SITE" commit -m "v0.34.0"
+git -C "${MASTERMIND_SITE:?}" add -A && git -C "${MASTERMIND_SITE:?}" commit -m "v0.34.0"
 
 git push -u origin release/v0.34.0
 gh pr create --fill
 PR="$(gh pr view --json number --jq .number)"
 gh pr merge "$PR" --squash --auto    # merges once check, suites, analyze and shellcheck pass
-gh pr checks "$PR" --watch
+gh pr checks "$PR" --watch &&
 while s="$(gh pr view "$PR" --json state --jq .state)" && [ "$s" = OPEN ]; do sleep 15; done
 gh pr view "$PR" --json state,mergeCommit    # must say MERGED; CLOSED means stop here
 ```
@@ -228,11 +231,17 @@ are on is not the one GitHub merged.
 ### 6. Rehearse the release on the merge commit, before the site or the tag moves
 
 ```
-git -C "$MASTERMIND_SITE" push -u origin release/v0.34.0    # a branch: the live site does not change
+git -C "${MASTERMIND_SITE:?}" push -u origin release/v0.34.0    # a branch: the live site does not change
+SHA="$(git rev-parse HEAD)"
+test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$SHA"    # master has not moved since step 5
 gh workflow run pre-tag.yml --ref master -f site-ref=release/v0.34.0
-sleep 5
-gh run watch "$(gh run list --workflow pre-tag.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
+until RUN="$(gh run list --workflow pre-tag.yml --commit "$SHA" --event workflow_dispatch --limit 1 \
+  --json databaseId --jq '.[0].databaseId')" && [ -n "$RUN" ]; do sleep 5; done
+gh run watch "$RUN" --exit-status
 ```
+
+The run is picked by the commit it ran on, never as "the latest run", so it is the rehearsal of the
+commit step 7 tags. If `master` moved after step 5, the `test` line stops: go back to step 5.
 
 `pre-tag.yml` runs everything the publish gate runs, and the whole platform matrix (Linux on two
 Node versions, macOS, Alpine, WSL, the native-Windows refusal, the packed tarball), on the commit
@@ -257,7 +266,7 @@ again at step 4.
 ### 7. Deploy the site, then tag the merge commit and push the tag
 
 ```
-git -C "$MASTERMIND_SITE" push origin release/v0.34.0:main    # only after step 6 is green
+git -C "${MASTERMIND_SITE:?}" push origin release/v0.34.0:main    # only after step 6 is green
 git tag -a v0.34.0 -m "v0.34.0: <the changelog's opening line>" "$(git rev-parse HEAD)"
 git push origin v0.34.0        # this is what publishes, and it is the irreversible step
 ```
@@ -285,7 +294,7 @@ is on `origin/master` and that commit's `VERSION` and `CHANGELOG.md` match the t
   server going down must not burn a version, so links are checked weekly (`freshness.yml`), on
   pull requests as a job that cannot fail the run, and by `preflight.sh` before the release commit.
   Links to files in this repository are different: `check-links.mjs --local` needs no network, and
-  a broken one fails the pull request's `check` job
+  a broken one fails the pull request's `check` job.
 - the library pages match the skill and agent sources, when CI can read the site (see below)
 - the packed tarball contains exactly `README.md`, `bin/mastermind.mjs`, `package.json`
 - **every** platform passes: Linux on Node 18 and 22, macOS, Alpine, WSL, the native-Windows

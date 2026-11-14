@@ -43,8 +43,13 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 printf '%s── releasing %s → %s%s%s\n' "$b" "$OLD" "$b" "$NEW" "$x"
 [ "$DRY" = 1 ] && warn "dry run: nothing will be written"
 
-[ -d "$SITE" ] || die "../mastermind-site is not checked out, so the site cannot be moved with the repo"
+[ -d "$SITE" ] || die "$SITE is not checked out, so the site cannot be moved with the repo (set MASTERMIND_SITE)"
 git -C "$SITE" rev-parse --git-dir >/dev/null 2>&1 || die "$SITE is not a git checkout, so its changes could not be reviewed or undone"
+# Pushing the site's main deploys it, so the rehearsal needs the site on its own release branch.
+SITE_BRANCH="$(git -C "$SITE" rev-parse --abbrev-ref HEAD)"
+case "$SITE_BRANCH" in main|master|HEAD)
+  die "the site checkout is on $SITE_BRANCH; branch it first: git -C \"$SITE\" switch -c release/v$NEW (RELEASING step 1)" ;;
+esac
 # Only the paths this script writes may be dirty on a resume; anything else is someone's work.
 REPO_PATHS='^(VERSION|cli/package\.json|\.claude-plugin/plugin\.json|\.claude-plugin/marketplace\.json|README\.md|mod/\.claude-plugin/plugin\.json|architecture\.json)$'
 SITE_PATHS='^(src|public)/'
@@ -176,15 +181,17 @@ ${b}Not done automatically, because each one leaves this machine:${x}
    3. open the pull request     git push -u origin "$BRANCH" && gh pr create --fill
                                 PR="\$(gh pr view --json number --jq .number)"
    4. wait until it is MERGED   gh pr merge "\$PR" --squash --auto
-                                gh pr checks "\$PR" --watch
+                                gh pr checks "\$PR" --watch &&
                                 while s="\$(gh pr view "\$PR" --json state --jq .state)" && [ "\$s" = OPEN ]; do sleep 15; done
                                 gh pr view "\$PR" --json state,mergeCommit     ${y}# must say MERGED; CLOSED means stop here${x}
                                 ${y}# auto-merge can lag the checks: nothing below runs before state is MERGED${x}
    5. take the merge commit     git fetch origin && git checkout master && git reset --hard origin/master
                                 test "\$(git rev-parse HEAD)" = "\$(gh pr view "\$PR" --json mergeCommit --jq .mergeCommit.oid)"
    6. push the site's branch    git -C "$SITE" push -u origin HEAD     ${y}# a branch, not main: the live site does not change${x}
-   7. rehearse the release      gh workflow run pre-tag.yml --ref master -f site-ref="\$(git -C "$SITE" rev-parse --abbrev-ref HEAD)"
-                                sleep 5; gh run watch "\$(gh run list --workflow pre-tag.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
+   7. rehearse the release      SHA="\$(git rev-parse HEAD)"; test "\$(git ls-remote origin refs/heads/master | cut -f1)" = "\$SHA"
+                                gh workflow run pre-tag.yml --ref master -f site-ref="\$(git -C "$SITE" rev-parse --abbrev-ref HEAD)"
+                                until RUN="\$(gh run list --workflow pre-tag.yml --commit "\$SHA" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId')" && [ -n "\$RUN" ]; do sleep 5; done
+                                gh run watch "\$RUN" --exit-status    ${y}# the run on the commit you will tag, not the latest one${x}
                                 ${y}# red: fix it through another pull request and start again at step 3${x}
    8. deploy the site           git -C "$SITE" push origin HEAD:main   ${y}# only after step 7 is green${x}
    9. tag the merge commit      git tag -a "v$NEW" -m "$TAGMSG" "\$(git rev-parse HEAD)"

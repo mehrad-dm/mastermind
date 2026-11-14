@@ -46,9 +46,11 @@ jobs:
         env:
           MM_REQUIRE_CLAUDE: 1
         run: bash scripts/validate-plugin.sh
-      # Exit 2 means no claude of 2.1.287 or later could read the Mod: not checked, which is not a failure.
+      # claude is installed just above, so "not checked" here means the install broke: a failure.
       - name: the Mod stays inside its contract and the marketplace lists it from ./mod
-        run: bash mod/tests/validate.sh || [ "$?" = 2 ]
+        env:
+          MM_REQUIRE_CLAUDE: 1
+        run: bash mod/tests/validate.sh
 
   # Runs on every pull request with no path filter, so it can be a REQUIRED check. The cross-OS
   # matrix is path-filtered and therefore cannot be required without deadlocking docs-only PRs,

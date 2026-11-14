@@ -141,8 +141,11 @@ Gotchas section** (only what pushes the model off its defaults); don't duplicate
 in `skills/README.md`. Full discipline: `skills/levelup/authoring.md`.
 
 Every description is loaded into every session, so they share a budget: `check-integrity.mjs` fails
-a `description` over 300 characters, a library whose descriptions total more than 7,500, and a
-`name` that differs from its folder.
+a `description` over 500 characters, a library whose descriptions total more than 12,000, and a
+`name` that differs from its folder. Lead with the phrasings users actually say (`"why is this
+slow"`): a description cut to bare intent routes worse, which `evals/auto-invoke.mjs` measures. No
+skill sets `disable-model-invocation`: it hides the skill from the model, so a plain request never
+reaches it. A skill that runs only on request says so in its description.
 
 ## Adding a field pack
 
