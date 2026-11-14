@@ -25,6 +25,8 @@ jobs:
       # Also holds the kernel to 200 lines and 9,500 characters, and skill descriptions to their budget.
       - run: node scripts/check-integrity.mjs
       - run: node scripts/build-router.mjs --check   # ROUTER.md must be regenerated when routed files change
+      # Repo only here; exit 2 is the site copy not being checked, which the release gate covers.
+      - run: node scripts/build-architecture.mjs --check || [ "$?" = 2 ]
       - run: node scripts/lint-brain.mjs --strict
       # A drifted version used to surface at the tag, where the tag can no longer be moved.
       - run: node scripts/check-versions.mjs

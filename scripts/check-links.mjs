@@ -13,7 +13,7 @@ const UA = 'Mozilla/5.0 (compatible; MasterMind-linkcheck/1.0; +https://mastermi
 const TLDS = 'com|dev|org|io|net|guru|gg|es|xyz'
 const SKIP = ['/ui-ux-pro-max/', '/lab/', '/_', 'ROUTER.md']   // /_ skips all _-prefixed scaffolding
 
-const EXCLUDE_DIRS = new Set(['.git', '.github', '.claude', '.cursor', '.agents', 'node_modules', '.eval-run', 'lab', 'private', 'local'])
+const EXCLUDE_DIRS = new Set(['.git', '.github', '.claude', '.cursor', '.agents', '.mastermind', 'node_modules', '.eval-run', 'lab', 'private', 'local'])
 const EXCLUDE_FILES = new Set(['CHANGELOG.md'])
 
 // --- collect curated markdown files ------------------------------------------

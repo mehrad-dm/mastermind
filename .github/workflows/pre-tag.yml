@@ -69,6 +69,11 @@ jobs:
         env:
           MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
         run: node scripts/build-library.mjs --check
+      - name: the site's diagram data is what this repo generates
+        if: steps.sitesrc.outcome == 'success'
+        env:
+          MASTERMIND_SITE: ${{ github.workspace }}/site-checkout
+        run: node scripts/build-architecture.mjs --check
       - name: no em dashes or long comment blocks on the website either
         if: steps.sitesrc.outcome == 'success'
         env:
@@ -123,6 +128,7 @@ jobs:
       # Not in publish.yml: these need a download or a slow install, which a tag must not wait on.
       - run: node scripts/self-test.mjs
       - run: node scripts/check-claims.mjs
+      - run: node scripts/build-architecture.mjs --check || [ "$?" = 2 ]
       - run: npm install -g @anthropic-ai/claude-code@2.1.319 --registry=https://registry.npmjs.org
       - name: plugin manifests pass Claude Code's own validator
         env:

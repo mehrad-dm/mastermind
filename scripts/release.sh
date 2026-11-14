@@ -2,7 +2,8 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-SITE="$REPO/../mastermind-site"
+SITE="${MASTERMIND_SITE:-$REPO/../mastermind-site}"
+export MASTERMIND_SITE="$SITE"
 cd "$REPO"
 
 g=$'\033[0;32m'; y=$'\033[0;33m'; r=$'\033[0;31m'; b=$'\033[1m'; x=$'\033[0m'
@@ -86,6 +87,8 @@ edit "llms.txt"           "$SITE/public/llms.txt"             "s/Current release
 if [ "$DRY" = 0 ]; then
   MASTERMIND_SITE="$SITE" node "$REPO/scripts/build-library.mjs" >/dev/null || die "library pages could not be regenerated"
   ok "library pages (a release date starts each New badge's 60 days)"
+  MASTERMIND_SITE="$SITE" node "$REPO/scripts/build-architecture.mjs" >/dev/null || die "the architecture data could not be regenerated"
+  ok "architecture.json and the site's copy of it"
   # The committed generator, never a work-in-progress copy, draws the link card and the banners.
   GEN="$SITE/scripts/.release-social.mjs"
   git -C "$SITE" show HEAD:scripts/generate-social.mjs > "$GEN" || die "the site has no committed scripts/generate-social.mjs"

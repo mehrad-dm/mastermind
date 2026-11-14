@@ -32,7 +32,7 @@ It refreshes **one field**: the one named in the argument, else the active field
 
    | Tool | Check | For |
    | --- | --- | --- |
-   | Claude Code | [code.claude.com/docs](https://code.claude.com/docs/en/overview) + changelog, [anthropic.com/engineering](https://www.anthropic.com/engineering), **Claude Devs** | skills, agents, hooks, MCP, model/effort, context management |
+   | Claude Code | [Claude Code docs](https://code.claude.com/docs/en/overview) + changelog, [anthropic.com/engineering](https://www.anthropic.com/engineering), **Claude Devs** | skills, agents, hooks, MCP, model/effort, context management |
    | Codex | [learn.chatgpt.com/docs](https://learn.chatgpt.com/docs), [developers.openai.com/api/docs](https://developers.openai.com/api/docs), [github.com/openai/codex](https://github.com/openai/codex) releases, [agents.md](https://agents.md) | AGENTS.md conventions, CLI surface, config + sandbox behavior |
    | Cursor | [cursor.com/docs](https://cursor.com/docs), [cursor.com/changelog](https://cursor.com/changelog), [cursor.com/blog](https://cursor.com/blog) | rules format (`.mdc`, `alwaysApply`), context handling, agent mode |
 

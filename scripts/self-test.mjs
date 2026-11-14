@@ -16,6 +16,7 @@ const GATES = [
   'scripts/check-links.mjs',
   'scripts/check-versions.mjs',
   'scripts/check-claims.mjs',
+  'scripts/build-architecture.mjs',
   'evals/agent-surface-routing.mjs',
   'evals/classify.mjs',
 ]

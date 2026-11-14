@@ -163,7 +163,8 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    It runs everything and exits non-zero if any of it fails: the installer and agent-surface
    suites, the routing checks, every gate's self-test, all shell parses, the router, library,
    integrity, plugin, claims and link checks, the writing checks, that the version strings agree
-   across the repo *and* the site, that the architecture map is fresh, and that the site builds.
+   across the repo *and* the site, that the architecture data matches the repo, and that the site
+   builds.
    A check that cannot run where you are (no site checkout, no Claude CLI, a live eval with no
    account) is reported as "could not run" and is never counted as passed. Add a check to
    `preflight.sh` the moment you find something a release should never ship without: it's the
@@ -266,7 +267,9 @@ Each of these was argued once and decided. Reopening one needs a new argument, n
   the site shows the badge from that release's changelog date for 60 days, then drops it on its own.
   People revisit a tool's docs occasionally, so 30 days expired before most of them saw it.
 - **Site docs are generated, never hand-written**: `scripts/build-library.mjs` builds them from
-  `skills/*/ABOUT.md`, so a page cannot claim something the skill doesn't say.
+  `skills/*/ABOUT.md`, so a page cannot claim something the skill doesn't say. The site's diagrams
+  are drawn from `architecture.json`, which `scripts/build-architecture.mjs` writes from the repo and
+  a real install; the only hand-written part is the wording in `scripts/architecture.source.json`.
 - **Prose column stays 768px** on the site; navigation may span the full container. 🧠 stays a literal
   emoji in terminal lines; genuine UI uses the icon component.
 

@@ -78,6 +78,14 @@ for (const f of readdirSync(join(REPO, 'library', 'agents'))) {
 }
 items.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
 
+// The Mod has no library page: the site keys its New badge on the plugin's name.
+const modSince = fm(readFileSync(join(REPO, 'mod', 'README.md'), 'utf8'))[0].since
+if (!modSince) {
+  console.error('✖ mod/README.md has no since: in its frontmatter, so the site cannot date the Mod\'s New badge')
+  process.exit(1)
+}
+const badges = [...items, { name: JSON.parse(readFileSync(join(REPO, 'mod', '.claude-plugin', 'plugin.json'), 'utf8')).name, newUntil: newUntil(modSince) }]
+
 // Neighbours for prev/next, wrapping around so the library is browsable end to end.
 const short = (t) => t.split(/:\s+/)[1] ?? t
 
@@ -113,7 +121,7 @@ ${it.body}
 let stale = 0
 const wanted = new Map(items.map((it, i) => [`${it.name}.md`, page(it, i, items)]))
 const NEW_JSON = join(SITE, 'src', 'data', 'new.json')
-const newJson = JSON.stringify(Object.fromEntries(items.filter((it) => it.newUntil).map((it) => [it.name, it.newUntil])), null, 2) + '\n'
+const newJson = JSON.stringify(Object.fromEntries(badges.filter((it) => it.newUntil).map((it) => [it.name, it.newUntil])), null, 2) + '\n'
 
 if (CHECK) {
   if (!existsSync(SITE)) {

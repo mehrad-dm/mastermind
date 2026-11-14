@@ -1,3 +1,7 @@
+---
+since: 0.34.0
+---
+
 # MasterMind Mod
 
 An optional add-on for Claude Code 2.1.287 or newer. The MasterMind brain is plain Markdown and works

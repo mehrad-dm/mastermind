@@ -55,11 +55,6 @@ function hookPayloads() {
   })
 }
 
-const matcher = () => {
-  try { return JSON.parse(read('hooks/hooks.json')).hooks.SessionStart.map((h) => h.matcher).join('|').split('|') }
-  catch { return [] }
-}
-
 const cli = (args, cwd) => sh('node', [join(ROOT, 'cli', 'bin', 'mastermind.mjs'), ...args], { cwd })
 
 let installed
@@ -115,7 +110,7 @@ function ownAgentsFile() {
 }
 
 const DOCS = ['README.md', 'CLAUDE.md', 'SECURITY.md']
-const MAP = 'scripts/update-scan.mjs'
+const SITE_MAP = 'https://mastermind.mehrad.me/architecture'
 
 const ROWS = [
   {
@@ -137,6 +132,13 @@ const ROWS = [
     test: (text) => {
       const missing = agents().filter((a) => !text.includes('`' + a + '`'))
       return missing.length ? `never names the agent(s) ${missing.join(', ')}` : null
+    },
+  },
+  {
+    id: 'architecture-link', file: 'README.md', claim: /<a href="([^"]+)"[^>]*><b>live interactive map<\/b>/, must: true,
+    test: (text, m) => {
+      if (m[1] !== SITE_MAP) return `the map link points at ${m[1]}, not at ${SITE_MAP}`
+      return existsSync(join(ROOT, 'architecture.json')) ? null : 'architecture.json, the data that page draws, is not in the repo'
     },
   },
   {
@@ -198,7 +200,7 @@ const ROWS = [
     },
   },
   {
-    id: 'cli-commands-answer', file: ['README.md', 'CLAUDE.md', MAP], claim: /wrong-log/, must: true,
+    id: 'cli-commands-answer', file: ['README.md', 'CLAUDE.md'], claim: /wrong-log/, must: true,
     test: () => {
       const cwd = emptyDir('cli-proj')
       const calls = [['skills'], ['skill', 'build'], ['agents'], ['agent', 'architect'], ['route', 'why is this slow?'], ['conflicts'], ['wrong-log']]
@@ -216,7 +218,7 @@ const ROWS = [
     test: () => (read('AGENTS.md') === read('CLAUDE.md') ? null : 'AGENTS.md at the repo root does not carry the kernel'),
   },
   {
-    id: 'hook-under-cap', file: [MAP, 'CLAUDE.md', 'README.md'], claim: /hook/i, must: true,
+    id: 'hook-under-cap', file: ['CLAUDE.md', 'README.md'], claim: /hook/i, must: true,
     test: () => {
       for (const p of hookPayloads()) {
         if (p.text === null) return `the ${p.shape} hook output is not the JSON shape a tool reads (exit ${p.code})`
@@ -226,15 +228,7 @@ const ROWS = [
     },
   },
   {
-    id: 'hook-events', file: MAP, claim: /on (startup[a-z, ]*?(?:and|or) [a-z]+)[,.]/, must: true,
-    test: (text, m) => {
-      const said = m[1].split(/,\s*|\s+(?:and|or)\s+/).map((w) => w.trim()).filter(Boolean)
-      const missing = said.filter((e) => !matcher().includes(e))
-      return missing.length ? `says the hook runs on ${said.join(', ')}; hooks/hooks.json does not match ${missing.join(', ')}` : null
-    },
-  },
-  {
-    id: 'kernel-loads-natively', file: MAP, claim: /kernel (?:itself )?loads natively/, must: true,
+    id: 'kernel-loads-natively', file: 'architecture.json', claim: /loads the kernel natively/, must: true,
     test: () => {
       const src = read('hooks/session-start.sh')
       if (!/CLAUDE\.md/.test(src)) return 'hooks/session-start.sh never points at CLAUDE.md'
@@ -243,12 +237,12 @@ const ROWS = [
     },
   },
   {
-    id: 'directive-cap', file: MAP, claim: /at (\d+) words/, must: true,
+    id: 'directive-cap', file: 'CONTRIBUTING.md', claim: /a directive over (\d+) words/, must: true,
     test: (text, m) => (new RegExp(`MAX_WORDS = ${m[1]}\\b`).test(read('scripts/check-instructions.mjs'))
       ? null : `says directives are capped at ${m[1]} words; check-instructions.mjs uses another number`),
   },
   {
-    id: 'cross-os-platforms', file: MAP, claim: /Linux · macOS · Windows · WSL · Alpine/, must: true,
+    id: 'cross-os-platforms', file: 'RELEASING.md', claim: /Linux on Node 18 and 22, macOS, Alpine, WSL, the native-Windows/, must: true,
     test: () => {
       const y = read('.github/workflows/cross-os.yml')
       const missing = ['linux', 'macos', 'windows-native-guard', 'wsl', 'alpine'].filter((j) => !new RegExp(`^  ${j}:`, 'm').test(y))
@@ -419,9 +413,8 @@ function selfTest() {
   const copy = join(scratch, 'mutated')
   cpSync(HERE, copy, { recursive: true, verbatimSymlinks: true, filter: (src) => !/\/(\.git|node_modules|evals|\.claude|private|lab)(\/|$)/.test(src.slice(HERE.length)) })
   const edit = (rel, fn) => writeFileSync(join(copy, rel), fn(readFileSync(join(copy, rel), 'utf8')))
-  edit('README.md', (t) => `${t}\nIt ships 999 skills and 99 agents.\n`)
+  edit('README.md', (t) => `${t.replace(SITE_MAP, 'https://example.com/map')}\nIt ships 999 skills and 99 agents.\n`)
   edit('cli/package.json', (t) => { const p = JSON.parse(t); p.dependencies = { leftpad: '1.0.0' }; p.engines.node = '>=20'; return JSON.stringify(p) })
-  edit('hooks/hooks.json', (t) => t.replace(/"matcher":\s*"[^"]*"/, '"matcher": "startup"'))
   edit('hooks/session-start.sh', (t) => t.replace(/\ncase "\$SHAPE" in\n/, `\npayload="$payload${'x'.repeat(HOOK_CAP)}"\ncase "$SHAPE" in\n`))
   edit('.github/workflows/integrity.yml', (t) => t.replace(/uses: actions\/checkout@[0-9a-f]{40}/, 'uses: actions/checkout@v4'))
   edit('.github/workflows/publish.yml', (t) => t.replace(/npm install -g npm@[\d.]+/, 'npm install -g npm@latest'))
@@ -441,7 +434,7 @@ function selfTest() {
   mutate((t) => t.replace('mm_strip_block "$t" exact "$MM_KSTART" "$MM_KEND" || return 0', 'return 0'))
   const r2 = spawnSync('node', [join(HERE, 'scripts', 'check-claims.mjs'), '--root', second, '--only', wired.join(','), '--json'], { encoding: 'utf8' })
   for (const f of JSON.parse(r2.stdout).failed) got.add(f.id)
-  const want = ['skill-count', 'agent-count', 'cli-no-dependencies', 'node-floor', 'hook-events', 'hook-under-cap',
+  const want = ['skill-count', 'agent-count', 'architecture-link', 'cli-no-dependencies', 'node-floor', 'hook-under-cap',
     'actions-pinned', 'npm-pinned', 'directive-cap', 'plugin-install-command', 'pre-tag-mirrors-gate', 'codex-hook-under-cap', ...wired]
   const silent = want.filter((id) => !got.has(id))
   if (silent.length || r.status !== 1 || r2.status !== 1) {

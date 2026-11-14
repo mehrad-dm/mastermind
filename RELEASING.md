@@ -140,7 +140,9 @@ old number and tells you about it. `scripts/check-versions.mjs` checks the ones 
 on every pull request, so a drift is found before the tag and not by it.
 
 It also moves the version in the site's `public/llms.txt`, regenerates the library pages (which dates
-each New badge) and redraws the link card and banners with the site's committed generator, because
+each New badge), regenerates `architecture.json` and the site's copy of it
+(`scripts/build-architecture.mjs`, the data behind the site's diagrams), and redraws the link card
+and banners with the site's committed generator, because
 those are the details a release kept missing: the link card carried an old version and `llms.txt`
 fell two releases behind before anyone looked. `preflight.sh` fails when `llms.txt` lists a different
 set of skills than the repo, and `verify-release.sh` checks the live `llms.txt` and that the live link
@@ -186,7 +188,8 @@ gh run watch "$(gh run list --workflow pre-tag.yml --limit 1 --json databaseId -
 `pre-tag.yml` runs everything the publish gate runs, and the whole platform matrix (Linux on two
 Node versions, macOS, Alpine, WSL, the native-Windows refusal, the packed tarball), on the commit
 you are about to tag. It also runs the checks that need a download and so are kept out of the tag
-itself: the gates' own self-tests, the claims check, and Claude Code's plugin validator.
+itself: the gates' own self-tests, the claims check, the architecture data check (it runs a real
+install), and Claude Code's plugin validator.
 
 This step exists because the publish workflow runs **after** the tag is pushed, and a pushed tag
 cannot be moved. Anything that first fails there burns the version: the only way forward is a new
@@ -264,7 +267,7 @@ scripts/verify-release.sh 0.31.0
 
 Checks the tag and every version location, that npm serves that version, that the published
 package is stamped with the commit the tag points at, that the site shows it, that the site's CSP
-allows the origin the embedded map actually resolves to, and that a Release object exists.
+allows no frame on the architecture page (it draws its own diagrams), and that a Release object exists.
 Read-only.
 
 Run it **after** pushing the site, not before: it reads the deployed site, so running it earlier

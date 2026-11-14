@@ -1,0 +1,234 @@
+{
+  "nodes": {
+    "ask": {
+      "label": "You ask",
+      "sub": "plain language",
+      "ref": "README.md",
+      "detail": "You describe what you want in your own words. There is no command to learn: the kernel recognises the intent."
+    },
+    "kernel": {
+      "label": "Kernel",
+      "sub": "always loaded, tiny",
+      "ref": "CLAUDE.md",
+      "detail": "CLAUDE.md, the only part loaded in every session: the prime directives, the operating loop and the menu of skills and agents."
+    },
+    "router": {
+      "label": "Router",
+      "sub": "loads only what the task needs",
+      "ref": "engineering/ROUTER.md",
+      "detail": "ROUTER.md is a generated map. It pulls in the few core docs and field-pack files this task needs and leaves the rest on disk."
+    },
+    "skill": {
+      "label": "A skill",
+      "sub": "one of {skills} inline workflows",
+      "ref": "skills/README.md",
+      "detail": "A workflow that runs in the same conversation: build, debug, qa and the rest. One job each, picked from what you asked."
+    },
+    "agent": {
+      "label": "An agent",
+      "sub": "one of {agents} isolated roles",
+      "ref": "agents",
+      "detail": "A role that works in its own clean context and reports back, so a review is not graded by the context that wrote the code."
+    },
+    "verify": {
+      "label": "Verify",
+      "sub": "run it, prove it",
+      "ref": "engineering/core/rigor.md",
+      "detail": "The work is run and checked before handoff. A claim with no tool result behind it is reported as not checked."
+    },
+    "verdict": {
+      "label": "Verdict",
+      "sub": "Done, or plainly not",
+      "ref": "engineering/core/rigor.md",
+      "detail": "Every report closes with one of four verdicts in plain words, the evidence for it, and a line naming what was not checked."
+    },
+    "core": {
+      "label": "Universal core",
+      "sub": "how to think and work",
+      "ref": "engineering/core",
+      "detail": "Field-agnostic documents read on demand: the mindset, the decision framework, the rigor gate and the execution loop."
+    },
+    "field": {
+      "label": "Field pack",
+      "sub": "built per project",
+      "ref": "engineering/fields/_template",
+      "detail": "What to know and which tools, for one real stack. None ships: init detects the stack and builds the pack from the template."
+    },
+    "skills": {
+      "label": "Skills",
+      "sub": "inline workflows",
+      "ref": "skills",
+      "detail": "A growable library of workflows. Each is one job with a short routing description and a body that loads only when it runs."
+    },
+    "agents": {
+      "label": "Agents",
+      "sub": "isolated-context roles",
+      "ref": "agents",
+      "detail": "Few and deep. Each runs in a fresh context: design, review, restructuring, and adopt-or-build decisions."
+    },
+    "cli": {
+      "label": "CLI",
+      "sub": "installer and lookups",
+      "ref": "bin/mastermind",
+      "detail": "Installs the brain and answers an assistant mid-task: the routing table, one skill, one agent, the wrong-log. The lookups are read-only."
+    },
+    "hooks": {
+      "label": "Hooks",
+      "sub": "frame each session",
+      "ref": "hooks/session-start.sh",
+      "detail": "A short note at session start that points at the kernel, so the brain is present even where nothing else carries it."
+    },
+    "mod": {
+      "label": "The Mod",
+      "sub": "optional Claude Code plugin",
+      "ref": "mod/README.md",
+      "detail": "Opt-in code that enforces what the kernel asks for: one question before anything that cannot be undone. It only tightens."
+    },
+    "claude": {
+      "label": "Claude Code",
+      "sub": "loads the kernel natively",
+      "detail": "Reads .claude/CLAUDE.md on its own at the start of every session and again after compaction. Skills and agents are native."
+    },
+    "claude-kernel": {
+      "label": ".claude/CLAUDE.md",
+      "sub": "the kernel",
+      "ref": "CLAUDE.md",
+      "detail": "The kernel, loaded natively and re-read after compaction. An existing file gets a pointer appended, never overwritten."
+    },
+    "claude-skills": {
+      "label": ".claude/skills",
+      "sub": "{skills} skills, native",
+      "ref": "skills",
+      "detail": "Every skill linked where Claude Code discovers skills, so it picks one from its description or by name."
+    },
+    "claude-agents": {
+      "label": ".claude/agents",
+      "sub": "{agents} agents, native",
+      "ref": "agents",
+      "detail": "The isolated-context roles as native subagents: design, review, restructuring, adopt or build."
+    },
+    "claude-hook": {
+      "label": "SessionStart hook",
+      "sub": ".claude/settings.json",
+      "ref": "hooks/session-start.sh",
+      "detail": "One entry merged into .claude/settings.json. It carries the framing at session start; every other key is left as it was."
+    },
+    "cursor": {
+      "label": "Cursor",
+      "sub": "an always-on rule",
+      "detail": "Has no kernel file of its own, so the kernel rides in a rule that Cursor sends again with every request."
+    },
+    "cursor-rule": {
+      "label": ".cursor/rules/mastermind.mdc",
+      "sub": "always on, kernel inlined",
+      "ref": "CLAUDE.md",
+      "detail": "alwaysApply: true with the kernel inlined. It is re-sent on every request, so nothing has to survive compaction."
+    },
+    "cursor-agents": {
+      "label": ".cursor/agents",
+      "sub": "{agents} subagents",
+      "ref": "agents",
+      "detail": "Generated copies of the agents as Cursor subagents, so a review runs in its own context there too."
+    },
+    "cursor-hook": {
+      "label": "sessionStart hook",
+      "sub": ".cursor/hooks.json",
+      "ref": "hooks/session-start.sh",
+      "detail": "Wired to Cursor's published schema, and unverified: Cursor has open bug reports where a hook's context never reaches the model. The rule carries the weight."
+    },
+    "codex": {
+      "label": "Codex",
+      "sub": "reads AGENTS.md at startup",
+      "detail": "Reads AGENTS.md once at startup, after you trust the project. A hook brings the framing back when context is compacted."
+    },
+    "codex-agents-md": {
+      "label": "AGENTS.md",
+      "sub": "carries the kernel",
+      "ref": "AGENTS.md",
+      "detail": "The instruction file Codex reads at startup. It carries the kernel; an AGENTS.md of your own gets the kernel in a marked block after your content."
+    },
+    "codex-skills": {
+      "label": ".agents/skills",
+      "sub": "{skills} skills, native",
+      "ref": "skills",
+      "detail": "Every skill linked where Codex discovers skills, picked by its description or by $name."
+    },
+    "codex-hook": {
+      "label": "SessionStart hook",
+      "sub": ".codex/hooks.json",
+      "ref": "hooks/session-start.sh",
+      "detail": "Restores the framing after compaction, which AGENTS.md alone does not. Inert until you approve it once."
+    },
+    "brain": {
+      "label": ".mastermind/",
+      "sub": "one brain, in your project",
+      "detail": "The project's own copy of the brain: kernel, core, field pack, skills, agents. Every tool's wiring points here."
+    }
+  },
+  "flow": {
+    "title": "How a request flows",
+    "summary": "From what you type to a verdict you can trust.",
+    "steps": [
+      { "nodes": ["ask"] },
+      { "nodes": ["kernel"] },
+      { "nodes": ["router"] },
+      { "nodes": ["skill", "agent"], "join": "or" },
+      { "nodes": ["verify"], "back": { "to": "skill", "label": "not green: fix, verify again" } },
+      { "nodes": ["verdict"] }
+    ]
+  },
+  "install": {
+    "title": "What an install writes",
+    "summary": "Three tools, three ways of loading, one brain in your project.",
+    "target": { "node": "brain", "path": ".mastermind" },
+    "sources": [
+      {
+        "node": "claude",
+        "tool": "claude",
+        "parts": [
+          { "node": "claude-kernel", "path": ".claude/CLAUDE.md" },
+          { "node": "claude-skills", "path": ".claude/skills", "holds": "skills" },
+          { "node": "claude-agents", "path": ".claude/agents", "holds": "agents" },
+          { "node": "claude-hook", "path": ".claude/settings.json", "contains": "session-start.sh" }
+        ]
+      },
+      {
+        "node": "cursor",
+        "tool": "cursor",
+        "parts": [
+          { "node": "cursor-rule", "path": ".cursor/rules/mastermind.mdc" },
+          { "node": "cursor-agents", "path": ".cursor/agents", "holds": "agents" },
+          { "node": "cursor-hook", "path": ".cursor/hooks.json", "contains": "session-start.sh" }
+        ],
+        "unlisted": [".cursor/skills"]
+      },
+      {
+        "node": "codex",
+        "tool": "codex",
+        "parts": [
+          { "node": "codex-agents-md", "path": "AGENTS.md" },
+          { "node": "codex-skills", "path": ".agents/skills", "holds": "skills" },
+          { "node": "codex-hook", "path": ".codex/hooks.json", "contains": "session-start.sh" }
+        ]
+      }
+    ]
+  },
+  "layers": {
+    "title": "The layers",
+    "summary": "One small kernel is always loaded. Everything under it loads when a task calls for it.",
+    "layers": [
+      { "node": "kernel", "load": "always" },
+      { "node": "core", "load": "on demand", "items": "core" },
+      { "node": "field", "load": "on demand", "items": "field" },
+      { "node": "skills", "load": "on demand", "items": "skill" },
+      { "node": "agents", "load": "on demand", "items": "agent" },
+      { "node": "cli", "load": "on request" },
+      { "node": "hooks", "load": "session start" },
+      { "node": "mod", "load": "optional", "items": "mod" }
+    ]
+  },
+  "spec": {
+    "title": "Spec-driven, in order",
+    "summary": "For a feature that spans sessions or touches money, authentication or data."
+  }
+}

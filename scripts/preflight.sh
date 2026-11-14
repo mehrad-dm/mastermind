@@ -3,7 +3,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 REPO="$PWD"
-SITE="$REPO/../mastermind-site"
+SITE="${MASTERMIND_SITE:-$REPO/../mastermind-site}"
+export MASTERMIND_SITE="$SITE"
 
 g=$'\033[0;32m'; r=$'\033[0;31m'; y=$'\033[0;33m'; x=$'\033[0m'
 PASS=0; SKIPPED=0; FAIL=0; LOG="$(mktemp)"; SKIPPED_NAMES=""
@@ -105,14 +106,6 @@ site_counts_agree() {
   return 0
 }
 
-scan_is_fresh() {
-  local before; before="$(mktemp)"
-  cp "$REPO/.foglamp/scan.json" "$before"
-  node "$REPO/scripts/update-scan.mjs" >/dev/null 2>&1 || { rm -f "$before"; return 1; }
-  diff -q "$before" "$REPO/.foglamp/scan.json" >/dev/null 2>&1 || { rm -f "$before"; echo "scan.json was stale: regenerated, commit it"; return 1; }
-  rm -f "$before"
-}
-
 site_available() {
   [ -d "$SITE" ] && return 0
   if [ -n "${MM_SKIP_SITE:-}" ]; then
@@ -159,7 +152,7 @@ step      "no over-long or hedged directive" node "$REPO/scripts/check-instructi
 
 echo "Release consistency"
 step_live "version strings agree (repo + site)" versions_agree
-step "architecture map is fresh"             scan_is_fresh
+step_live "architecture data matches the repo" node "$REPO/scripts/build-architecture.mjs" --check
 step_live "site counts match the repo"       site_counts_agree
 # Same gate as the other two site checks, so a missing site cannot make one of the three pass.
 site_numbers() { site_available || return $?; node "$REPO/scripts/sync-evals.mjs" --check; }
