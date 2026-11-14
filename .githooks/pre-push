@@ -152,6 +152,12 @@ if [ -n "${MM_SKIP_TESTS:-}" ]; then
   exit 0
 fi
 
+# The suites take minutes here and run on every pull request anyway.
+if [ "${MM_FULL_TESTS:-}" != 1 ]; then
+  printf '%s\n' "· installer and agent-surface suites: not run here, CI runs them on the pull request (MM_FULL_TESTS=1 runs them here)"
+  exit 0
+fi
+
 CHANGED="$(git diff --name-only "$(git merge-base HEAD origin/master 2>/dev/null || echo HEAD~1)" HEAD 2>/dev/null || true)"
 case "$CHANGED" in
   *install.sh*|*cli/*|*bin/*|*tests/*|*hooks/*|*scripts/*)

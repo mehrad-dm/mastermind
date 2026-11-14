@@ -627,7 +627,7 @@ for s in check-comments check-shell-patterns check-instructions; do printf 'proc
 ( cd "$GH" && git init -q . && git add -A && gitq commit -qm stubs && echo note > notes.txt && git add -A && gitq commit -qm notes ) >/dev/null 2>&1
 GSHA=$(git -C "$GH" rev-parse HEAD)
 # $1 hook file, $2 the ref line git would feed it; the rest is the environment.
-push() { local hook="$1" line="$2"; shift 2; (cd "$GH" && printf '%s\n' "$line" | env -u ALLOW_SENSITIVE -u MM_SKIP_TESTS "$@" bash "$hook" origin "$GH" 2>&1); }
+push() { local hook="$1" line="$2"; shift 2; (cd "$GH" && printf '%s\n' "$line" | env -u ALLOW_SENSITIVE -u MM_SKIP_TESTS -u MM_FULL_TESTS "$@" bash "$hook" origin "$GH" 2>&1); }
 LIVE="$ROOT/.githooks/pre-push"; SHIPPED="$ROOT/skills/quarantine/assets/pre-push"
 
 out=$(push "$LIVE" "refs/heads/main $GSHA refs/tags/v9.9.9 $ZERO" MM_SKIP_TESTS=1); rc=$?
@@ -647,8 +647,13 @@ case "$rc:$out" in 1:*"BLOCKED"*"v9.9.9-rc.1"*) case "$out" in *"is not v<major>
 out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" ALLOW_SENSITIVE=1 PROSE_RC=1); rc=$?
 case "$rc:$out" in 1:*"em dashes would be pushed"*) ok "ALLOW_SENSITIVE=1 does not skip the prose gate";; *) bad "prose gate skipped: exit $rc: $out";; esac
 out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" ALLOW_SENSITIVE=1); rc=$?
-case "$rc:$out" in 0:*"BYPASSED"*"suite not needed"*) ok "nor the step that decides whether the suites run";; *) bad "suites step skipped: exit $rc: $out";; esac
+case "$rc:$out" in 0:*"BYPASSED"*"CI runs them on the pull request (MM_FULL_TESTS=1 runs them here)"*) ok "nor the step that decides whether the suites run";; *) bad "suites step skipped: exit $rc: $out";; esac
 case "$out" in *"push guard: clean"*) bad "a bypassed scan was reported as clean";; *) ok "and a bypassed scan is not reported as clean";; esac
+out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" MM_FULL_TESTS=1); rc=$?
+case "$rc:$out" in 0:*"suite not needed"*) case "$out" in *"not run here"*) bad "MM_FULL_TESTS=1 still skipped the suites step";; *) ok "MM_FULL_TESTS=1 reaches the suites step";; esac ;;
+  *) bad "MM_FULL_TESTS=1: exit $rc: $out";; esac
+out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" MM_FULL_TESTS=1 MM_SKIP_TESTS=1); rc=$?
+case "$rc:$out" in 0:*"MM_SKIP_TESTS set"*) ok "and MM_SKIP_TESTS=1 still wins";; *) bad "MM_SKIP_TESTS with MM_FULL_TESTS: exit $rc: $out";; esac
 out=$(push "$LIVE" "refs/heads/main $GSHA refs/heads/main $ZERO" MM_SKIP_TESTS=1 PROSE_RC=2); rc=$?
 case "$rc:$out" in 0:*"✓ no em dashes"*) bad "an unchecked site was reported as clean";; 0:*"NOT checked"*) ok "check-prose exit 2 is reported as not checked";; *) bad "exit 2 handling: exit $rc: $out";; esac
 
