@@ -579,6 +579,39 @@ Raw data: `evals/runs/v0.27-set2/`.
 
 ---
 
+## Run V10: 2026-11-14 · did 0.34 make skill routing worse? (`evals/auto-invoke.mjs`, A/B against 0.33.2)
+
+Live headless Claude Code sessions (2.1.311, `MODEL=sonnet`), the same 29 prompts and the same harness
+against two trees: the 0.33.2 tag and the 0.34 working tree. Two reps each. Ground truth is the native
+`Skill` tool call.
+
+| tree | right skill fired | per rep |
+| --- | --: | --- |
+| 0.33.2 | 44/58 (76%)* | 23 · 23 (with the leaked `help` case) |
+| 0.34, descriptions cut to bare intent, six skills hidden from the model | 35/58 (60%) | 16 · 19 |
+| 0.34, user phrasings restored, nothing hidden | 37/58 (64%) | 18 · 19 |
+| 0.34, plus "apply skills automatically" as its own kernel rule | **46/58 (79%)** | **23 · 23** |
+
+\* 0.33.2 scored 46/58 with the old `help` prompt, which repeated three words of `help`'s description
+("what can you"). The new three-word check refused that prompt; reworded, 0.33.2 scores 0/2 on it, so
+its fair score is 44/58.
+
+**Honest reading.**
+- **The regression was real and had two causes.** Descriptions cut to intent dropped the words people
+  say, and `disable-model-invocation` hid `help` and `signature` from the model (2/2 to 0/2 on a plain
+  request). Restoring the phrasings alone recovered little; making "recognise the intent and load the
+  skill" a headline rule in the kernel again recovered the rest.
+- **0.34 is level with 0.33.2, not clearly better.** +2 hits on 58 is inside the run-to-run spread. It
+  gained `debug` (0/2 to 2/2) and `double-check` (0/2 to 1/2), and lost one hit each on `qa` and
+  `checklist`.
+- **Still never fire, in both trees:** `build`, `clarify`, `help` (with an honest prompt), `prototype`,
+  `learn`. The model handles those asks inline instead of loading the skill.
+- **The keyword hints** in `mastermind route` (the arrows Cursor and Codex see) went 15/17 to 11/17
+  with the short descriptions and back to 14/17 with the phrasings restored.
+- **Cursor and Codex on the final 0.34 tree, two reps:** `cursor-routing.mjs` (cursor-agent, model Auto)
+  6/6 with the brain, 3/6 without it; `codex-routing.mjs` (gpt-6-luna) 10/10 with the brain, 0/10
+  without. These ask the session to name the skill from the kernel's menu.
+
 ## Run V9: 2026-11-07 · does the session hook reach Claude Code at all, and does Codex still obey?
 
 Prompted by a report that installed projects ignored the brain. Claude Code 2.1.236, Sonnet, headless

@@ -4,7 +4,45 @@ Notable changes to MasterMind. Format follows [Keep a Changelog](https://keepach
 MasterMind is **experimental** and pre-1.0, so minor versions may change behavior. Full commit
 history lives in git.
 
-## [Unreleased]
+## [0.34.0] · 2026-11-14
+
+### Added
+
+- `mastermind-mod`, an optional Claude Code plugin (2.1.287 or newer) in the same marketplace. It
+  turns an irreversible Bash command, or a write outside the project, into Claude Code's own
+  permission prompt with a one-line reason; it never approves anything, and when its own check fails
+  on a risky command it denies. It also answers `/mm-status`, `/mm-wrong-log`, `/mm-next`,
+  `/mm-check` and `/mm-evidence` without a model turn, and draws a status line. It makes no network
+  request, writes no file and calls no model. The Markdown brain works the same without it.
+- `mastermind sync` delivers a field pack to every wired tool, offline. `init` runs it as its last
+  step, so after setting up you go back to nothing: Claude Code, Cursor and Codex all have the pack.
+- `mastermind status [--json]` prints the version, brain, mode, kernel and field in one place.
+- A project that already has an `AGENTS.md` now gets the kernel itself, in a marked block after your
+  own content, written and removed byte for byte, instead of one sentence pointing elsewhere.
+- Codex gets a session hook in `.codex/hooks.json`, so MasterMind's framing returns after a
+  compaction once you approve it with `/hooks`. Cursor gets the four agents as subagents in
+  `.cursor/agents`, the reviewer and the scout read-only.
+- The site's architecture page draws its diagrams from data built out of the repo itself and from
+  real sandboxed installs, replacing the old generated map.
+
+### Changed
+
+- The kernel is 148 lines and about 9,500 characters, down from 205 lines and 15,258, with the rules
+  that contradicted each other across the kernel, core docs, skills and agents resolved into one
+  statement each. Every closing line now names what was not checked and what was decided for you.
+- `init` is never run unasked. With no field pack, the first task's announce line ends "no field pack
+  yet: say init to build one", in every tool, and work carries on. Install never builds a pack; init,
+  in your AI tool's chat, does.
+- Skill descriptions lead with the words people actually say. Measured live in Claude Code on 29
+  plain-language prompts, two runs each, the right skill fired 79% of the time, against 76% for
+  0.33.2 on the same prompts. A shorter version of these descriptions had dropped it to 60%, which is
+  why the phrasings stayed.
+- `help`, `handoff`, `report`, `levelup`, `lint` and `signature` run only when you ask, and say so in
+  their descriptions, while a plain request such as "set things up so we can resume tomorrow" still
+  reaches them. The integrity check refuses `disable-model-invocation`, which hides a skill from the
+  model entirely: tried during this release, it took `help` and `signature` from 2/2 to 0/2.
+- A release runs on a branch through a pull request, waits for the merge, and rehearses the publish
+  gate and the platform matrix on the merge commit before the site or the tag moves.
 
 ### Fixed
 
@@ -35,6 +73,37 @@ history lives in git.
   has no `CLAUDE.md` and therefore relies on the pointer; it got a preview before, it gets a
   pointer now, and the proper fix, shipping the kernel inside the plugin as a skill, is a separate
   change.
+
+- Uninstall now leaves your project as it found it. Your own `settings.json` and hook files come back
+  byte for byte, an empty or whitespace-only file stays that way, and links whose brain was deleted
+  or moved are still removed. When something cannot be removed it is listed and uninstall exits
+  non-zero, instead of saying it is done.
+- Uninstalling after an upgrade from 0.33.2 could delete a `.claude/settings.json` or
+  `.cursor/hooks.json` you had committed, when it held nothing but an empty hooks section. A file
+  git shows you committed is never treated as ours: our entry is taken out and your bytes come back.
+- A line you add inside MasterMind's block in your `AGENTS.md` or `CLAUDE.md` is never deleted by a
+  re-run. The block carries a hash of its text: an edited block is reported by `--check` and left
+  alone by install and uninstall, both of which say so and exit non-zero. Reformatting the file
+  (blank lines, trailing spaces, as Prettier does) does not count as an edit.
+- A code fence in your `AGENTS.md` can no longer hide the block or trap it. Fences are read the way
+  CommonMark reads them, and a file that ends inside an open fence is left untouched.
+- `mastermind sync` records what it creates, so uninstall cleans it up, and it refuses in a project
+  MasterMind was removed from.
+- `--check` sees the breaks it used to miss: a hook matcher that no longer covers startup, a skill
+  link with no `SKILL.md`, a brain with missing files, a symlinked skills folder, and a field pack
+  that never reached Cursor. Every installer refusal makes the run exit non-zero.
+- A field pack built by `init` could miss Cursor, or be reported as "no field pack" by the hook,
+  depending on which line of `active-field.md` named it. The installer, the hook and the CLI now read
+  it one way: a pack is active when it is named and on disk, and is at least level 1.
+- In a project whose `AGENTS.md` links to its `CLAUDE.md`, Claude Code loaded the kernel twice. The
+  block now lives in the root `CLAUDE.md` only.
+- Upgrading a `--global` install from 0.33.2 left old wiring behind; it is now adopted and refreshed.
+- With no Node 18 on PATH, or a read-only project, install stops before writing anything and says why,
+  instead of failing halfway with `Permission denied`.
+- A monorepo route with no field pack yet is skipped with a line telling you to run `init`, instead of
+  being half wired.
+- The kernel budget is counted the way Claude Code's hook cap counts it, where an emoji counts twice,
+  so a kernel that passed the check can no longer be too big for the hook.
 
 ## [0.33.2] · 2026-10-08
 
