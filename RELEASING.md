@@ -43,9 +43,12 @@ approval is required, so you are never blocked waiting on yourself. The PR exist
 **before** the code is on `master`, and so the diff gets read once outside the context that wrote
 it.
 
-`pre-push` runs the installer and agent-surface suites locally whenever the push touches
-`install.sh`, `cli/`, `bin/`, `tests/`, `hooks/` or `scripts/`, so you find breakage in seconds
-rather than in a CI queue. `MM_SKIP_TESTS=1 git push` overrides it and says so out loud.
+`pre-push` runs the secret, `lab/` and tag guards and the writing checks, but not the installer
+and agent-surface suites: those take minutes on a laptop, and the `suites` check runs them on every
+pull request. `suites` is one job that waits on four parallel shards of the installer suite plus
+the agent-surface suite, and fails unless all of them pass, so the required check keeps its name.
+`MM_FULL_TESTS=1 git push` runs both suites locally first, when the push touches `install.sh`,
+`cli/`, `bin/`, `tests/`, `hooks/` or `scripts/`; `MM_SKIP_TESTS=1` skips them and says so.
 
 Dependabot opens its pull requests against the same checks. The two `github/codeql-action` steps
 are grouped in `.github/dependabot.yml`, because they refuse to run at different versions and a

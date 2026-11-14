@@ -1,0 +1,170 @@
+8	syntax
+1570	contradictory storage modes refuse before writing
+7049	clean install
+11641	an install written before the shape argument is repaired, not duplicated
+4834	a brain path with a space still yields one hook entry
+3943	name collision: BOTH survive (never displace the project's own)
+5633	collision released: ours reclaims the plain name
+14851	idempotency
+3590	existing settings.json is merged, never clobbered
+3548	unparseable settings.json is left strictly alone
+4622	uninstall removes ours, keeps theirs
+622	invoking via the ~/.mastermind symlink must not self-link the brain
+4263	the npx path: the brain IS ~/.mastermind and install.sh runs from inside it
+7387	a route whose parent links out of the project is refused, not followed
+103	a DIFFERENT brain already at ~/.mastermind is refused, not written into
+102	a ~/.mastermind LINK to a different brain is refused too, not silently redirected
+3535	but a link left dangling by a deleted clone is safe to reclaim
+3678	the isolated brain can run the commands init tells the model to run
+8069	--check from ~ asks the global question, not a project one
+3910	a repo cannot redirect the installer outside itself via a symlinked integration dir
+3990	a project's own instructions keep applying (project wins)
+7923	the doctor knows what SHOULD be wired, not just what survived
+131	canary self-test: an escape trips it, and a refused install does not
+987	a hostile repository cannot redirect a single write
+3678	a hostile repository cannot redirect a single FILE write either
+4669	a committed project survives being cloned elsewhere and the original vanishing
+4085	a user's own file keeps working wherever we write
+38993	the doctor notices every piece of wiring that goes missing
+17094	the install record survives a partial repair, and shrinks on uninstall
+12672	agents and codex aliases keep their shared AGENTS.md until both are removed
+5675	uninstall takes our pointer back out of the files it appended to
+10555	an unbalanced nested marker still hands back every line
+3333	the installed brain carries no ABOUT pages
+13814	replacing a project's edit to an engine file is announced
+7601	a hand-edited install record is called out
+8519	a gap in the hash ledger does not abort the install
+8573	a colliding project file is kept, not overwritten
+8690	a colliding project directory is kept, not recursively deleted
+3329	a first install preserves regular files in a pre-existing brain tree
+3509	a symlink at any brain path is refused, not written through
+7674	a context path named by routes.map is checked too
+11165	a project's own link into the brain survives
+2342	project paths that sanitise alike keep separate records
+3291	a retired tool name does not become expected wiring
+4358	a pointer written by an older release is still cleaned up
+11616	a corrupted or hostile install record does not break the doctor
+4296	hook cleanup matches on path, not on the word mastermind
+5553	--shared over a project brain refuses with the way out
+4425	a project path with a space and a # installs and uninstalls cleanly
+21383	the route check covers every anchor, not just the first
+725	a cyclic or broken chain is refused
+10442	an anchor is still cleaned up after its route is removed from the map
+9083	a route anchor uses the field the project declares
+5728	a pointer round trip changes nothing in the file
+5845	a project's own symlinked AGENTS.md survives install and uninstall
+23366	a link aimed at the wrong target is reported
+445	an incidental mention does not count as wiring
+4589	a shared install leaves an expected-integration record
+4845	files we did not generate are preserved, not destroyed
+4257	unreadable settings.json is reported, not glossed over
+5671	a project uninstall does not edit the global Codex file
+4347	uninstall will not act on a backup pointer it did not write
+8518	pruning leaves symlinks that were never ours
+3957	containment resolves the whole chain and respects path boundaries
+5012	uninstalling one tool leaves the others wired
+5061	uninstall removes what it wired, and keeps what it didn't
+3312	--global --uninstall must not delete project files
+1957	hook emits the right JSON shape per host
+14007	isolated: the project owns its brain, and keeps owning it
+5273	isolated: no field is shipped, the project builds its own, and keeps it
+12	isolated: real isolation, one project cannot change another
+629	isolated: never write through a symlinked .mastermind (data loss)
+3794	isolated: the copied brain has no dangling references
+7232	isolated: --check works without naming a tool
+8503	isolated: OWNED files survive at ANY depth
+14405	isolated: a project's OWN skills/agents inside the brain survive an update
+3916	per-project installs are ISOLATED by default
+3757	--shared opts back into the single shared clone
+8842	monorepo: one brain per REPO, wherever you run install from
+2843	isolated update: retire what upstream dropped, keep what the project added
+4902	project under \$HOME with the shared clone present: must NOT resolve PROJECT=\$HOME
+9630	anchor block editor must not touch the project's own marker-like content
+10640	CRLF routes.map must not create a carriage-return context
+8877	field+context: routes.map compiles into tool-enforced per-app anchors
+4	field+context: per-app lessons stay isolated
+11131	field+context: anchors are clobber-safe and idempotent
+4172	field+context: --check validates routes; a bad field is caught
+6867	field+context: uninstall strips anchors, keeps the project's own content
+3355	single-project (no routes.map) is untouched: the common case stays simple
+18977	field+context: a malformed routes.map line warns and skips, never aborts
+7766	cursor gets the kernel itself, not a pointer to it
+8661	cursor gets the FIELD PACK too, not just the kernel
+7926	cursor hooks.json
+32536	cursor: a renamed copy of the skill Cursor will not list
+3384	codex: per-project reads the repo's own AGENTS.md
+2233	codex: --global wires CODEX_HOME/AGENTS.md, honouring CODEX_HOME
+1658	codex: --global --uninstall removes only our link
+15459	retired tools are declined cleanly, never half-wired
+4156	AGENTS.md is wired even with no tool installed
+16841	routes.map may not escape the project
+14890	a symlinked path inside the brain is never written through
+24133	a chain of symlinks cannot walk out of the brain one innocent hop at a time
+1789	uninstall gives back what install displaced
+6256	another tool's session hook is never deleted
+6233	uninstall works when the project path crosses a symlink
+66133	.agents/skills: native skills for Codex (and Cursor)
+5841	a backup pointer that is a symlink is refused, never written through
+616	--shared does not seed a file through a dangling link
+4889	uninstall edits and deletes nothing through a symlink
+87	running from ~ with the clone elsewhere explains the next step
+1540	a global install keeps a user's own engineering link
+56272	--check names each broken piece
+10368	every form of our hook entry is ours; a lookalike is not
+4188	a shared brain whose path holds a space: one entry in, none left behind
+9240	a plain re-run keeps the mode the project was installed with
+5366	a clone under a directory named about still installs a whole brain
+3311	a symlinked .claude/CLAUDE.md keeps the project's own rules
+1067	global: a dotfiles link inside the home is followed, one that leaves it is refused
+18869	an existing .claude/CLAUDE.md imports the kernel
+16376	route anchors: a path with a space, the file's own mode, content Codex can read
+8480	a re-install leaves the user's own empty folders in the brain
+10805	a global and a project install together are called out once
+26715	a renamed capability carries its own name
+14773	uninstall removes what the installer created, and only that
+6334	every registered hook command runs under its own host
+127902	an AGENTS.md of their own carries the kernel in a block, and gets its bytes back
+13800	--check fails when the block is gone, and warns past Codex's 32 KiB
+28831	an older pointer line becomes the block on update, and goes on uninstall
+6554	a symlinked AGENTS.md: the block goes to its target inside the project
+19609	Codex gets a session hook beside its project config
+21965	a .codex/hooks.json of theirs is merged, and handed back
+542	.codex is contained like every other destination
+6319	--global writes the user-level Codex hook, and only that
+18141	Cursor gets the four agents as subagents
+8533	a copied brain's router describes the copy
+17407	a dangling relative link into the brain is ours to prune
+19420	uninstall returns a project to the tree it had
+5150	the path rewrite never writes back through a link the clone carries
+5659	an older pointer comes out of a file that had no final newline, byte for byte
+28000	a project installed before 0.34 is still handed back whole
+19530	a marker without its pair, a file re-saved with CRLF, two pointers in a row
+7433	uninstall after the brain was deleted by hand still takes every piece of wiring back
+4696	uninstall after a shared clone moved still finds its links
+4993	a surface swapped for a link that leaves the project fails uninstall and is listed
+17822	KERNEL markers MasterMind cannot prove are its own are never written or stripped
+68025	check: a single break is reported, with and without the install record
+3473	an install that refuses a symlinked surface exits non-zero, with one summary line
+17620	empty and whitespace-only files of the user's are appended to, and come back as they were
+10811	hook files come back byte for byte after uninstall
+15751	AGENTS.md -> CLAUDE.md: the kernel loads once, from the root file
+228	preflight: no node, or a folder it cannot write, stops before any write
+24662	monorepo routes with no field pack yet: install and check agree, and no empty field is seeded
+40343	sync delivers a field pack built after install to every tool, with no install re-run
+4243	the session hook: the field it runs on, and where Cursor got the kernel
+6437	the global check forgets a project install once it is uninstalled
+10955	a teammate's clone with no install record: uninstall removes the hook files that held only ours
+21454	upgrade from v0.33.2: global, and a project's own empty .cursor/rules
+19655	an unedited hook file comes back byte for byte whatever our install added to it
+10643	sync records what it creates, so uninstall takes it back
+6530	sync refuses a project that was uninstalled, even with its brain still there
+1648	shared sync rebuilds the shared brain's router
+11730	a code fence of the user's is read as CommonMark reads it
+12745	AGENTS.md -> CLAUDE.md: naming only claude keeps the kernel loading once
+4364	a record planted in the repository cannot widen what uninstall removes
+16559	the kernel block survives a formatter, and only the line after its start marker vouches for it
+13077	uninstall with our block present but unprovable is unfinished; with no block it says nothing
+32477	AGENTS.md -> CLAUDE.md, naming only claude: a stale root block is refreshed, an edited one reported
+2046	shared mode: a hook the user removed by hand still has its saved original cleaned up
+9126	a shared clone that moved: every link is found, whichever way HOME is spelled
+26981	upgrade from v0.33.2: hook files the user committed are never deleted

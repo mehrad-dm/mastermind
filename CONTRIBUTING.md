@@ -184,8 +184,8 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    single answer to "did I test everything?".
 
    (The git hooks give faster feedback. `pre-commit` runs the private-data guard and regenerates
-   `ROUTER.md` when it is stale. `pre-push` runs the guard again, the four writing checks, and
-   the two suites when the push touches code. Preflight is the full pre-release gate.)
+   `ROUTER.md` when it is stale. `pre-push` runs the guard again and the four writing checks;
+   the two suites run in CI on every pull request. Preflight is the full pre-release gate.)
 
 2. **If you fixed a bug, prove the test would have caught it.**
 
@@ -213,8 +213,17 @@ commits that violate this, but the judgment is yours. See [SECURITY.md](SECURITY
    never waiting on yourself. The reason for the PR is not ceremony: users run `master` directly
    (`~/.mastermind` is a clone of it), so CI has to run before code lands there, not after.
 
-   `pre-push` runs the suites locally whenever the push touches `install.sh`, `cli/`, `bin/`,
-   `tests/`, `hooks/` or `scripts/`. `MM_SKIP_TESTS=1 git push` skips it and says so.
+   `pre-push` does not run the two suites: the required `suites` check runs them on every pull
+   request, the installer suite split into four parallel shards. `MM_FULL_TESTS=1 git push` runs
+   them locally first, when the push touches `install.sh`, `cli/`, `bin/`, `tests/`, `hooks/` or
+   `scripts/`. `MM_SKIP_TESTS=1` still skips them and says so.
+
+   To run one slice of the installer suite, `MM_SHARD=2/4 bash tests/install.test.sh`. The slices
+   are cut by the section times in `tests/install.times` and add up to the whole suite. After
+   adding slow sections, refresh the times with
+   `MM_SHARD=1/1 MM_SHARD_TIMES=tests/install.times bash tests/install.test.sh` (delete the file
+   first). A section that reuses the state the one above it left ends its `echo "── ..."` line
+   with `# continues the section above`, so the two always land in the same slice.
 
    Releasing is a separate process: see [RELEASING.md](RELEASING.md).
 

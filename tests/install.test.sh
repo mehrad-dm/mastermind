@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 set -uo pipefail
+# A git hook exports these; inherited, a fixture's git would act on this repository instead.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_PREFIX
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL="${MM_INSTALL_UNDER_TEST:-$REPO/install.sh}"
@@ -43,6 +45,105 @@ repo_hook() { (cd "$HOOKP" && env -u CLAUDE_PLUGIN_ROOT -u CURSOR_PLUGIN_ROOT -u
 
 N_SKILLS="$(ls -d "$REPO"/skills/*/ | wc -l | tr -d ' ')"
 N_AGENTS="$(ls "$REPO"/agents/*.md | wc -l | tr -d ' ')"
+
+# Helpers more than one section uses: a section may rely only on what is defined up here.
+IREPO="$(cd "$(dirname "$INSTALL")" && pwd -P)"
+hook_cmds() {                       # every hook command in a settings.json or hooks.json, one per line
+  python3 - "$1" <<'PY'
+import json, sys
+try: d = json.load(open(sys.argv[1]))
+except Exception: sys.exit(0)
+for ev, entries in (d.get("hooks") or {}).items():
+    for e in entries:
+        if "hooks" in e:
+            for h in e["hooks"]: print(h.get("command", ""))
+        else: print(e.get("command", ""))
+PY
+}
+mode_of() { stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1" 2>/dev/null; }
+probe() { python3 -c "import json,sys;d=json.load(sys.stdin);v=d.get('hookSpecificOutput',d);t=v.get('additionalContext') or v.get('additional_context');print(list(d)[0], len(t)<10000)" 2>/dev/null; }
+codex_probe() { python3 -c "import json,sys;v=json.load(sys.stdin)['hookSpecificOutput'];t=v['additionalContext'];print(v['hookEventName'], len(t)<9000, 'Codex does not read that file again' in t)" 2>/dev/null; }
+codex_matchers() { python3 -c "import json,sys;print(' '.join(e.get('matcher','') for e in json.load(open(sys.argv[1]))['hooks']['SessionStart'] if 'session-start.sh' in json.dumps(e)))" "$1" 2>/dev/null; }
+restamp() {                         # $1 file: its kernel block re-signed as if MasterMind wrote that body
+  python3 - "$1" <<'PY'
+import hashlib, re, sys
+t = open(sys.argv[1], 'rb').read().decode()
+S, E = '<!-- MASTERMIND:KERNEL:START -->', '<!-- MASTERMIND:KERNEL:END -->'
+lines = t.split('\n'); i = next(k for k, l in enumerate(lines) if l.rstrip('\r') == S)
+j = next(k for k in range(i + 1, len(lines)) if lines[k].rstrip('\r') == E)
+body = ''.join(l.rstrip() + '\n' for l in lines[i + 2:j] if l.strip())
+lines[i + 1] = re.sub(r'sha256=[0-9a-f]+', 'sha256=' + hashlib.sha256(body.encode()).hexdigest(), lines[i + 1])
+sys.stdout.write('\n'.join(lines))
+PY
+}
+snap() { (cd "$1" && find . -path ./.git -prune -o -print | LC_ALL=C sort | while IFS= read -r f; do
+  if [ -L "$f" ]; then printf 'L %s -> %s\n' "$f" "$(readlink "$f")"
+  elif [ -d "$f" ]; then printf 'D %s\n' "$f"
+  else printf 'F %s %s\n' "$(shasum -a 256 < "$f" | cut -c1-16)" "$f"; fi; done); }
+mkfield() {                         # $1 brain, $2 field name: what init leaves behind
+  cp -R "$1/engineering/fields/_template" "$1/engineering/fields/$2"
+  printf '# Active Field\n\n## Current field: **%s**\n\n- **Field pack:** `engineering/fields/%s/`\n- **Level:** 1.\n' "$2" "$2" > "$1/engineering/active-field.md"
+}
+dangling() { find "$1" -type l ! -exec test -e {} \; -print 2>/dev/null | wc -l | tr -d ' '; }
+
+# Ends every run, a shard's too: the canary log of writes outside the fixtures, then the count.
+finish() {
+  if [ -s "$CANARY_LOG" ]; then
+    while IFS= read -r line; do no "a run wrote OUTSIDE every fixture: $line"; done < "$CANARY_LOG"
+  fi
+  echo
+  if [ "$FAIL" -eq 0 ]; then printf '%s✓ %d passed%s\n' "$g" "$PASS" "$x"; exit 0
+  else printf '%s✖ %d failed, %d passed%s\n' "$r" "$FAIL" "$PASS" "$x"; exit 1; fi
+}
+
+# MM_SHARD=k/n runs slice k of n, cut by the section times in install.times; the n slices add up
+# to the whole suite. MM_SHARD_TIMES=file appends each section's milliseconds to that file.
+if [ -n "${MM_SHARD:-}" ]; then
+  SK="${MM_SHARD%%/*}"; SN="${MM_SHARD#*/}"
+  case "$MM_SHARD" in [1-9]*/[1-9]*) ;; *) SK=0 ;; esac
+  case "$SK$SN" in *[!0-9]*) SK=0 ;; esac
+  [ "$SK" -ge 1 ] && [ "$SK" -le "$SN" ] || { echo "MM_SHARD must be k/n with 1 <= k <= n, not '$MM_SHARD'" >&2; exit 2; }
+  SELF="$REPO/tests/$(basename "${BASH_SOURCE[0]}")"; TIMES="$REPO/tests/install.times"
+  [ -f "$TIMES" ] || TIMES=/dev/null
+  # A unit starts at a section line, or at a top-level if whose next line is one, and runs to the
+  # next. A section line marked "# continues the section above" uses its state, so it stays in.
+  awk -v k="$SK" -v n="$SN" -F '\t' '
+    FILENAME == ARGV[1] { ms[$2] = $1; next }
+    { L[FNR] = $0; last = FNR }
+    END {
+      for (i = 1; i <= last; i++) {
+        if (L[i] == "finish") end = i - 1
+        if (u && L[i] ~ /^echo "── .*" *# continues the section above$/) {
+          t = L[i]; sub(/^echo "── /, "", t); sub(/" *# continues the section above$/, "", t)
+          if (t in ms) extra[u] += ms[t]
+        } else if (L[i] ~ /^echo "── / || (L[i] ~ /^if .*then$/ && L[i + 1] ~ /^  echo "── /)) {
+          u++; start[u] = i; t = (L[i] ~ /^if / ? L[i + 1] : L[i])
+          sub(/^ *echo "── /, "", t); sub(/"$/, "", t); title[u] = t
+          if (t in ms) { known += ms[t]; nk++ }
+        }
+      }
+      if (!u || !end) exit 3
+      avg = nk ? known / nk : 1
+      for (j = 1; j <= u; j++) { w[j] = ((title[j] in ms) ? ms[title[j]] : avg) + extra[j]; W += w[j] }
+      print u
+      for (j = 1; j <= u; j++) {
+        s = int((c + w[j] / 2) * n / W) + 1; c += w[j]
+        if (s > n) s = n
+        if (s == k) printf "%d\t%d\t%s\n", start[j], (j < u ? start[j + 1] - 1 : end), title[j]
+      }
+    }' "$TIMES" "$SELF" > "$TMP/units" || { no "MM_SHARD found no sections, or no finish line, in $SELF"; finish; }
+  echo "shard $MM_SHARD: $(($(wc -l < "$TMP/units") - 1)) of $(head -1 "$TMP/units") units"
+  [ "$(wc -l < "$TMP/units")" -gt 1 ] || no "shard $MM_SHARD selected no sections: use fewer shards"
+  now_ms() { python3 -c 'import time; print(int(time.time() * 1000))'; }
+  while IFS=$'\t' read -r _mm_a _mm_b _mm_t <&3; do
+    _mm_code="$(sed -n "${_mm_a},${_mm_b}p" "$SELF")"$'\n'
+    "$BASH" -n <<<"$_mm_code" 2>/dev/null || { no "section does not parse on its own: $_mm_t"; continue; }
+    [ -z "${MM_SHARD_TIMES:-}" ] || _mm_t0="$(now_ms)"
+    eval "$_mm_code"
+    [ -z "${MM_SHARD_TIMES:-}" ] || printf '%s\t%s\n' "$(($(now_ms) - _mm_t0))" "$_mm_t" >> "$MM_SHARD_TIMES"
+  done 3< <(tail -n +2 "$TMP/units")
+  finish
+fi
 
 echo "── syntax"
 bash -n "$INSTALL" && ok "install.sh parses" || no "install.sh parses"
@@ -107,7 +208,7 @@ is "ours installed as mastermind-code-reviewer.md, under that name" "$(sed -n 2p
 is "no capability lost (all ours + 1 theirs)" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$((N_SKILLS + 1))"
 is "no .bak created" "$(ls "$P/.claude/skills/"*.bak-* 2>/dev/null | wc -l | tr -d ' ')" "0"
 
-echo "── collision released: ours reclaims the plain name"
+echo "── collision released: ours reclaims the plain name"  # continues the section above
 rm -rf "$P/.claude/skills/build"; run "$P" claude >/dev/null
 yes_ "build is ours now" "$([ -L "$P/.claude/skills/build" ] && echo y)"
 is "alias cleaned up" "$([ -e "$P/.claude/skills/mastermind-build" ] && echo present || echo gone)" "gone"
@@ -490,7 +591,7 @@ P=$(proj ctxescape); mkdir -p "$P/apps/web"
 run "$P" claude cursor >/dev/null 2>&1
 cp -R "$P/.mastermind/engineering/fields/_template" "$P/.mastermind/engineering/fields/frontend"
 printf 'apps/web webctx\n' > "$P/.mastermind/routes.map"
-CTXOUT="$TMP_REAL/victims/ctx-$$"; rm -f "$CTXOUT"
+CTXOUT="$TMP_REAL/victims/ctx-$$"; rm -f "$CTXOUT"; mkdir -p "$TMP_REAL/victims"
 mkdir -p "$P/.mastermind/engineering/contexts"
 ln -s "$CTXOUT" "$P/.mastermind/engineering/contexts/webctx"
 out=$(run "$P" claude cursor 2>&1) || true
@@ -848,7 +949,7 @@ run "$P" claude >/dev/null 2>&1
 is "idempotent: no duplicate aliases" "$(ls "$P/.claude/skills" | wc -l | tr -d ' ')" "$N_SKILLS"
 yes_ "stays isolated without the flag" "$(readlink "$P/.claude/skills/build" | grep -o '\.mastermind/skills/build')"
 
-echo "── isolated: no field is shipped, the project builds its own, and keeps it"
+echo "── isolated: no field is shipped, the project builds its own, and keeps it"  # continues the section above
 is "scaffold shipped"        "$([ -d "$P/.mastermind/engineering/fields/_template" ] && echo y)" "y"
 is "no default field shipped" "$([ -d "$P/.mastermind/engineering/fields/frontend" ] && echo present || echo absent)" "absent"
 mkdir -p "$P/.mastermind/engineering/fields/myfield"
@@ -862,7 +963,7 @@ is "project stack rules preserved" "$(count_in "$P/.mastermind/engineering/field
 is "project field choice preserved" "$(grep -c 'OUR FIELD CHOICE' "$P/.mastermind/engineering/active-field.md")" "1"
 is "engine refreshed, not preserved" "$(grep -c 'TAMPERED' "$P/.mastermind/engineering/core/mindset.md")" "0"
 
-echo "── isolated: real isolation, one project cannot change another"
+echo "── isolated: real isolation, one project cannot change another"  # continues the section above
 is "the shared clone is untouched" "$(grep -rc 'OUR LESSON\|TAMPERED\|OUR FIELD CHOICE' "$REPO/engineering/core" | grep -cv ':0$')" "0"
 yes_ "--isolated --global is refused" "$( (cd "$P" && HOME="$SANDBOX_HOME" "$INSTALL" --isolated --global 2>&1 || true) | grep -o 'per-project by definition')"
 is "uninstall keeps the project's own brain" "$([ -d "$P/.mastermind" ] && echo kept)" "kept"
@@ -885,7 +986,7 @@ P=$(proj isodeps); run "$P" --isolated claude agents >/dev/null 2>&1
 is "ROUTER.md copied" "$([ -f "$P/.mastermind/engineering/ROUTER.md" ] && echo y)" "y"
 is "AGENTS.md copied" "$([ -e "$P/.mastermind/AGENTS.md" ] && echo y)" "y"
 
-echo "── isolated: --check works without naming a tool"
+echo "── isolated: --check works without naming a tool"  # continues the section above
 yes_ "doctor sees the isolated install" "$(run "$P" --check 2>&1 | grep -o 'healthy here')"
 echo "0.0.1" > "$P/.mastermind/VERSION"
 yes_ "and reports version drift" "$(run "$P" --check 2>&1 | grep -o 'this project is on v0.0.1')"
@@ -1015,24 +1116,24 @@ yes_ "shared at depth 1 uses ../" "$(grep -o '@\.\./\.mastermind/engineering/fie
 BROKEN=0; for imp in $(grep -oE '@[^ ]+' "$P/apps/web/CLAUDE.md" | sed 's/@//'); do [ -f "$P/apps/web/$imp" ] || BROKEN=1; done
 is "every web @import resolves" "$BROKEN" "0"
 
-echo "── field+context: per-app lessons stay isolated"
+echo "── field+context: per-app lessons stay isolated"  # continues the section above
 echo "web-only" >> "$P/.mastermind/engineering/contexts/web/lessons.md"
 is "lesson in web" "$(grep -c 'web-only' "$P/.mastermind/engineering/contexts/web/lessons.md")" "1"
 is "NOT in api"     "$(grep -c 'web-only' "$P/.mastermind/engineering/contexts/api/lessons.md")" "0"
 
-echo "── field+context: anchors are clobber-safe and idempotent"
+echo "── field+context: anchors are clobber-safe and idempotent"  # continues the section above
 printf '# my own web notes\nuse internal auth\n' > "$P/apps/web/CLAUDE.md"
 run "$P" claude >/dev/null 2>&1; run "$P" claude >/dev/null 2>&1
 is "the project's own content kept" "$(grep -c 'internal auth' "$P/apps/web/CLAUDE.md")" "1"
 is "exactly one generated block"    "$(grep -c 'MASTERMIND:START' "$P/apps/web/CLAUDE.md")" "1"
 is "imports not duplicated"          "$(grep -c '@\.\./\.\./\.mastermind/engineering/contexts/web/field.md' "$P/apps/web/CLAUDE.md")" "1"
 
-echo "── field+context: --check validates routes; a bad field is caught"
+echo "── field+context: --check validates routes; a bad field is caught"  # continues the section above
 yes_ "healthy routes pass --check" "$(run "$P" --check claude 2>&1 | grep -o 'route apps/web/ → web')"
 sed -i.bak 's/^field:.*/field: nope/' "$P/.mastermind/engineering/contexts/web/field.md"; rm -f "$P/.mastermind/engineering/contexts/web/field.md.bak"
 yes_ "missing field fails --check"  "$(run "$P" --check claude 2>&1 | grep -o 'missing field')"
 
-echo "── field+context: uninstall strips anchors, keeps the project's own content"
+echo "── field+context: uninstall strips anchors, keeps the project's own content"  # continues the section above
 printf '# my own web notes\nuse internal auth\n' > "$P/apps/web/CLAUDE.md"
 sed -i.bak 's/^field:.*/field: frontend/' "$P/.mastermind/engineering/contexts/web/field.md"; rm -f "$P/.mastermind/engineering/contexts/web/field.md.bak"
 run "$P" claude >/dev/null 2>&1
@@ -1077,7 +1178,7 @@ printf -- '---\nalwaysApply: true\n---\nFollow ~/.mastermind/CLAUDE.md\n' > "$P/
 yes_ "--check flags the old pointer-only rule" "$(run "$P" --check cursor 2>&1 | grep -o 'pointer-only' | head -1)"
 run "$P" cursor >/dev/null 2>&1
 
-echo "── cursor gets the FIELD PACK too, not just the kernel"
+echo "── cursor gets the FIELD PACK too, not just the kernel"  # continues the section above
 is "no field yet → no field rule" "$([ -f "$P/.cursor/rules/mastermind-field.mdc" ] && echo present || echo absent)" "absent"
 mkdir -p "$P/.mastermind/engineering/fields/webstack"
 printf 'DEFAULT-MARKER\n' > "$P/.mastermind/engineering/fields/webstack/stack-defaults.md"
@@ -1161,7 +1262,7 @@ OUT5=$( (cd "$P" && HOME="$GH5" CODEX_HOME="$CH5" "$INSTALL" --global codex 2>&1
 yes_ "warns that AGENTS.override.md takes priority" "$(printf '%s' "$OUT5" | grep -o 'AGENTS.override.md')"
 yes_ "discloses the global-merge bug"               "$(printf '%s' "$OUT5" | grep -o 'openai/codex#27705')"
 
-echo "── codex: --global --uninstall removes only our link"
+echo "── codex: --global --uninstall removes only our link"  # continues the section above
 (cd "$P" && HOME="$GH2" CODEX_HOME="$CH2" "$INSTALL" --global --uninstall >/dev/null 2>&1) || true
 is "our global codex link removed" "$([ -e "$CH2/AGENTS.md" ] && echo present || echo gone)" "gone"
 (cd "$P" && HOME="$GH4" CODEX_HOME="$CH4" "$INSTALL" --global --uninstall >/dev/null 2>&1) || true
@@ -1367,20 +1468,6 @@ is "global codex links ~/.agents/skills" "$(ls "$H/.agents/skills" 2>/dev/null |
 is "global codex uninstall removes them" "$(find "$H/.agents/skills" -type l 2>/dev/null | wc -l | tr -d ' ')" "0"
 
 # ══ 0.34: containment, truthful checks, one ownership rule, recorded modes ═══
-IREPO="$(cd "$(dirname "$INSTALL")" && pwd -P)"
-hook_cmds() {                       # every hook command in a settings.json or hooks.json, one per line
-  python3 - "$1" <<'PY'
-import json, sys
-try: d = json.load(open(sys.argv[1]))
-except Exception: sys.exit(0)
-for ev, entries in (d.get("hooks") or {}).items():
-    for e in entries:
-        if "hooks" in e:
-            for h in e["hooks"]: print(h.get("command", ""))
-        else: print(e.get("command", ""))
-PY
-}
-mode_of() { stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1" 2>/dev/null; }
 
 echo "── a backup pointer that is a symlink is refused, never written through"
 V="$TMP_REAL/victims/mmbackup"; rm -rf "$V"; mkdir -p "$V"
@@ -1692,7 +1779,6 @@ H="$TMP_REAL/cleanglobal"; rm -rf "$H"; mkdir -p "$H/.codex"
 is "a global uninstall leaves the home as it found it, plus the brain link" "$(ls -A "$H" | tr '\n' ' ')" ".codex .mastermind "
 
 echo "── every registered hook command runs under its own host"
-probe() { python3 -c "import json,sys;d=json.load(sys.stdin);v=d.get('hookSpecificOutput',d);t=v.get('additionalContext') or v.get('additional_context');print(list(d)[0], len(t)<10000)" 2>/dev/null; }
 P=$(proj hostrun); mkdir -p "$P/specs/001-x"; run "$P" claude cursor >/dev/null 2>&1
 CUR="$(hook_cmds "$P/.cursor/hooks.json" | head -1)"
 is "Cursor's entry, run from the project root" \
@@ -1714,22 +1800,8 @@ run "$P" --uninstall claude >/dev/null 2>&1
 is "an entry from before the shape argument is still removed" "$(count_in "$P/.claude/settings.json" 'session-start.sh')" "0"
 
 # ══ 0.34 pass 2: the kernel in every tool ══════════════════════════════════════
-codex_probe() { python3 -c "import json,sys;v=json.load(sys.stdin)['hookSpecificOutput'];t=v['additionalContext'];print(v['hookEventName'], len(t)<9000, 'Codex does not read that file again' in t)" 2>/dev/null; }
-codex_matchers() { python3 -c "import json,sys;print(' '.join(e.get('matcher','') for e in json.load(open(sys.argv[1]))['hooks']['SessionStart'] if 'session-start.sh' in json.dumps(e)))" "$1" 2>/dev/null; }
 
 echo "── an AGENTS.md of their own carries the kernel in a block, and gets its bytes back"
-restamp() {                         # $1 file: its kernel block re-signed as if MasterMind wrote that body
-  python3 - "$1" <<'PY'
-import hashlib, re, sys
-t = open(sys.argv[1], 'rb').read().decode()
-S, E = '<!-- MASTERMIND:KERNEL:START -->', '<!-- MASTERMIND:KERNEL:END -->'
-lines = t.split('\n'); i = next(k for k, l in enumerate(lines) if l.rstrip('\r') == S)
-j = next(k for k in range(i + 1, len(lines)) if lines[k].rstrip('\r') == E)
-body = ''.join(l.rstrip() + '\n' for l in lines[i + 2:j] if l.strip())
-lines[i + 1] = re.sub(r'sha256=[0-9a-f]+', 'sha256=' + hashlib.sha256(body.encode()).hexdigest(), lines[i + 1])
-sys.stdout.write('\n'.join(lines))
-PY
-}
 kb() {                              # $1 name, $2 printf format of their file
   local P O out rc
   P=$(proj "kb-$1"); O="$TMP/kb-$1.orig"
@@ -2047,15 +2119,6 @@ H="$TMP_REAL/codexglobal-big"; rm -rf "$H"; mkdir -p "$H/.codex"; python3 -c "pr
 (cd "$H" && HOME="$H" env -u CODEX_HOME "$INSTALL" --global codex >/dev/null 2>&1)
 is "the global check warns past 32 KiB too" "$( (cd "$H" && HOME="$H" env -u CODEX_HOME "$INSTALL" --check --global 2>&1) | grep -c '32 KiB (project_doc_max_bytes)')" "1"
 
-snap() { (cd "$1" && find . -path ./.git -prune -o -print | LC_ALL=C sort | while IFS= read -r f; do
-  if [ -L "$f" ]; then printf 'L %s -> %s\n' "$f" "$(readlink "$f")"
-  elif [ -d "$f" ]; then printf 'D %s\n' "$f"
-  else printf 'F %s %s\n' "$(shasum -a 256 < "$f" | cut -c1-16)" "$f"; fi; done); }
-mkfield() {                         # $1 brain, $2 field name: what init leaves behind
-  cp -R "$1/engineering/fields/_template" "$1/engineering/fields/$2"
-  printf '# Active Field\n\n## Current field: **%s**\n\n- **Field pack:** `engineering/fields/%s/`\n- **Level:** 1.\n' "$2" "$2" > "$1/engineering/active-field.md"
-}
-dangling() { find "$1" -type l ! -exec test -e {} \; -print 2>/dev/null | wc -l | tr -d ' '; }
 
 echo "── uninstall after the brain was deleted by hand still takes every piece of wiring back"
 P=$(proj gone-iso); printf '# mine\n' > "$P/AGENTS.md"; B="$(snap "$P")"
@@ -2491,10 +2554,4 @@ if [ -n "$(git -C "$REPO" tag --list v0.33.2)" ]; then
      "$(same "$P/.claude/settings.json" "$TMP/e1s-settings.orig")|$(same "$P/.cursor/hooks.json" "$TMP/e1s-cursor.orig")" "same|same"
 fi
 
-if [ -s "$CANARY_LOG" ]; then
-  while IFS= read -r line; do no "a run wrote OUTSIDE every fixture: $line"; done < "$CANARY_LOG"
-fi
-
-echo
-if [ "$FAIL" -eq 0 ]; then printf '%s✓ %d passed%s\n' "$g" "$PASS" "$x"; exit 0
-else printf '%s✖ %d failed, %d passed%s\n' "$r" "$FAIL" "$PASS" "$x"; exit 1; fi
+finish

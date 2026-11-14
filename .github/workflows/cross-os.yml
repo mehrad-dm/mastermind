@@ -32,10 +32,13 @@ jobs:
   linux:
     # Both ends of the supported range. package.json says Node >= 18, and a floor that is never
     # run is a floor nobody knows is broken.
+    # Each suite split across parallel jobs: four installer slices (MM_SHARD) and agent-surface.
+    name: linux node ${{ matrix.node }} ${{ matrix.part }}
     strategy:
       fail-fast: false
       matrix:
         node: [18, 22]
+        part: [1/4, 2/4, 3/4, 4/4, agent-surface]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -52,14 +55,23 @@ jobs:
           n="$(cd "$proj" && ./.mastermind/bin/mastermind skills --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).skills.length))')"
           echo "skills listed: $n"; test "$n" -ge 20
       - name: installer regression suite
+        if: matrix.part != 'agent-surface'
         run: bash tests/install.test.sh
+        env:
+          MM_SHARD: ${{ matrix.part }}
       - name: agent-surface suite
+        if: matrix.part == 'agent-surface'
         run: bash tests/agent-surface.test.sh
 
   # macOS was described as "covered locally", which is not evidence anyone else can check, and
   # it is the platform with bash 3.2 and the /tmp and /var symlinks that caused several of the
   # path bugs this suite exists to catch.
   macos:
+    name: macos ${{ matrix.part }}
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1/4, 2/4, 3/4, 4/4, agent-surface]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -78,8 +90,12 @@ jobs:
           n="$(cd "$proj" && ./.mastermind/bin/mastermind skills --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).skills.length))')"
           echo "skills listed: $n"; test "$n" -ge 20
       - name: installer regression suite
+        if: matrix.part != 'agent-surface'
         run: /bin/bash tests/install.test.sh
+        env:
+          MM_SHARD: ${{ matrix.part }}
       - name: agent-surface suite
+        if: matrix.part == 'agent-surface'
         run: /bin/bash tests/agent-surface.test.sh
 
   # Every other job runs install.sh out of the repository. That is not what users get: they get

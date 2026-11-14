@@ -52,10 +52,13 @@ jobs:
           MM_REQUIRE_CLAUDE: 1
         run: bash mod/tests/validate.sh
 
-  # Runs on every pull request with no path filter, so it can be a REQUIRED check. The cross-OS
-  # matrix is path-filtered and therefore cannot be required without deadlocking docs-only PRs,
-  # which left a failing installer suite able to merge. The full matrix still gates the release.
-  suites:
+  # The installer suite in four slices at once (MM_SHARD), cut by measured section time.
+  install-shards:
+    name: install ${{ matrix.shard }}/4
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -66,10 +69,36 @@ jobs:
         with:
           node-version: 22
       - run: bash tests/install.test.sh
+        env:
+          MM_SHARD: ${{ matrix.shard }}/4
+
+  agent-surface:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 22
       # Without tags the upgrade test used to skip itself and count as a pass.
       - run: bash tests/agent-surface.test.sh
         env:
           MM_REQUIRE_LIFECYCLE: 1
+
+  # The ruleset requires a check named exactly "suites"; matrix jobs report as "install 1/4".
+  # No path filter, so it can be required. always(), because a skipped required check passes.
+  suites:
+    needs: [install-shards, agent-surface]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: every shard and the agent-surface suite passed
+        run: |
+          echo "installer shards: ${{ needs.install-shards.result }}, agent-surface: ${{ needs.agent-surface.result }}"
+          test "${{ needs.install-shards.result }}" = success
+          test "${{ needs.agent-surface.result }}" = success
 
   # A dead or moved third-party page is worth knowing about and must never block a merge.
   links:
