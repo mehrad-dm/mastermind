@@ -1380,7 +1380,7 @@ for ev, entries in (d.get("hooks") or {}).items():
         else: print(e.get("command", ""))
 PY
 }
-mode_of() { stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1" 2>/dev/null; }
+mode_of() { stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1" 2>/dev/null; }
 
 echo "── a backup pointer that is a symlink is refused, never written through"
 V="$TMP_REAL/victims/mmbackup"; rm -rf "$V"; mkdir -p "$V"
