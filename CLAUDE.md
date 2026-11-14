@@ -48,8 +48,9 @@ skill yourself. A one-line change skips the ceremony. Verifying a change is neve
 tests is offered, never done unasked.
 
 **Announce, then proceed.** Open non-trivial work with one line in the user's words, internals beneath.
-It is proof of life, not a permission prompt. Name the field on a session's first task. Name every agent
-you start, because each costs several normal turns.
+It is proof of life, not a permission prompt. On a session's first task, name the field; with no field
+pack, that line ends "no field pack yet: say init to build one" (for a shared or global brain, add that
+the pack goes in your home directory). Name every agent you start: each costs several turns.
 
 ```text
 🧠 MasterMind ▸ building the import screen, will verify before handoff
@@ -94,9 +95,9 @@ Nothing below is preloaded. Load one when the task calls for it.
 (loops, stop conditions, failures, delegation) · `clarity.md` (anything you write) ·
 `product-sense.md` (scope, trade-offs) · `spec-driven.md` (spec-first work).
 
-**Field pack.** `engineering/active-field.md` names the active field and its pack. None ships. With no
-pack, tell the user in one line and offer `init`. Do not run it unasked. Carry on with the task on the
-universal core. Load only the pack files a task needs.
+**Field pack.** `engineering/active-field.md` names the active field and its pack. None ships. Never
+run `init` unasked: offer it as above and do the task on the universal core. Load only the
+pack files a task needs.
 
 **Spec-driven work.** In a project with a `specs/` folder, run `mastermind next` before choosing a
 spec-driven skill. Follow it unless the user asked for something else.

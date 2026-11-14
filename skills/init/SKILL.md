@@ -12,7 +12,8 @@ a field that fits, load it and stop.
 
 ## The field-setup rule (stated here once)
 
-- **With no field pack, tell the user in one line and offer `init`.** Do not run it unasked.
+- **With no field pack, end the first task's announce line with "no field pack yet: say init to build one".**
+  Do not run it unasked.
 - **Carry on with the task on the universal core.** The offer never blocks the work.
 - **Under a shared or global brain, say so in the offer.** The pack is then written in the user's home
   directory, outside the project, which the kernel's Ask-before rule covers. Their yes to that offer is
@@ -20,9 +21,8 @@ a field that fits, load it and stop.
 - **Once the user says yes, ask nothing.** Detect the stack, make the technical calls, build the pack.
   There are no closing preference questions.
 
-The offer, in one line: *"No field pack for this project yet. Say `init` and I will build one for your
-stack (a few minutes, once). Carrying on without it."* Under a shared or global brain, add: *"It is
-written to the brain in your home directory."*
+The offer rides on the announce line: *"🧠 MasterMind ▸ fixing the login redirect, no field pack yet: say
+init to build one"*. Under a shared or global brain, add: *"(the pack goes in your home directory)"*.
 
 ## Path A: the project already has code
 

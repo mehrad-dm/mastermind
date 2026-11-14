@@ -39,7 +39,7 @@ command without `--check` rewrites it.
 | `explain` | ,  | Use when an internal package, module or shared component lacks usage docs and people or AI sessions keep using it wrong, | 1076 | skills/explain/SKILL.md | 8f420683 |
 | `handoff` | ,  | Use when the user asks for a handoff: work must survive a reset, a pause, or a move to a teammate or a new session. Not  | 618 | skills/handoff/SKILL.md | aca9822e |
 | `help` | ,  | Use when the user asks what MasterMind can do or how to drive it. Shows the menu of skills and agents. | 2462 | skills/help/SKILL.md | ec8a6d37 |
-| `init` | ,  | Use when the user asks to set MasterMind up for this project, or says yes to the setup offer. Builds the field pack for  | 1542 | skills/init/SKILL.md | 3c4fa54f |
+| `init` | ,  | Use when the user asks to set MasterMind up for this project, or says yes to the setup offer. Builds the field pack for  | 1542 | skills/init/SKILL.md | 34f286ae |
 | `interview` | ,  | Use when it is unclear what to build: an ambiguous ask, disputed scope, terms used inconsistently, a spec with open ques | 2904 | skills/interview/SKILL.md | 9e0d379c |
 | `learn` | ,  | Use when a task depends on tech you do not actually know: an unfamiliar library, framework, API or codebase, or a load-b | 757 | skills/learn/SKILL.md | 621f673e |
 | `levelup` | ,  | Use when the user asks MasterMind to remember a lesson, refresh its standards or bootstrap a field pack, or when another | 1291 | skills/levelup/SKILL.md | bb611e5c |
