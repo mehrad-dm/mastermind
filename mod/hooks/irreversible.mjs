@@ -62,6 +62,22 @@ function arithmeticEnd(src, from) {
   return i
 }
 
+// Where a "${ ... }" ends: a "#" or ")" inside it is part of the expansion.
+function braceEnd(src, from) {
+  let depth = 1
+  let i = from
+  while (i < src.length && depth > 0) {
+    const c = src[i]
+    if (c === '\\') { i += 2; continue }
+    if (c === "'") { const end = src.indexOf("'", i + 1); i = end < 0 ? src.length : end + 1; continue }
+    if (c === '"') { let j = i + 1; while (j < src.length && src[j] !== '"') j += src[j] === '\\' ? 2 : 1; i = j + 1; continue }
+    if (c === '{') depth += 1
+    if (c === '}') depth -= 1
+    i += 1
+  }
+  return i
+}
+
 // Where a "$( ... )" inside double quotes ends: a quote in a heredoc body there does not close the string.
 function substitutionEnd(src, from) {
   if (src[from] === '(') return arithmeticEnd(src, from + 1)
@@ -77,6 +93,8 @@ function substitutionEnd(src, from) {
       i += m[0].length
     } else if (c === '\n' && marks.length) i = skipBodies(src, i + 1, marks)[0]
     else if (c === '\\') i += 2
+    else if (c === '$' && src[i + 1] === '{') i = braceEnd(src, i + 2)
+    else if (c === '$' && src[i + 1] === '(' && src[i + 2] === '(') i = arithmeticEnd(src, i + 3)
     else if (c === '#' && (i === from || /[\s;&|(]/.test(src[i - 1]))) {
       // A comment runs to the end of its line, and a quote inside it opens nothing.
       const end = src.indexOf('\n', i)
@@ -177,6 +195,13 @@ export function segments(text) {
       i = end
     } else if (c === '$' && src[i + 1] === '(' && src[i + 2] === '(') {
       const end = arithmeticEnd(src, i + 3)
+      word += src.slice(i, end)
+      open = true
+      i = end
+    } else if (c === '$' && src[i + 1] === '{') {
+      // One word: a "#" in it is not a comment, and a command inside it still runs.
+      const end = braceEnd(src, i + 2)
+      nested.push(...segments(src.slice(i + 2, end - 1)))
       word += src.slice(i, end)
       open = true
       i = end

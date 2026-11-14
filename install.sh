@@ -1380,9 +1380,20 @@ wire_cursor_agents() {
   return 0
 }
 
-# A real marker pair, ours or not: a lone marker, or one shown inside a code fence, is the user's text.
+# A start and end marker pair outside any code fence, ours or not. A lone marker, or one shown inside
+# a fence, is the user's text; a real pair beside a fenced one still is a block.
 mm_root_block_pair() {
-  case "$(mm_kernel_markers_raw "$1")" in ours|*"kernel blocks"*|*"did not write"*) return 0 ;; *) return 1 ;; esac
+  [ -f "$1" ] || return 1
+  MM_S="$MM_KSTART" MM_E="$MM_KEND" awk '
+    { sub(/\r$/, "") }
+    match($0, /^ {0,3}(```+|~~~+)/) {
+      run = substr($0, RSTART, RLENGTH); sub(/^ +/, "", run); c = substr(run, 1, 1); rest = substr($0, RSTART + RLENGTH)
+      if (fc == "") { if (!(c == "`" && index(rest, "`"))) { fc = c; fn = length(run) } ; next }
+      if (c == fc && length(run) >= fn && rest ~ /^[ \t]*$/) { fc = ""; next }
+    }
+    fc == "" && $0 == ENVIRON["MM_S"] { open = 1; next }
+    fc == "" && $0 == ENVIRON["MM_E"] && open { found = 1 }
+    END { exit found ? 0 : 1 }' "$1"
 }
 
 # AGENTS.md -> CLAUDE.md: the kernel block written through that link already loads in Claude Code

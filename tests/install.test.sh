@@ -2436,6 +2436,12 @@ run "$P" --check >/dev/null 2>&1; crc=$?
 is "a marker shown only inside a code fence: claude is wired the normal way, the root file is untouched, check passes" \
    "$irc|$([ -e "$P/.claude/CLAUDE.md" ] && echo linked || echo absent)|$(same "$P/CLAUDE.md" "$TMP/alf.orig")|$crc" "0|linked|same|0"
 
+P=$(proj agentslink-both); printf '# team\n' > "$P/CLAUDE.md"; ln -s CLAUDE.md "$P/AGENTS.md"
+run "$P" claude agents >/dev/null 2>&1; printf '\n```\n<!-- MASTERMIND:KERNEL:START -->\n```\n' >> "$P/CLAUDE.md"
+run "$P" claude >/dev/null 2>&1
+is "our real block beside a fenced marker: .claude/CLAUDE.md is not linked, the kernel loads once" \
+   "$([ -e "$P/.claude/CLAUDE.md" ] && echo linked || echo absent)|$(cat "$P/CLAUDE.md" "$P/.claude/CLAUDE.md" 2>/dev/null | grep -c '^# MasterMind: global operating system')" "absent|1"
+
 echo "── shared mode: a hook the user removed by hand still has its saved original cleaned up"
 P=$(proj orig-clean); mkdir -p "$P/.claude"; printf '{\n    "model": "opus"\n}\n' > "$P/.claude/settings.json"
 run "$P" --shared claude >/dev/null 2>&1
