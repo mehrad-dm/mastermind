@@ -658,7 +658,7 @@ for hook in "$LIVE" "$SHIPPED"; do
   out=$(push "$hook" "refs/heads/main $LSHA refs/heads/main $GSHA" MM_SKIP_TESTS=1); rc=$?
   case "$rc:$out" in 1:*"credentials"*) ok "$label: a credential is blocked";; *) bad "$label: credential not blocked: exit $rc";; esac
   out=$(push "$hook" "refs/heads/main $LSHA refs/heads/main $GSHA" MM_SKIP_TESTS=1 ALLOW_SENSITIVE=1); rc=$?
-  case "$rc:$out" in 0:*"scan BYPASSED"*) ok "$label: ALLOW_SENSITIVE=1 skips that scan and says so";; *) bad "$label: bypass: exit $rc: $out";; esac
+  case "$rc:$out" in 0:*"lab/ checks BYPASSED"*) ok "$label: ALLOW_SENSITIVE=1 skips the scans, the lab/ check included, and says so";; *) bad "$label: bypass: exit $rc: $out";; esac
 done
 
 CM="$WORK/commit-msg.txt"

@@ -248,7 +248,7 @@ matching skill. (Power users *can* type `/name` as a shortcut, but nobody has to
 | feel the design is hurting | surveys the area, ranks what is costing you, you pick one to fix (`deepen`) |
 
 Also auto-applied (and callable by name): `explain` (AI-friendly docs for an internal package) and `quarantine`
-(a private, gitignored space for sensitive data). Six run only when you ask for them by name: `handoff`,
+(a private, gitignored space for sensitive data). Six run only when you ask for them, in your own words: `handoff`,
 `signature`, `levelup` (teach MasterMind something durable), `report`, `lint` and `help`.
 Specialist **agents**: `architect`, `code-reviewer`, `refactorer`, `tech-scout`: handle deep,
 isolated-context work. Full index: [`skills/README.md`](skills/README.md).
@@ -326,11 +326,10 @@ fail loudly, not to make one impossible.
 ## Where it's tested
 
 MasterMind is plain Markdown with no runtime. It is developed and measured on **Claude Code**: most of
-the numbers in [`evals/RESULTS.md`](evals/RESULTS.md) come from there. **Codex is now measured too**, with
-a treatment-and-control run that asks a live session which skill it would use: the latest is 3 of 3 with
-the brain against 1 of 3 without it, and the control is noisy, so read it as a trend. **Cursor** is
-exercised live, confirming it loads the brain, but its routing is not yet measured. None of the three has
-its own mechanisms broken by it.
+the numbers in [`evals/RESULTS.md`](evals/RESULTS.md) come from there. **Codex and Cursor are measured too**, with
+a treatment-and-control run that asks a live session which skill it would use: the latest is 10 of 10
+with the brain against 0 of 10 without it in Codex, and 6 of 6 against 3 of 6 in Cursor (two reps
+each, so read it as a trend). None of the three has its own mechanisms broken by it.
 
 The installer wires those three. Everywhere else the brain still loads. It's just files: but
 whether it changes that tool's output is not something we've measured, so it isn't something we claim. If you

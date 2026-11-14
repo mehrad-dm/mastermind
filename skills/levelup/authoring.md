@@ -14,10 +14,10 @@ keeps a large library lean and navigable (the lesson from the best skill kits).
 - **One job.** The mega-skill (commits + PRs + changelog + …) is the top mistake. Split it.
 - **Description = a routing rule**: specific enough that it activates at exactly the right moment, and
   not otherwise. **Unambiguous:** if a human can't say which skill applies, neither can the agent.
-- **A skill description names categories of intent, not a list of example phrases.** Descriptions ride
-  in every request, and a phrase list taxes that budget and generalizes worse than the category it
-  samples. Each is at most 300 characters; all of them together stay under 7,500. Name the neighbouring
-  skill a near-miss belongs to: "Not for X (`other-skill`)".
+- **A skill description leads with the phrasings users actually say**, then the situation it covers,
+  then the neighbouring skill a near-miss belongs to: "Not for X (`other-skill`)". Cut to bare intent
+  categories, the descriptions dropped live routing in Claude Code from 79% to 60% (`evals/RESULTS.md`,
+  Run V10). Each is at most 500 characters; all of them together stay under 12,000.
 - **Phrase a field file's `route_when` as the *question the user would actually ask***, not a topic
   label. The router matches by meaning, so `"why is this slow?"` routes far better than
   `"performance optimization"`.

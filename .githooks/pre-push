@@ -67,7 +67,7 @@ REFLIST
 
 SCAN=1
 if [ "${ALLOW_SENSITIVE:-0}" = "1" ]; then
-  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: secret and denylist scan BYPASSED.${NC}"
+  printf '%s\n' "${YEL}⚠  ALLOW_SENSITIVE=1: secret, denylist and lab/ checks BYPASSED.${NC}"
   SCAN=0
 fi
 

@@ -76,5 +76,4 @@ It runs only when you ask. In your terminal:
 ## What you get
 
 A scannable picture of everything available, written around when each thing fires rather than what to
-type: because in normal use, you don't type anything special. You describe the problem; the right
-workflow shows up and says so.
+type: in normal use you describe the problem in plain words, and the right workflow shows up and says so.
