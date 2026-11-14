@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 set -uo pipefail
+# A git hook exports these; inherited, a fixture's git would act on this repository instead.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_PREFIX
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL="${MM_INSTALL_UNDER_TEST:-$REPO/install.sh}"
