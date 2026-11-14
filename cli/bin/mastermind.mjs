@@ -354,6 +354,7 @@ const rankCapabilities = (items, request) => {
 // patterns, and tests/agent-surface.test.sh feeds both the same fixtures.
 const FIELD_NAME_RE = /^[#* \t]*Current field:[*` \t]*([^*`]*)/
 const FIELD_LEVEL_RE = /^[ \t]*[-*][ \t]*\*\*Level:\*\*[ \t]*([0-9]{1,9})/
+const FIELD_PACK_RE = /^[ \t]*[-*][ \t]*\*\*Field pack:\*\*[ \t]*`([^`]*)`/
 const SPECS_DIR_RE = /^-?[ \t]*`?specs-dir:[ \t]*([^` \t]+)/
 const FEATURE_RE = /^[0-9]{3,}-[a-z0-9-]+$/
 const firstMatch = (file, re) => {
@@ -369,11 +370,14 @@ const fieldFile = (brain, proj) => {
   const own = proj && join(proj, '.mastermind', 'engineering', 'active-field.md')
   return own && existsSync(own) ? own : join(brain, 'engineering', 'active-field.md')
 }
+// Active when the file names a field and its pack is on disk; an active field is at least level 1.
 const readField = (file) => {
   let name = (firstMatch(file, FIELD_NAME_RE) || '').replace(/[ \t]+$/, '')
   if (/^(none|_)/i.test(name)) name = ''
-  const lvl = firstMatch(file, FIELD_LEVEL_RE)
-  return { name: name || null, level: lvl === null ? (name ? 1 : 0) : Number(lvl) }
+  if (!name) name = (firstMatch(file, FIELD_PACK_RE) || '').replace(/\/+$/, '').split('/').pop()
+  if (/^(none|_)/i.test(name) || (name && !existsSync(join(dirname(file), 'fields', name)))) name = ''
+  if (!name) return { name: null, level: 0 }
+  return { name, level: Math.max(1, Number(firstMatch(file, FIELD_LEVEL_RE) ?? 1)) }
 }
 const specsDirOf = (proj) => {
   const v = firstMatch(join(proj, '.mastermind', 'prefs.md'), SPECS_DIR_RE)

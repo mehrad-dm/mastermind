@@ -2207,6 +2207,20 @@ is "check fails before sync; sync exits 0; then the Cursor field rule and both a
 is "sync reports what it wrote and stays offline" "$(printf '%s' "$out" | grep -c 'mastermind-field.mdc: web pack inlined')|$(printf '%s' "$out" | grep -c '(offline)')" "1|1"
 P=$(proj nosync); out=$(cd "$P" && HOME="$SANDBOX_HOME" bash "$INSTALL" --sync 2>&1); rc=$?
 is "sync outside a project install refuses and writes nothing" "$rc|$(ls -A "$P" | wc -l | tr -d ' ')" "1|0"
+# init may write only one of the two lines that name the field, and may leave Level at 0.
+for form in heading bullet; do
+  PF=$(proj "sync-$form"); run "$PF" claude cursor codex >/dev/null 2>&1
+  mkfield "$PF/.mastermind" web
+  if [ "$form" = heading ]; then printf '# Active Field\n\n## Current field: **web**\n\n- **Field pack:** _none_.\n- **Level:** 0.\n' > "$PF/.mastermind/engineering/active-field.md"
+  else printf '# Active Field\n\n## Current field: **none yet**\n\n- **Field pack:** `engineering/fields/web/`\n- **Level:** 0.\n' > "$PF/.mastermind/engineering/active-field.md"; fi
+  (cd "$PF" && HOME="$SANDBOX_HOME" "$PF/.mastermind/bin/mastermind" sync >/dev/null 2>&1); rc=$?
+  run "$PF" --check >/dev/null 2>&1; crc=$?
+  st=""; for t in claude cursor codex; do
+    st="$st$(cd "$PF" && printf '{"source":"startup"}' | env -u CLAUDE_PLUGIN_ROOT -u CURSOR_PLUGIN_ROOT HOME="$SANDBOX_HOME" CLAUDE_PROJECT_DIR="$PF" bash "$PF/.mastermind/hooks/session-start.sh" "$t" 2>/dev/null | grep -c 'State: field pack \\"web\\" (level 1)')"
+  done
+  is "a pack named only by its $form line, Level left at 0: sync delivers it to Cursor, check passes, the hook reports it in all three tools" \
+     "$rc|$(grep -c 'Active field pack: web' "$PF/.cursor/rules/mastermind-field.mdc" 2>/dev/null)|$crc|$st" "0|1|0|111"
+done
 out=$(run "$P" claude 2>&1)
 is "an install with no field says to say init; with one it names the field" "$(printf '%s' "$out" | grep -c 'say init in your AI tool to build its field')" "1"
 mkfield "$P/.mastermind" web; out=$(run "$P" claude 2>&1)
@@ -2220,7 +2234,7 @@ for s in claude cursor codex; do
 done
 is "cursor: the kernel source is the always-on rule, not .claude/CLAUDE.md" \
    "$(hk cursor | grep -c 'loads from [^ ]*\.cursor/rules/mastermind\.mdc')|$(hk cursor | grep -c '\.claude/CLAUDE\.md')" "1|0"
-Q=$(proj hookcarry); mkdir -p "$Q/.mastermind/engineering"; cp "$P/.mastermind/engineering/active-field.md" "$Q/.mastermind/engineering/"
+Q=$(proj hookcarry); mkdir -p "$Q/.mastermind/engineering"; cp "$P/.mastermind/engineering/active-field.md" "$Q/.mastermind/engineering/"; mkdir -p "$Q/.mastermind/engineering/fields/web"
 HCAR="$TMP_REAL/carry-home"; mkdir -p "$HCAR"
 out=$(cd "$Q" && env -u CLAUDE_PLUGIN_ROOT -u CURSOR_PLUGIN_ROOT HOME="$HCAR" CLAUDE_PROJECT_DIR="$Q" bash "$REPO/hooks/session-start.sh" claude)
 is "carry mode: the state line rides with the kernel, under the cap" \

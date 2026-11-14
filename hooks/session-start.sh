@@ -41,8 +41,9 @@ esc() {
   printf '%s' "$s"
 }
 
-# The four patterns below are the ones cli/bin/mastermind.mjs uses for `status` and `next`.
+# The five patterns below are the ones cli/bin/mastermind.mjs uses for `status` and `next`.
 FIELD_NAME_RE='^[#*[:blank:]]*Current field:[*`[:blank:]]*([^*`]*)'
+FIELD_PACK_RE='^[[:blank:]]*[-*][[:blank:]]*\*\*Field pack:\*\*[[:blank:]]*`([^`]*)`'
 FIELD_LEVEL_RE='^[[:blank:]]*[-*][[:blank:]]*\*\*Level:\*\*[[:blank:]]*([0-9]{1,9})'
 SPECS_DIR_RE='^-?[[:blank:]]*`?specs-dir:[[:blank:]]*([^`[:blank:]]+)'
 FEATURE_RE='^[0-9]{3,}-[a-z0-9-]+$'
@@ -61,20 +62,30 @@ first_match() {                     # $1 file, $2 pattern: sets MATCH, fails whe
 FIELD="$proj/.mastermind/engineering/active-field.md"
 [ -f "$FIELD" ] || FIELD="$REPO/engineering/active-field.md"
 name=""; level=""
+# A field is active when the file names it and its pack is on disk; an active field is at least level 1.
 if first_match "$FIELD" "$FIELD_NAME_RE"; then
   name="${MATCH%"${MATCH##*[![:blank:]]}"}"
   case "$name" in [Nn][Oo][Nn][Ee]*|_*) name="" ;; esac
 fi
-if first_match "$FIELD" "$FIELD_LEVEL_RE"; then level=$((10#$MATCH)); elif [ -n "$name" ]; then level=1; else level=0; fi
+if [ -z "$name" ] && first_match "$FIELD" "$FIELD_PACK_RE"; then
+  name="${MATCH%/}"; name="${name##*/}"
+  case "$name" in [Nn][Oo][Nn][Ee]*|_*) name="" ;; esac
+fi
+[ -n "$name" ] && [ ! -d "$(dirname "$FIELD")/fields/$name" ] && name=""
+level=0
+if [ -n "$name" ]; then
+  first_match "$FIELD" "$FIELD_LEVEL_RE" && level=$((10#$MATCH))
+  [ "$level" -ge 1 ] || level=1
+fi
 
 # Each nudge has a short form that states only the fact, for a payload that carries the kernel:
 # the kernel already says what to do about it.
 field_nudge=""; field_state=""
 if [ -z "$name" ] || [ "$level" -eq 0 ]; then
-  field_nudge="\nNo field pack yet: tell the user in one line and offer the init skill, do not run it unasked, and carry on with the task on the universal core."
+  field_nudge="\nNo field pack yet: end your first announce line with \\\"no field pack yet: say init to build one\\\". Never run init unasked; carry on with the task on the universal core."
   field_state="\nState: no field pack here."
   case "$REPO/" in "$proj"/*) ;; *)
-    field_nudge="$field_nudge This brain is shared or global: say in that offer that the pack will be written in the home directory."
+    field_nudge="$field_nudge This brain is shared or global: add \\\"(the pack goes in your home directory)\\\"."
     field_state="\nState: no field pack; the brain is shared, so a pack is written in the home directory." ;;
   esac
 else

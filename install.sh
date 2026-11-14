@@ -938,9 +938,8 @@ wire_cursor_aliases() {
 
 wire_cursor_field() {
   local dst="$PROJECT/.cursor/rules/mastermind-field.mdc"
-  local af="$BRAIN/engineering/active-field.md" field pdir
-  field="$(sed -n 's/^[[:space:]]*[-*][[:space:]]*\*\*Field pack:\*\*[[:space:]]*`\([^`]*\)`.*/\1/p' "$af" 2>/dev/null | head -1)"
-  field="${field%/}"; field="${field##*/}"
+  local field pdir
+  field="$(mm_field_name)"
 
   # No field yet (a fresh install ships none) → nothing to inline, and a stale rule must go.
   if [ -z "$field" ] || [ ! -d "$BRAIN/engineering/fields/$field" ]; then
@@ -2148,11 +2147,23 @@ mm_write_block() {                  # $1 file, $2 body, $3 $4 markers, $5 note
   printf '%s%s\n<!-- %s -->\n%s\n%s\n' "$sep" "$S" "$note" "$body" "$E" >> "$file"
 }
 
-mm_active_field() {                 # the field active-field.md names, when that pack is built
-  local f
-  f="$(sed -n 's/^## Current field: \*\*\(.*\)\*\*$/\1/p' "$BRAIN/engineering/active-field.md" 2>/dev/null | head -1)"
+# The one reader of active-field.md: its "Current field" line, as the hook reads it, else the
+# older "Field pack" bullet. Prints nothing when no field is named.
+mm_field_name() {
+  local af="$BRAIN/engineering/active-field.md" f
+  f="$(sed -n -E 's/^[#*[:blank:]]*Current field:[*`[:blank:]]*([^*`]*).*/\1/p' "$af" 2>/dev/null | head -1)"
+  f="${f%"${f##*[![:blank:]]}"}"
+  case "$f" in ''|'none yet'|none|_*)
+    f="$(sed -n 's/^[[:space:]]*[-*][[:space:]]*\*\*Field pack:\*\*[[:space:]]*`\([^`]*\)`.*/\1/p' "$af" 2>/dev/null | head -1)"
+    f="${f%/}"; f="${f##*/}" ;;
+  esac
   case "$f" in ''|'none yet'|none|_*|*/*) return 0 ;; esac
-  [ -d "$BRAIN/engineering/fields/$f" ] && printf '%s' "$f"
+  printf '%s' "$f"
+}
+
+mm_active_field() {                 # the field active-field.md names, when that pack is built
+  local f; f="$(mm_field_name)"
+  [ -n "$f" ] && [ -d "$BRAIN/engineering/fields/$f" ] && printf '%s' "$f"
   return 0
 }
 
@@ -2160,9 +2171,7 @@ mm_active_field() {                 # the field active-field.md names, when that
 mm_default_field() {
   local first_field default_field=""
   if [ -f "$BRAIN/engineering/active-field.md" ]; then
-    default_field="$(sed -n 's/^## Current field: \*\*\(.*\)\*\*$/\1/p' \
-      "$BRAIN/engineering/active-field.md" | head -1)"
-    case "$default_field" in ''|'none yet'|none|_*) default_field="" ;; esac
+    default_field="$(mm_field_name)"
     [ -n "$default_field" ] && [ ! -d "$BRAIN/engineering/fields/$default_field" ] && default_field=""
   fi
   case "$default_field" in *[!A-Za-z0-9_-]*)
@@ -2320,7 +2329,7 @@ if [ "$MODE" = sync ]; then
   else
     ok "shared brain: its field pack and router live in the clone at $REPO, so only this project's Cursor rule is written here"
   fi
-  printf '\n%s✓ synced.%s  Verify: ~/.mastermind/install.sh --check\n' "$g" "$x"
+  printf '\n%s✓ synced.%s  Verify: %s --check\n' "$g" "$x" "$(if [ "$ISOLATED" = 1 ]; then printf '.mastermind/install.sh'; else printf '~/.mastermind/install.sh'; fi)"
   exit 0
 fi
 

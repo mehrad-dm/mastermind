@@ -307,7 +307,7 @@ mkdir -p "$SI/.mastermind/engineering" "$SI/specs/004-invitations" "$SI/sub" "$S
 (cd "$SI" && git init -q .); (cd "$SH" && git init -q .)
 echo "9.8.7" > "$SI/.mastermind/VERSION"; echo "9.8.6" > "$SHOME/.mastermind/VERSION"
 printf '# MasterMind: global operating system\n\nkernel body\n' > "$SI/.mastermind/CLAUDE.md"
-printf '## Current field: **web**\n\n- **Level:** 2.\n' > "$SI/.mastermind/engineering/active-field.md"
+printf '## Current field: **web**\n\n- **Level:** 2.\n' > "$SI/.mastermind/engineering/active-field.md"; mkdir -p "$SI/.mastermind/engineering/fields/web"
 printf '2026-01-02 · wrong · first miss · caught by a test · fix\n2026-03-04 · wrong · second miss · caught by review · fix\n2026-03-05 · shipped a thing · ship\n' \
   > "$SI/.mastermind/journal.md"
 printf '**Status** clarified\n' > "$SI/specs/004-invitations/spec.md"
@@ -382,12 +382,18 @@ rulefix b; mkdir -p "$RULE/b/specs/1000-big"
 agree b "specs/1000-big is one" "True:True"
 rulefix c; mkdir -p "$RULE/c/docs/specs/001-a"; printf -- '- `specs-dir: docs/specs`: where specs live\n' > "$RULE/c/.mastermind/prefs.md"
 agree c "docs/specs/001-a under specs-dir: docs/specs is one" "True:True"
-rulefix d; printf '## Current field: **web**\n\n- **Level:** 2.\n' > "$RULE/d/.mastermind/engineering/active-field.md"
+rulefix d; printf '## Current field: **web**\n\n- **Level:** 2.\n' > "$RULE/d/.mastermind/engineering/active-field.md"; mkdir -p "$RULE/d/.mastermind/engineering/fields/web"
 agree d "a Level 2 field in the project is a field, whatever the hook's own brain says" "False:False"
 rulefix e
 agree e "no field" "True:False"
-rulefix g; printf '## Current field: web\n\n- **Level:** 2.\n' > "$RULE/g/.mastermind/engineering/active-field.md"
+rulefix g; printf '## Current field: web\n\n- **Level:** 2.\n' > "$RULE/g/.mastermind/engineering/active-field.md"; mkdir -p "$RULE/g/.mastermind/engineering/fields/web"
 agree g "a field heading written without the bold marks is still a field" "False:False"
+rulefix h; printf '## Current field: **web**\n\n- **Level:** 2.\n' > "$RULE/h/.mastermind/engineering/active-field.md"
+agree h "a field named but never built is not a field" "True:False"
+rulefix i; printf '## Current field: **web**\n\n- **Level:** 0.\n' > "$RULE/i/.mastermind/engineering/active-field.md"; mkdir -p "$RULE/i/.mastermind/engineering/fields/web"
+agree i "a built field left at Level 0 is a field" "False:False"
+rulefix j; printf '## Current field: **none yet**\n\n- **Field pack:** `engineering/fields/web/`\n' > "$RULE/j/.mastermind/engineering/active-field.md"; mkdir -p "$RULE/j/.mastermind/engineering/fields/web"
+agree j "a built field named only by the Field pack line is a field" "False:False"
 rulefix f; mkdir -p "$RULE/f/specs/001-x"; printf -- '- `specs-dir: ../outside`\n' > "$RULE/f/.mastermind/prefs.md"
 agree f "a specs-dir that leaves the project falls back to specs/" "True:True"
 
@@ -430,7 +436,7 @@ BARE="$HKS/bare"; mkdir -p "$BARE"
 check "a 5,000-character kernel is carried whole when no file in the session holds it" "$(carried "$HKS/small" "$BARE")" "True:True"
 check "and the payload names the brain root for ~/.mastermind paths" "$(has "Brain root: $HKS/small (a ~/.mastermind/... path in a skill means this folder).")" "yes"
 check "and it states that there is no field pack and that one lands in the home directory, since the brain is outside the project" \
-  "$(has "State: no field pack; the brain is shared, so a pack is written in the home directory.")$(has "offer the init skill")" "yesno"
+  "$(has "State: no field pack; the brain is shared, so a pack is written in the home directory.")$(has "say init to build one")" "yesno"
 check "and it does not claim the kernel is loaded from a file" "$(has "loads from")$(has "as the project's CLAUDE.md")" "nono"
 check "a 12,000-character kernel is not carried: the pointer stays, under the cap" "$(carried "$HKS/large" "$BARE")" "False:True"
 check "and the pointer says the kernel is not loaded, where to read it, and where the brain is" \
@@ -443,7 +449,7 @@ check "with both state lines and the brain root beside it" \
 check "and the same holds for a brain path of 160 characters" \
   "${#P160}:$(carried "$P160" "$SPECD")$(has "State: no field pack; the brain is shared")$(has "State: this project has feature folders in specs/.")$(has "Brain root: $P160 ")" "160:True:Trueyesyesyes"
 check "the pointer keeps the full sentences" \
-  "$(carried "$HKS/large" "$SPECD")$(has "No field pack yet: tell the user in one line")$(has "Run mastermind next before choosing a spec-driven skill")$(has "State:")" "False:Trueyesyesno"
+  "$(carried "$HKS/large" "$SPECD")$(has "No field pack yet: end your first announce line with")$(has "Run mastermind next before choosing a spec-driven skill")$(has "State:")" "False:Trueyesyesno"
 check "a 9,480-character kernel is still carried whole, with its state lines" \
   "$(carried "$HKS/edge" "$SPECD")$(has "State: no field pack")$(has "State: this project has feature folders")" "True:Trueyesyes"
 check "when the brain path is too long to fit, the brain-root line goes and both state lines stay" \

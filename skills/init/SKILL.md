@@ -34,7 +34,8 @@ init to build one"*. Under a shared or global brain, add: *"(the pack goes in yo
 3. **Fill the pack's "Where things are" section** from what step 1 detected: the half-dozen entry-point
    pointers (components, routes, state, tests + run command, config, the one file that explains the
    architecture fastest). These few pointers stop every future task from re-running discovery.
-4. **Point `active-field.md` at the pack.** Then deliver it to every wired tool, offline:
+4. **Point `active-field.md` at the pack:** its `## Current field:` line names the pack, its **Level:** is 1.
+   Then deliver it to every wired tool, offline:
    `.mastermind/bin/mastermind sync` for a per-project brain, the default, or
    `~/.mastermind/bin/mastermind sync` under a shared or global brain. It regenerates the router,
    writes the Cursor field rule and refreshes monorepo route anchors. The user re-runs nothing. If
