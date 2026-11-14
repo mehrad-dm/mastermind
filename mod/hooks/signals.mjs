@@ -36,8 +36,14 @@ export function isQuestion(answer) {
   return last.endsWith('?')
 }
 
+// Until nothing changes: one pass can leave a phrase that removing another one put back together.
+const stripAll = (text, re) => {
+  for (let prev = null; prev !== text; ) { prev = text; text = text.replace(re, '') }
+  return text
+}
+
 export function reportsCheck(answer) {
-  const text = String(answer ?? '').replace(UNVERIFIED, '').replace(HEDGED, '')
+  const text = stripAll(stripAll(String(answer ?? ''), UNVERIFIED), HEDGED)
   if (CHECKED.test(text)) return true
   RATIO.lastIndex = 0
   for (let m; (m = RATIO.exec(text)) !== null; ) if (m[1] === m[2] && Number(m[1]) > 0) return true

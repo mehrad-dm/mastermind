@@ -30,7 +30,8 @@ const ASK = {
 
 const hit = (label, effect, rule, destructive) => ({ label, effect, rule, destructive })
 
-const HEREDOC = /^<<-?[ \t]*(['"]?)((?:\\.|[^\s;&|<>()'"])+)\1/
+// The backslash is kept out of the class, so each character has one way to match: no backtracking blow-up.
+const HEREDOC = /^<<-?[ \t]*(['"]?)((?:\\.|[^\s;&|<>()'"\\])+)\1/
 const markOf = (m) => m[2].replace(/\\(.)/g, '$1')
 
 // Returns [the index after the heredoc bodies that start at `from`, their text], one per pending marker.
