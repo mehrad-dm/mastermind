@@ -527,7 +527,8 @@ CXH="$HKS/codex-home"; mkdir -p "$CXH/.codex"; cp "$HKS/small/CLAUDE.md" "$CXH/.
 check "codex: a kernel in the user-level AGENTS.md counts as held" "$(codexsays "$HKS/small" "$BARE" "$CXH")$(has "from $CXH/.codex/AGENTS.md")" "hookSpecificOutput:SessionStart:False:Trueyes"
 CXL="$HKS/$(python3 -c 'print("c" * 250)')"; mkdir -p "$CXL"; cp "$HKS/small/CLAUDE.md" "$CXL/AGENTS.md"
 check "codex: a long project path stays under the cap" "$(codexsays "$HKS/small" "$CXL")" "hookSpecificOutput:SessionStart:False:True"
-CXK="$HKS/$(python3 -c 'print("k" * 250)')"; mkbrain "$CXK" 8400
+# Two long folders, so the path is past the cap whatever the temp prefix (/tmp on Linux is short).
+CXK="$HKS/$(python3 -c 'print("k" * 250)')/$(python3 -c 'print("q" * 250)')"; mkbrain "$CXK" 8400
 check "codex: a long brain path costs the brain-root line, not the kernel or the state line" \
   "$(codexsays "$CXK" "$BARE")$(has "State: no field pack")$(has "Brain root:")" "hookSpecificOutput:SessionStart:True:Trueyesno"
 CXI="$HKS/codex-iso"; mkbrain "$CXI/.mastermind" 5000; mkdir -p "$CXI/src/deep"; cp "$CXI/.mastermind/CLAUDE.md" "$CXI/AGENTS.md"
