@@ -67,6 +67,10 @@ everyone agreed with it.
 - **Never name who found a defect**, or that a review or audit happened, in anything public:
   commits, the changelog, code comments, the website. Say what broke and what it cost.
 
+- **No AI attribution in commits or pull requests**: no `Co-Authored-By` line for Claude, Cursor,
+  Codex or any other assistant, and no "Generated with" footer. `.githooks/commit-msg` removes those
+  lines from every commit message; a PR description is yours to keep clean.
+
 - **A directive states one thing, and states it.** Bullets and numbered steps in a skill body, an agent
   brief, the kernel or a core doc are instructions parsed by a reader who cannot ask a follow-up. Two verbs joined by
   "and" is two steps. "Should probably", "try to", "where possible", "perhaps", "ideally", "maybe"

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# >>> repo-only: not shipped in skills/quarantine/assets
+command -v node >/dev/null 2>&1 || exit 0
+node "$(dirname "$0")/strip-ai-attribution.mjs" "$1"
+# <<< repo-only
